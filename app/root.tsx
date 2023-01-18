@@ -8,6 +8,9 @@ import {
   ScrollRestoration,
 } from "@remix-run/react";
 
+import { NavBar } from "~/components/navbar";
+import { Footer } from "~/components/footer";
+
 import styles from "~/styles/app.css";
 
 export const links: LinksFunction = () => {
@@ -16,7 +19,7 @@ export const links: LinksFunction = () => {
 
 export const meta: MetaFunction = () => ({
   charset: "utf-8",
-  title: "New Remix App",
+  title: "Moku Pona",
   viewport: "width=device-width,initial-scale=1",
 });
 
@@ -27,8 +30,18 @@ export default function App() {
         <Meta />
         <Links />
       </head>
-      <body>
-        <Outlet />
+      <body className="bg-gray-50">
+        <div className="flex flex-col h-screen">
+          <header className="sticky">
+            <NavBar />
+          </header>
+          <main className="grow mx-auto">
+            <Outlet />
+          </main>
+          <footer>
+            <Footer />
+          </footer>
+        </div>
         <ScrollRestoration />
         <Scripts />
         <LiveReload />
