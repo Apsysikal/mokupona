@@ -33,14 +33,7 @@ export function NavBar() {
           <nav>
             <ul className="flex gap-2">
               {LINKS.map((props) => {
-                return (
-                  <li
-                    key={props.label}
-                    className="last:border border-white rounded-md"
-                  >
-                    <NavLink {...props} />
-                  </li>
-                );
+                return <NavLink key={props.label} {...props} />;
               })}
             </ul>
           </nav>

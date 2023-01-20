@@ -27,7 +27,7 @@ export function Footer() {
           <p className="font-bold uppercase">Moku Pona</p>
           <ul>
             {LINKS.map((props) => {
-              return <FooterLink {...props} />;
+              return <FooterLink key={props.label} {...props} />;
             })}
           </ul>
           <p className="text-xs text-gray-600">

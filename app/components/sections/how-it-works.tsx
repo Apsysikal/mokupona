@@ -2,12 +2,12 @@ import { Link } from "@remix-run/react";
 
 export function HowItWorksSection() {
   return (
-    <section>
-      <p className="text-sm font-medium text-pink-800">Easy as baking a pie</p>
-      <h2 className="text-xl uppercase font-bold text-gray-800">
+    <section className="mb-5 flex flex-col gap-4">
+      <p className="text-xl font-medium text-pink-800">Easy as baking a pie</p>
+      <h2 className="text-4xl uppercase font-bold text-gray-800">
         How it works
       </h2>
-      <ol>
+      <ol className="text-xl">
         <li>
           <strong className="text-pink-800">1</strong> Select a dinner
         </li>
@@ -18,7 +18,7 @@ export function HowItWorksSection() {
           <strong className="text-pink-800">3</strong> Show up
         </li>
       </ol>
-      <p className="text-gray-800">
+      <p className="text-xl text-gray-800">
         <strong className="block text-pink-800">
           No honestly, it's just that.
         </strong>
