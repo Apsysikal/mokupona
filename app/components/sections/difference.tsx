@@ -1,3 +1,5 @@
+import { Link } from "@remix-run/react";
+
 export function DifferenceSection() {
   return (
     <section className="flex flex-col gap-4 mb-5">
@@ -11,7 +13,7 @@ export function DifferenceSection() {
         We value our environment and we want you to enjoy our dinners without
         afterthoughts. That's why we cook with{" "}
         <span className="text-emerald-800">seasonal ingredients</span>, which
-        are <span className="text-emerald-800">sourced locally</span> and to the
+        are <span className="text-emerald-800">sourced locally</span> and to the{" "}
         <span className="text-emerald-800">best standards</span>. To make this
         transparent, every foods origin and details are listed on the dinners
         detail page.
@@ -25,6 +27,25 @@ export function DifferenceSection() {
         </span>{" "}
         than at a restaurant.
       </p>
+      <p className="text-xl text-gray-800">
+        This should have made clear, what we are all about. We would love to
+        meet you soon at one of our meetings. If you still have questions feel
+        free to contact us at any time. We're always happy to help.
+      </p>
+      <div className="flex flex-col lg:flex-row w-full gap-2">
+        <Link
+          to="/dinners"
+          className="inline-block text-center px-4 py-2 rounded-md shadow-md bg-emerald-800 text-white uppercase hover:bg-emerald-700 active:bg-emerald-900"
+        >
+          Reserve now
+        </Link>
+        <Link
+          to="/contact"
+          className="inline-block text-center px-4 py-2 rounded-md shadow-md text-emerald-800 uppercase border border-emerald-800 hover:border-emerald-700 active:border-emerald-900"
+        >
+          Contact us
+        </Link>
+      </div>
     </section>
   );
 }

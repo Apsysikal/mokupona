@@ -25,19 +25,14 @@ export const meta: MetaFunction = () => ({
 
 export default function App() {
   return (
-    <html lang="en">
+    <html lang="en" className="scroll-smooth">
       <head>
         <Meta />
         <Links />
       </head>
       <body className="bg-gray-50">
         <div className="flex flex-col h-screen">
-          <header className="sticky">
-            <NavBar />
-          </header>
-          <main className="grow mx-auto">
-            <Outlet />
-          </main>
+          <Outlet />
           <footer>
             <Footer />
           </footer>

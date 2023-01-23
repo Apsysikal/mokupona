@@ -1,6 +1,6 @@
 import { NavBar } from "~/components/navbar";
 
-export default function DinnerRoute() {
+export default function AboutRoute() {
   return (
     <>
       <header>

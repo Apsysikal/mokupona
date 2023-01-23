@@ -1,6 +1,6 @@
 export function VisionSection() {
   return (
-    <section className="my-5 flex flex-col gap-4">
+    <section id="vision" className="my-5 flex flex-col gap-4 scroll-m-9">
       <p className="text-xl font-medium text-emerald-800">
         The perfect place to meet new people.
       </p>

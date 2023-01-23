@@ -26,12 +26,14 @@ export function HowItWorksSection() {
         moderates the whole event. They inform you about the food and drinks you
         are experiencing and provide conversation topics as neccessary.
       </p>
-      <Link
-        to="/dinners"
-        className="inline-block px-4 py-2 rounded-md shadow-md bg-pink-800 text-white uppercase hover:bg-pink-700 active:bg-pink-900"
-      >
-        See available dates
-      </Link>
+      <div className="flex flex-col lg:flex-row w-full">
+        <Link
+          to="/dinners"
+          className="inline-block text-center px-4 py-2 rounded-md shadow-md bg-pink-800 text-white uppercase hover:bg-pink-700 active:bg-pink-900"
+        >
+          See available dates
+        </Link>
+      </div>
     </section>
   );
 }

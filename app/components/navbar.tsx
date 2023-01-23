@@ -1,4 +1,5 @@
 import { Link } from "@remix-run/react";
+import clsx from "clsx";
 
 const LINKS = [
   {
@@ -19,18 +20,18 @@ const LINKS = [
   },
 ];
 
-export function NavBar() {
+export function NavBar({ className }: { className?: string }) {
   return (
-    <div className="bg-transparent p-2 h-14 text-white w-full">
-      <div className="flex justify-between max-w-3xl mx-auto items-center">
+    <div className={clsx(["p-2 h-14 w-full", className])}>
+      <div className="flex justify-between max-w-3xl px-2 mx-auto items-center h-full">
         <Link
           to="/"
-          className="text-4xl font-extrabold uppercase whitespace-nowrap"
+          className="text-xl font-extrabold uppercase whitespace-nowrap"
         >
-          Moku Pona
+          Moaku Pona
         </Link>
         <div>
-          <nav>
+          <nav className="max-xl:hidden">
             <ul className="flex gap-2">
               {LINKS.map((props) => {
                 return <NavLink key={props.label} {...props} />;
