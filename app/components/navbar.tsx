@@ -28,7 +28,7 @@ export function NavBar({ className }: { className?: string }) {
           to="/"
           className="text-xl font-extrabold uppercase whitespace-nowrap"
         >
-          Moaku Pona
+          Moku Pona
         </Link>
         <div>
           <nav className="max-xl:hidden">
