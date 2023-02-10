@@ -15,7 +15,7 @@ export default function Index() {
           <div className="h-[calc(100vh-3.5rem)] p-2 flex flex-col gap-10 relative text-white place-content-center w-screen">
             <div className="bg-[url(/landing-background.jpg)] absolute -top-14 right-0 bottom-0 left-0 -z-10 bg-no-repeat bg-cover bg-center" />
             <div className="bg-gray-800/70 absolute -top-14 right-0 bottom-0 left-0 -z-10" />
-            <div className="flex flex-col max-lg:grow place-content-center gap-4 max-w-3xl mx-auto p-2">
+            <div className="flex flex-col place-content-center gap-4 max-w-3xl mx-auto p-2">
               <span className="text-2xl font-light">Hello, we are</span>
               <h1 className="text-5xl uppercase whitespace-nowrap font-extrabold text-emerald-600">
                 Moku Pona
