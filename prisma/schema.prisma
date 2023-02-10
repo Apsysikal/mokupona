@@ -11,7 +11,7 @@ datasource db {
 }
 
 model Event {
-  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  id               String          @id @default(auto()) @map("_id") @db.ObjectId
   title            String
   subtitle         String
   tags             String[]
@@ -20,8 +20,26 @@ model Event {
   price            Int
   description      String
   shortDescription String
-  locationId       String   @db.ObjectId
-  location         Location @relation(fields: [locationId], references: [id])
+  locationId       String          @db.ObjectId
+  location         Location        @relation(fields: [locationId], references: [id])
+  EventResponse    EventResponse[]
+}
+
+model EventResponse {
+  id             String  @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  phoneNumber    String
+  messenger      String
+  vegetarian     Boolean @default(false)
+  vegan          Boolean @default(false)
+  noNuts         Boolean @default(false)
+  noDairy        Boolean @default(false)
+  noAlcohol      Boolean @default(false)
+  comment        String?
+  termsOfService Boolean
+  newsletter     Boolean @default(false)
+  eventId        String  @db.ObjectId
+  event          Event   @relation(fields: [eventId], references: [id])
 }
 
 model Location {

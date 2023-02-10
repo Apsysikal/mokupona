@@ -1,11 +1,14 @@
-import { ActionArgs, json, LoaderArgs } from "@remix-run/node";
-import { Form, Link, useLoaderData } from "@remix-run/react";
+import { ActionArgs, json, LoaderArgs, redirect } from "@remix-run/node";
+import { Form, Link, useActionData, useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
 import { NavBar } from "~/components/navbar";
+import { hasErrors } from "~/utilities/forms.server";
 import { prisma } from "~/utilities/prisma.server";
+import { badRequest } from "~/utilities/request.server";
 
 export const loader = async ({ params }: LoaderArgs) => {
   const dinnerId = params.dinnerId;
+
   invariant(dinnerId, "dinnerId must be defined");
 
   const event = await prisma.event.findUnique({
@@ -31,16 +34,75 @@ export const loader = async ({ params }: LoaderArgs) => {
 
 export const action = async ({ params, request }: ActionArgs) => {
   const formData = await request.formData();
+  const dinnerId = params.dinnerId;
 
-  console.log(formData);
+  invariant(dinnerId, "dinnerId must be defined");
 
   const name = formData.get("name") as string;
   const phoneNumber = formData.get("phone-number") as string;
-  const preferredMessenger = formData.get("preferred-messenger") as string;
+  const messenger = formData.get("preferred-messenger") as string;
+  const restrictionVegetarian = formData.get("dr-vegetarian") as string;
+  const restrictionVegan = formData.get("dr-vegan") as string;
+  const restrictionNuts = formData.get("dr-nuts") as string;
+  const restrictionDairy = formData.get("dr-dairy") as string;
+  const restrictionAlcohol = formData.get("dr-alcohol") as string;
+  const comment = formData.get("comment") as string;
+  const termsOfService = formData.get("terms-of-service") as string;
+  const newsletter = formData.get("newsletter-signup") as string;
+
+  const fieldErrors = {
+    name: validateName(name),
+    phoneNumber: validatePhoneNumber(phoneNumber),
+    messenger: validateMessenger(messenger),
+    termsOfService: validateTermsOfService(termsOfService),
+  };
+
+  const fields = {
+    name,
+    phoneNumber,
+    messenger,
+    restrictionVegetarian,
+    restrictionVegan,
+    restrictionNuts,
+    restrictionDairy,
+    restrictionAlcohol,
+    comment,
+    termsOfService,
+    newsletter,
+  };
+
+  if (hasErrors(fieldErrors)) {
+    return badRequest({
+      fieldErrors,
+      fields,
+      formError: null,
+    });
+  }
+
+  await prisma.eventResponse.create({
+    data: {
+      name,
+      phoneNumber,
+      messenger,
+      vegetarian: restrictionVegetarian ? true : false,
+      vegan: restrictionVegan ? true : false,
+      noNuts: restrictionNuts ? true : false,
+      noDairy: restrictionDairy ? true : false,
+      noAlcohol: restrictionAlcohol ? true : false,
+      comment,
+      termsOfService: termsOfService ? true : false,
+      newsletter: newsletter ? true : false,
+      eventId: dinnerId,
+    },
+  });
+
+  return redirect("/");
 };
 
 export default function DinnerRoute() {
   const { event } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
+
   const parsedDate = new Date(Date.parse(event.date));
 
   return (
@@ -98,12 +160,22 @@ export default function DinnerRoute() {
                 type="text"
                 name="name"
                 id="name"
-                defaultValue={""}
-                aria-invalid={false}
-                aria-errormessage={""}
+                defaultValue={actionData?.fields.name}
+                aria-invalid={actionData?.fieldErrors.name ? true : false}
+                aria-errormessage={
+                  actionData?.fieldErrors.name ? "name-error" : undefined
+                }
                 className="border-emerald-600 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 rounded-md shadow-md"
               />
-              {/** Error message */}
+              {actionData?.fieldErrors?.name && (
+                <p
+                  id="name-error"
+                  role="alert"
+                  className="text-sm text-red-500"
+                >
+                  {actionData.fieldErrors.name}
+                </p>
+              )}
             </div>
             <div>
               <div className="flex flex-col gap-1">
@@ -114,12 +186,26 @@ export default function DinnerRoute() {
                   type="tel"
                   name="phone-number"
                   id="phone-number"
-                  defaultValue={""}
-                  aria-invalid={false}
-                  aria-errormessage={""}
+                  defaultValue={actionData?.fields.phoneNumber}
+                  aria-invalid={
+                    actionData?.fieldErrors.phoneNumber ? true : false
+                  }
+                  aria-errormessage={
+                    actionData?.fieldErrors.phoneNumber
+                      ? "phone-number-error"
+                      : undefined
+                  }
                   className="border-emerald-600 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 rounded-md shadow-md"
                 />
-                {/** Error message */}
+                {actionData?.fieldErrors?.phoneNumber && (
+                  <p
+                    id="phone-number-error"
+                    role="alert"
+                    className="text-sm text-red-500"
+                  >
+                    {actionData.fieldErrors.phoneNumber}
+                  </p>
+                )}
               </div>
             </div>
             <div>
@@ -130,6 +216,7 @@ export default function DinnerRoute() {
                     type="radio"
                     name="preferred-messenger"
                     id="preferred-messenger-signal"
+                    defaultChecked={actionData?.fields.messenger === "signal"}
                     value="signal"
                     className="border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600"
                   />
@@ -140,6 +227,7 @@ export default function DinnerRoute() {
                     type="radio"
                     name="preferred-messenger"
                     id="preferred-messenger-whatsapp"
+                    defaultChecked={actionData?.fields.messenger === "whatsapp"}
                     value="whatsapp"
                     className="border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600"
                   />
@@ -150,11 +238,21 @@ export default function DinnerRoute() {
                     type="radio"
                     name="preferred-messenger"
                     id="preferred-messenger-telegram"
+                    defaultChecked={actionData?.fields.messenger === "telegram"}
                     value="telegram"
                     className="border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600"
                   />
                   <label htmlFor="preferred-messenger-telegram">Telegram</label>
                 </div>
+                {actionData?.fieldErrors?.messenger && (
+                  <p
+                    id="messenger-error"
+                    role="alert"
+                    className="text-sm text-red-500"
+                  >
+                    {actionData.fieldErrors.messenger}
+                  </p>
+                )}
               </div>
             </div>
             <div>
@@ -163,58 +261,68 @@ export default function DinnerRoute() {
                 <div className="flex gap-2 items-center">
                   <input
                     type="checkbox"
-                    name="dietary-restriction-vegetarian"
-                    id="dietary-restriction-vegetarian"
-                    value="dietary-restriction-vegetarian"
+                    name="dr-vegetarian"
+                    id="dr-vegetarian"
+                    defaultChecked={
+                      actionData?.fields.restrictionVegetarian ===
+                      "dr-vegetarian"
+                    }
+                    value="dr-vegetarian"
                     className="border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600 rounded-sm"
                   />
-                  <label htmlFor="dietary-restriction-vegetarian">
-                    Vegetarian
-                  </label>
+                  <label htmlFor="dr-vegetarian">Vegetarian</label>
                 </div>
                 <div className="flex gap-2 items-center">
                   <input
                     type="checkbox"
-                    name="dietary-restriction-vegan"
-                    id="dietary-restriction-vegan"
-                    value="dietary-restriction-vegan"
+                    name="dr-vegan"
+                    id="dr-vegan"
+                    defaultChecked={
+                      actionData?.fields.restrictionVegetarian === "dr-vegan"
+                    }
+                    value="dr-vegan"
                     className="border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600 rounded-sm"
                   />
-                  <label htmlFor="dietary-restriction-vegan">Vegan</label>
+                  <label htmlFor="dr-vegan">Vegan</label>
                 </div>
                 <div className="flex gap-2 items-center">
                   <input
                     type="checkbox"
-                    name="dietary-restriction-nuts"
-                    id="dietary-restriction-nuts"
-                    value="dietary-restriction-nuts"
+                    name="dr-nuts"
+                    id="dr-nuts"
+                    defaultChecked={
+                      actionData?.fields.restrictionVegetarian === "dr-nuts"
+                    }
+                    value="dr-nuts"
                     className="border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600 rounded-sm"
                   />
-                  <label htmlFor="dietary-restriction-nuts">Nuts Allergy</label>
+                  <label htmlFor="dr-nuts">Nuts Allergy</label>
                 </div>
                 <div className="flex gap-2 items-center">
                   <input
                     type="checkbox"
-                    name="dietary-restriction-dairy"
-                    id="dietary-restriction-dairy"
-                    value="dietary-restriction-dairy"
+                    name="dr-dairy"
+                    id="dr-dairy"
+                    defaultChecked={
+                      actionData?.fields.restrictionVegetarian === "dr-dairy"
+                    }
+                    value="dr-dairy"
                     className="border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600 rounded-sm"
                   />
-                  <label htmlFor="dietary-restriction-dairy">
-                    Dairy Intolerance
-                  </label>
+                  <label htmlFor="dr-dairy">Dairy Intolerance</label>
                 </div>
                 <div className="flex gap-2 items-center">
                   <input
                     type="checkbox"
-                    name="dietary-restriction-alcohol"
-                    id="dietary-restriction-alcohol"
-                    value="dietary-restriction-alcohol"
+                    name="dr-alcohol"
+                    id="dr-alcohol"
+                    defaultChecked={
+                      actionData?.fields.restrictionVegetarian === "dr-alcohol"
+                    }
+                    value="dr-alcohol"
                     className="border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600 rounded-sm"
                   />
-                  <label htmlFor="dietary-restriction-alcohol">
-                    No Alcohol
-                  </label>
+                  <label htmlFor="dr-alcohol">No Alcohol</label>
                 </div>
               </div>
             </div>
@@ -226,6 +334,7 @@ export default function DinnerRoute() {
                 <textarea
                   name="comment"
                   id="comment"
+                  defaultValue={actionData?.fields.comment}
                   className="border-emerald-600 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 rounded-md shadow-md"
                 />
               </div>
@@ -237,6 +346,9 @@ export default function DinnerRoute() {
                     type="checkbox"
                     name="terms-of-service"
                     id="terms-of-service"
+                    defaultChecked={
+                      actionData?.fields.termsOfService === "terms-of-service"
+                    }
                     value="terms-of-service"
                     className="border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600 rounded-sm"
                   />
@@ -247,11 +359,23 @@ export default function DinnerRoute() {
                     </Link>
                   </label>
                 </div>
+                {actionData?.fieldErrors?.termsOfService && (
+                  <p
+                    id="messenger-error"
+                    role="alert"
+                    className="text-sm text-red-500"
+                  >
+                    {actionData.fieldErrors.termsOfService}
+                  </p>
+                )}
                 <div className="flex gap-2 items-center">
                   <input
                     type="checkbox"
                     name="newsletter-signup"
                     id="newsletter-signup"
+                    defaultChecked={
+                      actionData?.fields.termsOfService === "newsletter-signup"
+                    }
                     value="newsletter-signup"
                     className="border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600 rounded-sm"
                   />
@@ -274,4 +398,29 @@ export default function DinnerRoute() {
       </main>
     </>
   );
+}
+
+function validateName(name: string | null) {
+  if (!name) return "Name must be provided";
+  if (name.trim().length === 0) return "Name cannot be empty";
+}
+
+function validatePhoneNumber(phoneNumber: string | null) {
+  if (!phoneNumber) return "Phone number must be provided";
+  if (phoneNumber.length <= 6) return "Phone number must be valid";
+}
+
+function validateMessenger(messenger: string | null) {
+  const validMessengers = ["signal", "whatsapp", "telegram"];
+
+  if (!messenger) return "You must select a messenger";
+  if (!validMessengers.find((valid) => valid === messenger)) {
+    return "You must provide a valid messenger";
+  }
+}
+
+function validateTermsOfService(value: string | null) {
+  if (value !== "terms-of-service") {
+    return "You must accept the terms of service";
+  }
 }
