@@ -96,7 +96,7 @@ export const action = async ({ params, request }: ActionArgs) => {
     },
   });
 
-  return redirect("/");
+  return redirect("/dinners");
 };
 
 export default function DinnerRoute() {
