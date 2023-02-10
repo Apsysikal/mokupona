@@ -6,6 +6,28 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
+}
+
+model Event {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  title            String
+  subtitle         String
+  tags             String[]
+  imageUrl         String
+  date             String
+  price            Int
+  description      String
+  shortDescription String
+  locationId       String   @db.ObjectId
+  location         Location @relation(fields: [locationId], references: [id])
+}
+
+model Location {
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  street  String
+  zipCode String
+  zipName String
+  Event   Event[]
 }
