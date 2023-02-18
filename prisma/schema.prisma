@@ -1,51 +1,38 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
 
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider = "mongodb"
-  url      = env("DATABASE_URL")
+model User {
+  id    String @id @default(cuid())
+  email String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  password Password?
+  notes    Note[]
 }
 
-model Event {
-  id               String          @id @default(auto()) @map("_id") @db.ObjectId
-  title            String
-  subtitle         String
-  tags             String[]
-  imageUrl         String
-  date             String
-  price            Int
-  description      String
-  shortDescription String
-  locationId       String          @db.ObjectId
-  location         Location        @relation(fields: [locationId], references: [id])
-  EventResponse    EventResponse[]
+model Password {
+  hash String
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId String @unique
 }
 
-model EventResponse {
-  id             String  @id @default(auto()) @map("_id") @db.ObjectId
-  name           String
-  phoneNumber    String
-  messenger      String
-  vegetarian     Boolean @default(false)
-  vegan          Boolean @default(false)
-  noNuts         Boolean @default(false)
-  noDairy        Boolean @default(false)
-  noAlcohol      Boolean @default(false)
-  comment        String?
-  termsOfService Boolean
-  newsletter     Boolean @default(false)
-  eventId        String  @db.ObjectId
-  event          Event   @relation(fields: [eventId], references: [id])
-}
+model Note {
+  id    String @id @default(cuid())
+  title String
+  body  String
 
-model Location {
-  id      String  @id @default(auto()) @map("_id") @db.ObjectId
-  street  String
-  zipCode String
-  zipName String
-  Event   Event[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId String
 }

@@ -1,4 +1,5 @@
-import type { LinksFunction, MetaFunction } from "@remix-run/node";
+import type { LinksFunction, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import {
   Links,
   LiveReload,
@@ -8,35 +9,34 @@ import {
   ScrollRestoration,
 } from "@remix-run/react";
 
-import { NavBar } from "~/components/navbar";
-import { Footer } from "~/components/footer";
-
-import styles from "~/styles/app.css";
+import tailwindStylesheetUrl from "./styles/tailwind.css";
+import { getUser } from "./session.server";
 
 export const links: LinksFunction = () => {
-  return [{ rel: "stylesheet", href: styles }];
+  return [{ rel: "stylesheet", href: tailwindStylesheetUrl }];
 };
 
 export const meta: MetaFunction = () => ({
   charset: "utf-8",
-  title: "Moku Pona",
+  title: "Remix Notes",
   viewport: "width=device-width,initial-scale=1",
 });
 
+export async function loader({ request }: LoaderArgs) {
+  return json({
+    user: await getUser(request),
+  });
+}
+
 export default function App() {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className="h-full">
       <head>
         <Meta />
         <Links />
       </head>
-      <body className="bg-gray-50">
-        <div className="flex flex-col h-screen">
-          <Outlet />
-          <footer>
-            <Footer />
-          </footer>
-        </div>
+      <body className="h-full">
+        <Outlet />
         <ScrollRestoration />
         <Scripts />
         <LiveReload />
