@@ -1,45 +1,53 @@
 import { PrismaClient } from "@prisma/client";
-import { faker } from "@faker-js/faker";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function seed() {
-  const locations = await prisma.location.createMany({
-    data: getLocations(),
+  const email = "rachel@remix.run";
+
+  // cleanup the existing database
+  await prisma.user.delete({ where: { email } }).catch(() => {
+    // no worries if it doesn't exist yet
   });
 
-  const location = await prisma.location.findFirst();
-  if (!location) throw new Error("Something went wrong seeding locations");
+  const hashedPassword = await bcrypt.hash("racheliscool", 10);
 
-  const events = await prisma.event.createMany({
-    data: getDinners(location.id),
+  const user = await prisma.user.create({
+    data: {
+      email,
+      password: {
+        create: {
+          hash: hashedPassword,
+        },
+      },
+    },
   });
-}
 
-function getLocations() {
-  return [
-    {
-      street: faker.address.street(),
-      zipCode: faker.address.zipCode("####"),
-      zipName: faker.address.cityName(),
+  await prisma.note.create({
+    data: {
+      title: "My first note",
+      body: "Hello, world!",
+      userId: user.id,
     },
-  ];
-}
+  });
 
-function getDinners(locationId: string) {
-  return [
-    {
-      title: faker.lorem.sentence(3),
-      subtitle: faker.lorem.sentence(3),
-      tags: faker.lorem.words(3).split(" "),
-      imageUrl: faker.image.food(1200, 800),
-      date: faker.datatype.datetime({ min: Date.now() }).toISOString(),
-      price: 25,
-      description: faker.lorem.paragraph(25),
-      shortDescription: faker.lorem.paragraph(5),
-      locationId,
+  await prisma.note.create({
+    data: {
+      title: "My second note",
+      body: "Hello, world!",
+      userId: user.id,
     },
-  ];
+  });
+
+  console.log(`Database has been seeded. 🌱`);
 }
 
-seed();
+seed()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
