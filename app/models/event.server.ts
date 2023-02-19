@@ -1,5 +1,6 @@
 import { prisma } from "~/db.server";
 
+import type { Prisma } from "@prisma/client";
 export type { Event } from "@prisma/client";
 
 export async function getEvents() {
@@ -19,5 +20,11 @@ export async function getEventById(id: string) {
       price: true,
       description: true,
     },
+  });
+}
+
+export async function createEvent(data: Prisma.EventUncheckedCreateInput) {
+  return prisma.event.create({
+    data,
   });
 }
