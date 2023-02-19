@@ -1,6 +1,7 @@
 import { ActionArgs, json, LoaderArgs, redirect } from "@remix-run/node";
 import { Form, Link, useActionData, useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
+import { Footer } from "~/components/footer";
 import { NavBar } from "~/components/navbar";
 import { createEventResponse } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
@@ -26,7 +27,7 @@ export const action = async ({ params, request }: ActionArgs) => {
   invariant(dinnerId, "dinnerId must be defined");
 
   const name = formData.get("name") as string;
-  const phoneNumber = formData.get("phone-number") as string;
+  const email = formData.get("email") as string;
   const messenger = formData.get("preferred-messenger") as string;
   const restrictionVegetarian = formData.get("dr-vegetarian") as string;
   const restrictionVegan = formData.get("dr-vegan") as string;
@@ -39,15 +40,13 @@ export const action = async ({ params, request }: ActionArgs) => {
 
   const fieldErrors = {
     name: validateName(name),
-    phoneNumber: validatePhoneNumber(phoneNumber),
-    messenger: validateMessenger(messenger),
+    email: validateEmail(email),
     termsOfService: validateTermsOfService(termsOfService),
   };
 
   const fields = {
     name,
-    phoneNumber,
-    messenger,
+    email,
     restrictionVegetarian,
     restrictionVegan,
     restrictionNuts,
@@ -71,8 +70,7 @@ export const action = async ({ params, request }: ActionArgs) => {
 
   await createEventResponse({
     name,
-    phoneNumber,
-    messenger,
+    email,
     vegetarian: restrictionVegetarian ? true : false,
     vegan: restrictionVegan ? true : false,
     noNuts: restrictionNuts ? true : false,
@@ -167,78 +165,27 @@ export default function DinnerRoute() {
             </div>
             <div>
               <div className="flex flex-col gap-1">
-                <label htmlFor="phone-number" className="font-semibold">
-                  Phone Number
+                <label htmlFor="email" className="font-semibold">
+                  Email
                 </label>
                 <input
-                  type="tel"
-                  name="phone-number"
-                  id="phone-number"
-                  defaultValue={actionData?.fields.phoneNumber}
-                  aria-invalid={
-                    actionData?.fieldErrors.phoneNumber ? true : false
-                  }
+                  type="email"
+                  name="email"
+                  id="email"
+                  defaultValue={actionData?.fields.email}
+                  aria-invalid={actionData?.fieldErrors.email ? true : false}
                   aria-errormessage={
-                    actionData?.fieldErrors.phoneNumber
-                      ? "phone-number-error"
-                      : undefined
+                    actionData?.fieldErrors.email ? "email-error" : undefined
                   }
                   className="rounded-md border-emerald-600 shadow-md focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
                 />
-                {actionData?.fieldErrors?.phoneNumber && (
+                {actionData?.fieldErrors?.email && (
                   <p
-                    id="phone-number-error"
+                    id="email-error"
                     role="alert"
                     className="text-sm text-red-500"
                   >
-                    {actionData.fieldErrors.phoneNumber}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div>
-              <div className="flex flex-col gap-1">
-                <p className="font-semibold">Preferred Messenger</p>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="preferred-messenger"
-                    id="preferred-messenger-signal"
-                    defaultChecked={actionData?.fields.messenger === "signal"}
-                    value="signal"
-                    className="border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600"
-                  />
-                  <label htmlFor="preferred-messenger-signal">Signal</label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="preferred-messenger"
-                    id="preferred-messenger-whatsapp"
-                    defaultChecked={actionData?.fields.messenger === "whatsapp"}
-                    value="whatsapp"
-                    className="border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600"
-                  />
-                  <label htmlFor="preferred-messenger-whatsapp">WhatsApp</label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="preferred-messenger"
-                    id="preferred-messenger-telegram"
-                    defaultChecked={actionData?.fields.messenger === "telegram"}
-                    value="telegram"
-                    className="border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600"
-                  />
-                  <label htmlFor="preferred-messenger-telegram">Telegram</label>
-                </div>
-                {actionData?.fieldErrors?.messenger && (
-                  <p
-                    id="messenger-error"
-                    role="alert"
-                    className="text-sm text-red-500"
-                  >
-                    {actionData.fieldErrors.messenger}
+                    {actionData.fieldErrors.email}
                   </p>
                 )}
               </div>
@@ -384,6 +331,9 @@ export default function DinnerRoute() {
           </div>
         </Form>
       </main>
+      <footer>
+        <Footer />
+      </footer>
     </>
   );
 }
@@ -393,9 +343,11 @@ function validateName(name: string | null) {
   if (name.trim().length === 0) return "Name cannot be empty";
 }
 
-function validatePhoneNumber(phoneNumber: string | null) {
-  if (!phoneNumber) return "Phone number must be provided";
-  if (phoneNumber.length <= 6) return "Phone number must be valid";
+function validateEmail(email: string | null) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!email) return "Email must be provided";
+  if (!emailRegex.test(email)) return "Email must be valid";
 }
 
 function validateMessenger(messenger: string | null) {

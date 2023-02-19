@@ -1,6 +1,7 @@
-import { json, LoaderArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { DinnerCard } from "~/components/dinner-card";
+import { Footer } from "~/components/footer";
 import { NavBar } from "~/components/navbar";
 import { getEvents } from "~/models/event.server";
 
@@ -38,6 +39,9 @@ export default function DinnersIndexRoute() {
           </>
         )}
       </main>
+      <footer>
+        <Footer />
+      </footer>
     </>
   );
 }

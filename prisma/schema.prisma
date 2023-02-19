@@ -29,6 +29,7 @@ model Event {
   title            String
   subtitle         String
   tags             String
+  slots            Int             @default(16)
   imageUrl         String
   date             String
   price            Int
@@ -42,8 +43,7 @@ model Event {
 model EventResponse {
   id             String  @id @default(cuid())
   name           String
-  phoneNumber    String
-  messenger      String
+  email          String
   vegetarian     Boolean @default(false)
   vegan          Boolean @default(false)
   noNuts         Boolean @default(false)
