@@ -98,7 +98,7 @@ export default function DinnerRoute() {
   return (
     <>
       <header>
-        <NavBar className="bg-emerald-800 text-white" />
+        <NavBar />
       </header>
       <main className="mx-auto flex max-w-3xl grow flex-col gap-5 px-2 py-4 text-gray-800">
         <div className="flex flex-col gap-2">
