@@ -4,8 +4,10 @@ import { Footer } from "~/components/footer";
 import { NavBar } from "~/components/navbar";
 import { createEvent } from "~/models/event.server";
 import { getLocations } from "~/models/location.server";
+import { requireUser } from "~/session.server";
 
-export const loader = async (params: LoaderArgs) => {
+export const loader = async ({ request }: LoaderArgs) => {
+  const user = await requireUser(request);
   const locations = await getLocations();
 
   return json({
@@ -25,6 +27,7 @@ export const action = async ({ request }: ActionArgs) => {
   const price = formData.get("price") as string;
   const slots = formData.get("slots") as string;
   const date = formData.get("date") as string;
+  const signupStart = formData.get("signup-start") as string;
   const locationId = formData.get("location") as string;
   console.log(locationId);
 
@@ -38,6 +41,7 @@ export const action = async ({ request }: ActionArgs) => {
     price: validatePrice(price),
     slots: validateSlots(slots),
     date: validateDate(date),
+    signupStart: validateDate(signupStart),
     locationId: validateLocation(locationId),
   };
 
@@ -51,6 +55,7 @@ export const action = async ({ request }: ActionArgs) => {
     price,
     slots,
     date,
+    signupStart,
     locationId,
   };
 
@@ -74,7 +79,8 @@ export const action = async ({ request }: ActionArgs) => {
     description: longDescription,
     price: Number(price),
     slots: Number(slots),
-    date,
+    date: new Date(date),
+    signupDate: new Date(signupStart),
     locationId,
   });
 
@@ -309,6 +315,35 @@ export default function DinnersIndexRoute() {
                   className="text-sm text-red-500"
                 >
                   {actionData.fieldErrors.date}
+                </p>
+              )}
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="date" className="font-semibold">
+                Signup Start
+              </label>
+              <input
+                type="datetime-local"
+                name="signup-start"
+                id="signup-start"
+                defaultValue={actionData?.fields.signupStart}
+                aria-invalid={
+                  actionData?.fieldErrors.signupStart ? true : false
+                }
+                aria-errormessage={
+                  actionData?.fieldErrors.signupStart
+                    ? "signup-start-error"
+                    : undefined
+                }
+                className="rounded-md border-emerald-600 shadow-md focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
+              />
+              {actionData?.fieldErrors?.signupStart && (
+                <p
+                  id="signup-start-error"
+                  role="alert"
+                  className="text-sm text-red-500"
+                >
+                  {actionData.fieldErrors.signupStart}
                 </p>
               )}
             </div>

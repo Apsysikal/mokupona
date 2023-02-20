@@ -23,9 +23,13 @@ export default function DinnersIndexRoute() {
         {events.length > 0 ? (
           <>
             {events.map((event) => {
-              event.date;
+              const parsedEvent = {
+                ...event,
+                date: new Date(event.date),
+                signupDate: new Date(event.signupDate),
+              };
 
-              return <DinnerCard event={event} />;
+              return <DinnerCard event={parsedEvent} />;
             })}
           </>
         ) : (

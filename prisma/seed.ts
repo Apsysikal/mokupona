@@ -31,7 +31,7 @@ async function seed() {
   const location = await prisma.location.create({ data: getLocation() });
 
   // Cleanup the existing database
-  await prisma.event.deleteMany().catch(() => {});
+  await prisma.event.deleteMany().catch((e) => {});
 
   await Promise.all(
     getDinners(location.id).map((dinner) => {
@@ -60,14 +60,19 @@ function getLocation() {
 }
 
 function getDinners(locationId: string) {
+  const dates = generateEventDatePair();
+  const datesTwo = generateEventDatePair();
+
   return [
     {
       title: faker.lorem.sentence(3),
       subtitle: faker.lorem.sentence(3),
       tags: faker.lorem.words(3),
       imageUrl: faker.image.food(1200, 800),
-      date: faker.datatype.datetime({ min: Date.now() }).toISOString(),
+      date: dates.date,
+      signupDate: dates.signupDate,
       price: 25,
+      slots: 16,
       description: faker.lorem.paragraph(25),
       shortDescription: faker.lorem.paragraph(5),
       locationId,
@@ -77,8 +82,10 @@ function getDinners(locationId: string) {
       subtitle: faker.lorem.sentence(3),
       tags: faker.lorem.words(3),
       imageUrl: faker.image.food(1200, 800),
-      date: faker.datatype.datetime({ min: Date.now() }).toISOString(),
+      date: datesTwo.date,
+      signupDate: datesTwo.signupDate,
       price: 25,
+      slots: 16,
       description: faker.lorem.paragraph(25),
       shortDescription: faker.lorem.paragraph(5),
       locationId,
@@ -88,11 +95,23 @@ function getDinners(locationId: string) {
       subtitle: faker.lorem.sentence(3),
       tags: faker.lorem.words(3),
       imageUrl: faker.image.food(1200, 800),
-      date: faker.datatype.datetime({ min: Date.now() }).toISOString(),
+      date: new Date(),
+      signupDate: new Date(),
       price: 25,
+      slots: 16,
       description: faker.lorem.paragraph(25),
       shortDescription: faker.lorem.paragraph(5),
       locationId,
     },
   ];
+}
+
+function generateEventDatePair() {
+  const date = faker.datatype.datetime({ min: Date.now() });
+  const signupDate = faker.datatype.datetime({ min: date.valueOf() });
+
+  return {
+    date,
+    signupDate,
+  };
 }

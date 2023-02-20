@@ -29,9 +29,10 @@ model Event {
   title            String
   subtitle         String
   tags             String
-  slots            Int             @default(16)
+  slots            Int
   imageUrl         String
-  date             String
+  date             DateTime
+  signupDate       DateTime
   price            Int
   description      String
   shortDescription String
