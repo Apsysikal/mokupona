@@ -9,11 +9,11 @@ export default function Index() {
   return (
     <>
       <header>
-        <NavBar className="text-white" />
+        <NavBar />
       </header>
       <main>
         <div>
-          <div className="relative flex h-[calc(100vh-3.5rem)] w-screen flex-col place-content-center gap-10 p-2 text-white">
+          <div className="relative flex h-[calc(100vh-4rem)] w-screen flex-col place-content-center gap-10 p-2 text-white">
             <div className="absolute -top-14 right-0 bottom-0 left-0 -z-10 bg-[url(/landing-background.jpg)] bg-cover bg-center bg-no-repeat" />
             <div className="absolute -top-14 right-0 bottom-0 left-0 -z-10 bg-gray-800/70" />
             <div className="mx-auto flex max-w-3xl flex-col place-content-center gap-4 p-2">
