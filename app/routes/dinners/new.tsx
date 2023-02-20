@@ -5,7 +5,30 @@ import { NavBar } from "~/components/navbar";
 import { createEvent } from "~/models/event.server";
 import { getLocations } from "~/models/location.server";
 import { requireUser } from "~/session.server";
+import { z } from "zod";
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
+import invariant from "tiny-invariant";
+
+const EventSchema = z.object({
+  title: z.string().trim().min(1).max(50),
+  subtitle: z.string().trim().min(1).max(50),
+  tags: z.string().trim().optional().default(""),
+  imageUrl: z.string().trim().startsWith("https://"),
+  shortDescription: z.string().trim().min(1).max(500),
+  description: z.string().trim().min(1),
+  price: z.coerce.number().min(0),
+  slots: z.coerce.number().min(1),
+  date: z.coerce.date().min(new Date()),
+  signupDate: z.coerce.date().min(new Date()),
+  locationId: z.string().min(1),
+});
+
+const formKeys = EventSchema.keyof();
+type FormKeyEnum = z.infer<typeof formKeys>;
+
+function getFormKeyValue(key: FormKeyEnum): string {
+  return formKeys.Values[key];
+}
 
 export const loader = async ({ request }: LoaderArgs) => {
   await requireUser(request);
@@ -18,49 +41,27 @@ export const loader = async ({ request }: LoaderArgs) => {
 
 export const action = async ({ request }: ActionArgs) => {
   const formData = await request.formData();
+  const result = EventSchema.safeParse(Object.fromEntries(formData));
 
-  const title = formData.get("title") as string;
-  const subtitle = formData.get("subtitle") as string;
-  const tags = formData.get("tags") as string;
-  const imageUrl = formData.get("image-url") as string;
-  const shortDescription = formData.get("short-description") as string;
-  const longDescription = formData.get("long-description") as string;
-  const price = formData.get("price") as string;
-  const slots = formData.get("slots") as string;
-  const date = formData.get("date") as string;
-  const signupStart = formData.get("signup-start") as string;
-  const locationId = formData.get("location") as string;
-  console.log(locationId);
+  const fieldErrors = !result.success
+    ? result.error.formErrors.fieldErrors
+    : null;
 
-  const fieldErrors = {
-    title: validateTitle(title),
-    subtitle: validateSubtitle(subtitle),
-    tags: validateTags(tags),
-    imageUrl: validateImageUrl(imageUrl),
-    shortDescription: validateShortDescription(shortDescription),
-    longDescription: validateLongDescription(longDescription),
-    price: validatePrice(price),
-    slots: validateSlots(slots),
-    date: validateDate(date),
-    signupStart: validateDate(signupStart),
-    locationId: validateLocation(locationId),
+  const fields: { [key in FormKeyEnum]: any } = {
+    title: formData.get("title"),
+    subtitle: formData.get("subtitle"),
+    tags: formData.get("tags"),
+    imageUrl: formData.get("imageUrl"),
+    shortDescription: formData.get("shortDescription"),
+    description: formData.get("description"),
+    price: formData.get("price"),
+    slots: formData.get("slots"),
+    date: formData.get("date"),
+    signupDate: formData.get("signupDate"),
+    locationId: formData.get("locationId"),
   };
 
-  const fields = {
-    title,
-    subtitle,
-    tags,
-    imageUrl,
-    shortDescription,
-    longDescription,
-    price,
-    slots,
-    date,
-    signupStart,
-    locationId,
-  };
-
-  if (Object.values(fieldErrors).some(Boolean)) {
+  if (fieldErrors) {
     return json(
       {
         fieldErrors,
@@ -71,19 +72,9 @@ export const action = async ({ request }: ActionArgs) => {
     );
   }
 
-  const event = await createEvent({
-    title,
-    subtitle,
-    tags,
-    imageUrl,
-    shortDescription,
-    description: longDescription,
-    price: Number(price),
-    slots: Number(slots),
-    date: new Date(date),
-    signupDate: new Date(signupStart),
-    locationId,
-  });
+  invariant(result.success);
+
+  const event = await createEvent(result.data);
 
   return redirect(`/dinners/${event.id}`);
 };
@@ -106,12 +97,12 @@ export default function DinnersIndexRoute() {
               </label>
               <input
                 type="text"
-                name="title"
-                id="title"
+                name={getFormKeyValue("title")}
+                id={getFormKeyValue("title")}
                 defaultValue={actionData?.fields.title}
-                aria-invalid={actionData?.fieldErrors.title ? true : false}
+                aria-invalid={actionData?.fieldErrors?.title ? true : false}
                 aria-errormessage={
-                  actionData?.fieldErrors.title ? "title-error" : undefined
+                  actionData?.fieldErrors?.title ? "title-error" : undefined
                 }
                 className="rounded-md border-emerald-600 shadow-md focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
               />
@@ -126,13 +117,16 @@ export default function DinnersIndexRoute() {
               )}
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="subtitle" className="font-semibold">
+              <label
+                htmlFor={getFormKeyValue("subtitle")}
+                className="font-semibold"
+              >
                 Subtitle
               </label>
               <input
                 type="text"
-                name="subtitle"
-                id="subtitle"
+                name={getFormKeyValue("subtitle")}
+                id={getFormKeyValue("subtitle")}
                 defaultValue={actionData?.fields.subtitle}
                 aria-invalid={actionData?.fieldErrors.subtitle ? true : false}
                 aria-errormessage={
@@ -153,13 +147,16 @@ export default function DinnersIndexRoute() {
               )}
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="tags" className="font-semibold">
+              <label
+                htmlFor={getFormKeyValue("tags")}
+                className="font-semibold"
+              >
                 Tags (separated by space)
               </label>
               <input
                 type="text"
-                name="tags"
-                id="tags"
+                name={getFormKeyValue("tags")}
+                id={getFormKeyValue("tags")}
                 defaultValue={actionData?.fields.tags}
                 aria-invalid={actionData?.fieldErrors.tags ? true : false}
                 aria-errormessage={
@@ -178,13 +175,16 @@ export default function DinnersIndexRoute() {
               )}
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="image-url" className="font-semibold">
+              <label
+                htmlFor={getFormKeyValue("imageUrl")}
+                className="font-semibold"
+              >
                 Image URL
               </label>
               <input
                 type="url"
-                name="image-url"
-                id="image-url"
+                name={getFormKeyValue("imageUrl")}
+                id={getFormKeyValue("imageUrl")}
                 defaultValue={actionData?.fields.imageUrl}
                 aria-invalid={actionData?.fieldErrors.imageUrl ? true : false}
                 aria-errormessage={
@@ -205,12 +205,15 @@ export default function DinnersIndexRoute() {
               )}
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="short-description" className="font-semibold">
+              <label
+                htmlFor={getFormKeyValue("shortDescription")}
+                className="font-semibold"
+              >
                 Short Description
               </label>
               <textarea
-                name="short-description"
-                id="short-description"
+                name={getFormKeyValue("shortDescription")}
+                id={getFormKeyValue("shortDescription")}
                 defaultValue={actionData?.fields.shortDescription}
                 className="rounded-md border-emerald-600 shadow-md focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
               />
@@ -225,33 +228,39 @@ export default function DinnersIndexRoute() {
               )}
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="long-description" className="font-semibold">
+              <label
+                htmlFor={getFormKeyValue("description")}
+                className="font-semibold"
+              >
                 Long Description
               </label>
               <textarea
-                name="long-description"
-                id="long-description"
-                defaultValue={actionData?.fields.longDescription}
+                name={getFormKeyValue("description")}
+                id={getFormKeyValue("description")}
+                defaultValue={actionData?.fields.description}
                 className="rounded-md border-emerald-600 shadow-md focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
               />
-              {actionData?.fieldErrors?.longDescription && (
+              {actionData?.fieldErrors?.description && (
                 <p
                   id="long-description-error"
                   role="alert"
                   className="text-sm text-red-500"
                 >
-                  {actionData.fieldErrors.longDescription}
+                  {actionData.fieldErrors.description}
                 </p>
               )}
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="price" className="font-semibold">
+              <label
+                htmlFor={getFormKeyValue("price")}
+                className="font-semibold"
+              >
                 Price (CHF)
               </label>
               <input
                 type="number"
-                name="price"
-                id="price"
+                name={getFormKeyValue("price")}
+                id={getFormKeyValue("price")}
                 defaultValue={actionData?.fields.price}
                 aria-invalid={actionData?.fieldErrors.price ? true : false}
                 aria-errormessage={
@@ -270,13 +279,16 @@ export default function DinnersIndexRoute() {
               )}
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="slots" className="font-semibold">
+              <label
+                htmlFor={getFormKeyValue("slots")}
+                className="font-semibold"
+              >
                 Number of Seats
               </label>
               <input
                 type="number"
-                name="slots"
-                id="slots"
+                name={getFormKeyValue("slots")}
+                id={getFormKeyValue("slots")}
                 defaultValue={actionData?.fields.slots}
                 aria-invalid={actionData?.fieldErrors.slots ? true : false}
                 aria-errormessage={
@@ -295,13 +307,16 @@ export default function DinnersIndexRoute() {
               )}
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="date" className="font-semibold">
+              <label
+                htmlFor={getFormKeyValue("date")}
+                className="font-semibold"
+              >
                 Date
               </label>
               <input
                 type="datetime-local"
-                name="date"
-                id="date"
+                name={getFormKeyValue("date")}
+                id={getFormKeyValue("date")}
                 defaultValue={actionData?.fields.date}
                 aria-invalid={actionData?.fieldErrors.date ? true : false}
                 aria-errormessage={
@@ -320,31 +335,32 @@ export default function DinnersIndexRoute() {
               )}
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="date" className="font-semibold">
+              <label
+                htmlFor={getFormKeyValue("signupDate")}
+                className="font-semibold"
+              >
                 Signup Start
               </label>
               <input
                 type="datetime-local"
-                name="signup-start"
-                id="signup-start"
-                defaultValue={actionData?.fields.signupStart}
-                aria-invalid={
-                  actionData?.fieldErrors.signupStart ? true : false
-                }
+                name={getFormKeyValue("signupDate")}
+                id={getFormKeyValue("signupDate")}
+                defaultValue={actionData?.fields.signupDate}
+                aria-invalid={actionData?.fieldErrors.signupDate ? true : false}
                 aria-errormessage={
-                  actionData?.fieldErrors.signupStart
+                  actionData?.fieldErrors.signupDate
                     ? "signup-start-error"
                     : undefined
                 }
                 className="rounded-md border-emerald-600 shadow-md focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
               />
-              {actionData?.fieldErrors?.signupStart && (
+              {actionData?.fieldErrors?.signupDate && (
                 <p
                   id="signup-start-error"
                   role="alert"
                   className="text-sm text-red-500"
                 >
-                  {actionData.fieldErrors.signupStart}
+                  {actionData.fieldErrors.signupDate}
                 </p>
               )}
             </div>
@@ -355,7 +371,7 @@ export default function DinnersIndexRoute() {
                   <div key={location.id} className="flex items-center gap-2">
                     <input
                       type="radio"
-                      name="location"
+                      name={getFormKeyValue("locationId")}
                       id={`location-${location.id}`}
                       defaultChecked={
                         actionData?.fields.locationId === location.id
@@ -386,56 +402,4 @@ export default function DinnersIndexRoute() {
       </footer>
     </>
   );
-}
-
-function validateTitle(title: string | null) {
-  if (!title) return "Title must be provided";
-  if (title.trim().length === 0) return "Title cannot be empty";
-}
-
-function validateSubtitle(subtitle: string | null) {
-  if (!subtitle) return "Subtitle must be provided";
-  if (subtitle.trim().length === 0) return "Subtitle cannot be empty";
-}
-
-function validateTags(tags: string | null) {
-  if (!tags) return "Tags must be provided";
-  if (tags.trim().length === 0) return "Tags cannot be empty";
-}
-
-function validateImageUrl(url: string | null) {
-  if (!url) return "Image url must be provided";
-  if (url.trim().length === 0) return "Image url cannot be empty";
-}
-
-function validateShortDescription(shortDescription: string | null) {
-  if (!shortDescription) return "Short description must be provided";
-  if (shortDescription.trim().length === 0)
-    return "Short description cannot be empty";
-}
-
-function validateLongDescription(longDescription: string | null) {
-  if (!longDescription) return "Long description must be provided";
-  if (longDescription.trim().length === 0)
-    return "Long description cannot be empty";
-}
-
-function validatePrice(price: string | null) {
-  if (!price) return "Price must be provided";
-  if (price.trim().length === 0) return "Price cannot be empty";
-}
-
-function validateSlots(slots: string | null) {
-  if (!slots) return "Slots must be provided";
-  if (slots.trim().length === 0) return "Slots cannot be empty";
-}
-
-function validateDate(date: string | null) {
-  if (!date) return "Date must be provided";
-  if (date.trim().length === 0) return "Date cannot be empty";
-}
-
-function validateLocation(location: string | null) {
-  if (!location) return "Location must be provided";
-  if (location.trim().length === 0) return "Location cannot be empty";
 }

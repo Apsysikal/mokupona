@@ -100,7 +100,7 @@ export default function DinnerRoute() {
       <header>
         <NavBar />
       </header>
-      <main className="mx-auto flex max-w-3xl grow flex-col gap-5 px-2 py-4 text-gray-800">
+      <main className="mx-auto flex max-w-3xl grow flex-col gap-5 px-2 pt-4 pb-8 text-gray-800">
         <div className="flex flex-col gap-2">
           <p className="text-xl text-emerald-600">{event.subtitle}</p>
           <h1 className="text-4xl font-bold text-gray-900">{event.title}</h1>
