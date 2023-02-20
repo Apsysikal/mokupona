@@ -5,10 +5,7 @@ import { DifferenceSection } from "~/components/sections/difference";
 import { HowItWorksSection } from "~/components/sections/how-it-works";
 import { VisionSection } from "~/components/sections/vision";
 
-import { useOptionalUser } from "~/utils";
-
 export default function Index() {
-  const user = useOptionalUser();
   return (
     <>
       <header>

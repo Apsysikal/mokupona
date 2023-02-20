@@ -4,7 +4,9 @@ import { Link } from "@remix-run/react";
 export function DinnerCard({
   event,
 }: {
-  event: Event & { EventResponse: [] };
+  event: Event & {
+    EventResponse: Array<{ id: string }>;
+  };
 }) {
   const parsedDate = new Date(event.date);
   const slotsAvailable = event.slots - event.EventResponse.length;
@@ -31,7 +33,10 @@ export function DinnerCard({
                 <div className="flex gap-1">
                   {event.tags.split(" ").map((tag) => {
                     return (
-                      <span className="rounded-full bg-emerald-200/50 px-2 py-1 text-xs uppercase text-emerald-800">
+                      <span
+                        key={tag}
+                        className="rounded-full bg-emerald-200/50 px-2 py-1 text-xs uppercase text-emerald-800"
+                      >
                         {tag}
                       </span>
                     );

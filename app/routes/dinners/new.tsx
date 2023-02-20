@@ -1,13 +1,14 @@
-import { ActionArgs, json, LoaderArgs, redirect } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
 import { Footer } from "~/components/footer";
 import { NavBar } from "~/components/navbar";
 import { createEvent } from "~/models/event.server";
 import { getLocations } from "~/models/location.server";
 import { requireUser } from "~/session.server";
+import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 
 export const loader = async ({ request }: LoaderArgs) => {
-  const user = await requireUser(request);
+  await requireUser(request);
   const locations = await getLocations();
 
   return json({
@@ -351,7 +352,7 @@ export default function DinnersIndexRoute() {
               <p className="font-semibold">Location</p>
               {locations.map((location) => {
                 return (
-                  <div className="flex items-center gap-2">
+                  <div key={location.id} className="flex items-center gap-2">
                     <input
                       type="radio"
                       name="location"

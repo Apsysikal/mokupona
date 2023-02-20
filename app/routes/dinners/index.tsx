@@ -29,7 +29,7 @@ export default function DinnersIndexRoute() {
                 signupDate: new Date(event.signupDate),
               };
 
-              return <DinnerCard event={parsedEvent} />;
+              return <DinnerCard key={event.id} event={parsedEvent} />;
             })}
           </>
         ) : (

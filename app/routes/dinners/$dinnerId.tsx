@@ -1,10 +1,11 @@
-import { ActionArgs, json, LoaderArgs, redirect } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import { Form, Link, useActionData, useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
 import { Footer } from "~/components/footer";
 import { NavBar } from "~/components/navbar";
 import { createEventResponse } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
+import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 
 export const loader = async ({ params }: LoaderArgs) => {
   const dinnerId = params.dinnerId;
@@ -28,7 +29,6 @@ export const action = async ({ params, request }: ActionArgs) => {
 
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
-  const messenger = formData.get("preferred-messenger") as string;
   const restrictionVegetarian = formData.get("dr-vegetarian") as string;
   const restrictionVegan = formData.get("dr-vegan") as string;
   const restrictionNuts = formData.get("dr-nuts") as string;
@@ -112,7 +112,10 @@ export default function DinnerRoute() {
                 <div className="flex gap-1">
                   {event.tags.split(" ").map((tag) => {
                     return (
-                      <span className="rounded-full bg-emerald-200/50 px-2 py-1 text-xs uppercase text-emerald-800">
+                      <span
+                        key={tag}
+                        className="rounded-full bg-emerald-200/50 px-2 py-1 text-xs uppercase text-emerald-800"
+                      >
                         {tag}
                       </span>
                     );
@@ -384,15 +387,6 @@ function validateEmail(email: string | null) {
 
   if (!email) return "Email must be provided";
   if (!emailRegex.test(email)) return "Email must be valid";
-}
-
-function validateMessenger(messenger: string | null) {
-  const validMessengers = ["signal", "whatsapp", "telegram"];
-
-  if (!messenger) return "You must select a messenger";
-  if (!validMessengers.find((valid) => valid === messenger)) {
-    return "You must provide a valid messenger";
-  }
 }
 
 function validateTermsOfService(value: string | null) {
