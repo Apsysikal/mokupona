@@ -1,6 +1,7 @@
-import { json, LoaderArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { DinnerCard } from "~/components/dinner-card";
+import { Footer } from "~/components/footer";
 import { NavBar } from "~/components/navbar";
 import { getEvents } from "~/models/event.server";
 
@@ -16,15 +17,19 @@ export default function DinnersIndexRoute() {
   return (
     <>
       <header>
-        <NavBar className="bg-emerald-800 text-white" />
+        <NavBar />
       </header>
       <main className="mx-auto flex max-w-3xl grow flex-col gap-5 px-2 py-4 text-gray-800">
         {events.length > 0 ? (
           <>
             {events.map((event) => {
-              event.date;
+              const parsedEvent = {
+                ...event,
+                date: new Date(event.date),
+                signupDate: new Date(event.signupDate),
+              };
 
-              return <DinnerCard event={event} />;
+              return <DinnerCard key={event.id} event={parsedEvent} />;
             })}
           </>
         ) : (
@@ -38,6 +43,9 @@ export default function DinnersIndexRoute() {
           </>
         )}
       </main>
+      <footer>
+        <Footer />
+      </footer>
     </>
   );
 }

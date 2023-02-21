@@ -29,8 +29,10 @@ model Event {
   title            String
   subtitle         String
   tags             String
+  slots            Int
   imageUrl         String
-  date             String
+  date             DateTime
+  signupDate       DateTime
   price            Int
   description      String
   shortDescription String
@@ -42,8 +44,7 @@ model Event {
 model EventResponse {
   id             String  @id @default(cuid())
   name           String
-  phoneNumber    String
-  messenger      String
+  email          String
   vegetarian     Boolean @default(false)
   vegan          Boolean @default(false)
   noNuts         Boolean @default(false)
