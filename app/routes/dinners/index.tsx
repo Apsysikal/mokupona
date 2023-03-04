@@ -6,8 +6,10 @@ import { NavBar } from "~/components/navbar";
 import { getEvents } from "~/models/event.server";
 
 export const loader = async () => {
+  const events = await getEvents();
+
   return json({
-    events: await getEvents(),
+    events,
   });
 };
 
@@ -22,14 +24,9 @@ export default function DinnersIndexRoute() {
       <main className="mx-auto flex max-w-3xl grow flex-col gap-5 px-2 py-4 text-gray-800">
         {events.length > 0 ? (
           <>
-            {events.map((event) => {
-              const parsedEvent = {
-                ...event,
-                date: new Date(event.date),
-                signupDate: new Date(event.signupDate),
-              };
-
-              return <DinnerCard key={event.id} event={parsedEvent} />;
+            {events.map(({ id, attributes: event }) => {
+              // @ts-ignore
+              return <DinnerCard key={id} id={id} event={event} />;
             })}
           </>
         ) : (

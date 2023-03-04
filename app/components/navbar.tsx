@@ -3,7 +3,6 @@ import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Form, Link } from "@remix-run/react";
 import clsx from "clsx";
 import { Fragment } from "react";
-import { useOptionalUser } from "~/utils";
 
 const LINKS = [
   {
@@ -19,7 +18,7 @@ const LINKS = [
 ];
 
 export function NavBar() {
-  const maybeUser = useOptionalUser();
+  const maybeUser = null;
 
   return (
     <Disclosure as="nav" className="bg-emerald-800 shadow-xl">
@@ -78,7 +77,7 @@ export function NavBar() {
                     <Menu.Button className="flex rounded-md bg-emerald-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
                       <span className="sr-only">Open user menu</span>
                       {maybeUser ? (
-                        <span className="text-gray-300">{maybeUser.email}</span>
+                        <span className="text-gray-300">{maybeUser}</span>
                       ) : (
                         <Link to="/login" className="text-gray-300">
                           Login

@@ -1,55 +1,104 @@
-import { prisma } from "~/db.server";
+import type { EventResponse } from "./event-response.server";
 
-import type { Prisma } from "@prisma/client";
-export type { Event } from "@prisma/client";
+export type Event = {
+  title: string;
+  subtitle: string;
+  summary: string;
+  description: string;
+  tags?: string;
+  date: string;
+  signupDate: string;
+  slots: number;
+  price: number;
+  locationStreet: string;
+  locationCity: string;
+};
+
+export type EventPopulatedCoverField = {
+  data: {
+    id: number;
+    attributes: {
+      alternativeText: string;
+      url: string;
+      formats: {
+        large: {
+          url: string;
+        };
+        small: {
+          url: string;
+        };
+        medium: {
+          url: string;
+        };
+        thumbnail: {
+          url: string;
+        };
+      };
+    };
+  };
+};
+
+export type EventPopulatedResponsesField = {
+  data: [EventResponse];
+};
+
+type AllEventsResponse = {
+  data: [
+    {
+      id: number;
+      attributes: Event & {
+        cover: EventPopulatedCoverField;
+      };
+    }
+  ];
+};
+
+type SingleEventResponse = {
+  data: {
+    id: number;
+    attributes: Event & {
+      cover: EventPopulatedCoverField;
+      event_responses: EventPopulatedResponsesField;
+    };
+  };
+};
+
+const apiUrl = process.env.STRAPI_API_URL;
+const apiHeaders = {
+  Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}`,
+  "Content-Type": "application/json",
+};
 
 export async function getEvents() {
-  return prisma.event.findMany({
-    select: {
-      id: true,
-      title: true,
-      subtitle: true,
-      date: true,
-      signupDate: true,
-      slots: true,
-      tags: true,
-      imageUrl: true,
-      location: true,
-      price: true,
-      shortDescription: true,
-      description: true,
-      locationId: true,
-      EventResponse: {
-        select: { id: true },
-      },
-    },
-    orderBy: { date: "asc" },
+  const url = `${apiUrl}/api/events`;
+  const query = new URLSearchParams({
+    populate: "cover",
+    sort: "date",
+    publicationDate: "live",
+    "filter[date][$gt]": `${new Date().toISOString()}`, // Only events later than current time
   });
+  const response = await fetch(`${url}?${query}`, {
+    headers: apiHeaders,
+  });
+
+  if (!response.ok) throw new Error("Failed to fetch events");
+
+  const body = (await response.json()) as AllEventsResponse;
+  return body.data;
 }
 
 export async function getEventById(id: string) {
-  return prisma.event.findUnique({
-    where: { id },
-    select: {
-      title: true,
-      subtitle: true,
-      date: true,
-      signupDate: true,
-      slots: true,
-      tags: true,
-      imageUrl: true,
-      location: true,
-      price: true,
-      description: true,
-      EventResponse: {
-        select: { id: true },
-      },
-    },
+  const url = `${apiUrl}/api/events/${id}`;
+  const query = new URLSearchParams([
+    ["populate", "cover"],
+    ["populate", "event_responses"],
+  ]);
+  const response = await fetch(`${url}?${query}`, {
+    headers: apiHeaders,
   });
-}
 
-export async function createEvent(data: Prisma.EventUncheckedCreateInput) {
-  return prisma.event.create({
-    data,
-  });
+  if (!response.ok) throw new Error(`Failed to fetch event ${id}`);
+
+  const body = (await response.json()) as SingleEventResponse;
+  return body.data;
 }
