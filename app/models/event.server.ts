@@ -75,7 +75,7 @@ export async function getEvents() {
     populate: "cover",
     sort: "date",
     publicationDate: "live",
-    "filter[date][$gt]": `${new Date().toISOString()}`, // Only events later than current time
+    "filters[date][$gt]": `${new Date().toISOString()}`, // Only events later than current time
   });
   const response = await fetch(`${url}?${query}`, {
     headers: apiHeaders,
