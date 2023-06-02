@@ -39,12 +39,12 @@ export function DifferenceSection() {
         >
           Reserve now
         </Link>
-        <Link
+        {/* <Link
           to="/contact"
           className="inline-block rounded-md border border-emerald-800 px-4 py-2 text-center uppercase text-emerald-800 shadow-md hover:border-emerald-700 active:border-emerald-900"
         >
           Contact us
-        </Link>
+        </Link> */}
       </div>
     </section>
   );

@@ -5,18 +5,14 @@ const LINKS = [
     label: "Dinners",
     to: "/dinners",
   },
-  {
-    label: "Past Dinners",
-    to: "/past-dinners",
-  },
-  {
-    label: "About",
-    to: "/about",
-  },
-  {
-    label: "Contact",
-    to: "/contact",
-  },
+  // {
+  //   label: "Past Dinners",
+  //   to: "/past-dinners",
+  // },
+  // {
+  //   label: "About",
+  //   to: "/about",
+  // },
 ];
 
 export function Footer() {
@@ -29,6 +25,16 @@ export function Footer() {
             {LINKS.map((props) => {
               return <FooterLink key={props.label} {...props} />;
             })}
+            <li>
+              <a
+                href="https://instagram.com/mokupona"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-light hover:underline"
+              >
+                Instagram
+              </a>
+            </li>
           </ul>
           <p className="text-xs text-gray-600">
             Made with love in Zurich by Benedikt
