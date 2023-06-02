@@ -20,7 +20,7 @@ export function Footer() {
     <div className="bg-gray-800 text-gray-200">
       <div className="mx-auto max-w-3xl p-2">
         <div className="flex flex-col gap-3">
-          <p className="font-bold uppercase">Moku Pona</p>
+          <p className="font-bold lowercase">moku pona</p>
           <ul>
             {LINKS.map((props) => {
               return <FooterLink key={props.label} {...props} />;
