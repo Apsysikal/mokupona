@@ -186,66 +186,67 @@ export default function DinnerRoute() {
         <div>
           <p className="whitespace-pre-line">{event.attributes.description}</p>
         </div>
-        <Form method="post">
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1">
-              <label htmlFor="name" className="font-semibold">
-                Name
-              </label>
-              <input
-                type="text"
-                name="name"
-                id="name"
-                defaultValue={actionData?.fields.name}
-                aria-invalid={actionData?.fieldErrors.name ? true : false}
-                aria-errormessage={
-                  actionData?.fieldErrors.name ? "name-error" : undefined
-                }
-                className="rounded-md border-emerald-600 shadow-md focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
-              />
-              {actionData?.fieldErrors?.name && (
-                <p
-                  id="name-error"
-                  role="alert"
-                  className="text-sm text-red-500"
-                >
-                  {actionData.fieldErrors.name}
-                </p>
-              )}
-            </div>
-            <div>
+        {signupHasStarted && (
+          <Form method="post">
+            <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1">
-                <label htmlFor="email" className="font-semibold">
-                  Email
+                <label htmlFor="name" className="font-semibold">
+                  Name
                 </label>
                 <input
-                  type="email"
-                  name="email"
-                  id="email"
-                  defaultValue={actionData?.fields.email}
-                  aria-invalid={actionData?.fieldErrors.email ? true : false}
+                  type="text"
+                  name="name"
+                  id="name"
+                  defaultValue={actionData?.fields.name}
+                  aria-invalid={actionData?.fieldErrors.name ? true : false}
                   aria-errormessage={
-                    actionData?.fieldErrors.email ? "email-error" : undefined
+                    actionData?.fieldErrors.name ? "name-error" : undefined
                   }
                   className="rounded-md border-emerald-600 shadow-md focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
                 />
-                {actionData?.fieldErrors?.email && (
+                {actionData?.fieldErrors?.name && (
                   <p
-                    id="email-error"
+                    id="name-error"
                     role="alert"
                     className="text-sm text-red-500"
                   >
-                    {actionData.fieldErrors.email}
+                    {actionData.fieldErrors.name}
                   </p>
                 )}
               </div>
-            </div>
-            {actionData?.formError && (
               <div>
-                <p className="text-sm text-red-500">{actionData.formError}</p>
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="email" className="font-semibold">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    id="email"
+                    defaultValue={actionData?.fields.email}
+                    aria-invalid={actionData?.fieldErrors.email ? true : false}
+                    aria-errormessage={
+                      actionData?.fieldErrors.email ? "email-error" : undefined
+                    }
+                    className="rounded-md border-emerald-600 shadow-md focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
+                  />
+                  {actionData?.fieldErrors?.email && (
+                    <p
+                      id="email-error"
+                      role="alert"
+                      className="text-sm text-red-500"
+                    >
+                      {actionData.fieldErrors.email}
+                    </p>
+                  )}
+                </div>
               </div>
-            )}
-            {/* <div>
+              {actionData?.formError && (
+                <div>
+                  <p className="text-sm text-red-500">{actionData.formError}</p>
+                </div>
+              )}
+              {/* <div>
                 <div className="flex flex-col gap-1">
                   <p className="font-semibold">Dietary Restrictions</p>
                   <div className="flex items-center gap-2">
@@ -377,16 +378,17 @@ export default function DinnerRoute() {
                   </div>
                 </div>
               </div> */}
-            <div>
-              <button
-                type="submit"
-                className="rounded-md bg-emerald-800 px-4 py-2 uppercase text-white shadow-md hover:bg-emerald-700 active:bg-emerald-900 max-sm:w-full"
-              >
-                Join
-              </button>
+              <div>
+                <button
+                  type="submit"
+                  className="rounded-md bg-emerald-800 px-4 py-2 uppercase text-white shadow-md hover:bg-emerald-700 active:bg-emerald-900 max-sm:w-full"
+                >
+                  Join
+                </button>
+              </div>
             </div>
-          </div>
-        </Form>
+          </Form>
+        )}
       </main>
       <footer>
         <Footer />
