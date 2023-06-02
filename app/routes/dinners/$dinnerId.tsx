@@ -30,14 +30,6 @@ export const action = async ({ params, request }: ActionArgs) => {
 
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
-  //   const restrictionVegetarian = formData.get("dr-vegetarian") as string;
-  //   const restrictionVegan = formData.get("dr-vegan") as string;
-  //   const restrictionNuts = formData.get("dr-nuts") as string;
-  //   const restrictionDairy = formData.get("dr-dairy") as string;
-  //   const restrictionAlcohol = formData.get("dr-alcohol") as string;
-  //   const comment = formData.get("comment") as string;
-  //   const termsOfService = formData.get("terms-of-service") as string;
-  //   const newsletter = formData.get("newsletter-signup") as string;
 
   const fieldErrors = {
     name: validateName(name),
@@ -246,138 +238,6 @@ export default function DinnerRoute() {
                   <p className="text-sm text-red-500">{actionData.formError}</p>
                 </div>
               )}
-              {/* <div>
-                <div className="flex flex-col gap-1">
-                  <p className="font-semibold">Dietary Restrictions</p>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      name="dr-vegetarian"
-                      id="dr-vegetarian"
-                      defaultChecked={
-                        actionData?.fields.restrictionVegetarian ===
-                        "dr-vegetarian"
-                      }
-                      value="dr-vegetarian"
-                      className="rounded-sm border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600"
-                    />
-                    <label htmlFor="dr-vegetarian">Vegetarian</label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      name="dr-vegan"
-                      id="dr-vegan"
-                      defaultChecked={
-                        actionData?.fields.restrictionVegetarian === "dr-vegan"
-                      }
-                      value="dr-vegan"
-                      className="rounded-sm border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600"
-                    />
-                    <label htmlFor="dr-vegan">Vegan</label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      name="dr-nuts"
-                      id="dr-nuts"
-                      defaultChecked={
-                        actionData?.fields.restrictionVegetarian === "dr-nuts"
-                      }
-                      value="dr-nuts"
-                      className="rounded-sm border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600"
-                    />
-                    <label htmlFor="dr-nuts">Nuts Allergy</label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      name="dr-dairy"
-                      id="dr-dairy"
-                      defaultChecked={
-                        actionData?.fields.restrictionVegetarian === "dr-dairy"
-                      }
-                      value="dr-dairy"
-                      className="rounded-sm border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600"
-                    />
-                    <label htmlFor="dr-dairy">Dairy Intolerance</label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      name="dr-alcohol"
-                      id="dr-alcohol"
-                      defaultChecked={
-                        actionData?.fields.restrictionVegetarian ===
-                        "dr-alcohol"
-                      }
-                      value="dr-alcohol"
-                      className="rounded-sm border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600"
-                    />
-                    <label htmlFor="dr-alcohol">No Alcohol</label>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="comment" className="font-semibold">
-                    Anything else?
-                  </label>
-                  <textarea
-                    name="comment"
-                    id="comment"
-                    defaultValue={actionData?.fields.comment}
-                    className="rounded-md border-emerald-600 shadow-md focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
-                  />
-                </div>
-              </div>
-              <div>
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      name="terms-of-service"
-                      id="terms-of-service"
-                      defaultChecked={
-                        actionData?.fields.termsOfService === "terms-of-service"
-                      }
-                      value="terms-of-service"
-                      className="rounded-sm border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600"
-                    />
-                    <label htmlFor="terms-of-service">
-                      I agree to the{" "}
-                      <Link to="/toc" className="underline">
-                        Terms of Service
-                      </Link>
-                    </label>
-                  </div>
-                  {actionData?.fieldErrors?.termsOfService && (
-                    <p
-                      id="messenger-error"
-                      role="alert"
-                      className="text-sm text-red-500"
-                    >
-                      {actionData.fieldErrors.termsOfService}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      name="newsletter-signup"
-                      id="newsletter-signup"
-                      defaultChecked={
-                        actionData?.fields.termsOfService ===
-                        "newsletter-signup"
-                      }
-                      value="newsletter-signup"
-                      className="rounded-sm border-emerald-600 checked:bg-emerald-600 checked:hover:bg-emerald-600"
-                    />
-                    <label htmlFor="newsletter-signup">
-                      Inform me about new events
-                    </label>
-                  </div>
-                </div>
-              </div> */}
               <div>
                 <button
                   type="submit"
@@ -407,12 +267,6 @@ function validateEmail(email: string | null) {
 
   if (!email) return "Email must be provided";
   if (!emailRegex.test(email)) return "Email must be valid";
-}
-
-function validateTermsOfService(value: string | null) {
-  if (value !== "terms-of-service") {
-    return "You must accept the terms of service";
-  }
 }
 
 function getBookedSlots(field: EventPopulatedResponsesField) {
