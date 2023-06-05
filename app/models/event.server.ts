@@ -10,58 +10,22 @@ export type Event = {
   signupDate: string;
   slots: number;
   price: number;
-  locationStreet: string;
-  locationCity: string;
+  cover?: { data: StrapiMediaField };
+  address?: StrapiComponentAddressField;
+  event_responses?: { data: EventResponse[] };
 };
 
-export type EventPopulatedCoverField = {
-  data: {
+export type GetEventResponse = StrapiApiResponse<{
+  id: number;
+  attributes: Event;
+}>;
+
+export type GetEventsResponse = StrapiApiResponse<
+  Array<{
     id: number;
-    attributes: {
-      alternativeText: string;
-      url: string;
-      formats: {
-        large: {
-          url: string;
-        };
-        small: {
-          url: string;
-        };
-        medium: {
-          url: string;
-        };
-        thumbnail: {
-          url: string;
-        };
-      };
-    };
-  };
-};
-
-export type EventPopulatedResponsesField = {
-  data: [EventResponse];
-};
-
-type AllEventsResponse = {
-  data: [
-    {
-      id: number;
-      attributes: Event & {
-        cover: EventPopulatedCoverField;
-      };
-    }
-  ];
-};
-
-type SingleEventResponse = {
-  data: {
-    id: number;
-    attributes: Event & {
-      cover: EventPopulatedCoverField;
-      event_responses: EventPopulatedResponsesField;
-    };
-  };
-};
+    attributes: Event;
+  }>
+>;
 
 const apiUrl = process.env.STRAPI_API_URL;
 const apiHeaders = {
@@ -71,19 +35,20 @@ const apiHeaders = {
 
 export async function getEvents() {
   const url = `${apiUrl}/api/events`;
-  const query = new URLSearchParams({
-    populate: "cover",
-    sort: "date",
-    publicationDate: "live",
-    "filters[date][$gt]": `${new Date().toISOString()}`, // Only events later than current time
-  });
+  const query = new URLSearchParams([
+    ["populate", "cover"],
+    ["populate", "address"],
+    ["sort", "date"],
+    ["publicationDate", "live"],
+    ["filters[date][$gt]", new Date().toISOString()],
+  ]);
   const response = await fetch(`${url}?${query}`, {
     headers: apiHeaders,
   });
 
   if (!response.ok) throw new Error("Failed to fetch events");
 
-  const body = (await response.json()) as AllEventsResponse;
+  const body = (await response.json()) as GetEventsResponse;
   return body.data;
 }
 
@@ -91,6 +56,7 @@ export async function getEventById(id: string) {
   const url = `${apiUrl}/api/events/${id}`;
   const query = new URLSearchParams([
     ["populate", "cover"],
+    ["populate", "address"],
     ["populate", "event_responses"],
   ]);
   const response = await fetch(`${url}?${query}`, {
@@ -99,6 +65,6 @@ export async function getEventById(id: string) {
 
   if (!response.ok) throw new Error(`Failed to fetch event ${id}`);
 
-  const body = (await response.json()) as SingleEventResponse;
+  const body = (await response.json()) as GetEventResponse;
   return body.data;
 }

@@ -182,8 +182,8 @@ export default function DinnerRoute() {
           <time dateTime={event.attributes.date}>
             {`${eventDate.toLocaleDateString()} - ${eventDate.toLocaleTimeString()}`}
           </time>
-          <p>{event.attributes.locationStreet}</p>
-          <p>{event.attributes.locationCity}</p>
+          <p>{`${event.attributes.address?.street} ${event.attributes.address?.number}`}</p>
+          <p>{`${event.attributes.address?.zipcode} ${event.attributes.address?.city}`}</p>
         </div>
         <div className="font-semibold text-emerald-600">
           <p>{`Cost, ${event.attributes.price} CHF (Non-Profit)`}</p>

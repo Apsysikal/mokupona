@@ -1,15 +1,9 @@
 import { Link } from "@remix-run/react";
-import type { Event, EventPopulatedCoverField } from "~/models/event.server";
+import type { Event } from "~/models/event.server";
 
-export function DinnerCard({
-  id,
-  event,
-}: {
-  id: number;
-  event: Event & { cover: EventPopulatedCoverField };
-}) {
+export function DinnerCard({ id, event }: { id: number; event: Event }) {
   const parsedDate = new Date(event.date);
-  const coverUrl = event.cover.data.attributes.url;
+  const coverUrl = event.cover?.data.attributes.url;
   //const slotsAvailable = event.slots - event.EventResponse.length;
   //const slotsFilled = event.slots - slotsAvailable;
 

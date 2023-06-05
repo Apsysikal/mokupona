@@ -5,7 +5,7 @@ import invariant from "tiny-invariant";
 import { Footer } from "~/components/footer";
 import { NavBar } from "~/components/navbar";
 import { createEventResponse } from "~/models/event-response.server";
-import type { EventPopulatedResponsesField } from "~/models/event.server";
+import type { Event } from "~/models/event.server";
 import { getEventById } from "~/models/event.server";
 
 export const loader = async ({ params }: LoaderArgs) => {
@@ -169,8 +169,8 @@ export default function DinnerRoute() {
               </>
             )}
           </div>
-          <p>{event.attributes.locationStreet}</p>
-          <p>{event.attributes.locationCity}</p>
+          <p>{`${event.attributes.address?.street} ${event.attributes.address?.number}`}</p>
+          <p>{`${event.attributes.address?.zipcode} ${event.attributes.address?.city}`}</p>
         </div>
         <div className="font-semibold text-emerald-600">
           <p>{`Cost, ${event.attributes.price} CHF (Non-Profit)`}</p>
@@ -269,7 +269,8 @@ function validateEmail(email: string | null) {
   if (!emailRegex.test(email)) return "Email must be valid";
 }
 
-function getBookedSlots(field: EventPopulatedResponsesField) {
+function getBookedSlots(field: Event["event_responses"]) {
+  if (!field) return 0;
   const { data: events } = field;
   return events.filter(({ attributes: event }) => {
     const { state } = event;
