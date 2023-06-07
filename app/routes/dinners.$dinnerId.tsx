@@ -76,7 +76,7 @@ export const action = async ({ params, request }: ActionArgs) => {
         fieldErrors,
         fields,
         formError:
-          "Failed to create the event. Maybe you already signed up using this email address.",
+          "Failed to sign you up. Maybe you already signed up using this email address.",
       },
       { status: 400 }
     );
