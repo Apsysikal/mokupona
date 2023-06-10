@@ -8,8 +8,11 @@ import { createEventResponse } from "~/models/event-response.server";
 import type { Event } from "~/models/event.server";
 import { getEventById } from "~/models/event.server";
 
-export const loader = async ({ params }: LoaderArgs) => {
+export const loader = async ({ params, request }: LoaderArgs) => {
+  console.log("hit");
   const dinnerId = params.dinnerId;
+  const preferredLocale =
+    request.headers.get("accept-language")?.split(",")[0] || "de-DE";
 
   invariant(dinnerId, "dinnerId must be defined");
 
@@ -18,6 +21,7 @@ export const loader = async ({ params }: LoaderArgs) => {
   if (!event) throw new Response("Event not found", { status: 404 });
 
   return json({
+    preferredLocale,
     event,
   });
 };
@@ -86,7 +90,7 @@ export const action = async ({ params, request }: ActionArgs) => {
 };
 
 export default function DinnerRoute() {
-  const { event } = useLoaderData<typeof loader>();
+  const { event, preferredLocale } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const eventResponses = event.attributes.event_responses;
   const maximumSlots = event.attributes.slots;
@@ -157,14 +161,18 @@ export default function DinnerRoute() {
         />
         <div className="font-semibold text-emerald-600">
           <time dateTime={event.attributes.date}>
-            {`${eventDate.toLocaleDateString()} - ${eventDate.toLocaleTimeString()}`}
+            {`${eventDate.toLocaleDateString(
+              preferredLocale
+            )} - ${eventDate.toLocaleTimeString(preferredLocale)}`}
           </time>
           <div>
             {!signupHasStarted && (
               <>
                 Signup starts{" "}
                 <time dateTime={event.attributes.signupDate}>
-                  {`${signupStartDate.toLocaleDateString()} - ${signupStartDate.toLocaleTimeString()}`}
+                  {`${signupStartDate.toLocaleDateString(
+                    preferredLocale
+                  )} - ${signupStartDate.toLocaleTimeString(preferredLocale)}`}
                 </time>
               </>
             )}

@@ -11,11 +11,14 @@ import {
 import { getEventById } from "~/models/event.server";
 
 export const loader = async ({ params, request }: LoaderArgs) => {
+  console.log("confirmation");
   const dinnerId = params.dinnerId;
   const url = new URL(request.url);
   const responseId = url.searchParams.get("id");
   const email = url.searchParams.get("email");
   const token = url.searchParams.get("token");
+  const preferredLocale =
+    request.headers.get("accept-language")?.split(",")[0] || "de-DE";
 
   invariant(dinnerId, "dinnerId must be defined");
   invariant(responseId, "responseId must be defined");
@@ -34,8 +37,8 @@ export const loader = async ({ params, request }: LoaderArgs) => {
   if (!event) throw new Response("Event not found", { status: 404 });
 
   return json({
+    preferredLocale,
     event,
-    response,
   });
 };
 
@@ -132,7 +135,7 @@ export const action = async ({ params, request }: ActionArgs) => {
 };
 
 export default function DinnerRoute() {
-  const { event } = useLoaderData<typeof loader>();
+  const { event, preferredLocale } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const eventDate = new Date(event.attributes.date);
 
@@ -179,8 +182,10 @@ export default function DinnerRoute() {
           className="max-h-28 w-full rounded-xl object-cover shadow-xl"
         />
         <div className="font-semibold text-emerald-600">
-          <time dateTime={event.attributes.date}>
-            {`${eventDate.toLocaleDateString()} - ${eventDate.toLocaleTimeString()}`}
+          <time dateTime={""}>
+            {`${eventDate.toLocaleDateString(
+              preferredLocale
+            )} - ${eventDate.toLocaleTimeString(preferredLocale)}`}
           </time>
           <p>{`${event.attributes.address?.street} ${event.attributes.address?.number}`}</p>
           <p>{`${event.attributes.address?.zipcode} ${event.attributes.address?.city}`}</p>
