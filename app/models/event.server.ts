@@ -1,3 +1,9 @@
+import type {
+  StrapiApiResponse,
+  StrapiApiResponseMultiple,
+  StrapiComponentAddressField,
+  StrapiMediaField,
+} from "types/strapi";
 import type { EventResponse } from "./event-response.server";
 
 export type Event = {
@@ -15,17 +21,9 @@ export type Event = {
   event_responses?: { data: EventResponse[] };
 };
 
-export type GetEventResponse = StrapiApiResponse<{
-  id: number;
-  attributes: Event;
-}>;
+export type GetEventResponse = StrapiApiResponse<Event>;
 
-export type GetEventsResponse = StrapiApiResponse<
-  Array<{
-    id: number;
-    attributes: Event;
-  }>
->;
+export type GetEventsResponse = StrapiApiResponseMultiple<Event>;
 
 const apiUrl = process.env.STRAPI_API_URL;
 const apiHeaders = {
