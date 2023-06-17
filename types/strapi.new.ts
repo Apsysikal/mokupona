@@ -61,24 +61,26 @@ type ErrorResponseBody = {
 
 type ResponseBody<T> = SuccessResponseBody<T> | ErrorResponseBody;
 
-type SortParameter<T extends Entity> = EntityKey<T> | Array<EntityKey<T>>;
+export type SortParameter<T extends Entity> =
+  | EntityKey<T>
+  | Array<EntityKey<T>>;
 
-type FilterParameter<T extends Entity> = Partial<
+export type FilterParameter<T extends Entity> = Partial<
   Record<EntityKey<T>, SimpleFilterQuery>
 >;
 
-type PopulateParameter<T extends Entity> =
+export type PopulateParameter<T extends Entity> =
   | "*"
   | Array<EntityKey<T>>
   | Partial<Record<EntityKey<T>, boolean>>;
 
-type FieldsParameter<T extends Entity> = Array<EntityKey<T>>;
+export type FieldsParameter<T extends Entity> = Array<EntityKey<T>>;
 
-type PaginationParameter = PaginateByPage | PaginateByOffset;
+export type PaginationParameter = PaginateByPage | PaginateByOffset;
 
-type PublicationStateParameter = "live" | "preview";
+export type PublicationStateParameter = "live" | "preview";
 
-type GetEntriesResponseBody<T extends Entity> = ResponseBody<
+export type GetEntriesResponseBody<T extends Entity> = ResponseBody<
   Array<{
     id: number;
     attributes: { [K in EntityKey<T>]: T[K] };
@@ -86,25 +88,25 @@ type GetEntriesResponseBody<T extends Entity> = ResponseBody<
   }>
 >;
 
-type GetEntryBody<T extends Entity> = ResponseBody<{
+export type GetEntryResponseBody<T extends Entity> = ResponseBody<{
   id: number;
   attributes: { [K in EntityKey<T>]: T[K] };
   meta: Record<string, unknown>;
 }>;
 
-type CreateEntryBody<T extends Entity> = ResponseBody<{
+export type CreateEntryResponseBody<T extends Entity> = ResponseBody<{
   id: number;
   attributes: { [K in EntityKey<T>]: T[K] };
   meta: Record<string, unknown>;
 }>;
 
-type UpdateEntryBody<T extends Entity> = ResponseBody<{
+export type UpdateEntryResponseBody<T extends Entity> = ResponseBody<{
   id: number;
   attributes: { [K in EntityKey<T>]: T[K] };
   meta: Record<string, unknown>;
 }>;
 
-type DeleteEntryBody<T extends Entity> = ResponseBody<{
+export type DeleteEntryResponseBody<T extends Entity> = ResponseBody<{
   id: number;
   attributes: { [K in EntityKey<T>]: T[K] };
   meta: Record<string, unknown>;

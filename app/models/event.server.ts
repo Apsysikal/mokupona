@@ -5,6 +5,10 @@ import type {
   StrapiComponentAddressField,
   StrapiMediaField,
 } from "types/strapi";
+import type {
+  GetEntriesResponseBody,
+  GetEntryResponseBody,
+} from "types/strapi.new";
 import type { EventResponse } from "./event-response.server";
 
 export type Event = {
@@ -47,7 +51,7 @@ export async function getEvents() {
 
   if (!response.ok) throw new Error("Failed to fetch events");
 
-  const body = (await response.json()) as GetEventsResponse;
+  const body = (await response.json()) as GetEntriesResponseBody<Event>;
   return body.data;
 }
 
@@ -64,6 +68,6 @@ export async function getEventById(id: string) {
 
   if (!response.ok) throw new Error(`Failed to fetch event ${id}`);
 
-  const body = (await response.json()) as GetEventResponse;
+  const body = (await response.json()) as GetEntryResponseBody<Event>;
   return body.data;
 }
