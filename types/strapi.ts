@@ -40,7 +40,7 @@ export type StrapiCollectionType<T> = {
 
 type KeyOfCollectionType<T extends StrapiCollectionType<T>> = keyof T;
 
-type StrapiApiUrlParameters<T extends StrapiCollectionType<T>> = {
+export type StrapiApiUrlParameters<T extends StrapiCollectionType<T>> = {
   sort?: KeyOfCollectionType<T> | Array<KeyOfCollectionType<T>>;
   filters?: Record<
     KeyOfCollectionType<T>,
@@ -50,7 +50,7 @@ type StrapiApiUrlParameters<T extends StrapiCollectionType<T>> = {
   fields?: KeyOfCollectionType<T> | Array<KeyOfCollectionType<T>>;
   pagination?: Record<"page" | "pageSize" | "withCount", number | boolean>;
   publicationState?: "live" | "preview";
-  locale: string | string[];
+  locale?: string | string[];
 };
 
 export type StrapiApiResponse<T> = {

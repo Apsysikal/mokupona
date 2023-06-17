@@ -1,6 +1,7 @@
 import type {
   StrapiApiResponse,
   StrapiApiResponseMultiple,
+  StrapiApiUrlParameters,
   StrapiComponentAddressField,
   StrapiMediaField,
 } from "types/strapi";
