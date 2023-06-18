@@ -1,14 +1,13 @@
 import type {
-  StrapiApiResponse,
-  StrapiApiResponseMultiple,
-  StrapiApiUrlParameters,
   StrapiComponentAddressField,
   StrapiMediaField,
 } from "types/strapi";
 import type {
   GetEntriesResponseBody,
   GetEntryResponseBody,
+  Parameters,
 } from "types/strapi.new";
+import { stringify } from "qs";
 import type { EventResponse } from "./event-response.server";
 
 export type Event = {
@@ -26,10 +25,6 @@ export type Event = {
   event_responses?: { data: EventResponse[] };
 };
 
-export type GetEventResponse = StrapiApiResponse<Event>;
-
-export type GetEventsResponse = StrapiApiResponseMultiple<Event>;
-
 const apiUrl = process.env.STRAPI_API_URL;
 const apiHeaders = {
   Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}`,
@@ -38,14 +33,18 @@ const apiHeaders = {
 
 export async function getEvents() {
   const url = `${apiUrl}/api/events`;
-  const query = new URLSearchParams([
-    ["populate", "cover"],
-    ["populate", "address"],
-    ["sort", "date"],
-    ["publicationDate", "live"],
-    ["filters[date][$gt]", new Date().toISOString()],
-  ]);
-  const response = await fetch(`${url}?${query}`, {
+  const query: Parameters<Event> = {
+    populate: ["cover", "address"],
+    sort: "date",
+    publicationState: "live",
+    filters: {
+      date: {
+        $gt: new Date().toISOString(),
+      },
+    },
+  };
+
+  const response = await fetch(`${url}?${stringify(query)}`, {
     headers: apiHeaders,
   });
 
@@ -57,12 +56,11 @@ export async function getEvents() {
 
 export async function getEventById(id: string) {
   const url = `${apiUrl}/api/events/${id}`;
-  const query = new URLSearchParams([
-    ["populate", "cover"],
-    ["populate", "address"],
-    ["populate", "event_responses"],
-  ]);
-  const response = await fetch(`${url}?${query}`, {
+  const query: Parameters<Event> = {
+    populate: ["cover", "address", "event_responses"],
+  };
+
+  const response = await fetch(`${url}?${stringify(query)}`, {
     headers: apiHeaders,
   });
 

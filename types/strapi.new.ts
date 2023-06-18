@@ -61,24 +61,38 @@ type ErrorResponseBody = {
 
 type ResponseBody<T> = SuccessResponseBody<T> | ErrorResponseBody;
 
-export type SortParameter<T extends Entity> =
-  | EntityKey<T>
-  | Array<EntityKey<T>>;
+type SortParameter<T extends Entity> = EntityKey<T> | Array<EntityKey<T>>;
 
-export type FilterParameter<T extends Entity> = Partial<
+type FilterParameter<T extends Entity> = Partial<
   Record<EntityKey<T>, SimpleFilterQuery>
 >;
 
-export type PopulateParameter<T extends Entity> =
+type PopulateParameter<T extends Entity> =
   | "*"
   | Array<EntityKey<T>>
   | Partial<Record<EntityKey<T>, boolean>>;
 
-export type FieldsParameter<T extends Entity> = Array<EntityKey<T>>;
+type FieldsParameter<T extends Entity> = Array<EntityKey<T>>;
 
-export type PaginationParameter = PaginateByPage | PaginateByOffset;
+type PaginationParameter = PaginateByPage | PaginateByOffset;
 
-export type PublicationStateParameter = "live" | "preview";
+type PublicationStateParameter = "live" | "preview";
+
+export type Parameters<T extends Entity> = {
+  sort?: SortParameter<T>;
+  filters?: FilterParameter<T>;
+  populate?: PopulateParameter<T>;
+  fields?: FieldsParameter<T>;
+  pagination?: PaginationParameter;
+  publicationState?: PublicationStateParameter;
+  locale?: string | Array<string>;
+};
+
+// TODO: Implement types for locale
+
+//-----------------------------------------------------------------
+// Requests and Responses
+//-----------------------------------------------------------------
 
 export type GetEntriesResponseBody<T extends Entity> = ResponseBody<
   Array<{
@@ -100,11 +114,19 @@ export type CreateEntryResponseBody<T extends Entity> = ResponseBody<{
   meta: Record<string, unknown>;
 }>;
 
+export type CreateEntryRequestBody<T extends Entity> = {
+  data: { [K in EntityKey<T>]: T[K] };
+};
+
 export type UpdateEntryResponseBody<T extends Entity> = ResponseBody<{
   id: number;
   attributes: { [K in EntityKey<T>]: T[K] };
   meta: Record<string, unknown>;
 }>;
+
+export type UpdateEntryRequestBody<T extends Entity> = {
+  data: Partial<{ [K in EntityKey<T>]: T[K] }>;
+};
 
 export type DeleteEntryResponseBody<T extends Entity> = ResponseBody<{
   id: number;
