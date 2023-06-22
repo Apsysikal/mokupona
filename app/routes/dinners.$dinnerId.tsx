@@ -280,7 +280,7 @@ function validateEmail(email: string | null) {
 function getBookedSlots(field: Event["event_responses"]) {
   if (!field) return 0;
   const { data: events } = field;
-  return events.filter(({ attributes: event }) => {
+  return events.filter((event) => {
     const { state } = event;
     if (state === "invite_confirmed") return true;
     if (state === "invite_sent") return true;

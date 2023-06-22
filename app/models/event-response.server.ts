@@ -1,9 +1,6 @@
-export type EventResponse = {
-  id: number;
-  attributes: EventResponseAttributes;
-};
+import type { GetEntryResponseBody } from "types/strapi";
 
-type EventResponseAttributes = {
+export type EventResponse = {
   name: string;
   email: string;
   restriction_vegetarian: boolean;
@@ -14,8 +11,6 @@ type EventResponseAttributes = {
   restriction_other: null | string;
   comment: null | string;
   termsOfService: boolean;
-  createdAt: string;
-  updatedAt: string;
   confirm_token: null | string;
   state: "waiting" | "invite_sent" | "invite_confirmed" | "invite_cancelled";
   invite_date: string | null;
@@ -23,20 +18,13 @@ type EventResponseAttributes = {
   event?: string;
 };
 
-type EventResponseAttributesKeys = keyof EventResponseAttributes;
-
-type CreateEventResponseAttributes = Omit<
-  EventResponseAttributes,
-  "createdAt" | "updatedAt"
->;
-
 const apiUrl = process.env.STRAPI_API_URL;
 const apiHeaders = {
   Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}`,
   "Content-Type": "application/json",
 };
 
-export async function createEventResponse(data: CreateEventResponseAttributes) {
+export async function createEventResponse(data: EventResponse) {
   const url = `${apiUrl}/api/event-responses`;
   const response = await fetch(`${url}`, {
     method: "POST",
@@ -58,13 +46,13 @@ export async function getEventResponseById(id: string) {
 
   if (!response.ok) throw new Error(`Failed to fetch event-response ${id}`);
 
-  const body = (await response.json()) as { data: EventResponse };
+  const body = (await response.json()) as GetEntryResponseBody<EventResponse>;
   return body.data;
 }
 
 export async function updateEventResponse(
   id: string,
-  data: Partial<Record<EventResponseAttributesKeys, any>>
+  data: Partial<EventResponse>
 ) {
   const url = `${apiUrl}/api/event-responses/${id}`;
   const response = await fetch(`${url}`, {
