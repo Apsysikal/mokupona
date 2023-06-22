@@ -1,14 +1,39 @@
 import type {
-  StrapiComponentAddressField,
-  StrapiMediaField,
-} from "types/strapi";
-import type {
   GetEntriesResponseBody,
   GetEntryResponseBody,
   Parameters,
-} from "types/strapi.new";
+} from "types/strapi";
 import { stringify } from "qs";
 import type { EventResponse } from "./event-response.server";
+
+export type StrapiComponentAddressField = {
+  street: string;
+  number?: string;
+  zipcode: string;
+  city: string;
+};
+
+export type StrapiMediaField = {
+  id: number;
+  attributes: {
+    alternativeText: string;
+    url: string;
+    formats: {
+      large: {
+        url: string;
+      };
+      small: {
+        url: string;
+      };
+      medium: {
+        url: string;
+      };
+      thumbnail: {
+        url: string;
+      };
+    };
+  };
+};
 
 export type Event = {
   title: string;
