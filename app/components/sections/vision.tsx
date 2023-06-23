@@ -8,7 +8,7 @@ export function VisionSection() {
       <p className="text-xl text-gray-800">
         We wanted to create a new way to meet people. A place, where you are
         comfortable and the vibe encourages interesting conversations. That's
-        why we created <span className="text-emerald-800">Moku Pona</span>,
+        why we created <span className="text-emerald-800">moku pona</span>,
         where you can meet a few people over dinner and have an amazing evening.
       </p>
     </section>

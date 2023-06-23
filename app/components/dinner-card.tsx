@@ -1,21 +1,16 @@
-import type { Event } from "@prisma/client";
 import { Link } from "@remix-run/react";
+import type { Event } from "~/models/event.server";
 
-export function DinnerCard({
-  event,
-}: {
-  event: Event & {
-    EventResponse: Array<{ id: string }>;
-  };
-}) {
+export function DinnerCard({ id, event }: { id: number; event: Event }) {
   const parsedDate = new Date(event.date);
-  const slotsAvailable = event.slots - event.EventResponse.length;
-  const slotsFilled = event.slots - slotsAvailable;
+  const coverUrl = event.cover?.data.attributes.url;
+  //const slotsAvailable = event.slots - event.EventResponse.length;
+  //const slotsFilled = event.slots - slotsAvailable;
 
   return (
     <div className="relative mx-auto overflow-hidden rounded-lg border border-gray-200 shadow-lg">
       <img
-        src={event.imageUrl}
+        src={coverUrl}
         alt=""
         width={1200}
         height={800}
@@ -27,11 +22,11 @@ export function DinnerCard({
           <strong className="text-3xl text-gray-900">{event.title}</strong>
         </div>
         <div className="flex items-center justify-between">
-          {event.tags.length > 0 && (
+          {event.tags?.length && event.tags.length > 0 && (
             <>
               <div>
                 <div className="flex gap-1">
-                  {event.tags.split(" ").map((tag) => {
+                  {event.tags?.split(" ").map((tag) => {
                     return (
                       <span
                         key={tag}
@@ -46,7 +41,7 @@ export function DinnerCard({
             </>
           )}
 
-          <div className="flex items-center gap-1 text-xs">
+          {/* <div className="flex items-center gap-1 text-xs">
             {`${slotsFilled}/${event.slots}`}
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -60,7 +55,7 @@ export function DinnerCard({
                 clipRule="evenodd"
               />
             </svg>
-          </div>
+          </div> */}
         </div>
         <div>
           <time className="text-sm font-semibold text-emerald-600">
@@ -68,11 +63,11 @@ export function DinnerCard({
           </time>
         </div>
         <div>
-          <p className="text-gray-900">{event.shortDescription}</p>
+          <p className="text-gray-900">{event.summary}</p>
         </div>
         <div className="flex items-center justify-between">
           <Link
-            to={event.id}
+            to={`${id}`}
             className="rounded-md px-2 py-1 font-bold uppercase text-emerald-600 hover:bg-emerald-200/20"
           >
             Join

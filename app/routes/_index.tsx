@@ -18,8 +18,8 @@ export default function Index() {
             <div className="absolute -top-14 right-0 bottom-0 left-0 -z-10 bg-gray-800/70" />
             <div className="mx-auto flex max-w-3xl flex-col place-content-center gap-4 p-2">
               <span className="text-2xl font-light">Hello, we are</span>
-              <h1 className="whitespace-nowrap text-5xl font-extrabold uppercase text-emerald-600">
-                Moku Pona
+              <h1 className="whitespace-nowrap text-5xl font-extrabold lowercase text-emerald-600">
+                moku pona
               </h1>
               <p className="text-2xl font-light">
                 A dinner society located in Zurich. We love sharing food and
