@@ -1,19 +1,52 @@
 import { Link } from "@remix-run/react";
 import type { Event } from "~/models/event.server";
 
-export function DinnerCard({ id, event }: { id: number; event: Event }) {
+function getKeysFromObject<T extends { [K in keyof T]: any }>(
+  obj: T
+): Array<keyof T> {
+  return Object.keys(obj) as Array<keyof T>;
+}
+
+export function DinnerCard({
+  id,
+  event,
+  preferredLocale,
+}: {
+  id: number;
+  event: Event;
+  preferredLocale: string;
+}) {
   const parsedDate = new Date(event.date);
-  const coverUrl = event.cover?.data.attributes.url;
+
+  const covers = event.cover?.data.attributes.formats || {};
+  // Pick smallest size if available. Otherwise use the original,
+  const availableCovers = getKeysFromObject(covers);
+
+  const smallestCover =
+    covers?.thumbnail ||
+    covers?.medium ||
+    covers?.medium ||
+    covers?.large ||
+    event.cover?.data.attributes;
+
+  const srcSetStrings = [
+    ...availableCovers.map((key) => {
+      return `${covers[key]?.url} ${covers[key]?.width}w`;
+    }),
+    `${event.cover?.data.attributes.url} ${event.cover?.data.attributes.width}w`,
+  ];
+
   //const slotsAvailable = event.slots - event.EventResponse.length;
   //const slotsFilled = event.slots - slotsAvailable;
 
   return (
     <div className="relative mx-auto overflow-hidden rounded-lg border border-gray-200 shadow-lg">
       <img
-        src={coverUrl}
+        src={smallestCover?.url}
+        srcSet={srcSetStrings.join(",")}
         alt=""
-        width={1200}
-        height={800}
+        width={smallestCover?.width}
+        height={smallestCover?.height}
         className="max-h-28 w-full object-cover"
       />
       <div className="flex flex-col gap-3 p-5">
@@ -59,7 +92,9 @@ export function DinnerCard({ id, event }: { id: number; event: Event }) {
         </div>
         <div>
           <time className="text-sm font-semibold text-emerald-600">
-            {`${parsedDate.toLocaleDateString()} - ${parsedDate.toLocaleTimeString()}`}
+            {`${parsedDate.toLocaleDateString(
+              preferredLocale
+            )} - ${parsedDate.toLocaleTimeString(preferredLocale)}`}
           </time>
         </div>
         <div>

@@ -18,18 +18,28 @@ export type StrapiMediaField = {
   attributes: {
     alternativeText: string;
     url: string;
+    width: number;
+    height: number;
     formats: {
-      large: {
+      large?: {
         url: string;
+        width: number;
+        height: number;
       };
-      small: {
+      small?: {
         url: string;
+        width: number;
+        height: number;
       };
-      medium: {
+      medium?: {
         url: string;
+        width: number;
+        height: number;
       };
-      thumbnail: {
+      thumbnail?: {
         url: string;
+        width: number;
+        height: number;
       };
     };
   };

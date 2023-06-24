@@ -152,8 +152,7 @@ export default function DinnerRoute() {
           </div>
         </div>
         <img
-          // @ts-expect-error
-          src={event.attributes.cover.data.attributes.url}
+          src={event.attributes.cover?.data.attributes.url}
           alt=""
           width={1200}
           height={800}

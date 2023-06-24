@@ -1,3 +1,4 @@
+import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { DinnerCard } from "~/components/dinner-card";
@@ -5,16 +6,19 @@ import { Footer } from "~/components/footer";
 import { NavBar } from "~/components/navbar";
 import { getEvents } from "~/models/event.server";
 
-export const loader = async () => {
+export const loader = async ({ request }: LoaderArgs) => {
   const events = await getEvents();
+  const preferredLocale =
+    request.headers.get("accept-language")?.split(",")[0] || "de-DE";
 
   return json({
     events,
+    preferredLocale,
   });
 };
 
 export default function DinnersIndexRoute() {
-  const { events } = useLoaderData<typeof loader>();
+  const { events, preferredLocale } = useLoaderData<typeof loader>();
 
   return (
     <>
@@ -26,7 +30,14 @@ export default function DinnersIndexRoute() {
           <>
             {events.map(({ id, attributes: event }) => {
               // @ts-ignore
-              return <DinnerCard key={id} id={id} event={event} />;
+              return (
+                <DinnerCard
+                  key={id}
+                  id={id}
+                  event={event}
+                  preferredLocale={preferredLocale}
+                />
+              );
             })}
           </>
         ) : (
