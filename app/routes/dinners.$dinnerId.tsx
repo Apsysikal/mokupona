@@ -162,7 +162,7 @@ export default function DinnerRoute() {
           className="max-h-28 w-full rounded-xl object-cover shadow-xl"
         />
         <div className="font-semibold text-emerald-600">
-          <time dateTime={event.attributes.date}>
+          <time dateTime={event.attributes.date} suppressHydrationWarning>
             {`${eventDate.toLocaleDateString(
               preferredLocale
             )} - ${eventDate.toLocaleTimeString(preferredLocale)}`}
@@ -171,7 +171,10 @@ export default function DinnerRoute() {
             {!signupHasStarted && (
               <>
                 Signup starts{" "}
-                <time dateTime={event.attributes.signupDate}>
+                <time
+                  dateTime={event.attributes.signupDate}
+                  suppressHydrationWarning
+                >
                   {`${signupStartDate.toLocaleDateString(
                     preferredLocale
                   )} - ${signupStartDate.toLocaleTimeString(preferredLocale)}`}

@@ -91,7 +91,11 @@ export function DinnerCard({
           </div> */}
         </div>
         <div>
-          <time className="text-sm font-semibold text-emerald-600">
+          <time
+            className="text-sm font-semibold text-emerald-600"
+            dateTime={parsedDate.toISOString()}
+            suppressHydrationWarning
+          >
             {`${parsedDate.toLocaleDateString(
               preferredLocale
             )} - ${parsedDate.toLocaleTimeString(preferredLocale)}`}
