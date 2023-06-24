@@ -11,6 +11,8 @@ export const loader = async ({ request }: LoaderArgs) => {
   const preferredLocale =
     request.headers.get("accept-language")?.split(",")[0] || "de-DE";
 
+  console.log(preferredLocale);
+
   return json({
     events,
     preferredLocale,
@@ -19,6 +21,7 @@ export const loader = async ({ request }: LoaderArgs) => {
 
 export default function DinnersIndexRoute() {
   const { events, preferredLocale } = useLoaderData<typeof loader>();
+  console.log(preferredLocale);
 
   return (
     <>

@@ -11,7 +11,6 @@ import {
 import { getEventById } from "~/models/event.server";
 
 export const loader = async ({ params, request }: LoaderArgs) => {
-  console.log("confirmation");
   const dinnerId = params.dinnerId;
   const url = new URL(request.url);
   const responseId = url.searchParams.get("id");
@@ -19,6 +18,8 @@ export const loader = async ({ params, request }: LoaderArgs) => {
   const token = url.searchParams.get("token");
   const preferredLocale =
     request.headers.get("accept-language")?.split(",")[0] || "de-DE";
+
+  console.log(preferredLocale);
 
   invariant(dinnerId, "dinnerId must be defined");
   invariant(responseId, "responseId must be defined");
@@ -138,6 +139,8 @@ export default function DinnerRoute() {
   const { event, preferredLocale } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const eventDate = new Date(event.attributes.date);
+
+  console.log(preferredLocale);
 
   return (
     <>
