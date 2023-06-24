@@ -9,10 +9,11 @@ import type { Event } from "~/models/event.server";
 import { getEventById } from "~/models/event.server";
 
 export const loader = async ({ params, request }: LoaderArgs) => {
-  console.log("hit");
   const dinnerId = params.dinnerId;
   const preferredLocale =
     request.headers.get("accept-language")?.split(",")[0] || "de-DE";
+
+  console.log(preferredLocale);
 
   invariant(dinnerId, "dinnerId must be defined");
 
@@ -100,6 +101,8 @@ export default function DinnerRoute() {
   const signupHasStarted = Date.now() > signupStartDate.valueOf();
   const slotsAvailable = maximumSlots - bookedSlots;
   const slotsFilled = maximumSlots - slotsAvailable;
+
+  console.log(preferredLocale);
 
   return (
     <>
@@ -280,7 +283,7 @@ function getBookedSlots(field: Event["event_responses"]) {
   if (!field) return 0;
   const { data: events } = field;
   return events.filter((event) => {
-    const { state } = event;
+    const { state } = event.attributes;
     if (state === "invite_confirmed") return true;
     if (state === "invite_sent") return true;
     return false;

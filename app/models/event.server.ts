@@ -57,7 +57,7 @@ export type Event = {
   price: number;
   cover?: { data: StrapiMediaField };
   address?: StrapiComponentAddressField;
-  event_responses?: { data: EventResponse[] };
+  event_responses?: { data: { id: number; attributes: EventResponse }[] };
 };
 
 const apiUrl = process.env.STRAPI_API_URL;
