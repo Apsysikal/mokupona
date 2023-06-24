@@ -185,7 +185,7 @@ export default function DinnerRoute() {
           className="max-h-28 w-full rounded-xl object-cover shadow-xl"
         />
         <div className="font-semibold text-emerald-600">
-          <time dateTime={""}>
+          <time dateTime={event.attributes.date} suppressHydrationWarning>
             {`${eventDate.toLocaleDateString(
               preferredLocale
             )} - ${eventDate.toLocaleTimeString(preferredLocale)}`}
