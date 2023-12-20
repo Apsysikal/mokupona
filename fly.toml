@@ -1,4 +1,4 @@
-app = "mokupona-stack-b568"
+app = "mokupona-4755"
 kill_signal = "SIGINT"
 kill_timeout = 5
 processes = [ ]
