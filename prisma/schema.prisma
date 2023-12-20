@@ -36,3 +36,28 @@ model Note {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId String
 }
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  subtitle    String
+  summary     String
+  description String
+  tags        String
+  date        DateTime
+  signupStart DateTime
+  slots       Int
+  price       Decimal
+  cover       String
+  addressId   String
+  address     Address  @relation(fields: [addressId], references: [id])
+}
+
+model Address {
+  id          String  @id @default(cuid())
+  streetName  String
+  houseNumber String
+  zip         String
+  city        String
+  Event       Event[]
+}
