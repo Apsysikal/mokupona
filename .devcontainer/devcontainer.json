@@ -20,7 +20,11 @@
   "postCreateCommand": "npm install && npx cypress install && npm run setup",
   "customizations": {
     "vscode": {
-      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"]
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "Prisma.prisma"
+      ]
     }
   }
 
