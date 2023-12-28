@@ -16,6 +16,7 @@ model User {
 
   password Password?
   notes    Note[]
+  events   Event[]
 }
 
 model Password {
@@ -40,17 +41,33 @@ model Note {
 model Event {
   id          String   @id @default(cuid())
   title       String
-  subtitle    String
-  summary     String
   description String
-  tags        String
   date        DateTime
-  signupStart DateTime
   slots       Int
   price       Decimal
   cover       String
-  addressId   String
-  address     Address  @relation(fields: [addressId], references: [id])
+
+  addressId String
+  address   Address @relation(fields: [addressId], references: [id])
+
+  EventResponse EventResponse[]
+
+  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdById String
+}
+
+model EventResponse {
+  id    String @id @default(cuid())
+  name  String
+  email String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event   Event  @relation(fields: [eventId], references: [id])
+  eventId String
+
+  @@unique([email, eventId])
 }
 
 model Address {
