@@ -2,18 +2,22 @@ import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MaxPartSizeExceededError,
+  NodeOnDiskFile,
   json,
+  redirect,
   unstable_composeUploadHandlers,
   unstable_createFileUploadHandler,
   unstable_createMemoryUploadHandler,
   unstable_parseMultipartFormData,
 } from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import invariant from "tiny-invariant";
 
 import { getAddresses } from "~/models/address.server";
+import { createEvent } from "~/models/event.server";
 import { requireUserId } from "~/session.server";
 
-const validImageTypes = ["image/jpeg/", "image/png", "image/webp"];
+const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireUserId(request);
@@ -35,46 +39,44 @@ export async function action({ request }: ActionFunctionArgs) {
     unstable_createMemoryUploadHandler(),
   );
 
-  console.log(request.formData);
+  const fieldErrors: Record<string, string | undefined> = {
+    title: undefined,
+    description: undefined,
+    date: undefined,
+    slots: undefined,
+    price: undefined,
+    cover: undefined,
+    address: undefined,
+  } as const;
 
   const formData = await unstable_parseMultipartFormData(
     request,
-    uploadHandler,
-  ).catch((error) => {
-    if (error instanceof MaxPartSizeExceededError) return null;
-    throw error;
-  });
-
-  if (!formData)
-    return json(
-      {
-        fieldErrors: {
-          title: null,
-          description: null,
-          date: null,
-          slots: null,
-          price: null,
-          cover: "File must be smaller than 3MB",
-          address: null,
-        },
-        fields: null,
-        formError: null,
-      },
-      { status: 400 },
-    );
+    async (part) => {
+      try {
+        const result = await uploadHandler(part);
+        return result;
+      } catch (error) {
+        if (error instanceof MaxPartSizeExceededError) {
+          // Catch the size error and handle it instead of the parser crashing
+          fieldErrors.cover = "File size must be less than 3MB";
+          return null;
+        }
+        throw error;
+      }
+    },
+  );
 
   const { title, description, date, slots, price, cover, address } =
     Object.fromEntries(formData);
 
-  const fieldErrors = {
-    title: validateTitle(title),
-    description: validateDescription(description),
-    date: validateDate(date),
-    slots: validateSlots(slots),
-    price: validatePrice(price),
-    cover: validateCover(cover),
-    address: validateAddress(address),
-  };
+  fieldErrors.title = validateTitle(title);
+  fieldErrors.description = validateDescription(description);
+  fieldErrors.date = validateDate(date);
+  fieldErrors.slots = validateSlots(slots);
+  fieldErrors.price = validatePrice(price);
+  // If we already have an error (size error) we don't want to validate again
+  fieldErrors.cover = fieldErrors.cover || validateCover(cover);
+  fieldErrors.address = validateAddress(address);
 
   const fields = {
     title: title as string,
@@ -85,15 +87,13 @@ export async function action({ request }: ActionFunctionArgs) {
     address: address as string,
   };
 
-  console.log(title);
-  console.log(description);
-  console.log(date);
-  console.log(slots);
-  console.log(price);
-  console.log(cover);
-  console.log(address);
-
   if (Object.values(fieldErrors).some(Boolean)) {
+    if (!fieldErrors.cover) {
+      // Delete the image from the disk as it will be uploaded again in the next submission
+      invariant(cover instanceof NodeOnDiskFile);
+      await cover.remove();
+    }
+
     return json(
       {
         fieldErrors,
@@ -103,6 +103,18 @@ export async function action({ request }: ActionFunctionArgs) {
       { status: 400 },
     );
   }
+
+  const event = await createEvent({
+    title: String(title),
+    description: String(description),
+    date: new Date(String(date)),
+    slots: Number(slots),
+    price: Number(price),
+    addressId: String(address),
+    cover: String(`/file/${(cover as NodeOnDiskFile).name}`),
+  });
+
+  return redirect(`/dinners/${event.id}`);
 }
 
 export default function DinnersPage() {
@@ -255,7 +267,7 @@ function validatePrice(price: FormDataEntryValue | string | null) {
 
 function validateCover(cover: FormDataEntryValue | string | null) {
   if (!cover) return "Cover must be provided";
-  if (!(cover instanceof File)) return "Invalid type";
+  if (!(cover instanceof NodeOnDiskFile)) return "Invalid type";
   if (cover.size <= 0) return "No file provided";
   if (!validImageTypes.includes(cover.type))
     return "Image must be of type png, jpg or webp";
