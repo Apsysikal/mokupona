@@ -20,6 +20,7 @@ export async function createEvent({
   price,
   cover,
   addressId,
+  creatorId,
 }: {
   title: string;
   description: string;
@@ -28,6 +29,7 @@ export async function createEvent({
   price: number;
   cover: string;
   addressId: string;
+  creatorId: string;
 }) {
   return prisma.event.create({
     data: {
@@ -38,6 +40,50 @@ export async function createEvent({
       price,
       cover,
       addressId,
+      createdById: creatorId,
     },
+  });
+}
+
+export async function updateEvent(
+  id: string,
+  {
+    title,
+    description,
+    date,
+    slots,
+    price,
+    cover,
+    addressId,
+    creatorId,
+  }: {
+    title?: string;
+    description?: string;
+    date?: Date;
+    slots?: number;
+    price?: number;
+    cover?: string;
+    addressId?: string;
+    creatorId?: string;
+  },
+) {
+  return prisma.event.update({
+    where: { id },
+    data: {
+      title,
+      description,
+      date,
+      slots,
+      price,
+      cover,
+      addressId,
+      createdById: creatorId,
+    },
+  });
+}
+
+export async function deleteEvent(id: string) {
+  return prisma.event.delete({
+    where: { id },
   });
 }

@@ -15,23 +15,34 @@ import { zonedTimeToUtc } from "date-fns-tz";
 import invariant from "tiny-invariant";
 
 import { getAddresses } from "~/models/address.server";
-import { createEvent } from "~/models/event.server";
+import { getEventById, updateEvent } from "~/models/event.server";
 import { requireUser, requireUserId } from "~/session.server";
 
 const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, params }: LoaderFunctionArgs) {
   await requireUserId(request);
+
+  const { dinnerId } = params;
+  invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
+
   const addresses = await getAddresses();
+  const event = await getEventById(dinnerId);
+
+  if (!event) throw new Response("Not found", { status: 404 });
 
   return json({
     validImageTypes,
     addresses,
+    dinner: event,
   });
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request, params }: ActionFunctionArgs) {
   const user = await requireUser(request);
+
+  const { dinnerId } = params;
+  invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
 
   const uploadHandler = unstable_composeUploadHandlers(
     unstable_createFileUploadHandler({
@@ -70,13 +81,20 @@ export async function action({ request }: ActionFunctionArgs) {
   const { title, description, date, slots, price, cover, address } =
     Object.fromEntries(formData);
 
+  const imageUpdated =
+    fieldErrors.cover || (cover as NodeOnDiskFile).size > 0 ? true : false;
+
   fieldErrors.title = validateTitle(title);
   fieldErrors.description = validateDescription(description);
   fieldErrors.date = validateDate(date);
   fieldErrors.slots = validateSlots(slots);
   fieldErrors.price = validatePrice(price);
   // If we already have an error (size error) we don't want to validate again
-  fieldErrors.cover = fieldErrors.cover || validateCover(cover);
+  fieldErrors.cover = fieldErrors.cover
+    ? fieldErrors.cover
+    : imageUpdated
+    ? validateCover(cover)
+    : undefined;
   fieldErrors.address = validateAddress(address);
 
   const fields = {
@@ -89,7 +107,7 @@ export async function action({ request }: ActionFunctionArgs) {
   };
 
   if (Object.values(fieldErrors).some(Boolean)) {
-    if (!fieldErrors.cover) {
+    if (!fieldErrors.cover && (cover as Blob).size > 0) {
       // Delete the image from the disk as it will be uploaded again in the next submission
       invariant(cover instanceof NodeOnDiskFile);
       await cover.remove();
@@ -105,14 +123,16 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const event = await createEvent({
+  const event = await updateEvent(dinnerId, {
     title: String(title),
     description: String(description),
     date: zonedTimeToUtc(String(date), "Europe/Zurich"),
     slots: Number(slots),
     price: Number(price),
     addressId: String(address),
-    cover: String(`/file/${(cover as NodeOnDiskFile).name}`),
+    ...(imageUpdated && {
+      cover: String(`/file/${(cover as NodeOnDiskFile).name}`),
+    }),
     creatorId: user.id,
   });
 
@@ -120,12 +140,12 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function DinnersPage() {
-  const { addresses, validImageTypes } = useLoaderData<typeof loader>();
+  const { addresses, validImageTypes, dinner } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   return (
     <>
-      <div>Create a new dinner</div>
+      <div>Update the dinner</div>
       <Form
         method="POST"
         encType="multipart/form-data"
@@ -137,7 +157,7 @@ export default function DinnersPage() {
             id="title"
             name="title"
             type="text"
-            defaultValue={actionData?.fields?.title}
+            defaultValue={actionData?.fields?.title || dinner.title}
           />
           {actionData?.fieldErrors?.title ? (
             <p>{actionData.fieldErrors.title}</p>
@@ -149,7 +169,7 @@ export default function DinnersPage() {
           <textarea
             id="description"
             name="description"
-            defaultValue={actionData?.fields?.description}
+            defaultValue={actionData?.fields?.description || dinner.description}
           />
           {actionData?.fieldErrors?.description ? (
             <p>{actionData.fieldErrors.description}</p>
@@ -162,7 +182,9 @@ export default function DinnersPage() {
             type="datetime-local"
             name="date"
             id="date"
-            defaultValue={actionData?.fields?.date}
+            defaultValue={
+              actionData?.fields?.date || dinner.date.substring(0, 16)
+            }
           />
           {actionData?.fieldErrors?.date ? (
             <p>{actionData.fieldErrors.date}</p>
@@ -175,7 +197,7 @@ export default function DinnersPage() {
             type="number"
             name="slots"
             id="slots"
-            defaultValue={actionData?.fields?.slots}
+            defaultValue={actionData?.fields?.slots || dinner.slots}
           />
           {actionData?.fieldErrors?.slots ? (
             <p>{actionData.fieldErrors.slots}</p>
@@ -188,7 +210,7 @@ export default function DinnersPage() {
             type="number"
             name="price"
             id="price"
-            defaultValue={actionData?.fields?.price}
+            defaultValue={actionData?.fields?.price || dinner.price}
           />
           {actionData?.fieldErrors?.price ? (
             <p>{actionData.fieldErrors.price}</p>
@@ -213,7 +235,7 @@ export default function DinnersPage() {
           <select
             name="address"
             id="address"
-            defaultValue={actionData?.fields?.address}
+            defaultValue={actionData?.fields?.address || dinner.addressId}
           >
             {addresses.map((address) => {
               const { id } = address;
@@ -230,7 +252,7 @@ export default function DinnersPage() {
           ) : null}
         </div>
 
-        <button type="submit">Create Dinner</button>
+        <button type="submit">Update Dinner</button>
       </Form>
     </>
   );
@@ -268,7 +290,6 @@ function validatePrice(price: FormDataEntryValue | string | null) {
 }
 
 function validateCover(cover: FormDataEntryValue | string | null) {
-  if (!cover) return "Cover must be provided";
   if (!(cover instanceof NodeOnDiskFile)) return "Invalid type";
   if (cover.size <= 0) return "No file provided";
   if (!validImageTypes.includes(cover.type))

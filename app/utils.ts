@@ -74,3 +74,7 @@ export function useUser(): User {
 export function validateEmail(email: unknown): email is string {
   return typeof email === "string" && email.length > 3 && email.includes("@");
 }
+
+export function getLocale(request: Request) {
+  return request.headers.get("accept-language")?.split(",")[0] || "de-DE";
+}

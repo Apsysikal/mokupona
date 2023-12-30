@@ -12,8 +12,12 @@ async function seed() {
     // no worries if it doesn't exist yet
   });
 
-  await prisma.event.deleteMany().catch(() => {/** */})
-  await prisma.address.deleteMany().catch(() => {/** */});
+  await prisma.event.deleteMany().catch(() => {
+    /** */
+  });
+  await prisma.address.deleteMany().catch(() => {
+    /** */
+  });
 
   const hashedPassword = await bcrypt.hash("racheliscool", 10);
 
@@ -49,33 +53,35 @@ async function seed() {
       streetName: faker.location.street(),
       houseNumber: faker.location.buildingNumber(),
       zip: faker.location.zipCode("####"),
-      city: faker.location.city()
-    }
-  })
+      city: faker.location.city(),
+    },
+  });
 
   await prisma.event.create({
     data: {
-      title: faker.lorem.sentence({min: 3, max: 7}),
-      description: faker.lorem.paragraphs({ min: 3, max: 7}),
-      date: faker.date.soon({days: 3}),
-      slots: faker.number.int({min: 10, max: 20}),
-      price: faker.number.int({min: 15, max: 30}),
-      cover: faker.image.url({width: 1200, height: 600}),
-      addressId: address.id
-    }
-  })
+      title: faker.lorem.sentence({ min: 3, max: 7 }),
+      description: faker.lorem.paragraphs({ min: 3, max: 7 }),
+      date: faker.date.soon({ days: 3 }),
+      slots: faker.number.int({ min: 10, max: 20 }),
+      price: faker.number.int({ min: 15, max: 30 }),
+      cover: faker.image.url({ width: 1200, height: 600 }),
+      addressId: address.id,
+      createdById: user.id,
+    },
+  });
 
   await prisma.event.create({
     data: {
-      title: faker.lorem.sentence({min: 3, max: 7}),
-      description: faker.lorem.paragraphs({ min: 3, max: 7}),
-      date: faker.date.soon({days: 3}),
-      slots: faker.number.int({min: 10, max: 20}),
-      price: faker.number.int({min: 15, max: 30}),
-      cover: faker.image.url({width: 1200, height: 600}),
-      addressId: address.id
-    }
-  })
+      title: faker.lorem.sentence({ min: 3, max: 7 }),
+      description: faker.lorem.paragraphs({ min: 3, max: 7 }),
+      date: faker.date.soon({ days: 3 }),
+      slots: faker.number.int({ min: 10, max: 20 }),
+      price: faker.number.int({ min: 15, max: 30 }),
+      cover: faker.image.url({ width: 1200, height: 600 }),
+      addressId: address.id,
+      createdById: user.id,
+    },
+  });
 
   console.log(`Database has been seeded. 🌱`);
 }

@@ -64,7 +64,7 @@ model EventResponse {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  event   Event  @relation(fields: [eventId], references: [id])
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   eventId String
 
   @@unique([email, eventId])

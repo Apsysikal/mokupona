@@ -1,5 +1,5 @@
 import { LoaderFunctionArgs, json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Form, Link, useLoaderData } from "@remix-run/react";
 
 import { getEvents } from "~/models/event.server";
 import { requireUserId } from "~/session.server";
@@ -21,9 +21,13 @@ export default function DinnersPage() {
         <div className="flex flex-col gap-4">
           {events.map(({ id, title }) => {
             return (
-              <Link key={id} to={id}>
-                {title}
-              </Link>
+              <div key={id} className="flex gap-2">
+                <Link to={id}>{title}</Link>
+                <Link to={`${id}/edit`}>Edit</Link>
+                <Form method="POST" action={`${id}/delete`}>
+                  <button type="submit">Delete</button>
+                </Form>
+              </div>
             );
           })}
         </div>

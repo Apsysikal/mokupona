@@ -10,16 +10,19 @@ import invariant from "tiny-invariant";
 
 import { createEventResponse } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
+import { getLocale } from "~/utils";
 
-export async function loader({ params }: LoaderFunctionArgs) {
+export async function loader({ params, request }: LoaderFunctionArgs) {
   const { dinnerId } = params;
+  const locale = getLocale(request);
+
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
 
   const event = await getEventById(dinnerId);
 
   if (!event) throw new Response("Not found", { status: 404 });
 
-  return json({ event });
+  return json({ event, locale });
 }
 
 export async function action({ params, request }: ActionFunctionArgs) {
@@ -89,16 +92,20 @@ export async function action({ params, request }: ActionFunctionArgs) {
 }
 
 export default function DinnerPage() {
-  const { event } = useLoaderData<typeof loader>();
+  const { event, locale } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   return (
     <>
       <div className="flex flex-col gap-4">
-        <img src={event.cover} alt="" />
+        <img src={event.cover} alt="" width={640} height={480} />
         <span>{event.title}</span>
         <p className="whitespace-pre-line">{event.description}</p>
-        <span>{new Date(event.date).toLocaleString()}</span>
+        <span>
+          {new Date(event.date).toLocaleString(locale, {
+            timeZone: "Europe/Zurich",
+          })}
+        </span>
         <span>{event.slots}</span>
         <span>{`${event.price} CHF`}</span>
       </div>
