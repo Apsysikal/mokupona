@@ -11,17 +11,18 @@ import {
   unstable_parseMultipartFormData,
 } from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
-import { zonedTimeToUtc } from "date-fns-tz";
 import invariant from "tiny-invariant";
 
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
 import { requireUser, requireUserId } from "~/session.server";
+import { getTimezoneOffset, offsetDate } from "~/utils";
 
 const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireUserId(request);
+
   const addresses = await getAddresses();
 
   return json({
@@ -32,6 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUser(request);
+  const timeOffset = getTimezoneOffset(request);
 
   const uploadHandler = unstable_composeUploadHandlers(
     unstable_createFileUploadHandler({
@@ -108,7 +110,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const event = await createEvent({
     title: String(title),
     description: String(description),
-    date: zonedTimeToUtc(String(date), "Europe/Zurich"),
+    // Subtract user time offset to make the date utc
+    date: offsetDate(new Date(String(date)), -timeOffset),
     slots: Number(slots),
     price: Number(price),
     addressId: String(address),

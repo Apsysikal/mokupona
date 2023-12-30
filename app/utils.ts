@@ -75,6 +75,27 @@ export function validateEmail(email: unknown): email is string {
   return typeof email === "string" && email.length > 3 && email.includes("@");
 }
 
-export function getLocale(request: Request) {
-  return request.headers.get("accept-language")?.split(",")[0] || "de-DE";
+export function getTimezoneOffset(request: Request): number {
+  const cookies = request.headers.get("Cookie")?.split("; ");
+
+  if (!cookies) return 0;
+
+  const offsetCookie = cookies.filter((cookie) => {
+    return cookie.startsWith("clockOffset");
+  });
+
+  if (offsetCookie.length === 0) return 0;
+
+  const offset = offsetCookie[0].split("=")[1];
+
+  if (!offset) return 0;
+  return Number(offset);
+}
+
+export function offsetDate(date: Date, minutesOffset = 0): Date {
+  const newDate = new Date(date);
+
+  newDate.setMinutes(date.getMinutes() + minutesOffset);
+
+  return newDate;
 }

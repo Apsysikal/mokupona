@@ -6,15 +6,14 @@ import {
   redirect,
 } from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import React, { Suspense } from "react";
 import invariant from "tiny-invariant";
 
 import { createEventResponse } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
-import { getLocale } from "~/utils";
 
-export async function loader({ params, request }: LoaderFunctionArgs) {
+export async function loader({ params }: LoaderFunctionArgs) {
   const { dinnerId } = params;
-  const locale = getLocale(request);
 
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
 
@@ -22,7 +21,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
   if (!event) throw new Response("Not found", { status: 404 });
 
-  return json({ event, locale });
+  return json({ event });
 }
 
 export async function action({ params, request }: ActionFunctionArgs) {
@@ -92,7 +91,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
 }
 
 export default function DinnerPage() {
-  const { event, locale } = useLoaderData<typeof loader>();
+  const { event } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   return (
@@ -101,11 +100,13 @@ export default function DinnerPage() {
         <img src={event.cover} alt="" width={640} height={480} />
         <span>{event.title}</span>
         <p className="whitespace-pre-line">{event.description}</p>
-        <span>
-          {new Date(event.date).toLocaleString(locale, {
-            timeZone: "Europe/Zurich",
-          })}
-        </span>
+        <Suspense
+          fallback={<span>{new Date(event.date).toLocaleString("de-CH")}</span>}
+        >
+          <ClientOnly>
+            <span>{new Date(event.date).toLocaleString()}</span>
+          </ClientOnly>
+        </Suspense>
         <span>{event.slots}</span>
         <span>{`${event.price} CHF`}</span>
       </div>
@@ -141,6 +142,14 @@ export default function DinnerPage() {
       </Form>
     </>
   );
+}
+
+function ClientOnly({ children }: { children: React.ReactElement }) {
+  if (typeof window === "undefined") {
+    throw Error("Should only be client side rendered");
+  }
+
+  return children;
 }
 
 function validateName(name: FormDataEntryValue | string | null) {

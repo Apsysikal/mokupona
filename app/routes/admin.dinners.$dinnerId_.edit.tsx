@@ -11,12 +11,12 @@ import {
   unstable_parseMultipartFormData,
 } from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
-import { zonedTimeToUtc } from "date-fns-tz";
 import invariant from "tiny-invariant";
 
 import { getAddresses } from "~/models/address.server";
 import { getEventById, updateEvent } from "~/models/event.server";
 import { requireUser, requireUserId } from "~/session.server";
+import { getTimezoneOffset, offsetDate } from "~/utils";
 
 const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
 
@@ -40,6 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const user = await requireUser(request);
+  const timeOffset = getTimezoneOffset(request);
 
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
@@ -126,7 +127,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const event = await updateEvent(dinnerId, {
     title: String(title),
     description: String(description),
-    date: zonedTimeToUtc(String(date), "Europe/Zurich"),
+    // Subtract user time offset to make the date utc
+    date: offsetDate(new Date(String(date)), -timeOffset),
     slots: Number(slots),
     price: Number(price),
     addressId: String(address),

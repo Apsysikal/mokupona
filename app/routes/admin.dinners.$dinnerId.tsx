@@ -1,5 +1,6 @@
 import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
+import { Suspense } from "react";
 import invariant from "tiny-invariant";
 
 import { getEventById } from "~/models/event.server";
@@ -26,10 +27,24 @@ export default function DinnerPage() {
         <img src={event.cover} alt="" width={640} height={480} />
         <span>{event.title}</span>
         <p className="whitespace-pre-line">{event.description}</p>
-        <span>{new Date(event.date).toLocaleString()}</span>
+        <Suspense
+          fallback={<span>{new Date(event.date).toLocaleString("de-CH")}</span>}
+        >
+          <ClientOnly>
+            <span>{new Date(event.date).toLocaleString()}</span>
+          </ClientOnly>
+        </Suspense>
         <span>{event.slots}</span>
         <span>{`${event.price} CHF`}</span>
       </div>
     </>
   );
+}
+
+function ClientOnly({ children }: { children: React.ReactNode }) {
+  if (typeof window === "undefined") {
+    throw Error("Should only be client side rendered");
+  }
+
+  return children;
 }
