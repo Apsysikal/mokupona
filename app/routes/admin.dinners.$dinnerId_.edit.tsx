@@ -151,6 +151,7 @@ export default function DinnersPage() {
       <Form
         method="POST"
         encType="multipart/form-data"
+        replace
         className="flex flex-col gap-2"
       >
         <div>
