@@ -1,8 +1,9 @@
 import { LoaderFunctionArgs, json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
-import { Suspense } from "react";
+import { Form, Link, useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
 
+import { DinnerView } from "~/components/dinner-view";
+import { Button } from "~/components/ui/button";
 import { getEventById } from "~/models/event.server";
 import { requireUserId } from "~/session.server";
 
@@ -22,29 +23,25 @@ export default function DinnerPage() {
   const { event } = useLoaderData<typeof loader>();
 
   return (
-    <>
-      <div className="flex flex-col gap-4">
-        <img src={event.cover} alt="" width={640} height={480} />
-        <span>{event.title}</span>
-        <p className="whitespace-pre-line">{event.description}</p>
-        <Suspense
-          fallback={<span>{new Date(event.date).toLocaleString("de-CH")}</span>}
-        >
-          <ClientOnly>
-            <span>{new Date(event.date).toLocaleString()}</span>
-          </ClientOnly>
-        </Suspense>
-        <span>{event.slots}</span>
-        <span>{`${event.price} CHF`}</span>
+    <main className="mx-auto flex max-w-2xl grow flex-col gap-5">
+      <div className="p-4 bg-secondary text-secondary-foreground rounded-md flex gap-2 items-center justify-between">
+        <p className="text-sm font-medium leading-none">
+          You are viewing the admin view of this dinner.
+        </p>
+
+        <span className="flex gap-2">
+          <Button variant="ghost" asChild>
+            <Link to="edit">Edit</Link>
+          </Button>
+          <Form method="POST" action="delete">
+            <Button type="submit" variant="destructive">
+              Delete
+            </Button>
+          </Form>
+        </span>
       </div>
-    </>
+
+      <DinnerView event={event} />
+    </main>
   );
-}
-
-function ClientOnly({ children }: { children: React.ReactNode }) {
-  if (typeof window === "undefined") {
-    throw Error("Should only be client side rendered");
-  }
-
-  return children;
 }

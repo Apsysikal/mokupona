@@ -6,6 +6,9 @@ import {
 } from "@remix-run/node";
 import { Form, useActionData } from "@remix-run/react";
 
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { createAddress } from "~/models/address.server";
 import { requireUserId } from "~/session.server";
 
@@ -66,8 +69,8 @@ export default function DinnersPage() {
       <div>Create a new location</div>
       <Form method="POST" replace className="flex flex-col gap-2">
         <div>
-          <label htmlFor="streetName">Street Name</label>
-          <input
+          <Label htmlFor="streetName">Street Name</Label>
+          <Input
             id="streetName"
             name="streetName"
             type="text"
@@ -79,8 +82,8 @@ export default function DinnersPage() {
         </div>
 
         <div>
-          <label htmlFor="houseNumber">House number</label>
-          <input
+          <Label htmlFor="houseNumber">House number</Label>
+          <Input
             id="houseNumber"
             name="houseNumber"
             type="text"
@@ -92,8 +95,8 @@ export default function DinnersPage() {
         </div>
 
         <div>
-          <label htmlFor="zipCode">Zip code</label>
-          <input
+          <Label htmlFor="zipCode">Zip code</Label>
+          <Input
             id="zipCode"
             name="zipCode"
             type="text"
@@ -105,8 +108,8 @@ export default function DinnersPage() {
         </div>
 
         <div>
-          <label htmlFor="city">City name</label>
-          <input
+          <Label htmlFor="city">City name</Label>
+          <Input
             id="city"
             name="city"
             type="text"
@@ -117,7 +120,7 @@ export default function DinnersPage() {
           ) : null}
         </div>
 
-        <button type="submit">Create Location</button>
+        <Button type="submit">Create Location</Button>
       </Form>
     </>
   );

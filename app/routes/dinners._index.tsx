@@ -1,6 +1,7 @@
 import { json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { useLoaderData } from "@remix-run/react";
 
+import { DinnerCard } from "~/components/dinner-card";
 import { getEvents } from "~/models/event.server";
 
 export const loader = async () => {
@@ -17,20 +18,29 @@ export default function DinnersIndexPage() {
   const { events } = useLoaderData<typeof loader>();
 
   return (
-    <>
+    <main className="flex grow flex-col gap-5 py-4 text-gray-800">
       {events.length > 0 ? (
-        <div className="flex flex-col gap-4">
-          {events.map(({ id, title }) => {
+        <>
+          {events.map((event) => {
             return (
-              <Link key={id} to={id}>
-                {title}
-              </Link>
+              <DinnerCard
+                key={event.id}
+                event={event}
+                preferredLocale={"de-CH"}
+              />
             );
           })}
-        </div>
+        </>
       ) : (
-        <p>There are currently no dinners available</p>
+        <>
+          <p className="text-center text-4xl font-bold">
+            There are currently no dinners available.
+          </p>
+          <p className="textgray text-center text-xl font-semibold">
+            Please come back later...
+          </p>
+        </>
       )}
-    </>
+    </main>
   );
 }

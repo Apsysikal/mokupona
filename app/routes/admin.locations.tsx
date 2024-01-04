@@ -11,9 +11,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function LocationsPage() {
   return (
-    <>
+    <div className="flex flex-col gap-2">
       <div>Locations</div>
       <Outlet />
-    </>
+    </div>
   );
 }

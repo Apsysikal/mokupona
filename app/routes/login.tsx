@@ -7,6 +7,10 @@ import { json, redirect } from "@remix-run/node";
 import { Form, Link, useActionData, useSearchParams } from "@remix-run/react";
 import { useEffect, useRef } from "react";
 
+import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { verifyLogin } from "~/models/user.server";
 import { createUserSession, getUserId } from "~/session.server";
 import { safeRedirect, validateEmail } from "~/utils";
@@ -66,7 +70,7 @@ export const meta: MetaFunction = () => [{ title: "Login" }];
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") || "/notes";
+  const redirectTo = searchParams.get("redirectTo") || "/dinners";
   const actionData = useActionData<typeof action>();
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -84,14 +88,9 @@ export default function LoginPage() {
       <div className="mx-auto w-full max-w-md px-8">
         <Form method="post" className="space-y-6">
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Email address
-            </label>
+            <Label htmlFor="email">Email address</Label>
             <div className="mt-1">
-              <input
+              <Input
                 ref={emailRef}
                 id="email"
                 required
@@ -102,7 +101,6 @@ export default function LoginPage() {
                 autoComplete="email"
                 aria-invalid={actionData?.errors?.email ? true : undefined}
                 aria-describedby="email-error"
-                className="w-full rounded border border-gray-500 px-2 py-1 text-lg"
               />
               {actionData?.errors?.email ? (
                 <div className="pt-1 text-red-700" id="email-error">
@@ -113,14 +111,14 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label
+            <Label
               htmlFor="password"
               className="block text-sm font-medium text-gray-700"
             >
               Password
-            </label>
+            </Label>
             <div className="mt-1">
-              <input
+              <Input
                 id="password"
                 ref={passwordRef}
                 name="password"
@@ -128,7 +126,6 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 aria-invalid={actionData?.errors?.password ? true : undefined}
                 aria-describedby="password-error"
-                className="w-full rounded border border-gray-500 px-2 py-1 text-lg"
               />
               {actionData?.errors?.password ? (
                 <div className="pt-1 text-red-700" id="password-error">
@@ -139,38 +136,33 @@ export default function LoginPage() {
           </div>
 
           <input type="hidden" name="redirectTo" value={redirectTo} />
-          <button
-            type="submit"
-            className="w-full rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 focus:bg-blue-400"
-          >
-            Log in
-          </button>
+          <Button type="submit">Log in</Button>
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <input
+              <Checkbox
                 id="remember"
                 name="remember"
-                type="checkbox"
                 className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <label
+              <Label
                 htmlFor="remember"
                 className="ml-2 block text-sm text-gray-900"
               >
                 Remember me
-              </label>
+              </Label>
             </div>
             <div className="text-center text-sm text-gray-500">
               Don&apos;t have an account?{" "}
-              <Link
-                className="text-blue-500 underline"
-                to={{
-                  pathname: "/join",
-                  search: searchParams.toString(),
-                }}
-              >
-                Sign up
-              </Link>
+              <Button variant="link" asChild>
+                <Link
+                  to={{
+                    pathname: "/join",
+                    search: searchParams.toString(),
+                  }}
+                >
+                  Sign up
+                </Link>
+              </Button>
             </div>
           </div>
         </Form>

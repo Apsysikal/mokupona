@@ -10,6 +10,7 @@ export async function loader() {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   await requireUserId(request);
+
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
 

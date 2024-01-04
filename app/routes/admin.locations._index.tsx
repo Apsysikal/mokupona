@@ -1,6 +1,7 @@
 import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { Form, Link, useLoaderData } from "@remix-run/react";
 
+import { Button } from "~/components/ui/button";
 import { getAddresses } from "~/models/address.server";
 import { requireUserId } from "~/session.server";
 
@@ -15,18 +16,25 @@ export default function DinnersPage() {
   const { addresses } = useLoaderData<typeof loader>();
 
   return (
-    <>
-      <Link to="new">Create new location</Link>
+    <div className="flex flex-col gap-2">
       {addresses.length > 0 ? (
         <div className="flex flex-col gap-4">
           {addresses.map(({ id, streetName, houseNumber, zip, city }) => {
             return (
-              <div key={id} className="flex gap-2">
-                <span>{`${streetName} ${houseNumber} - ${zip} ${city}`}</span>
-                <Link to={`${id}/edit`}>Edit</Link>
-                <Form method="POST" action={`${id}/delete`}>
-                  <button type="submit">Delete</button>
-                </Form>
+              <div key={id} className="flex gap-2 items-center justify-between">
+                <span className="text-sm font-medium leading-none">{`${streetName} ${houseNumber} - ${zip} ${city}`}</span>
+
+                <span className="flex gap-2">
+                  <Button variant="secondary" asChild>
+                    <Link to={`${id}/edit`}>Edit</Link>
+                  </Button>
+
+                  <Form method="POST" action={`${id}/delete`}>
+                    <Button type="submit" variant="destructive">
+                      Delete
+                    </Button>
+                  </Form>
+                </span>
               </div>
             );
           })}
@@ -34,6 +42,10 @@ export default function DinnersPage() {
       ) : (
         <p>There are currently no locations available</p>
       )}
-    </>
+
+      <Button asChild>
+        <Link to="new">Create new location</Link>
+      </Button>
+    </div>
   );
 }

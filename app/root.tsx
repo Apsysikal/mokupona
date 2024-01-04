@@ -2,16 +2,30 @@ import { cssBundleHref } from "@remix-run/css-bundle";
 import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import {
+  Form,
+  Link,
   Links,
   LiveReload,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
+  useSubmit,
 } from "@remix-run/react";
+import { useRef } from "react";
 
 import { getUser } from "~/session.server";
 import stylesheet from "~/tailwind.css";
+
+import { Button } from "./components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuTrigger,
+} from "./components/ui/dropdown-menu";
+import { useOptionalUser, useUser } from "./utils";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
@@ -22,6 +36,33 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return json({ user: await getUser(request) });
 };
 
+function Document() {
+  const user = useOptionalUser();
+
+  return (
+    <>
+      <nav className="w-full h-14">
+        <div className="h-full flex flex-wrap items-center justify-between gap-4 sm:flex-nowrap md:gap-8 max-w-2xl mx-auto px-2">
+          <Link to="/" className="text-primary">
+            moku pona
+          </Link>
+
+          <div className="flex items-center gap-10">
+            {user ? (
+              <UserDropdown />
+            ) : (
+              <Button asChild size="sm">
+                <Link to="/login">Log In</Link>
+              </Button>
+            )}
+          </div>
+        </div>
+      </nav>
+      <Outlet />
+    </>
+  );
+}
+
 export default function App() {
   return (
     <html lang="en" className="h-full">
@@ -31,12 +72,49 @@ export default function App() {
         <Meta />
         <Links />
       </head>
-      <body className="h-full">
-        <Outlet />
+      <body className="h-full bg-background text-foreground dark">
+        <Document />
         <ScrollRestoration />
         <Scripts />
         <LiveReload />
       </body>
     </html>
+  );
+}
+
+function UserDropdown() {
+  const user = useUser();
+  const submit = useSubmit();
+  const formRef = useRef<HTMLFormElement>(null);
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button asChild variant="secondary">
+          <span className="text-body-sm font-bold">{user.email}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuPortal>
+        <DropdownMenuContent sideOffset={8} align="start">
+          <DropdownMenuItem asChild>
+            <Link prefetch="intent" to="/admin">
+              Admin Area
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            asChild
+            // this prevents the menu from closing before the form submission is completed
+            onSelect={(event) => {
+              event.preventDefault();
+              submit(formRef.current);
+            }}
+          >
+            <Form action="/logout" method="POST" ref={formRef}>
+              <button type="submit">Logout</button>
+            </Form>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenuPortal>
+    </DropdownMenu>
   );
 }

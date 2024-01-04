@@ -6,9 +6,12 @@ import {
   redirect,
 } from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
-import React, { Suspense } from "react";
 import invariant from "tiny-invariant";
 
+import { DinnerView } from "~/components/dinner-view";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { createEventResponse } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
 
@@ -95,61 +98,69 @@ export default function DinnerPage() {
   const actionData = useActionData<typeof action>();
 
   return (
-    <>
-      <div className="flex flex-col gap-4">
-        <img src={event.cover} alt="" width={640} height={480} />
-        <span>{event.title}</span>
-        <p className="whitespace-pre-line">{event.description}</p>
-        <Suspense
-          fallback={<span>{new Date(event.date).toLocaleString("de-CH")}</span>}
-        >
-          <ClientOnly>
-            <span>{new Date(event.date).toLocaleString()}</span>
-          </ClientOnly>
-        </Suspense>
-        <span>{event.slots}</span>
-        <span>{`${event.price} CHF`}</span>
-      </div>
-      <Form method="POST" className="flex flex-col gap-2">
-        <div>
-          <label htmlFor="name">Name</label>
-          <input
-            id="name"
-            name="name"
-            type="text"
-            defaultValue={actionData?.fields.name}
-          />
-          {actionData?.fieldErrors.name ? (
-            <p>{actionData.fieldErrors.name}</p>
+    <main className="mx-auto flex max-w-2xl grow flex-col gap-5 px-2 pt-4 pb-8 text-gray-800">
+      <DinnerView event={event} />
+
+      <Form method="post">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="name" className="font-semibold">
+              Name
+            </Label>
+            <Input
+              type="text"
+              name="name"
+              id="name"
+              defaultValue={actionData?.fields.name}
+              aria-invalid={actionData?.fieldErrors.name ? true : false}
+              aria-errormessage={
+                actionData?.fieldErrors.name ? "name-error" : undefined
+              }
+            />
+            {actionData?.fieldErrors?.name ? (
+              <p id="name-error" role="alert" className="text-sm text-red-500">
+                {actionData.fieldErrors.name}
+              </p>
+            ) : null}
+          </div>
+          <div>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="email" className="font-semibold">
+                Email
+              </Label>
+              <Input
+                type="email"
+                name="email"
+                id="email"
+                defaultValue={actionData?.fields.email}
+                aria-invalid={actionData?.fieldErrors.email ? true : false}
+                aria-errormessage={
+                  actionData?.fieldErrors.email ? "email-error" : undefined
+                }
+              />
+              {actionData?.fieldErrors?.email ? (
+                <p
+                  id="email-error"
+                  role="alert"
+                  className="text-sm text-red-500"
+                >
+                  {actionData.fieldErrors.email}
+                </p>
+              ) : null}
+            </div>
+          </div>
+          {actionData?.formError ? (
+            <div>
+              <p className="text-sm text-red-500">{actionData.formError}</p>
+            </div>
           ) : null}
+          <div>
+            <Button type="submit">Join</Button>
+          </div>
         </div>
-        <div>
-          <label htmlFor="email">Email</label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            defaultValue={actionData?.fields.email}
-          />
-          {actionData?.fieldErrors.email ? (
-            <p>{actionData.fieldErrors.email}</p>
-          ) : null}
-        </div>
-        <div>
-          <button type="submit">Join</button>
-        </div>
-        {actionData?.formError ? <p>{actionData.formError}</p> : null}
       </Form>
-    </>
+    </main>
   );
-}
-
-function ClientOnly({ children }: { children: React.ReactElement }) {
-  if (typeof window === "undefined") {
-    throw Error("Should only be client side rendered");
-  }
-
-  return children;
 }
 
 function validateName(name: FormDataEntryValue | string | null) {

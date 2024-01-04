@@ -9,7 +9,12 @@ export async function getEvents(filter?: Prisma.EventWhereInput) {
 }
 
 export async function getEventById(id: string) {
-  return prisma.event.findUnique({ where: { id } });
+  return prisma.event.findUnique({
+    where: { id },
+    include: {
+      address: true,
+    },
+  });
 }
 
 export async function createEvent({

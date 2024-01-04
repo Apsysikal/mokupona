@@ -13,6 +13,19 @@ import {
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
 
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Textarea } from "~/components/ui/textarea";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
 import { requireUser, requireUserId } from "~/session.server";
@@ -119,7 +132,7 @@ export async function action({ request }: ActionFunctionArgs) {
     creatorId: user.id,
   });
 
-  return redirect(`/dinners/${event.id}`);
+  return redirect(`/admin/dinners/${event.id}`);
 }
 
 export default function DinnersPage() {
@@ -136,8 +149,8 @@ export default function DinnersPage() {
         className="flex flex-col gap-2"
       >
         <div>
-          <label htmlFor="title">Title</label>
-          <input
+          <Label htmlFor="title">Title</Label>
+          <Input
             id="title"
             name="title"
             type="text"
@@ -149,8 +162,8 @@ export default function DinnersPage() {
         </div>
 
         <div className="flex flex-col">
-          <label htmlFor="description">Description</label>
-          <textarea
+          <Label htmlFor="description">Description</Label>
+          <Textarea
             id="description"
             name="description"
             defaultValue={actionData?.fields?.description}
@@ -161,8 +174,8 @@ export default function DinnersPage() {
         </div>
 
         <div>
-          <label htmlFor="date">Date</label>
-          <input
+          <Label htmlFor="date">Date</Label>
+          <Input
             type="datetime-local"
             name="date"
             id="date"
@@ -174,8 +187,8 @@ export default function DinnersPage() {
         </div>
 
         <div>
-          <label htmlFor="slots">Slots</label>
-          <input
+          <Label htmlFor="slots">Slots</Label>
+          <Input
             type="number"
             name="slots"
             id="slots"
@@ -187,8 +200,8 @@ export default function DinnersPage() {
         </div>
 
         <div>
-          <label htmlFor="price">Price</label>
-          <input
+          <Label htmlFor="price">Price</Label>
+          <Input
             type="number"
             name="price"
             id="price"
@@ -200,8 +213,8 @@ export default function DinnersPage() {
         </div>
 
         <div>
-          <label htmlFor="cover">Cover</label>
-          <input
+          <Label htmlFor="cover">Cover</Label>
+          <Input
             type="file"
             accept={validImageTypes.join(",")}
             name="cover"
@@ -213,28 +226,32 @@ export default function DinnersPage() {
         </div>
 
         <div>
-          <label htmlFor="address">Address</label>
-          <select
-            name="address"
-            id="address"
-            defaultValue={actionData?.fields?.address}
-          >
-            {addresses.map((address) => {
-              const { id } = address;
+          <Label htmlFor="address">Address</Label>
+          <Select name="address" defaultValue={actionData?.fields.address}>
+            <SelectTrigger id="address">
+              <SelectValue placeholder="Select a location" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Locations</SelectLabel>
+                {addresses.map((address) => {
+                  const { id } = address;
 
-              return (
-                <option key={id} value={id}>
-                  {`${address.streetName} ${address.houseNumber} - ${address.zip} ${address.city}`}
-                </option>
-              );
-            })}
-          </select>
+                  return (
+                    <SelectItem key={id} value={id}>
+                      {`${address.streetName} ${address.houseNumber} - ${address.zip} ${address.city}`}
+                    </SelectItem>
+                  );
+                })}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
           {actionData?.fieldErrors?.address ? (
             <p>{actionData.fieldErrors.address}</p>
           ) : null}
         </div>
 
-        <button type="submit">Create Dinner</button>
+        <Button type="submit">Create Dinner</Button>
       </Form>
     </>
   );
