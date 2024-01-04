@@ -240,6 +240,7 @@ export default function DinnersPage() {
             accept={validImageTypes.join(",")}
             name="cover"
             id="cover"
+            tabIndex={0}
           />
           {actionData?.fieldErrors?.cover ? (
             <p>{actionData.fieldErrors.cover}</p>
@@ -252,7 +253,7 @@ export default function DinnersPage() {
             name="address"
             defaultValue={actionData?.fields.address || dinner.addressId}
           >
-            <SelectTrigger id="address">
+            <SelectTrigger id="address" tabIndex={0}>
               <SelectValue placeholder="Select a location" />
             </SelectTrigger>
             <SelectContent>
