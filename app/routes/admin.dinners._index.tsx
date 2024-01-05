@@ -21,12 +21,16 @@ export default function DinnersPage() {
         <div className="flex flex-col gap-4">
           {events.map(({ id, title }) => {
             return (
-              <div key={id} className="flex gap-2 justify-between">
+              <div key={id} className="flex justify-between gap-2">
                 <Button variant="link" asChild>
                   <Link to={id}>{title}</Link>
                 </Button>
 
                 <span className="flex gap-2">
+                  <Button variant="ghost" asChild>
+                    <Link to={`${id}/signups`}>View Signups</Link>
+                  </Button>
+
                   <Button variant="secondary" asChild>
                     <Link to={`${id}/edit`}>Edit</Link>
                   </Button>

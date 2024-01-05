@@ -13,3 +13,11 @@ export async function createEventResponse(
     },
   });
 }
+
+export async function getEventResponsesForEvent(eventId: string) {
+  return prisma.eventResponse.findMany({
+    where: {
+      eventId,
+    },
+  });
+}

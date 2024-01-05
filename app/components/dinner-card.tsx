@@ -14,7 +14,7 @@ export function DinnerCard({
   const parsedDate = new Date(event.date);
 
   return (
-    <div className="relative mx-auto overflow-hidden rounded-lg border border-gray-200 shadow-lg">
+    <div className="relative mx-auto overflow-hidden rounded-lg border border-border bg-muted shadow-lg">
       <img
         src={event.cover}
         alt=""
@@ -24,12 +24,12 @@ export function DinnerCard({
       />
       <div className="flex flex-col gap-3 p-5">
         <div>
-          <strong className="text-3xl text-gray-900">{event.title}</strong>
+          <strong className="text-3xl">{event.title}</strong>
         </div>
 
         <div>
           <time
-            className="text-sm font-semibold text-emerald-600"
+            className="text-sm font-semibold text-primary"
             dateTime={parsedDate.toISOString()}
             suppressHydrationWarning
           >
@@ -39,7 +39,7 @@ export function DinnerCard({
           </time>
         </div>
         <div>
-          <p className="text-gray-900 line-clamp-5">{event.description}</p>
+          <p className="line-clamp-5">{event.description}</p>
         </div>
         <div className="flex items-center justify-between">
           <Button asChild>

@@ -21,7 +21,7 @@ export default function DinnersPage() {
         <div className="flex flex-col gap-4">
           {addresses.map(({ id, streetName, houseNumber, zip, city }) => {
             return (
-              <div key={id} className="flex gap-2 items-center justify-between">
+              <div key={id} className="flex items-center justify-between gap-2">
                 <span className="text-sm font-medium leading-none">{`${streetName} ${houseNumber} - ${zip} ${city}`}</span>
 
                 <span className="flex gap-2">

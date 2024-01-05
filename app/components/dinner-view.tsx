@@ -11,9 +11,9 @@ export function DinnerView({ event }: DinnerViewProps) {
   const eventDate = new Date(event.date);
 
   return (
-    <div className="mx-auto flex max-w-2xl grow flex-col gap-5 text-gray-800">
+    <div className="mx-auto flex max-w-3xl grow flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-bold text-gray-900">{event.title}</h1>
+        <h1 className="text-4xl font-bold">{event.title}</h1>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -26,7 +26,7 @@ export function DinnerView({ event }: DinnerViewProps) {
         />
 
         <div>
-          <div className="font-semibold text-emerald-600">
+          <div className="font-semibold text-primary">
             <time dateTime={eventDate.toISOString()} suppressHydrationWarning>
               {`${eventDate.toLocaleDateString(
                 "de-CH",
@@ -38,7 +38,7 @@ export function DinnerView({ event }: DinnerViewProps) {
         </div>
       </div>
 
-      <div className="font-semibold text-emerald-600">
+      <div className="font-semibold text-primary">
         <p>{`Cost, ${event.price} CHF (Non-Profit)`}</p>
       </div>
 

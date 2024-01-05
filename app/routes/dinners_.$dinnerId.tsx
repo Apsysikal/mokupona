@@ -98,7 +98,7 @@ export default function DinnerPage() {
   const actionData = useActionData<typeof action>();
 
   return (
-    <main className="mx-auto flex max-w-2xl grow flex-col gap-5 px-2 pt-4 pb-8 text-gray-800">
+    <main className="mx-auto flex max-w-3xl grow flex-col gap-5 px-2 pb-8 pt-4">
       <DinnerView event={event} />
 
       <Form method="post">

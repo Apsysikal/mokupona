@@ -15,7 +15,12 @@ async function seed() {
   await prisma.event.deleteMany().catch(() => {
     /** */
   });
+
   await prisma.address.deleteMany().catch(() => {
+    /** */
+  });
+
+  await prisma.eventResponse.deleteMany().catch(() => {
     /** */
   });
 
@@ -32,22 +37,6 @@ async function seed() {
     },
   });
 
-  await prisma.note.create({
-    data: {
-      title: "My first note",
-      body: "Hello, world!",
-      userId: user.id,
-    },
-  });
-
-  await prisma.note.create({
-    data: {
-      title: "My second note",
-      body: "Hello, world!",
-      userId: user.id,
-    },
-  });
-
   const address = await prisma.address.create({
     data: {
       streetName: faker.location.street(),
@@ -57,7 +46,7 @@ async function seed() {
     },
   });
 
-  await prisma.event.create({
+  const event = await prisma.event.create({
     data: {
       title: faker.lorem.sentence({ min: 3, max: 7 }),
       description: faker.lorem.paragraphs({ min: 3, max: 7 }),
@@ -82,6 +71,16 @@ async function seed() {
       createdById: user.id,
     },
   });
+
+  for (let i = 0; i < 15; i++) {
+    await prisma.eventResponse.create({
+      data: {
+        email: faker.internet.email(),
+        name: faker.person.fullName(),
+        eventId: event.id,
+      },
+    });
+  }
 
   console.log(`Database has been seeded. 🌱`);
 }

@@ -41,9 +41,9 @@ function Document() {
 
   return (
     <>
-      <nav className="w-full h-14">
-        <div className="h-full flex flex-wrap items-center justify-between gap-4 sm:flex-nowrap md:gap-8 max-w-2xl mx-auto px-2">
-          <Link to="/" className="text-primary">
+      <nav className="h-14 w-full bg-primary">
+        <div className="mx-auto flex h-full max-w-3xl flex-wrap items-center justify-between gap-4 px-2 sm:flex-nowrap md:gap-8">
+          <Link to="/" className="font-medium text-primary-foreground">
             moku pona
           </Link>
 
@@ -51,7 +51,12 @@ function Document() {
             {user ? (
               <UserDropdown />
             ) : (
-              <Button asChild size="sm">
+              <Button
+                asChild
+                variant="ghost"
+                className="font-normal text-primary-foreground"
+                size="sm"
+              >
                 <Link to="/login">Log In</Link>
               </Button>
             )}
@@ -72,7 +77,7 @@ export default function App() {
         <Meta />
         <Links />
       </head>
-      <body className="h-full bg-background text-foreground dark">
+      <body className="h-full scroll-smooth bg-background text-foreground">
         <Document />
         <ScrollRestoration />
         <Scripts />
@@ -90,7 +95,7 @@ function UserDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button asChild variant="secondary">
+        <Button variant="ghost" className="text-primary-foreground" size="sm">
           <span className="text-body-sm font-bold">{user.email}</span>
         </Button>
       </DropdownMenuTrigger>

@@ -9,6 +9,7 @@ import { requireUserId } from "~/session.server";
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   await requireUserId(request);
+
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
 
@@ -23,13 +24,16 @@ export default function DinnerPage() {
   const { event } = useLoaderData<typeof loader>();
 
   return (
-    <main className="mx-auto flex max-w-2xl grow flex-col gap-5">
-      <div className="p-4 bg-secondary text-secondary-foreground rounded-md flex gap-2 items-center justify-between">
+    <main className="mx-auto flex max-w-3xl grow flex-col gap-5">
+      <div className="flex items-center justify-between gap-2 rounded-md bg-secondary p-4 text-secondary-foreground">
         <p className="text-sm font-medium leading-none">
           You are viewing the admin view of this dinner.
         </p>
 
         <span className="flex gap-2">
+          <Button variant="ghost" asChild>
+            <Link to="signups">View Signups</Link>
+          </Button>
           <Button variant="ghost" asChild>
             <Link to="edit">Edit</Link>
           </Button>
