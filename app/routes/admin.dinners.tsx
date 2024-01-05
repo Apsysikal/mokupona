@@ -12,7 +12,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function DinnersPage() {
   return (
     <div className="flex flex-col gap-2">
-      <span>Dinners</span>
       <Outlet />
     </div>
   );

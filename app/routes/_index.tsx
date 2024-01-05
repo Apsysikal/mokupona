@@ -7,26 +7,27 @@ export const meta: MetaFunction = () => [{ title: "Remix Notes" }];
 
 export default function Index() {
   return (
-    <main className="flex flex-col">
-      <div className="bg-cover bg-left sm:items-end sm:bg-[url(/landing-page.jpg)]">
-        <div className="mx-auto flex min-h-[70vh] max-w-3xl flex-col justify-center gap-2 px-2 pt-2 sm:items-end">
-          <img
-            src="/landing-page.jpg"
-            className="max-h-[33vh] rounded-md bg-left object-cover sm:hidden"
-            alt=""
-            width={1920}
-            height={1080}
-          />
-          <h1 className="whitespace-nowrap text-5xl font-extrabold lowercase text-primary sm:text-right">
+    <main className="relative flex flex-col">
+      <div className="h-[70vh]">
+        <img
+          src="/landing-page.jpg"
+          className="absolute left-0 right-0 top-0 -z-[1] h-[calc(70vh+3.5rem)] bg-black object-cover object-left opacity-80 [mask-image:linear-gradient(black,transparent_90%)]"
+          alt=""
+          width={1920}
+          height={1080}
+        />
+
+        <div className="mx-auto flex h-full max-w-3xl grow flex-col justify-end gap-5 px-2">
+          <h1 className="text-8xl font-extrabold lowercase text-primary">
             moku pona
           </h1>
 
-          <p className="text-2xl sm:max-w-[50%] sm:text-right sm:dark:text-background">
+          <p className="text-balance text-2xl">
             A dinner society located in Zurich. We love sharing food and stories
             with our friends. And you?
           </p>
 
-          <div className="flex flex-col justify-end gap-2 sm:flex-row">
+          <div className="flex flex-col gap-2 sm:mb-10 sm:flex-row">
             <Button asChild>
               <Link to="/dinners">Join a dinner</Link>
             </Button>

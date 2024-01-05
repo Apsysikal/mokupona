@@ -160,7 +160,6 @@ export default function DinnersPage() {
 
   return (
     <>
-      <div>Update the dinner</div>
       <Form
         method="POST"
         encType="multipart/form-data"
@@ -241,6 +240,7 @@ export default function DinnersPage() {
             name="cover"
             id="cover"
             tabIndex={0}
+            className="file:text-foreground"
           />
           {actionData?.fieldErrors?.cover ? (
             <p>{actionData.fieldErrors.cover}</p>

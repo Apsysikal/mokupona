@@ -80,10 +80,6 @@ export default function DinnersPage() {
 
   return (
     <>
-      <div>
-        Edit{" "}
-        {`${location.streetName} ${location.houseNumber} - ${location.zip} ${location.city}`}
-      </div>
       <Form method="POST" replace className="flex flex-col gap-2">
         <div>
           <Label htmlFor="streetName">Street Name</Label>

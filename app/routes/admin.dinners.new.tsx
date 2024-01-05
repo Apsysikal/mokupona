@@ -220,6 +220,7 @@ export default function DinnersPage() {
             name="cover"
             id="cover"
             tabIndex={0}
+            className="file:text-foreground"
           />
           {actionData?.fieldErrors?.cover ? (
             <p>{actionData.fieldErrors.cover}</p>

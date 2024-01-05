@@ -10,6 +10,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation,
   useSubmit,
 } from "@remix-run/react";
 import { useRef } from "react";
@@ -17,6 +18,7 @@ import { useRef } from "react";
 import { getUser } from "~/session.server";
 import stylesheet from "~/tailwind.css";
 
+import { Footer } from "./components/footer";
 import { Button } from "./components/ui/button";
 import {
   DropdownMenu,
@@ -25,6 +27,7 @@ import {
   DropdownMenuPortal,
   DropdownMenuTrigger,
 } from "./components/ui/dropdown-menu";
+import { cn } from "./lib/utils";
 import { useOptionalUser, useUser } from "./utils";
 
 export const links: LinksFunction = () => [
@@ -36,27 +39,54 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return json({ user: await getUser(request) });
 };
 
+export default function App() {
+  return (
+    <html lang="en" className="h-full scroll-smooth">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <Meta />
+        <Links />
+      </head>
+      <body className="dark h-full bg-background text-foreground">
+        <Document />
+        <ScrollRestoration />
+        <Scripts />
+        <LiveReload />
+      </body>
+    </html>
+  );
+}
+
 function Document() {
   const user = useOptionalUser();
+  const location = useLocation();
+
+  const isAdminSection = location.pathname.startsWith("/admin");
 
   return (
     <>
-      <nav className="h-14 w-full bg-primary">
+      <nav
+        className={cn(
+          "h-14",
+          isAdminSection
+            ? "bg-destructive text-destructive-foreground"
+            : "bg-primary text-primary-foreground",
+        )}
+      >
         <div className="mx-auto flex h-full max-w-3xl flex-wrap items-center justify-between gap-4 px-2 sm:flex-nowrap md:gap-8">
-          <Link to="/" className="font-medium text-primary-foreground">
-            moku pona
-          </Link>
+          <span className="flex items-center gap-2">
+            <Link to="/" className="font-bold">
+              moku pona
+            </Link>
+            {isAdminSection ? <Link to="/admin">Admin</Link> : null}
+          </span>
 
           <div className="flex items-center gap-10">
             {user ? (
               <UserDropdown />
             ) : (
-              <Button
-                asChild
-                variant="ghost"
-                className="font-normal text-primary-foreground"
-                size="sm"
-              >
+              <Button asChild variant="ghost" className="font-normal" size="sm">
                 <Link to="/login">Log In</Link>
               </Button>
             )}
@@ -64,26 +94,8 @@ function Document() {
         </div>
       </nav>
       <Outlet />
+      <Footer />
     </>
-  );
-}
-
-export default function App() {
-  return (
-    <html lang="en" className="h-full">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <Meta />
-        <Links />
-      </head>
-      <body className="h-full scroll-smooth bg-background text-foreground">
-        <Document />
-        <ScrollRestoration />
-        <Scripts />
-        <LiveReload />
-      </body>
-    </html>
   );
 }
 
@@ -95,8 +107,8 @@ function UserDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="text-primary-foreground" size="sm">
-          <span className="text-body-sm font-bold">{user.email}</span>
+        <Button variant="ghost" className="" size="sm">
+          <span className="text-body-sm">{user.email}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuPortal>

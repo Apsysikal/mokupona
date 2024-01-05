@@ -16,15 +16,15 @@ export default function DinnersPage() {
   const { events } = useLoaderData<typeof loader>();
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-4">
       {events.length > 0 ? (
         <div className="flex flex-col gap-4">
           {events.map(({ id, title }) => {
             return (
-              <div key={id} className="flex justify-between gap-2">
-                <Button variant="link" asChild>
-                  <Link to={id}>{title}</Link>
-                </Button>
+              <div key={id} className="flex items-center justify-between gap-2">
+                <Link to={id} className="text-sm font-medium leading-none">
+                  {title}
+                </Link>
 
                 <span className="flex gap-2">
                   <Button variant="ghost" asChild>

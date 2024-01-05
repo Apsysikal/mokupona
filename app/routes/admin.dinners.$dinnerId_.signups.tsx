@@ -69,7 +69,9 @@ export default function DinnerSignupsPage() {
               <TableRow key={response.id}>
                 <TableCell className="font-medium">{response.email}</TableCell>
                 <TableCell>{response.name}</TableCell>
-                <TableCell>{response.createdAt}</TableCell>
+                <TableCell>
+                  {new Date(response.createdAt).toLocaleString()}
+                </TableCell>
               </TableRow>
             );
           })}

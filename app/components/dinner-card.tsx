@@ -20,7 +20,7 @@ export function DinnerCard({
         alt=""
         width={640}
         height={480}
-        className="max-h-28 w-full object-cover"
+        className="max-h-28 w-full object-cover object-center"
       />
       <div className="flex flex-col gap-3 p-5">
         <div>
