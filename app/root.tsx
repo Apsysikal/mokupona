@@ -15,7 +15,7 @@ import {
 } from "@remix-run/react";
 import { useRef } from "react";
 
-import { getUser } from "~/session.server";
+import { getUserWithRole } from "~/session.server";
 import stylesheet from "~/tailwind.css";
 
 import { Footer } from "./components/footer";
@@ -36,7 +36,7 @@ export const links: LinksFunction = () => [
 ];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  return json({ user: await getUser(request) });
+  return json({ user: await getUserWithRole(request) });
 };
 
 export default function App() {
@@ -113,11 +113,13 @@ function UserDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuPortal>
         <DropdownMenuContent sideOffset={8} align="start">
-          <DropdownMenuItem asChild>
-            <Link prefetch="intent" to="/admin">
-              Admin Area
-            </Link>
-          </DropdownMenuItem>
+          {["moderator", "admin"].includes(user.Role.name) ? (
+            <DropdownMenuItem asChild>
+              <Link prefetch="intent" to="/admin">
+                Admin Area
+              </Link>
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem
             asChild
             // this prevents the menu from closing before the form submission is completed

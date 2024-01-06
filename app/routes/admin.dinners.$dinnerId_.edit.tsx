@@ -16,25 +16,16 @@ import invariant from "tiny-invariant";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
 import { Textarea } from "~/components/ui/textarea";
 import { getAddresses } from "~/models/address.server";
 import { getEventById, updateEvent } from "~/models/event.server";
-import { requireUser, requireUserId } from "~/session.server";
+import { requireUserWithRole } from "~/session.server";
 import { getTimezoneOffset, offsetDate } from "~/utils";
 
 const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  await requireUserId(request);
+  await requireUserWithRole(request, ["moderator", "admin"]);
 
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
@@ -52,7 +43,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const user = await requireUser(request);
+  const user = await requireUserWithRole(request, ["moderator", "admin"]);
   const timeOffset = getTimezoneOffset(request);
 
   const { dinnerId } = params;
@@ -249,28 +240,21 @@ export default function DinnersPage() {
 
         <div>
           <Label htmlFor="address">Address</Label>
-          <Select
+          <select
             name="address"
-            defaultValue={actionData?.fields.address || dinner.addressId}
+            id="address"
+            className="flex h-9 w-full appearance-none rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground file:placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <SelectTrigger id="address" tabIndex={0}>
-              <SelectValue placeholder="Select a location" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel>Locations</SelectLabel>
-                {addresses.map((address) => {
-                  const { id } = address;
+            {addresses.map((address) => {
+              const { id } = address;
 
-                  return (
-                    <SelectItem key={id} value={id}>
-                      {`${address.streetName} ${address.houseNumber} - ${address.zip} ${address.city}`}
-                    </SelectItem>
-                  );
-                })}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+              return (
+                <option key={id} value={id}>
+                  {`${address.streetName} ${address.houseNumber} - ${address.zip} ${address.city}`}
+                </option>
+              );
+            })}
+          </select>
           {actionData?.fieldErrors?.address ? (
             <p>{actionData.fieldErrors.address}</p>
           ) : null}

@@ -11,10 +11,10 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { getAddressById, updateAddress } from "~/models/address.server";
-import { requireUserId } from "~/session.server";
+import { requireUserWithRole } from "~/session.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  await requireUserId(request);
+  await requireUserWithRole(request, ["moderator", "admin"]);
 
   const { locationId } = params;
   invariant(typeof locationId === "string", "Parameter locationId is missing");
@@ -29,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  await requireUserId(request);
+  await requireUserWithRole(request, ["moderator", "admin"]);
 
   const { locationId } = params;
   invariant(typeof locationId === "string", "Parameter locationId is missing");

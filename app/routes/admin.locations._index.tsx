@@ -3,10 +3,10 @@ import { Form, Link, useLoaderData } from "@remix-run/react";
 
 import { Button } from "~/components/ui/button";
 import { getAddresses } from "~/models/address.server";
-import { requireUserId } from "~/session.server";
+import { requireUserWithRole } from "~/session.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requireUserId(request);
+  await requireUserWithRole(request, ["moderator", "admin"]);
   const addresses = await getAddresses();
 
   return json({ addresses });

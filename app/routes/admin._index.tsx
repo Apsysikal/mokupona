@@ -2,10 +2,10 @@ import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 
 import { Button } from "~/components/ui/button";
-import { requireUserId } from "~/session.server";
+import { requireUserWithRole } from "~/session.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requireUserId(request);
+  await requireUserWithRole(request, ["moderator", "admin"]);
   return json({});
 }
 

@@ -5,10 +5,10 @@ import invariant from "tiny-invariant";
 import { DinnerView } from "~/components/dinner-view";
 import { Button } from "~/components/ui/button";
 import { getEventById } from "~/models/event.server";
-import { requireUserId } from "~/session.server";
+import { requireUserWithRole } from "~/session.server";
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
-  await requireUserId(request);
+  await requireUserWithRole(request, ["moderator", "admin"]);
 
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");

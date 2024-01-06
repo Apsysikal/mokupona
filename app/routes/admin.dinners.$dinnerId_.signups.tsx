@@ -14,10 +14,10 @@ import {
 } from "~/components/ui/table";
 import { getEventResponsesForEvent } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
-import { requireUserId } from "~/session.server";
+import { requireUserWithRole } from "~/session.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  await requireUserId(request);
+  await requireUserWithRole(request, ["moderator", "admin"]);
 
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");

@@ -5,11 +5,25 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function seed() {
-  const email = "rachel@remix.run";
+  const userEmail = "user@mokupona.ch";
+  const moderatorEmail = "moderator@mokupona.ch";
+  const adminEmail = "admin@mokupona.ch";
 
   // cleanup the existing database
-  await prisma.user.delete({ where: { email } }).catch(() => {
+  await prisma.user.delete({ where: { email: userEmail } }).catch(() => {
     // no worries if it doesn't exist yet
+  });
+
+  await prisma.user.delete({ where: { email: moderatorEmail } }).catch(() => {
+    // no worries if it doesn't exist yet
+  });
+
+  await prisma.user.delete({ where: { email: adminEmail } }).catch(() => {
+    // no worries if it doesn't exist yet
+  });
+
+  await prisma.role.deleteMany().catch(() => {
+    /** */
   });
 
   await prisma.event.deleteMany().catch(() => {
@@ -24,11 +38,48 @@ async function seed() {
     /** */
   });
 
-  const hashedPassword = await bcrypt.hash("racheliscool", 10);
+  const hashedPassword = await bcrypt.hash("mokupona", 10);
 
-  const user = await prisma.user.create({
+  const roleNames = ["user", "moderator", "admin"];
+
+  const roles = await Promise.all(
+    roleNames.map((role) => {
+      return prisma.role.create({
+        data: {
+          name: role,
+        },
+      });
+    }),
+  );
+
+  await prisma.user.create({
     data: {
-      email,
+      email: userEmail,
+      roleId: roles[0].id,
+      password: {
+        create: {
+          hash: hashedPassword,
+        },
+      },
+    },
+  });
+
+  const moderator = await prisma.user.create({
+    data: {
+      email: moderatorEmail,
+      roleId: roles[1].id,
+      password: {
+        create: {
+          hash: hashedPassword,
+        },
+      },
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      email: adminEmail,
+      roleId: roles[2].id,
       password: {
         create: {
           hash: hashedPassword,
@@ -55,7 +106,7 @@ async function seed() {
       price: faker.number.int({ min: 15, max: 30 }),
       cover: faker.image.url({ width: 1200, height: 600 }),
       addressId: address.id,
-      createdById: user.id,
+      createdById: moderator.id,
     },
   });
 
@@ -68,7 +119,7 @@ async function seed() {
       price: faker.number.int({ min: 15, max: 30 }),
       cover: faker.image.url({ width: 1200, height: 600 }),
       addressId: address.id,
-      createdById: user.id,
+      createdById: moderator.id,
     },
   });
 

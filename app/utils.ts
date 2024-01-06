@@ -1,9 +1,14 @@
+import type { Role } from "@prisma/client";
 import { useMatches } from "@remix-run/react";
 import { useMemo } from "react";
 
 import type { User } from "~/models/user.server";
 
 const DEFAULT_REDIRECT = "/";
+
+type UserWithRole = User & {
+  Role: Role;
+};
 
 /**
  * This should be used any time the redirect path is user-provided
@@ -44,24 +49,29 @@ export function useMatchesData(
   return route?.data as Record<string, unknown>;
 }
 
-function isUser(user: unknown): user is User {
+function isUserWithRole(user: unknown): user is UserWithRole {
   return (
     user != null &&
     typeof user === "object" &&
     "email" in user &&
-    typeof user.email === "string"
+    typeof user.email === "string" &&
+    "Role" in user &&
+    user.Role != null &&
+    typeof user.Role === "object" &&
+    "name" in user.Role &&
+    typeof user.Role.name === "string"
   );
 }
 
-export function useOptionalUser(): User | undefined {
+export function useOptionalUser(): UserWithRole | undefined {
   const data = useMatchesData("root");
-  if (!data || !isUser(data.user)) {
+  if (!data || !isUserWithRole(data.user)) {
     return undefined;
   }
   return data.user;
 }
 
-export function useUser(): User {
+export function useUser(): UserWithRole {
   const maybeUser = useOptionalUser();
   if (!maybeUser) {
     throw new Error(
