@@ -1,56 +1,35 @@
+import { InstagramLogoIcon } from "@radix-ui/react-icons";
 import { Link } from "@remix-run/react";
-
-const LINKS = [
-  {
-    label: "Dinners",
-    to: "/dinners",
-  },
-  // {
-  //   label: "Past Dinners",
-  //   to: "/past-dinners",
-  // },
-  // {
-  //   label: "About",
-  //   to: "/about",
-  // },
-];
 
 export function Footer() {
   return (
-    <div className="bg-gray-800 text-gray-200">
+    <div className="mt-10 bg-muted text-muted-foreground">
       <div className="mx-auto max-w-3xl p-2">
         <div className="flex flex-col gap-3">
           <p className="font-bold lowercase">moku pona</p>
-          <ul>
-            {LINKS.map((props) => {
-              return <FooterLink key={props.label} {...props} />;
-            })}
+          <ul className="flex flex-col gap-2">
+            <li>
+              <Link to="/dinners" className="text-sm hover:underline">
+                Dinners
+              </Link>
+            </li>
             <li>
               <a
                 href="https://instagram.com/mokupona"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-light hover:underline"
+                className="flex items-center gap-1 text-sm hover:underline"
               >
+                <InstagramLogoIcon />
                 Instagram
               </a>
             </li>
           </ul>
-          <p className="text-xs text-gray-600">
-            Made with love in Zurich by Benedikt
+          <p className="text-xs">
+            Website made with love in Zurich by Benedikt
           </p>
         </div>
       </div>
     </div>
-  );
-}
-
-function FooterLink({ label, to }: { label: string; to: string }) {
-  return (
-    <li>
-      <Link to={to} className="text-sm font-light hover:underline">
-        {label}
-      </Link>
-    </li>
   );
 }

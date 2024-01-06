@@ -1,106 +1,94 @@
-import type {
-  GetEntriesResponseBody,
-  GetEntryResponseBody,
-  Parameters,
-} from "types/strapi";
-import { stringify } from "qs";
-import type { EventResponse } from "./event-response.server";
+import type { Prisma } from "@prisma/client";
 
-export type StrapiComponentAddressField = {
-  street: string;
-  number?: string;
-  zipcode: string;
-  city: string;
-};
+import { prisma } from "~/db.server";
 
-export type StrapiMediaField = {
-  id: number;
-  attributes: {
-    alternativeText: string;
-    url: string;
-    width: number;
-    height: number;
-    formats: {
-      large?: {
-        url: string;
-        width: number;
-        height: number;
-      };
-      small?: {
-        url: string;
-        width: number;
-        height: number;
-      };
-      medium?: {
-        url: string;
-        width: number;
-        height: number;
-      };
-      thumbnail?: {
-        url: string;
-        width: number;
-        height: number;
-      };
-    };
-  };
-};
-
-export type Event = {
-  title: string;
-  subtitle: string;
-  summary: string;
-  description: string;
-  tags?: string;
-  date: string;
-  signupDate: string;
-  slots: number;
-  price: number;
-  cover?: { data: StrapiMediaField };
-  address?: StrapiComponentAddressField;
-  event_responses?: { data: { id: number; attributes: EventResponse }[] };
-};
-
-const apiUrl = process.env.STRAPI_API_URL;
-const apiHeaders = {
-  Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}`,
-  "Content-Type": "application/json",
-};
-
-export async function getEvents() {
-  const url = `${apiUrl}/api/events`;
-  const query: Parameters<Event> = {
-    populate: ["cover", "address"],
-    sort: "date",
-    publicationState: "live",
-    filters: {
-      date: {
-        $gt: new Date().toISOString(),
-      },
-    },
-  };
-
-  const response = await fetch(`${url}?${stringify(query)}`, {
-    headers: apiHeaders,
+export async function getEvents(filter?: Prisma.EventWhereInput) {
+  return prisma.event.findMany({
+    where: filter,
   });
-
-  if (!response.ok) throw new Error("Failed to fetch events");
-
-  const body = (await response.json()) as GetEntriesResponseBody<Event>;
-  return body.data;
 }
 
 export async function getEventById(id: string) {
-  const url = `${apiUrl}/api/events/${id}`;
-  const query: Parameters<Event> = {
-    populate: ["cover", "address", "event_responses"],
-  };
-
-  const response = await fetch(`${url}?${stringify(query)}`, {
-    headers: apiHeaders,
+  return prisma.event.findUnique({
+    where: { id },
+    include: {
+      address: true,
+    },
   });
+}
 
-  if (!response.ok) throw new Error(`Failed to fetch event ${id}`);
+export async function createEvent({
+  title,
+  description,
+  date,
+  slots,
+  price,
+  cover,
+  addressId,
+  creatorId,
+}: {
+  title: string;
+  description: string;
+  date: Date;
+  slots: number;
+  price: number;
+  cover: string;
+  addressId: string;
+  creatorId: string;
+}) {
+  return prisma.event.create({
+    data: {
+      title,
+      description,
+      date,
+      slots,
+      price,
+      cover,
+      addressId,
+      createdById: creatorId,
+    },
+  });
+}
 
-  const body = (await response.json()) as GetEntryResponseBody<Event>;
-  return body.data;
+export async function updateEvent(
+  id: string,
+  {
+    title,
+    description,
+    date,
+    slots,
+    price,
+    cover,
+    addressId,
+    creatorId,
+  }: {
+    title?: string;
+    description?: string;
+    date?: Date;
+    slots?: number;
+    price?: number;
+    cover?: string;
+    addressId?: string;
+    creatorId?: string;
+  },
+) {
+  return prisma.event.update({
+    where: { id },
+    data: {
+      title,
+      description,
+      date,
+      slots,
+      price,
+      cover,
+      addressId,
+      createdById: creatorId,
+    },
+  });
+}
+
+export async function deleteEvent(id: string) {
+  return prisma.event.delete({
+    where: { id },
+  });
 }

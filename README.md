@@ -4,7 +4,7 @@
 
 Learn more about [Remix Stacks](https://remix.run/stacks).
 
-```
+```sh
 npx create-remix@latest --template remix-run/indie-stack
 ```
 
@@ -14,7 +14,7 @@ npx create-remix@latest --template remix-run/indie-stack
 - Production-ready [SQLite Database](https://sqlite.org)
 - Healthcheck endpoint for [Fly backups region fallbacks](https://fly.io/docs/reference/configuration/#services-http_checks)
 - [GitHub Actions](https://github.com/features/actions) for deploy on merge to production and staging environments
-- Email/Password Authentication with [cookie-based sessions](https://remix.run/docs/en/v1/api/remix#createcookiesessionstorage)
+- Email/Password Authentication with [cookie-based sessions](https://remix.run/utils/sessions#md-createcookiesessionstorage)
 - Database ORM with [Prisma](https://prisma.io)
 - Styling with [Tailwind](https://tailwindcss.com/)
 - End-to-end testing with [Cypress](https://cypress.io)
@@ -34,13 +34,7 @@ Click this button to create a [Gitpod](https://gitpod.io) workspace with the pro
 
 ## Development
 
-- This step only applies if you've opted out of having the CLI install dependencies for you:
-
-  ```sh
-  npx remix init
-  ```
-
-- Initial setup: _If you just generated this project, this step has been done for you._
+- Initial setup:
 
   ```sh
   npm run setup
@@ -56,8 +50,8 @@ This starts your app in development mode, rebuilding assets on file changes.
 
 The database seed script creates a new user with some data you can use to get started:
 
-- Email: `dev@mokupona.ch`
-- Password: `mokuisawesome`
+- Email: `rachel@remix.run`
+- Password: `racheliscool`
 
 ### Relevant code:
 
@@ -86,8 +80,8 @@ Prior to your first deployment, you'll need to do a few things:
 - Create two apps on Fly, one for staging and one for production:
 
   ```sh
-  fly apps create mokupona-stack-b568
-  fly apps create mokupona-stack-b568-staging
+  fly apps create mokupona-4755
+  fly apps create mokupona-4755-staging
   ```
 
   > **Note:** Make sure this name matches the `app` set in your `fly.toml` file. Otherwise, you will not be able to deploy.
@@ -109,17 +103,17 @@ Prior to your first deployment, you'll need to do a few things:
 - Add a `SESSION_SECRET` to your fly app secrets, to do this you can run the following commands:
 
   ```sh
-  fly secrets set SESSION_SECRET=$(openssl rand -hex 32) --app mokupona-stack-b568
-  fly secrets set SESSION_SECRET=$(openssl rand -hex 32) --app mokupona-stack-b568-staging
+  fly secrets set SESSION_SECRET=$(openssl rand -hex 32) --app mokupona-4755
+  fly secrets set SESSION_SECRET=$(openssl rand -hex 32) --app mokupona-4755-staging
   ```
 
-  If you don't have openssl installed, you can also use [1password](https://1password.com/password-generator/) to generate a random secret, just replace `$(openssl rand -hex 32)` with the generated secret.
+  If you don't have openssl installed, you can also use [1Password](https://1password.com/password-generator) to generate a random secret, just replace `$(openssl rand -hex 32)` with the generated secret.
 
 - Create a persistent volume for the sqlite database for both your staging and production environments. Run the following:
 
   ```sh
-  fly volumes create data --size 1 --app mokupona-stack-b568
-  fly volumes create data --size 1 --app mokupona-stack-b568-staging
+  fly volumes create data --size 1 --app mokupona-4755
+  fly volumes create data --size 1 --app mokupona-4755-staging
   ```
 
 Now that everything is set up you can commit and push your changes to your repo. Every commit to your `main` branch will trigger a deployment to your production environment, and every commit to your `dev` branch will trigger a deployment to your staging environment.
