@@ -50,7 +50,7 @@ export default function Index() {
           <p className="text-xl">
             We wanted to create a new way to meet people. A place, where you are
             comfortable and the vibe encourages interesting conversations.
-            That's why we created{" "}
+            That&lsquos why we created{" "}
             <span className="text-primary">moku pona</span>, where you can meet
             a few people over dinner and have an amazing evening.
           </p>
@@ -74,7 +74,7 @@ export default function Index() {
           </ol>
           <p className="text-xl">
             <strong className="block text-primary">
-              No honestly, it's just that.
+              No honestly, it&lsquos just that.
             </strong>
             Besides the food and drinks, you will be joined by a moderator who
             moderates the whole event. They inform you about the food and drinks
@@ -96,7 +96,7 @@ export default function Index() {
           </h2>
           <p className="text-xl ">
             We value our environment and we want you to enjoy our dinners
-            without afterthoughts. That's why we cook with{" "}
+            without afterthoughts. That&lsquos why we cook with{" "}
             <span className="text-primary">seasonal ingredients</span>, which
             are <span className="text-primary">sourced locally</span> and to the{" "}
             <span className="text-primary">best standards</span>. To make this
@@ -104,9 +104,9 @@ export default function Index() {
             dinners detail page.
           </p>
           <p className="text-xl ">
-            Also, you're not just one of hundreds of guests an evening. Every
-            dinner is unique - Just like you. As we, the founders, moderate the
-            evenings, we also believe in{" "}
+            Also, you&lsquore not just one of hundreds of guests an evening.
+            Every dinner is unique - Just like you. As we, the founders,
+            moderate the evenings, we also believe in{" "}
             <span className="text-primary">
               a more personal relationship with our guests
             </span>{" "}
@@ -115,7 +115,8 @@ export default function Index() {
           <p className="text-xl ">
             This should have made clear, what we are all about. We would love to
             meet you soon at one of our meetings. If you still have questions
-            feel free to contact us at any time. We're always happy to help.
+            feel free to contact us at any time. We&lsquore always happy to
+            help.
           </p>
           <div className="flex w-full flex-col gap-2 lg:flex-row">
             <Button asChild>
