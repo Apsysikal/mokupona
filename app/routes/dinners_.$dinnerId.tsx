@@ -15,6 +15,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { createEventResponse } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
+import { RootLoaderData } from "~/root";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const { dinnerId } = params;
@@ -94,8 +95,9 @@ export async function action({ params, request }: ActionFunctionArgs) {
   return redirect("/dinners");
 }
 
-export const meta: MetaFunction<typeof loader> = ({ data }) => {
+export const meta: MetaFunction<typeof loader> = ({ data, matches }) => {
   if (!data) return [{ title: "Dinner" }];
+  const { domainUrl } = matches[0].data as RootLoaderData;
 
   const { event } = data;
   if (!event) return [{ title: "Dinner" }];
@@ -108,7 +110,11 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     },
     {
       property: "og:image",
-      content: `${event.cover}`,
+      content: `${domainUrl}${event.cover}`,
+    },
+    {
+      property: "og:url",
+      content: `${domainUrl}${matches.at(-1)?.pathname}`,
     },
   ];
 };

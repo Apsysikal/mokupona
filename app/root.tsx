@@ -1,5 +1,9 @@
 import { cssBundleHref } from "@remix-run/css-bundle";
-import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
+import type {
+  LinksFunction,
+  LoaderFunctionArgs,
+  SerializeFrom,
+} from "@remix-run/node";
 import { json } from "@remix-run/node";
 import {
   Form,
@@ -28,7 +32,9 @@ import {
   DropdownMenuTrigger,
 } from "./components/ui/dropdown-menu";
 import { cn } from "./lib/utils";
-import { useOptionalUser, useUser } from "./utils";
+import { getDomainUrl, useOptionalUser, useUser } from "./utils";
+
+export type RootLoaderData = SerializeFrom<typeof loader>;
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
@@ -36,7 +42,8 @@ export const links: LinksFunction = () => [
 ];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  return json({ user: await getUserWithRole(request) });
+  const domainUrl = getDomainUrl(request);
+  return json({ user: await getUserWithRole(request), domainUrl });
 };
 
 export default function App() {
