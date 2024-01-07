@@ -10,16 +10,8 @@ async function seed() {
   const adminEmail = "admin@mokupona.ch";
 
   // cleanup the existing database
-  await prisma.user.delete({ where: { email: userEmail } }).catch(() => {
-    // no worries if it doesn't exist yet
-  });
-
-  await prisma.user.delete({ where: { email: moderatorEmail } }).catch(() => {
-    // no worries if it doesn't exist yet
-  });
-
-  await prisma.user.delete({ where: { email: adminEmail } }).catch(() => {
-    // no worries if it doesn't exist yet
+  await prisma.user.deleteMany().catch(() => {
+    /** */
   });
 
   await prisma.role.deleteMany().catch(() => {
