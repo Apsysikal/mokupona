@@ -3,7 +3,7 @@ import { Link } from "@remix-run/react";
 
 import { Button } from "~/components/ui/button";
 
-export const meta: MetaFunction = () => [{ title: "Remix Notes" }];
+export const meta: MetaFunction = () => [{ title: "moku pona" }];
 
 export default function Index() {
   return (

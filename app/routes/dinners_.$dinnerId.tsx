@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
+  MetaFunction,
   json,
   redirect,
 } from "@remix-run/node";
@@ -92,6 +93,25 @@ export async function action({ params, request }: ActionFunctionArgs) {
 
   return redirect("/dinners");
 }
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
+  if (!data) return [{ title: "Dinner" }];
+
+  const { event } = data;
+  if (!event) return [{ title: "Dinner" }];
+
+  return [
+    { title: `Dinner - ${event.title}` },
+    {
+      property: "og:title",
+      content: `Dinner - ${event.title}`,
+    },
+    {
+      property: "og:image",
+      content: `${event.cover}`,
+    },
+  ];
+};
 
 export default function DinnerPage() {
   const { event } = useLoaderData<typeof loader>();

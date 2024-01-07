@@ -2,6 +2,7 @@ import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MaxPartSizeExceededError,
+  MetaFunction,
   NodeOnDiskFile,
   json,
   redirect,
@@ -34,6 +35,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     addresses,
   });
 }
+
+export const meta: MetaFunction<typeof loader> = () => {
+  return [{ title: "Admin - Create Dinner" }];
+};
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUserWithRole(request, ["moderator", "admin"]);

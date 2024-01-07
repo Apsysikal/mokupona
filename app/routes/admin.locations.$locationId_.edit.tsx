@@ -1,6 +1,7 @@
 import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
+  MetaFunction,
   json,
   redirect,
 } from "@remix-run/node";
@@ -27,6 +28,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     location: address,
   });
 }
+
+export const meta: MetaFunction<typeof loader> = () => {
+  return [{ title: "Admin - Edit Location" }];
+};
 
 export async function action({ request, params }: ActionFunctionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);

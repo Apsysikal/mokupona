@@ -2,6 +2,7 @@ import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MaxPartSizeExceededError,
+  MetaFunction,
   NodeOnDiskFile,
   json,
   redirect,
@@ -41,6 +42,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     dinner: event,
   });
 }
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
+  if (!data) return [{ title: "Admin - Dinner" }];
+
+  const { dinner } = data;
+  if (!dinner) return [{ title: "Admin - Dinner" }];
+
+  return [{ title: `Admin - Dinner - ${dinner.title} - Edit` }];
+};
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const user = await requireUserWithRole(request, ["moderator", "admin"]);
@@ -98,8 +108,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   fieldErrors.cover = fieldErrors.cover
     ? fieldErrors.cover
     : imageUpdated
-    ? validateCover(cover)
-    : undefined;
+      ? validateCover(cover)
+      : undefined;
   fieldErrors.address = validateAddress(address);
 
   const fields = {

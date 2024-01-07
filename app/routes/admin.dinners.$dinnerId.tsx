@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs, json } from "@remix-run/node";
+import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
 import { Form, Link, useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
 
@@ -19,6 +19,15 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
   return json({ event });
 }
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
+  if (!data) return [{ title: "Admin - Dinner" }];
+
+  const { event } = data;
+  if (!event) return [{ title: "Admin - Dinner" }];
+
+  return [{ title: `Dinner - ${event.title}` }];
+};
 
 export default function DinnerPage() {
   const { event } = useLoaderData<typeof loader>();

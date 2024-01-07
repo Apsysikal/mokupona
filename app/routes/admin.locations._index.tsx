@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs, json } from "@remix-run/node";
+import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
 import { Form, Link, useLoaderData } from "@remix-run/react";
 
 import { Button } from "~/components/ui/button";
@@ -11,6 +11,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return json({ addresses });
 }
+
+export const meta: MetaFunction<typeof loader> = () => {
+  return [{ title: "Admin - Locations" }];
+};
 
 export default function DinnersPage() {
   const { addresses } = useLoaderData<typeof loader>();
