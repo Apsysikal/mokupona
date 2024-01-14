@@ -10,9 +10,8 @@ import { Form, useActionData, useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
 
 import { DinnerView } from "~/components/dinner-view";
+import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import { createEventResponse } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
 import { RootLoaderData } from "~/root";
@@ -129,52 +128,34 @@ export default function DinnerPage() {
 
       <Form method="post">
         <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="name" className="font-semibold">
-              Name
-            </Label>
-            <Input
-              type="text"
-              name="name"
-              id="name"
-              defaultValue={actionData?.fields.name}
-              aria-invalid={actionData?.fieldErrors.name ? true : false}
-              aria-errormessage={
-                actionData?.fieldErrors.name ? "name-error" : undefined
-              }
-            />
-            {actionData?.fieldErrors?.name ? (
-              <p id="name-error" role="alert" className="text-sm text-red-500">
-                {actionData.fieldErrors.name}
-              </p>
-            ) : null}
-          </div>
-          <div>
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="email" className="font-semibold">
-                Email
-              </Label>
-              <Input
-                type="email"
-                name="email"
-                id="email"
-                defaultValue={actionData?.fields.email}
-                aria-invalid={actionData?.fieldErrors.email ? true : false}
-                aria-errormessage={
-                  actionData?.fieldErrors.email ? "email-error" : undefined
-                }
-              />
-              {actionData?.fieldErrors?.email ? (
-                <p
-                  id="email-error"
-                  role="alert"
-                  className="text-sm text-red-500"
-                >
-                  {actionData.fieldErrors.email}
-                </p>
-              ) : null}
-            </div>
-          </div>
+          <Field
+            labelProps={{ children: "Name" }}
+            inputProps={{
+              id: "name",
+              name: "name",
+              type: "text",
+            }}
+            errors={
+              actionData?.fieldErrors.name
+                ? actionData.fieldErrors.name
+                : undefined
+            }
+          />
+
+          <Field
+            labelProps={{ children: "Email" }}
+            inputProps={{
+              id: "email",
+              name: "email",
+              type: "email",
+            }}
+            errors={
+              actionData?.fieldErrors.email
+                ? actionData.fieldErrors.email
+                : undefined
+            }
+          />
+
           {actionData?.formError ? (
             <div>
               <p className="text-sm text-red-500">{actionData.formError}</p>

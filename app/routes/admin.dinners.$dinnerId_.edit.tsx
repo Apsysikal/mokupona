@@ -14,10 +14,8 @@ import {
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
 
+import { Field, SelectField, TextareaField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Textarea } from "~/components/ui/textarea";
 import { getAddresses } from "~/models/address.server";
 import { getEventById, updateEvent } from "~/models/event.server";
 import { requireUserWithRole } from "~/session.server";
@@ -66,14 +64,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     unstable_createMemoryUploadHandler(),
   );
 
-  const fieldErrors: Record<string, string | undefined> = {
-    title: undefined,
-    description: undefined,
-    date: undefined,
-    slots: undefined,
-    price: undefined,
-    cover: undefined,
-    address: undefined,
+  const fieldErrors: Record<string, string | null> = {
+    title: null,
+    description: null,
+    date: null,
+    slots: null,
+    price: null,
+    cover: null,
+    address: null,
   } as const;
 
   const formData = await unstable_parseMultipartFormData(
@@ -109,7 +107,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     ? fieldErrors.cover
     : imageUpdated
       ? validateCover(cover)
-      : undefined;
+      : null;
   fieldErrors.address = validateAddress(address);
 
   const fields = {
@@ -167,95 +165,105 @@ export default function DinnersPage() {
         replace
         className="flex flex-col gap-2"
       >
-        <div>
-          <Label htmlFor="title">Title</Label>
-          <Input
-            id="title"
-            name="title"
-            type="text"
-            defaultValue={actionData?.fields?.title || dinner.title}
-          />
-          {actionData?.fieldErrors?.title ? (
-            <p>{actionData.fieldErrors.title}</p>
-          ) : null}
-        </div>
+        <Field
+          labelProps={{ children: "Title" }}
+          inputProps={{
+            id: "title",
+            name: "title",
+            type: "text",
+            defaultValue: actionData?.fields?.title || dinner.title,
+          }}
+          errors={
+            actionData?.fieldErrors.title
+              ? actionData.fieldErrors.title
+              : undefined
+          }
+        />
 
-        <div className="flex flex-col">
-          <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            name="description"
-            defaultValue={actionData?.fields?.description || dinner.description}
-          />
-          {actionData?.fieldErrors?.description ? (
-            <p>{actionData.fieldErrors.description}</p>
-          ) : null}
-        </div>
+        <TextareaField
+          labelProps={{ children: "Description" }}
+          textareaProps={{
+            id: "description",
+            name: "description",
+            defaultValue: actionData?.fields?.description || dinner.description,
+          }}
+          errors={
+            actionData?.fieldErrors.description
+              ? actionData.fieldErrors.description
+              : undefined
+          }
+        />
 
-        <div>
-          <Label htmlFor="date">Date</Label>
-          <Input
-            type="datetime-local"
-            name="date"
-            id="date"
-            defaultValue={
-              actionData?.fields?.date || dinner.date.substring(0, 16)
-            }
-          />
-          {actionData?.fieldErrors?.date ? (
-            <p>{actionData.fieldErrors.date}</p>
-          ) : null}
-        </div>
+        <Field
+          labelProps={{ children: "Date" }}
+          inputProps={{
+            id: "date",
+            name: "date",
+            type: "datetime-local",
+            defaultValue:
+              actionData?.fields?.date || dinner.date.substring(0, 16),
+          }}
+          errors={
+            actionData?.fieldErrors.date
+              ? actionData.fieldErrors.date
+              : undefined
+          }
+        />
 
-        <div>
-          <Label htmlFor="slots">Slots</Label>
-          <Input
-            type="number"
-            name="slots"
-            id="slots"
-            defaultValue={actionData?.fields?.slots || dinner.slots}
-          />
-          {actionData?.fieldErrors?.slots ? (
-            <p>{actionData.fieldErrors.slots}</p>
-          ) : null}
-        </div>
+        <Field
+          labelProps={{ children: "Slots" }}
+          inputProps={{
+            id: "slots",
+            name: "slots",
+            type: "number",
+            defaultValue: actionData?.fields?.slots || dinner.slots,
+          }}
+          errors={
+            actionData?.fieldErrors.slots
+              ? actionData.fieldErrors.slots
+              : undefined
+          }
+        />
 
-        <div>
-          <Label htmlFor="price">Price</Label>
-          <Input
-            type="number"
-            name="price"
-            id="price"
-            defaultValue={actionData?.fields?.price || dinner.price}
-          />
-          {actionData?.fieldErrors?.price ? (
-            <p>{actionData.fieldErrors.price}</p>
-          ) : null}
-        </div>
+        <Field
+          labelProps={{ children: "Price" }}
+          inputProps={{
+            id: "price",
+            name: "price",
+            type: "number",
+            defaultValue: actionData?.fields?.price || dinner.price,
+          }}
+          errors={
+            actionData?.fieldErrors.price
+              ? actionData.fieldErrors.price
+              : undefined
+          }
+        />
 
-        <div>
-          <Label htmlFor="cover">Cover</Label>
-          <Input
-            type="file"
-            accept={validImageTypes.join(",")}
-            name="cover"
-            id="cover"
-            tabIndex={0}
-            className="file:text-foreground"
-          />
-          {actionData?.fieldErrors?.cover ? (
-            <p>{actionData.fieldErrors.cover}</p>
-          ) : null}
-        </div>
+        <Field
+          labelProps={{ children: "Cover" }}
+          inputProps={{
+            id: "cover",
+            name: "cover",
+            type: "file",
+            tabIndex: 0,
+            accept: validImageTypes.join(","),
+            className: "file:text-foreground",
+          }}
+          errors={
+            actionData?.fieldErrors.cover
+              ? actionData.fieldErrors.cover
+              : undefined
+          }
+        />
 
-        <div>
-          <Label htmlFor="address">Address</Label>
-          <select
-            name="address"
-            id="address"
-            className="flex h-9 w-full appearance-none rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground file:placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {addresses.map((address) => {
+        <SelectField
+          labelProps={{ children: "Address" }}
+          selectProps={{
+            id: "address",
+            name: "address",
+            defaultValue: actionData?.fields?.address || dinner.address.id,
+            children: addresses.map((address) => {
               const { id } = address;
 
               return (
@@ -263,12 +271,16 @@ export default function DinnersPage() {
                   {`${address.streetName} ${address.houseNumber} - ${address.zip} ${address.city}`}
                 </option>
               );
-            })}
-          </select>
-          {actionData?.fieldErrors?.address ? (
-            <p>{actionData.fieldErrors.address}</p>
-          ) : null}
-        </div>
+            }),
+            className:
+              "flex h-9 w-full appearance-none rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground file:placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+          }}
+          errors={
+            actionData?.fieldErrors.address
+              ? actionData.fieldErrors.address
+              : undefined
+          }
+        />
 
         <Button type="submit">Update Dinner</Button>
       </Form>
@@ -280,41 +292,50 @@ function validateTitle(title: FormDataEntryValue | string | null) {
   if (!title) return "Title must be provided";
   if (title instanceof File) return "Invalid type";
   if (title.trim().length === 0) return "Title cannot be empty";
+  return null;
 }
 
 function validateDescription(description: FormDataEntryValue | string | null) {
   if (!description) return "Description must be provided";
   if (description instanceof File) return "Invalid type";
   if (description.trim().length === 0) return "Description cannot be empty";
+  return null;
 }
 
 function validateDate(date: FormDataEntryValue | string | null) {
   if (!date) return "Date must be provided";
   if (date instanceof File) return "Invalid type";
-  if (new Date(date).getTime() <= new Date().getTime())
+  if (new Date(date).getTime() <= new Date().getTime()) {
     return "Date must be in the future";
+  }
+  return null;
 }
 
 function validateSlots(slots: FormDataEntryValue | string | null) {
   if (!slots) return "Slots must be provided";
   if (slots instanceof File) return "Invalid type";
   if (Number(slots) <= 0) return "Slots cannot be zero";
+  return null;
 }
 
 function validatePrice(price: FormDataEntryValue | string | null) {
   if (!price) return "Price must be provided";
   if (price instanceof File) return "Invalid type";
   if (Number(price) <= 0) return "Price cannot be zero";
+  return null;
 }
 
 function validateCover(cover: FormDataEntryValue | string | null) {
   if (!(cover instanceof NodeOnDiskFile)) return "Invalid type";
   if (cover.size <= 0) return "No file provided";
-  if (!validImageTypes.includes(cover.type))
+  if (!validImageTypes.includes(cover.type)) {
     return "Image must be of type png, jpg or webp";
+  }
+  return null;
 }
 
 function validateAddress(address: FormDataEntryValue | string | null) {
   if (!address) return "Address must be provided";
   if (String(address).trim().length === 0) return "Address cannot be empty";
+  return null;
 }

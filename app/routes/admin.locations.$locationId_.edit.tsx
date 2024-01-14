@@ -8,9 +8,8 @@ import {
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
 
+import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import { getAddressById, updateAddress } from "~/models/address.server";
 import { requireUserWithRole } from "~/session.server";
 
@@ -86,59 +85,66 @@ export default function DinnersPage() {
   return (
     <>
       <Form method="POST" replace className="flex flex-col gap-2">
-        <div>
-          <Label htmlFor="streetName">Street Name</Label>
-          <Input
-            id="streetName"
-            name="streetName"
-            type="text"
-            defaultValue={actionData?.fields?.streetName || location.streetName}
-          />
-          {actionData?.fieldErrors?.streetName ? (
-            <p>{actionData.fieldErrors.streetName}</p>
-          ) : null}
-        </div>
+        <Field
+          labelProps={{ children: "Street Name" }}
+          inputProps={{
+            id: "streetName",
+            name: "streetName",
+            type: "text",
+            defaultValue: actionData?.fields.streetName || location.streetName,
+          }}
+          errors={
+            actionData?.fieldErrors.streetName
+              ? actionData.fieldErrors.streetName
+              : undefined
+          }
+        />
 
-        <div>
-          <Label htmlFor="houseNumber">House number</Label>
-          <Input
-            id="houseNumber"
-            name="houseNumber"
-            type="text"
-            defaultValue={
-              actionData?.fields?.houseNumber || location.houseNumber
-            }
-          />
-          {actionData?.fieldErrors?.houseNumber ? (
-            <p>{actionData.fieldErrors.houseNumber}</p>
-          ) : null}
-        </div>
+        <Field
+          labelProps={{ children: "House Number" }}
+          inputProps={{
+            id: "houseNumber",
+            name: "houseNumber",
+            type: "text",
+            defaultValue:
+              actionData?.fields.houseNumber || location.houseNumber,
+          }}
+          errors={
+            actionData?.fieldErrors.houseNumber
+              ? actionData.fieldErrors.houseNumber
+              : undefined
+          }
+        />
 
-        <div>
-          <Label htmlFor="zipCode">Zip code</Label>
-          <Input
-            id="zipCode"
-            name="zipCode"
-            type="text"
-            defaultValue={actionData?.fields?.zipCode || location.zip}
-          />
-          {actionData?.fieldErrors?.zipCode ? (
-            <p>{actionData.fieldErrors.zipCode}</p>
-          ) : null}
-        </div>
+        <Field
+          labelProps={{ children: "Zip Code" }}
+          inputProps={{
+            id: "zipCode",
+            name: "zipCode",
+            type: "text",
+            defaultValue: actionData?.fields.zipCode || location.zip,
+          }}
+          errors={
+            actionData?.fieldErrors.zipCode
+              ? actionData.fieldErrors.zipCode
+              : undefined
+          }
+        />
 
-        <div>
-          <Label htmlFor="city">City name</Label>
-          <Input
-            id="city"
-            name="city"
-            type="text"
-            defaultValue={actionData?.fields?.city || location.city}
-          />
-          {actionData?.fieldErrors?.city ? (
-            <p>{actionData.fieldErrors.city}</p>
-          ) : null}
-        </div>
+        <Field
+          labelProps={{ children: "City Name" }}
+          inputProps={{
+            id: "city",
+            name: "city",
+            type: "text",
+            defaultValue: actionData?.fields.city || location.city,
+          }}
+          errors={
+            actionData?.fieldErrors.city
+              ? actionData.fieldErrors.city
+              : undefined
+          }
+        />
 
         <Button type="submit">Update Location</Button>
       </Form>

@@ -7,9 +7,9 @@ import { json, redirect } from "@remix-run/node";
 import { Form, Link, useActionData, useSearchParams } from "@remix-run/react";
 import { useEffect, useRef } from "react";
 
+import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import { createUser, getUserByEmail } from "~/models/user.server";
 import { createUserSession, getUserId } from "~/session.server";
 import { safeRedirect, validateEmail } from "~/utils";
@@ -80,7 +80,7 @@ export default function Join() {
   const passwordRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (actionData?.errors?.email) {
+    if (actionData?.errors.email) {
       emailRef.current?.focus();
     } else if (actionData?.errors?.password) {
       passwordRef.current?.focus();
@@ -91,61 +91,40 @@ export default function Join() {
     <div className="flex min-h-full flex-col justify-center">
       <div className="mx-auto w-full max-w-md px-8">
         <Form method="post" className="space-y-6">
-          <div>
-            <Label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Email address
-            </Label>
-            <div className="mt-1">
-              <Input
-                ref={emailRef}
-                id="email"
-                required
-                // eslint-disable-next-line jsx-a11y/no-autofocus
-                autoFocus={true}
-                name="email"
-                type="email"
-                autoComplete="email"
-                aria-invalid={actionData?.errors?.email ? true : undefined}
-                aria-describedby="email-error"
-              />
-              {actionData?.errors?.email ? (
-                <div className="pt-1 text-red-700" id="email-error">
-                  {actionData.errors.email}
-                </div>
-              ) : null}
-            </div>
-          </div>
+          <Field
+            labelProps={{ children: "Email address" }}
+            inputProps={{
+              id: "email",
+              name: "email",
+              type: "email",
+              autoComplete: "email",
+              required: true,
+            }}
+            errors={
+              actionData?.errors.email ? actionData.errors.email : undefined
+            }
+          />
 
-          <div>
-            <Label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Password
-            </Label>
-            <div className="mt-1">
-              <Input
-                id="password"
-                ref={passwordRef}
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                aria-invalid={actionData?.errors?.password ? true : undefined}
-                aria-describedby="password-error"
-              />
-              {actionData?.errors?.password ? (
-                <div className="pt-1 text-red-700" id="password-error">
-                  {actionData.errors.password}
-                </div>
-              ) : null}
-            </div>
-          </div>
+          <Field
+            labelProps={{ children: "Password" }}
+            inputProps={{
+              id: "password",
+              name: "password",
+              type: "password",
+              autoComplete: "password",
+              required: true,
+            }}
+            errors={
+              actionData?.errors.password
+                ? actionData.errors.password
+                : undefined
+            }
+          />
 
           <Input type="hidden" name="redirectTo" value={redirectTo} />
+
           <Button type="submit">Create Account</Button>
+
           <div className="flex items-center justify-center">
             <div className="text-center text-sm text-gray-500">
               Already have an account?{" "}

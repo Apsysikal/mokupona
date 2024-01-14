@@ -1,14 +1,12 @@
-import type { ClassValue } from "clsx";
 import * as React from "react";
 
 import { cn } from "~/lib/utils";
 
-export type TextareaProps =
-  React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
-    className?: ClassValue[];
-  };
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLTextAreaElement> {}
 
-const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
+const Textarea = React.forwardRef<HTMLTextAreaElement, InputProps>(
   ({ className, ...props }, ref) => {
     return (
       <textarea

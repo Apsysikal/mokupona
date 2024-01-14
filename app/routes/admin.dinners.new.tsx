@@ -14,10 +14,8 @@ import {
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
 
+import { Field, SelectField, TextareaField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Textarea } from "~/components/ui/textarea";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
 import { requireUserWithRole } from "~/session.server";
@@ -144,93 +142,104 @@ export default function DinnersPage() {
         replace
         className="flex flex-col gap-2"
       >
-        <div>
-          <Label htmlFor="title">Title</Label>
-          <Input
-            id="title"
-            name="title"
-            type="text"
-            defaultValue={actionData?.fields?.title}
-          />
-          {actionData?.fieldErrors?.title ? (
-            <p>{actionData.fieldErrors.title}</p>
-          ) : null}
-        </div>
+        <Field
+          labelProps={{ children: "Title" }}
+          inputProps={{
+            id: "title",
+            name: "title",
+            type: "text",
+            defaultValue: actionData?.fields.title,
+          }}
+          errors={
+            actionData?.fieldErrors.title
+              ? actionData.fieldErrors.title
+              : undefined
+          }
+        />
 
-        <div className="flex flex-col">
-          <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            name="description"
-            defaultValue={actionData?.fields?.description}
-          />
-          {actionData?.fieldErrors?.description ? (
-            <p>{actionData.fieldErrors.description}</p>
-          ) : null}
-        </div>
+        <TextareaField
+          labelProps={{ children: "Description" }}
+          textareaProps={{
+            id: "description",
+            name: "description",
+            defaultValue: actionData?.fields.description,
+          }}
+          errors={
+            actionData?.fieldErrors.description
+              ? actionData.fieldErrors.description
+              : undefined
+          }
+        />
 
-        <div>
-          <Label htmlFor="date">Date</Label>
-          <Input
-            type="datetime-local"
-            name="date"
-            id="date"
-            defaultValue={actionData?.fields?.date}
-          />
-          {actionData?.fieldErrors?.date ? (
-            <p>{actionData.fieldErrors.date}</p>
-          ) : null}
-        </div>
+        <Field
+          labelProps={{ children: "Date" }}
+          inputProps={{
+            id: "date",
+            name: "date",
+            type: "datetime-local",
+            defaultValue: actionData?.fields.date,
+          }}
+          errors={
+            actionData?.fieldErrors.date
+              ? actionData.fieldErrors.date
+              : undefined
+          }
+        />
 
-        <div>
-          <Label htmlFor="slots">Slots</Label>
-          <Input
-            type="number"
-            name="slots"
-            id="slots"
-            defaultValue={actionData?.fields?.slots}
-          />
-          {actionData?.fieldErrors?.slots ? (
-            <p>{actionData.fieldErrors.slots}</p>
-          ) : null}
-        </div>
+        <Field
+          labelProps={{ children: "Slots" }}
+          inputProps={{
+            id: "slots",
+            name: "slots",
+            type: "number",
+            defaultValue: actionData?.fields.slots,
+          }}
+          errors={
+            actionData?.fieldErrors.slots
+              ? actionData.fieldErrors.slots
+              : undefined
+          }
+        />
 
-        <div>
-          <Label htmlFor="price">Price</Label>
-          <Input
-            type="number"
-            name="price"
-            id="price"
-            defaultValue={actionData?.fields?.price}
-          />
-          {actionData?.fieldErrors?.price ? (
-            <p>{actionData.fieldErrors.price}</p>
-          ) : null}
-        </div>
+        <Field
+          labelProps={{ children: "Price" }}
+          inputProps={{
+            id: "price",
+            name: "price",
+            type: "number",
+            defaultValue: actionData?.fields.price,
+          }}
+          errors={
+            actionData?.fieldErrors.price
+              ? actionData.fieldErrors.price
+              : undefined
+          }
+        />
 
-        <div>
-          <Label htmlFor="cover">Cover</Label>
-          <Input
-            type="file"
-            accept={validImageTypes.join(",")}
-            name="cover"
-            id="cover"
-            tabIndex={0}
-            className="file:text-foreground"
-          />
-          {actionData?.fieldErrors?.cover ? (
-            <p>{actionData.fieldErrors.cover}</p>
-          ) : null}
-        </div>
+        <Field
+          labelProps={{ children: "Cover" }}
+          inputProps={{
+            id: "cover",
+            name: "cover",
+            type: "file",
+            tabIndex: 0,
+            accept: validImageTypes.join(","),
+            className: "file:text-foreground",
+          }}
+          errors={
+            actionData?.fieldErrors.cover
+              ? actionData.fieldErrors.cover
+              : undefined
+          }
+        />
 
-        <div>
-          <Label htmlFor="address">Address</Label>
-          <select
-            name="address"
-            id="address"
-            className="flex h-9 w-full appearance-none rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground file:placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {addresses.map((address) => {
+        <SelectField
+          labelProps={{ children: "Address" }}
+          selectProps={{
+            id: "address",
+            name: "address",
+            defaultValue: actionData?.fields.address,
+            children: addresses.map((address) => {
               const { id } = address;
 
               return (
@@ -238,12 +247,16 @@ export default function DinnersPage() {
                   {`${address.streetName} ${address.houseNumber} - ${address.zip} ${address.city}`}
                 </option>
               );
-            })}
-          </select>
-          {actionData?.fieldErrors?.address ? (
-            <p>{actionData.fieldErrors.address}</p>
-          ) : null}
-        </div>
+            }),
+            className:
+              "flex h-9 w-full appearance-none rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground file:placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+          }}
+          errors={
+            actionData?.fieldErrors.address
+              ? actionData.fieldErrors.address
+              : undefined
+          }
+        />
 
         <Button type="submit">Create Dinner</Button>
       </Form>
