@@ -24,7 +24,8 @@
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "Prisma.prisma",
-        "bradlc.vscode-tailwindcss"
+        "bradlc.vscode-tailwindcss",
+        "streetsidesoftware.code-spell-checker"
       ]
     }
   }
