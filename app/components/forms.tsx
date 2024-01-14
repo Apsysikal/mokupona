@@ -1,8 +1,30 @@
-import React from "react";
+import React, { useId } from "react";
 
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
+
+export type ListOfErrors = (string | null | undefined)[] | null | undefined;
+
+export function ErrorList({
+  id,
+  errors,
+}: {
+  id?: string;
+  errors?: ListOfErrors;
+}) {
+  const errorsToRender = errors?.filter(Boolean);
+  if (!errorsToRender?.length) return null;
+  return (
+    <ul id={id} className="flex flex-col gap-1">
+      {errorsToRender.map((e) => (
+        <li key={e} className="text-sm text-destructive">
+          {e}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export function Field({
   labelProps,
@@ -12,11 +34,12 @@ export function Field({
 }: {
   labelProps: React.InputHTMLAttributes<HTMLLabelElement>;
   inputProps: React.InputHTMLAttributes<HTMLInputElement>;
-  errors?: string;
+  errors?: ListOfErrors;
   className?: string;
 }) {
-  const { id, ...props } = inputProps;
-  const errorId = `error-${id}`;
+  const fallbackId = useId();
+  const id = inputProps.id ?? fallbackId;
+  const errorId = errors?.length ? `${id}-error` : undefined;
 
   return (
     <div className={className}>
@@ -25,13 +48,9 @@ export function Field({
         id={id}
         aria-invalid={errors ? true : undefined}
         aria-describedby={errorId}
-        {...props}
+        {...inputProps}
       />
-      {errors ? (
-        <p id={errorId} className="text-sm text-destructive">
-          {errors}
-        </p>
-      ) : null}
+      {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
     </div>
   );
 }
@@ -44,11 +63,12 @@ export function TextareaField({
 }: {
   labelProps: React.InputHTMLAttributes<HTMLLabelElement>;
   textareaProps: React.InputHTMLAttributes<HTMLTextAreaElement>;
-  errors?: string;
+  errors?: ListOfErrors;
   className?: string;
 }) {
-  const { id, ...props } = textareaProps;
-  const errorId = `error-${id}`;
+  const fallbackId = useId();
+  const id = textareaProps.id ?? fallbackId;
+  const errorId = errors?.length ? `${id}-error` : undefined;
 
   return (
     <div className={className}>
@@ -57,13 +77,9 @@ export function TextareaField({
         id={id}
         aria-invalid={errors ? true : undefined}
         aria-describedby={errorId}
-        {...props}
+        {...textareaProps}
       />
-      {errors ? (
-        <p id={errorId} className="text-sm text-destructive">
-          {errors}
-        </p>
-      ) : null}
+      {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
     </div>
   );
 }
@@ -76,11 +92,12 @@ export function SelectField({
 }: {
   labelProps: React.InputHTMLAttributes<HTMLLabelElement>;
   selectProps: React.InputHTMLAttributes<HTMLSelectElement>;
-  errors?: string;
+  errors?: ListOfErrors;
   className?: string;
 }) {
-  const { id, children, ...props } = selectProps;
-  const errorId = `error-${id}`;
+  const fallbackId = useId();
+  const id = selectProps.id ?? fallbackId;
+  const errorId = errors?.length ? `${id}-error` : undefined;
 
   return (
     <div className={className}>
@@ -89,10 +106,8 @@ export function SelectField({
         id={id}
         aria-invalid={errors ? true : undefined}
         aria-describedby={errorId}
-        {...props}
-      >
-        {children}
-      </select>
+        {...selectProps}
+      />
       {errors ? (
         <p id={errorId} className="text-sm text-destructive">
           {errors}
