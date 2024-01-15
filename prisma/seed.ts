@@ -1,3 +1,6 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+
 import { faker } from "@faker-js/faker";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
@@ -89,6 +92,20 @@ async function seed() {
     },
   });
 
+  const defaultImage = await readFile(path.join(__dirname, "default.jpg"));
+  const image = await prisma.eventImage.create({
+    data: {
+      contentType: "image/jpg",
+      blob: Buffer.from(defaultImage.buffer),
+    },
+  });
+  const image2 = await prisma.eventImage.create({
+    data: {
+      contentType: "image/jpg",
+      blob: Buffer.from(defaultImage.buffer),
+    },
+  });
+
   const event = await prisma.event.create({
     data: {
       title: faker.lorem.sentence({ min: 3, max: 7 }),
@@ -97,6 +114,7 @@ async function seed() {
       slots: faker.number.int({ min: 10, max: 20 }),
       price: faker.number.int({ min: 15, max: 30 }),
       cover: faker.image.url({ width: 1200, height: 600 }),
+      imageId: image.id,
       addressId: address.id,
       createdById: moderator.id,
     },
@@ -110,6 +128,7 @@ async function seed() {
       slots: faker.number.int({ min: 10, max: 20 }),
       price: faker.number.int({ min: 15, max: 30 }),
       cover: faker.image.url({ width: 1200, height: 600 }),
+      imageId: image2.id,
       addressId: address.id,
       createdById: moderator.id,
     },
