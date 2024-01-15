@@ -126,28 +126,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     submission.value;
 
   if (cover) {
-    await prisma.$transaction(async ($prisma) => {
-      await $prisma.eventImage.deleteMany({
-        where: {
-          event: {
-            id: dinnerId,
+    await prisma.event.update({
+      where: {
+        id: dinnerId,
+      },
+      data: {
+        image: {
+          update: {
+            contentType: cover.type,
+            blob: Buffer.from(await cover.arrayBuffer()),
           },
         },
-      });
-      await $prisma.event.update({
-        where: {
-          id: dinnerId,
-        },
-        data: {
-          image: {
-            create: {
-              contentType: cover.type,
-              blob: Buffer.from(await cover.arrayBuffer()),
-            },
-          },
-        },
-      });
+      },
     });
+
+    // Remove the file from disk.
+    // It is in the database now.
+    await (cover as NodeOnDiskFile).remove();
   }
 
   const event = await updateEvent(dinnerId, {
@@ -160,10 +155,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     addressId,
     creatorId: user.id,
   });
-
-  // Remove the file from disk.
-  // It is in the database now.
-  await (cover as NodeOnDiskFile).remove();
 
   return redirect(`/admin/dinners/${event.id}`);
 }
