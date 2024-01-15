@@ -58,6 +58,7 @@ export async function updateEvent(
     date,
     slots,
     price,
+    imageId,
     addressId,
     creatorId,
   }: {
@@ -66,6 +67,7 @@ export async function updateEvent(
     date?: Date;
     slots?: number;
     price?: number;
+    imageId?: string;
     addressId?: string;
     creatorId?: string;
   },
@@ -79,6 +81,7 @@ export async function updateEvent(
       slots,
       price,
       addressId,
+      imageId,
       createdById: creatorId,
     },
   });

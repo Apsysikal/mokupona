@@ -125,18 +125,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { title, description, date, slots, price, cover, addressId } =
     submission.value;
 
+  let eventImage;
+
   if (cover) {
-    await prisma.event.update({
-      where: {
-        id: dinnerId,
-      },
+    eventImage = await prisma.eventImage.create({
       data: {
-        image: {
-          update: {
-            contentType: cover.type,
-            blob: Buffer.from(await cover.arrayBuffer()),
-          },
-        },
+        contentType: cover.type,
+        blob: Buffer.from(await cover.arrayBuffer()),
       },
     });
 
@@ -153,6 +148,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     slots,
     price,
     addressId,
+    ...(eventImage && { imageId: eventImage.id }),
     creatorId: user.id,
   });
 
