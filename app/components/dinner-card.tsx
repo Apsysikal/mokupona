@@ -2,6 +2,8 @@ import type { Event } from "@prisma/client";
 import type { SerializeFrom } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 
+import { getEventImageUrl } from "~/utils";
+
 import { Button } from "./ui/button";
 
 export function DinnerCard({
@@ -12,11 +14,14 @@ export function DinnerCard({
   preferredLocale: string;
 }) {
   const parsedDate = new Date(event.date);
+  const imageUrl = event.imageId
+    ? getEventImageUrl(event.imageId)
+    : event.cover;
 
   return (
     <div className="relative mx-auto overflow-hidden rounded-lg border border-border bg-muted shadow-lg">
       <img
-        src={event.cover}
+        src={imageUrl}
         alt=""
         width={640}
         height={480}

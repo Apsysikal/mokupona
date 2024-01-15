@@ -18,6 +18,7 @@ import { z } from "zod";
 
 import { Field, SelectField, TextareaField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
+import { prisma } from "~/db.server";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
 import { requireUserWithRole } from "~/session.server";
@@ -84,12 +85,25 @@ export async function action({ request }: ActionFunctionArgs) {
       }),
   });
 
+  if (submission.intent !== "submit" && submission.value) {
+    // Remove the uploaded file from disk.
+    // It will be sent again when submitting.
+    await (submission.value.cover as NodeOnDiskFile).remove();
+  }
+
   if (submission.intent !== "submit" || !submission.value) {
     return json(submission);
   }
 
   const { title, description, date, slots, price, cover, addressId } =
     submission.value;
+
+  const eventImage = await prisma.eventImage.create({
+    data: {
+      contentType: cover.type,
+      blob: Buffer.from(await cover.arrayBuffer()),
+    },
+  });
 
   const event = await createEvent({
     title,
@@ -100,8 +114,13 @@ export async function action({ request }: ActionFunctionArgs) {
     price,
     addressId: addressId,
     cover: String(`/file/${(cover as NodeOnDiskFile).name}`),
+    imageId: eventImage.id,
     creatorId: user.id,
   });
+
+  // Remove the file from disk.
+  // It is in the database now.
+  await (cover as NodeOnDiskFile).remove();
 
   return redirect(`/admin/dinners/${event.id}`);
 }

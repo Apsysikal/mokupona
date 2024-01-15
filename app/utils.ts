@@ -118,3 +118,7 @@ export function getDomainUrl(request: Request) {
   const protocol = host.includes("localhost") ? "http" : "https";
   return `${protocol}://${host}`;
 }
+
+export function getEventImageUrl(imageId: string) {
+  return `/file/${imageId}`;
+}

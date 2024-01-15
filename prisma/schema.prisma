@@ -63,6 +63,9 @@ model Event {
   price       Decimal
   cover       String
 
+  image   EventImage? @relation(fields: [imageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  imageId String?     @unique
+
   addressId String
   address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
@@ -95,4 +98,16 @@ model Address {
   Event       Event[]
 
   @@unique([streetName, houseNumber, zip, city])
+}
+
+model EventImage {
+  id          String  @id @default(cuid())
+  altText     String?
+  contentType String
+  blob        Bytes
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event?
 }

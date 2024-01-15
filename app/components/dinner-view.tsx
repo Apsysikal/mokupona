@@ -1,6 +1,8 @@
 import type { Address, Event } from "@prisma/client";
 import { SerializeFrom } from "@remix-run/node";
 
+import { getEventImageUrl } from "~/utils";
+
 export interface DinnerViewProps {
   event:
     | (Event & { address: Address })
@@ -9,6 +11,9 @@ export interface DinnerViewProps {
 
 export function DinnerView({ event }: DinnerViewProps) {
   const eventDate = new Date(event.date);
+  const imageUrl = event.imageId
+    ? getEventImageUrl(event.imageId)
+    : event.cover;
 
   return (
     <div className="mx-auto flex max-w-3xl grow flex-col gap-5">
@@ -18,7 +23,7 @@ export function DinnerView({ event }: DinnerViewProps) {
 
       <div className="flex flex-col gap-3">
         <img
-          src={event.cover}
+          src={imageUrl}
           alt=""
           width={1200}
           height={800}

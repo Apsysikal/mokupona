@@ -24,6 +24,7 @@ export async function createEvent({
   slots,
   price,
   cover,
+  imageId,
   addressId,
   creatorId,
 }: {
@@ -33,6 +34,7 @@ export async function createEvent({
   slots: number;
   price: number;
   cover: string;
+  imageId?: string;
   addressId: string;
   creatorId: string;
 }) {
@@ -44,6 +46,7 @@ export async function createEvent({
       slots,
       price,
       cover,
+      imageId,
       addressId,
       createdById: creatorId,
     },
