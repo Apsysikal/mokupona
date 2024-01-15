@@ -13,6 +13,5 @@ echo 10 > /proc/sys/vm/swappiness
 swapon /swapfile
 echo 1 > /proc/sys/vm/overcommit_memory
 
-npm run data-migration:add_image
 npx prisma migrate deploy
 npm run start
