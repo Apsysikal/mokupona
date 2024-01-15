@@ -41,7 +41,7 @@ RUN npm run build
 FROM base
 
 ENV DATABASE_URL=file:/data/sqlite.db
-ENV IMAGE_UPLOAD_FOLDER=/uploads/images
+ENV IMAGE_UPLOAD_FOLDER=/data/uploads/images
 ENV PORT="8080"
 ENV NODE_ENV="production"
 
