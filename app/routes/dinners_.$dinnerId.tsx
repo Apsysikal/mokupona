@@ -18,6 +18,7 @@ import { prisma } from "~/db.server";
 import { createEventResponse } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
 import { RootLoaderData } from "~/root";
+import { getEventImageUrl } from "~/utils";
 
 const schema = z.object({
   name: z.string({ required_error: "Name is required" }).trim(),
@@ -97,7 +98,7 @@ export const meta: MetaFunction<typeof loader> = ({ data, matches }) => {
     },
     {
       property: "og:image",
-      content: `${domainUrl}${event.cover}`,
+      content: `${domainUrl}${getEventImageUrl(event.imageId)}`,
     },
     {
       property: "og:url",

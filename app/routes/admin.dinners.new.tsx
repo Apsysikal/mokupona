@@ -113,7 +113,6 @@ export async function action({ request }: ActionFunctionArgs) {
     slots,
     price,
     addressId: addressId,
-    cover: String(`/file/${(cover as NodeOnDiskFile).name}`),
     imageId: eventImage.id,
     creatorId: user.id,
   });

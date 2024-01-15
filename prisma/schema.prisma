@@ -61,10 +61,9 @@ model Event {
   date        DateTime
   slots       Int
   price       Decimal
-  cover       String
 
   image   EventImage @relation(fields: [imageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  imageId String     @unique @default("")
+  imageId String     @unique
 
   addressId String
   address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade, onUpdate: Cascade)

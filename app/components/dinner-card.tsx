@@ -14,9 +14,7 @@ export function DinnerCard({
   preferredLocale: string;
 }) {
   const parsedDate = new Date(event.date);
-  const imageUrl = event.imageId
-    ? getEventImageUrl(event.imageId)
-    : event.cover;
+  const imageUrl = getEventImageUrl(event.imageId);
 
   return (
     <div className="relative mx-auto overflow-hidden rounded-lg border border-border bg-muted shadow-lg">

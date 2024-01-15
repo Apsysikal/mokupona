@@ -11,9 +11,7 @@ export interface DinnerViewProps {
 
 export function DinnerView({ event }: DinnerViewProps) {
   const eventDate = new Date(event.date);
-  const imageUrl = event.imageId
-    ? getEventImageUrl(event.imageId)
-    : event.cover;
+  const imageUrl = getEventImageUrl(event.imageId);
 
   return (
     <div className="mx-auto flex max-w-3xl grow flex-col gap-5">
