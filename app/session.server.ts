@@ -78,7 +78,7 @@ export async function requireUserWithRole(request: Request, roles: string[]) {
   const user = await getUserByIdWithRole(userId);
 
   if (!user) throw await logout(request);
-  if (!roles.includes(user.Role.name)) {
+  if (!roles.includes(user.role.name)) {
     throw new Response("Forbidden", { status: 403 });
   }
 

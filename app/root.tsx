@@ -43,7 +43,8 @@ export const links: LinksFunction = () => [
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const domainUrl = getDomainUrl(request);
-  return json({ user: await getUserWithRole(request), domainUrl });
+  const user = await getUserWithRole(request);
+  return json({ user, domainUrl });
 };
 
 export default function App() {
@@ -120,7 +121,7 @@ function UserDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuPortal>
         <DropdownMenuContent sideOffset={8} align="start">
-          {["moderator", "admin"].includes(user.Role.name) ? (
+          {["moderator", "admin"].includes(user.role.name) ? (
             <DropdownMenuItem asChild>
               <Link prefetch="intent" to="/admin">
                 Admin Area

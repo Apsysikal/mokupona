@@ -19,7 +19,7 @@ model User {
   notes  Note[]
   events Event[]
 
-  Role   Role   @relation(fields: [roleId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   roleId String
 }
 
@@ -68,7 +68,7 @@ model Event {
   addressId String
   address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  EventResponse EventResponse[]
+  eventResponses EventResponse[]
 
   createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
   createdById String
@@ -94,7 +94,7 @@ model Address {
   houseNumber String
   zip         String
   city        String
-  Event       Event[]
+  events      Event[]
 
   @@unique([streetName, houseNumber, zip, city])
 }

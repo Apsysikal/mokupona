@@ -7,7 +7,7 @@ import type { User } from "~/models/user.server";
 const DEFAULT_REDIRECT = "/";
 
 type UserWithRole = User & {
-  Role: Role;
+  role: Role;
 };
 
 /**
@@ -55,11 +55,11 @@ function isUserWithRole(user: unknown): user is UserWithRole {
     typeof user === "object" &&
     "email" in user &&
     typeof user.email === "string" &&
-    "Role" in user &&
-    user.Role != null &&
-    typeof user.Role === "object" &&
-    "name" in user.Role &&
-    typeof user.Role.name === "string"
+    "role" in user &&
+    user.role != null &&
+    typeof user.role === "object" &&
+    "name" in user.role &&
+    typeof user.role.name === "string"
   );
 }
 
