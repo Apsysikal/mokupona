@@ -19,7 +19,12 @@ describe("smoke tests", () => {
     cy.findByRole("link", { name: /sign up/i }).click();
 
     cy.findByRole("textbox", { name: /email/i }).type(loginForm.email);
-    cy.findByLabelText(/password/i).type(loginForm.password);
+    cy.findAllByLabelText(/password/i)
+      .first()
+      .type(loginForm.password);
+    cy.findAllByLabelText(/password/i)
+      .last()
+      .type(loginForm.password);
     cy.findByRole("button", { name: /create account/i }).click();
 
     cy.findByRole("button", { name: loginForm.email }).click();
