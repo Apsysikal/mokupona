@@ -25,9 +25,7 @@ export function Footer() {
               </a>
             </li>
           </ul>
-          <p className="text-xs">
-            Website made with love in Zurich by Benedikt
-          </p>
+          <p className="text-xs">Website made with love in Zurich</p>
         </div>
       </div>
     </div>
