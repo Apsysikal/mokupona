@@ -16,17 +16,30 @@ import { createUser, getUserByEmail } from "~/models/user.server";
 import { createUserSession, getUserId } from "~/session.server";
 import { safeRedirect } from "~/utils";
 
-const schema = z.object({
-  email: z
-    .string({ required_error: "Email is required" })
-    .email("Invalid email"),
-  password: z
-    .string({
-      required_error: "Password is required",
-    })
-    .min(8, "Password must be greater than 8 characters"),
-  redirectTo: z.string().optional(),
-});
+const schema = z
+  .object({
+    email: z
+      .string({ required_error: "Email is required" })
+      .email("Invalid email"),
+    password: z
+      .string({
+        required_error: "Password is required",
+      })
+      .min(8, "Password must be greater than 8 characters"),
+    confirmPassword: z.string({
+      required_error: "Please confirm your password",
+    }),
+    redirectTo: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      return data.password === data.confirmPassword;
+    },
+    {
+      message: "Passwords must match",
+      path: ["confirmPassword"],
+    },
+  );
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const userId = await getUserId(request);
@@ -101,6 +114,14 @@ export default function Join() {
               ...conform.input(fields.password, { type: "password" }),
             }}
             errors={fields.password.errors}
+          />
+
+          <Field
+            labelProps={{ children: "Confirm Password" }}
+            inputProps={{
+              ...conform.input(fields.confirmPassword, { type: "password" }),
+            }}
+            errors={fields.confirmPassword.errors}
           />
 
           <Input type="hidden" name="redirectTo" value={redirectTo} />
