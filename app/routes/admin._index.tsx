@@ -3,6 +3,7 @@ import { Link } from "@remix-run/react";
 
 import { Button } from "~/components/ui/button";
 import { requireUserWithRole } from "~/session.server";
+import { useUser } from "~/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
@@ -14,6 +15,9 @@ export const meta: MetaFunction<typeof loader> = () => {
 };
 
 export default function DinnersPage() {
+  const user = useUser();
+  const isAdmin = user.role.name === "admin";
+
   return (
     <div className="flex flex-col gap-1">
       <Button asChild>
@@ -22,6 +26,11 @@ export default function DinnersPage() {
       <Button asChild>
         <Link to="locations">Manage Locations</Link>
       </Button>
+      {isAdmin ? (
+        <Button asChild>
+          <Link to="users">Manage Users</Link>
+        </Button>
+      ) : null}
     </div>
   );
 }
