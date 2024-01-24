@@ -7,18 +7,20 @@ export const meta: MetaFunction = () => [{ title: "moku pona" }];
 
 export default function Index() {
   return (
-    <main className="relative flex flex-col">
-      <div className="h-[70vh]">
-        <img
-          src="/landing-page.jpg"
-          className="absolute left-0 right-0 top-0 -z-[1] h-[calc(70vh+3.5rem)] bg-black object-cover object-left opacity-80 [mask-image:linear-gradient(black,transparent_90%)]"
-          alt=""
-          width={1920}
-          height={1080}
-        />
+    <main>
+      <div className="mx-auto grid max-w-3xl grid-cols-12 gap-4 px-2">
+        <div className="col-span-full mt-4 shrink overflow-hidden rounded-2xl shadow-lg md:order-2 md:col-span-7 md:col-start-6">
+          <img
+            src="/landing-page.jpg"
+            className="aspect-video h-full w-full object-cover object-center"
+            alt=""
+            width={500}
+            height={500}
+          />
+        </div>
 
-        <div className="mx-auto flex h-full max-w-3xl grow flex-col justify-end gap-5 px-2">
-          <h1 className="text-8xl font-extrabold lowercase text-primary">
+        <div className="col-span-full flex flex-col gap-5 md:col-span-5 md:h-full md:justify-center">
+          <h1 className="text-7xl font-extrabold lowercase text-primary">
             moku pona
           </h1>
 
@@ -27,7 +29,7 @@ export default function Index() {
             with our friends. And you?
           </p>
 
-          <div className="flex flex-col gap-2 sm:mb-10 sm:flex-row">
+          <div className="flex flex-col gap-2 md:flex-row">
             <Button asChild>
               <Link to="/dinners">Join a dinner</Link>
             </Button>
@@ -38,7 +40,7 @@ export default function Index() {
         </div>
       </div>
 
-      <div className="mx-auto flex max-w-3xl flex-col gap-2 px-2">
+      <div className="mx-auto mt-6 flex max-w-3xl flex-col gap-2 px-2">
         <section
           id="vision"
           className="my-5 flex max-w-3xl scroll-m-9 flex-col gap-4"
