@@ -8,7 +8,7 @@ export const meta: MetaFunction = () => [{ title: "moku pona" }];
 export default function Index() {
   return (
     <main>
-      <div className="mx-auto grid max-w-3xl grid-cols-12 gap-4 px-2">
+      <div className="mx-auto mt-2 grid max-w-3xl grid-cols-12 gap-4 px-2">
         <div className="col-span-full mt-4 shrink overflow-hidden rounded-2xl shadow-lg md:order-2 md:col-span-7 md:col-start-6">
           <img
             src="/landing-page.jpg"
