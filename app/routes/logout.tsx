@@ -1,12 +1,9 @@
-import type { ActionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 
 import { logout } from "~/session.server";
 
-export async function action({ request }: ActionArgs) {
-  return logout(request);
-}
+export const action = async ({ request }: ActionFunctionArgs) =>
+  logout(request);
 
-export async function loader() {
-  return redirect("/");
-}
+export const loader = async () => redirect("/");

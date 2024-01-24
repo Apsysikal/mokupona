@@ -1,0 +1,19 @@
+import { ActionFunctionArgs, redirect } from "@remix-run/node";
+import invariant from "tiny-invariant";
+
+import { deleteAddress } from "~/models/address.server";
+import { requireUserWithRole } from "~/session.server";
+
+export async function loader() {
+  return redirect("/admin/locations");
+}
+
+export async function action({ request, params }: ActionFunctionArgs) {
+  await requireUserWithRole(request, ["moderator", "admin"]);
+
+  const { locationId } = params;
+  invariant(typeof locationId === "string", "Parameter locationId is missing");
+
+  await deleteAddress(locationId);
+  return redirect("/admin/locations");
+}

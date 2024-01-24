@@ -1,175 +1,147 @@
-import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { conform, useForm } from "@conform-to/react";
+import { getFieldsetConstraint, parse } from "@conform-to/zod";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction,
+} from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, Link, useActionData, useSearchParams } from "@remix-run/react";
-import * as React from "react";
+import { z } from "zod";
 
-import { createUserSession, getUserId } from "~/session.server";
+import { Field } from "~/components/forms";
+import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { verifyLogin } from "~/models/user.server";
-import { safeRedirect, validateEmail } from "~/utils";
+import { createUserSession, getUserId } from "~/session.server";
+import { safeRedirect } from "~/utils";
 
-export async function loader({ request }: LoaderArgs) {
+const schema = z.object({
+  email: z
+    .string({ required_error: "Email is required" })
+    .email("Invalid email"),
+  password: z
+    .string({
+      required_error: "Password is required",
+    })
+    .min(8, "Password must be greater than 8 characters"),
+  redirectTo: z.string().optional(),
+  remember: z.boolean().optional().default(false),
+});
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
   const userId = await getUserId(request);
   if (userId) return redirect("/");
   return json({});
-}
+};
 
-export async function action({ request }: ActionArgs) {
+export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
-  const email = formData.get("email");
-  const password = formData.get("password");
-  const redirectTo = safeRedirect(formData.get("redirectTo"), "/notes");
-  const remember = formData.get("remember");
 
-  if (!validateEmail(email)) {
-    return json(
-      { errors: { email: "Email is invalid", password: null } },
-      { status: 400 }
-    );
+  const submission = await parse(formData, {
+    schema: (intent) =>
+      schema.transform(async (data, ctx) => {
+        if (intent !== "submit") return { ...data, user: null };
+        const user = await verifyLogin(data.email, data.password);
+        if (!user) {
+          ctx.addIssue({
+            path: ["password"],
+            code: z.ZodIssueCode.custom,
+            message: "Invalid username or password",
+          });
+          return z.NEVER;
+        }
+
+        return { ...data, user };
+      }),
+    async: true,
+  });
+
+  if (
+    submission.intent !== "submit" ||
+    !submission.value ||
+    !submission.value.user
+  ) {
+    return json(submission);
   }
 
-  if (typeof password !== "string" || password.length === 0) {
-    return json(
-      { errors: { email: null, password: "Password is required" } },
-      { status: 400 }
-    );
-  }
-
-  if (password.length < 8) {
-    return json(
-      { errors: { email: null, password: "Password is too short" } },
-      { status: 400 }
-    );
-  }
-
-  const user = await verifyLogin(email, password);
-
-  if (!user) {
-    return json(
-      { errors: { email: "Invalid email or password", password: null } },
-      { status: 400 }
-    );
-  }
+  const redirectTo = safeRedirect(submission.value.redirectTo, "/");
+  const { remember, user } = submission.value;
 
   return createUserSession({
+    redirectTo,
+    remember: remember,
     request,
     userId: user.id,
-    remember: remember === "on" ? true : false,
-    redirectTo,
   });
-}
-
-export const meta: MetaFunction = () => {
-  return {
-    title: "Login",
-  };
 };
+
+export const meta: MetaFunction = () => [{ title: "Login" }];
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") || "/notes";
-  const actionData = useActionData<typeof action>();
-  const emailRef = React.useRef<HTMLInputElement>(null);
-  const passwordRef = React.useRef<HTMLInputElement>(null);
-
-  React.useEffect(() => {
-    if (actionData?.errors?.email) {
-      emailRef.current?.focus();
-    } else if (actionData?.errors?.password) {
-      passwordRef.current?.focus();
-    }
-  }, [actionData]);
+  const redirectTo = searchParams.get("redirectTo") || "/dinners";
+  const lastSubmission = useActionData<typeof action>();
+  const [form, fields] = useForm({
+    lastSubmission,
+    shouldValidate: "onBlur",
+    constraint: getFieldsetConstraint(schema),
+    defaultValue: { redirectTo },
+    onValidate({ formData }) {
+      return parse(formData, { schema });
+    },
+  });
 
   return (
     <div className="flex min-h-full flex-col justify-center">
       <div className="mx-auto w-full max-w-md px-8">
-        <Form method="post" className="space-y-6">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Email address
-            </label>
-            <div className="mt-1">
-              <input
-                ref={emailRef}
-                id="email"
-                required
-                autoFocus={true}
-                name="email"
-                type="email"
-                autoComplete="email"
-                aria-invalid={actionData?.errors?.email ? true : undefined}
-                aria-describedby="email-error"
-                className="w-full rounded border border-gray-500 px-2 py-1 text-lg"
-              />
-              {actionData?.errors?.email && (
-                <div className="pt-1 text-red-700" id="email-error">
-                  {actionData.errors.email}
-                </div>
-              )}
-            </div>
-          </div>
+        <Form method="post" className="space-y-6" {...form.props}>
+          <Field
+            labelProps={{ children: "Email address" }}
+            inputProps={{ ...conform.input(fields.email, { type: "email" }) }}
+            errors={fields.email.errors}
+          />
 
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Password
-            </label>
-            <div className="mt-1">
-              <input
-                id="password"
-                ref={passwordRef}
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                aria-invalid={actionData?.errors?.password ? true : undefined}
-                aria-describedby="password-error"
-                className="w-full rounded border border-gray-500 px-2 py-1 text-lg"
-              />
-              {actionData?.errors?.password && (
-                <div className="pt-1 text-red-700" id="password-error">
-                  {actionData.errors.password}
-                </div>
-              )}
-            </div>
-          </div>
+          <Field
+            labelProps={{ children: "Password" }}
+            inputProps={{
+              ...conform.input(fields.password, { type: "password" }),
+            }}
+            errors={fields.password.errors}
+          />
 
-          <input type="hidden" name="redirectTo" value={redirectTo} />
-          <button
-            type="submit"
-            className="w-full rounded bg-blue-500  py-2 px-4 text-white hover:bg-blue-600 focus:bg-blue-400"
-          >
-            Log in
-          </button>
+          <Input type="hidden" name="redirectTo" value={redirectTo} />
+
+          <Button type="submit">Log in</Button>
+
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <input
+              <Checkbox
                 id="remember"
                 name="remember"
-                type="checkbox"
                 className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <label
+              <Label
                 htmlFor="remember"
                 className="ml-2 block text-sm text-gray-900"
               >
                 Remember me
-              </label>
+              </Label>
             </div>
             <div className="text-center text-sm text-gray-500">
-              Don't have an account?{" "}
-              <Link
-                className="text-blue-500 underline"
-                to={{
-                  pathname: "/join",
-                  search: searchParams.toString(),
-                }}
-              >
-                Sign up
-              </Link>
+              Don&apos;t have an account?{" "}
+              <Button variant="link" asChild>
+                <Link
+                  to={{
+                    pathname: "/join",
+                    search: searchParams.toString(),
+                  }}
+                >
+                  Sign up
+                </Link>
+              </Button>
             </div>
           </div>
         </Form>

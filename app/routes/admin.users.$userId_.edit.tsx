@@ -1,0 +1,161 @@
+import { conform, useForm } from "@conform-to/react";
+import { getFieldsetConstraint, parse } from "@conform-to/zod";
+import {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction,
+  json,
+  redirect,
+} from "@remix-run/node";
+import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import invariant from "tiny-invariant";
+import { z } from "zod";
+
+import { SelectField } from "~/components/forms";
+import { Button } from "~/components/ui/button";
+import { prisma } from "~/db.server";
+import { requireUserWithRole } from "~/session.server";
+
+const schema = z.object({
+  roleName: z.union([z.literal("user"), z.literal("moderator")]),
+});
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  await requireUserWithRole(request, ["admin"]);
+
+  const { userId } = params;
+  invariant(typeof userId === "string", "Parameter userId is missing");
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      email: true,
+      role: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  if (!user) throw new Response("Not found", { status: 404 });
+
+  return json({
+    user,
+  });
+}
+
+export const meta: MetaFunction<typeof loader> = () => {
+  return [{ title: "Admin - Edit User" }];
+};
+
+export async function action({ request, params }: ActionFunctionArgs) {
+  await requireUserWithRole(request, ["admin"]);
+
+  const { userId } = params;
+  invariant(typeof userId === "string", "Parameter userId is missing");
+
+  const formData = await request.formData();
+  const submission = await parse(formData, {
+    schema: (intent) =>
+      schema.transform(async (data, ctx) => {
+        if (intent !== "submit") return { ...data, roleId: null };
+        const role = await prisma.role.findUnique({
+          where: { name: data.roleName },
+        });
+        if (!role) {
+          ctx.addIssue({
+            path: ["roleName"],
+            code: z.ZodIssueCode.custom,
+            message: "Invalid role",
+          });
+          return z.NEVER;
+        }
+
+        return { ...data, roleId: role.id };
+      }),
+    async: true,
+  });
+
+  if (
+    submission.intent !== "submit" ||
+    !submission.value ||
+    !submission.value.roleId
+  ) {
+    return json(submission);
+  }
+
+  const { roleId } = submission.value;
+
+  await prisma.user.update({
+    where: {
+      id: userId,
+      role: {
+        NOT: {
+          name: "admin",
+        },
+      },
+    },
+    data: {
+      roleId,
+    },
+  });
+
+  return redirect(`/admin/users`);
+}
+
+export default function DinnersPage() {
+  const { user } = useLoaderData<typeof loader>();
+  const lastSubmission = useActionData<typeof action>();
+  const [form, fields] = useForm({
+    lastSubmission,
+    shouldValidate: "onBlur",
+    constraint: getFieldsetConstraint(schema),
+    defaultValue: {
+      roleName: user.role.name,
+    },
+    onValidate({ formData }) {
+      return parse(formData, { schema });
+    },
+  });
+
+  const isAdmin = user.role.name === "admin";
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p>{user.email}</p>
+
+      <Form
+        method="POST"
+        replace
+        className="flex flex-col gap-2"
+        {...form.props}
+      >
+        <SelectField
+          labelProps={{ children: "Role" }}
+          selectProps={{
+            ...conform.select(fields.roleName),
+            disabled: isAdmin,
+            children: [
+              { name: "User", value: "user" },
+              { name: "Moderator", value: "moderator" },
+            ].map((role) => {
+              const { name, value } = role;
+
+              return (
+                <option key={value} value={value}>
+                  {name}
+                </option>
+              );
+            }),
+            className:
+              "flex h-9 w-full appearance-none rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground file:placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+          }}
+          errors={fields.roleName.errors}
+        />
+
+        <Button type="submit">Update User</Button>
+      </Form>
+    </div>
+  );
+}

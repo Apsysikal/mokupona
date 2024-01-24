@@ -15,7 +15,24 @@ model User {
   updatedAt DateTime @updatedAt
 
   password Password?
-  notes    Note[]
+
+  notes  Note[]
+  events Event[]
+
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  roleId String
+}
+
+model Role {
+  id          String @id @default(cuid())
+  // user, moderator, admin
+  name        String @unique
+  description String @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users User[]
 }
 
 model Password {
@@ -35,4 +52,61 @@ model Note {
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId String
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  date        DateTime
+  slots       Int
+  price       Decimal
+
+  image   EventImage @relation(fields: [imageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  imageId String     @unique
+
+  addressId String
+  address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  eventResponses EventResponse[]
+
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdById String
+}
+
+model EventResponse {
+  id    String @id @default(cuid())
+  name  String
+  email String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  eventId String
+
+  @@unique([email, eventId])
+}
+
+model Address {
+  id          String  @id @default(cuid())
+  streetName  String
+  houseNumber String
+  zip         String
+  city        String
+  events      Event[]
+
+  @@unique([streetName, houseNumber, zip, city])
+}
+
+model EventImage {
+  id          String  @id @default(cuid())
+  altText     String?
+  contentType String
+  blob        Bytes
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event?
 }
