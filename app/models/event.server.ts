@@ -5,6 +5,9 @@ import { prisma } from "~/db.server";
 export async function getEvents(filter?: Prisma.EventWhereInput) {
   return prisma.event.findMany({
     where: filter,
+    orderBy: {
+      date: "asc",
+    },
   });
 }
 
