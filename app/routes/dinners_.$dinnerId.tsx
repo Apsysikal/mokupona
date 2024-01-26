@@ -120,7 +120,7 @@ export default function DinnerPage() {
   });
 
   return (
-    <main className="mx-auto flex max-w-3xl grow flex-col gap-5 px-2 pb-8 pt-4">
+    <main className="mx-auto flex max-w-4xl grow flex-col gap-5 px-2 pb-8 pt-4">
       <DinnerView event={event} />
 
       <Form method="post" {...form.props}>

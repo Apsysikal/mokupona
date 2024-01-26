@@ -82,7 +82,7 @@ function Document() {
             : "bg-primary text-primary-foreground",
         )}
       >
-        <div className="mx-auto flex h-full max-w-3xl flex-wrap items-center justify-between gap-4 px-2 sm:flex-nowrap md:gap-8">
+        <div className="mx-auto flex h-full max-w-4xl flex-wrap items-center justify-between gap-4 px-2 sm:flex-nowrap md:gap-8">
           <span className="flex items-center gap-2">
             <Link to="/" className="font-bold">
               moku pona

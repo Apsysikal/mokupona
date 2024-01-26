@@ -8,8 +8,8 @@ export const meta: MetaFunction = () => [{ title: "moku pona" }];
 export default function Index() {
   return (
     <main>
-      <div className="mx-auto mt-2 grid max-w-3xl grid-cols-12 gap-4 px-2">
-        <div className="col-span-full mt-4 shrink overflow-hidden rounded-2xl shadow-lg md:order-2 md:col-span-7 md:col-start-6">
+      <div className="mx-auto mt-2 grid max-w-7xl grid-cols-[minmax(1rem,_1fr)_minmax(0,_calc(56rem/_2))_minmax(0,_calc(56rem/_2))_minmax(1rem,_1fr)] gap-4 px-2 lg:gap-8">
+        <div className="col-span-full mt-4 shrink overflow-hidden rounded-2xl shadow-lg lg:col-start-1 lg:col-end-3">
           <img
             src="/landing-page.jpg"
             className="aspect-video h-full w-full object-cover object-center"
@@ -19,17 +19,17 @@ export default function Index() {
           />
         </div>
 
-        <div className="col-span-full flex flex-col gap-5 md:col-span-5 md:h-full md:justify-center">
-          <h1 className="text-7xl font-extrabold lowercase text-primary">
+        <div className="col-span-full mx-auto flex max-w-4xl flex-col gap-5 lg:col-start-3 lg:col-end-4 lg:h-full lg:justify-center lg:gap-10">
+          <h1 className="text-7xl font-extrabold lowercase text-primary lg:text-8xl">
             moku pona
           </h1>
 
-          <p className="text-balance text-2xl">
+          <p className="text-balance text-3xl lg:text-4xl">
             A dinner society located in Zurich. We love sharing food and stories
             with our friends. And you?
           </p>
 
-          <div className="flex flex-col gap-2 md:flex-row">
+          <div className="flex gap-2 max-md:flex-col">
             <Button asChild>
               <Link to="/dinners">Join a dinner</Link>
             </Button>
@@ -40,10 +40,10 @@ export default function Index() {
         </div>
       </div>
 
-      <div className="mx-auto mt-6 flex max-w-3xl flex-col gap-2 px-2">
+      <div className="mx-auto mt-6 flex max-w-4xl flex-col gap-2 px-2">
         <section
           id="vision"
-          className="my-5 flex max-w-3xl scroll-m-9 flex-col gap-4"
+          className="my-5 flex max-w-4xl scroll-m-9 flex-col gap-4"
         >
           <p className="text-xl font-medium text-primary">
             The perfect place to meet new people.
@@ -82,9 +82,11 @@ export default function Index() {
             moderates the whole event. They inform you about the food and drinks
             you are experiencing and provide conversation topics as neccessary.
           </p>
-          <div className="flex w-full flex-col lg:flex-row">
+          <div>
             <Button asChild>
-              <Link to="/dinners">See available dates</Link>
+              <Link to="/dinners" className="max-md:w-full">
+                See available dates
+              </Link>
             </Button>
           </div>
         </section>
@@ -120,9 +122,11 @@ export default function Index() {
             feel free to contact us at any time. We&lsquo;re always happy to
             help.
           </p>
-          <div className="flex w-full flex-col gap-2 lg:flex-row">
+          <div>
             <Button asChild>
-              <Link to="/dinners">Reserve now</Link>
+              <Link to="/dinners" className="max-md:w-full">
+                Reserve now
+              </Link>
             </Button>
           </div>
         </section>

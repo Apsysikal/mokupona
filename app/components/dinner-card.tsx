@@ -17,7 +17,7 @@ export function DinnerCard({
   const imageUrl = getEventImageUrl(event.imageId);
 
   return (
-    <div className="relative mx-auto overflow-hidden rounded-lg border border-border bg-muted shadow-lg">
+    <div className="relative mx-auto w-full overflow-hidden rounded-lg border border-border bg-muted shadow-lg">
       <img
         src={imageUrl}
         alt=""

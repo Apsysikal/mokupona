@@ -14,7 +14,7 @@ export function DinnerView({ event }: DinnerViewProps) {
   const imageUrl = getEventImageUrl(event.imageId);
 
   return (
-    <div className="mx-auto flex max-w-3xl grow flex-col gap-5">
+    <div className="mx-auto flex max-w-4xl grow flex-col gap-5">
       <div className="flex flex-col gap-2">
         <h1 className="text-4xl font-bold">{event.title}</h1>
       </div>
