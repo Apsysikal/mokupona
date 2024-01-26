@@ -8,34 +8,36 @@ export const meta: MetaFunction = () => [{ title: "moku pona" }];
 export default function Index() {
   return (
     <main>
-      <div className="mx-auto mt-2 grid max-w-7xl grid-cols-[minmax(1rem,_1fr)_minmax(0,_calc(56rem/_2))_minmax(0,_calc(56rem/_2))_minmax(1rem,_1fr)] gap-4 px-2 lg:gap-8">
-        <div className="col-span-full mt-4 shrink overflow-hidden rounded-2xl shadow-lg lg:col-start-1 lg:col-end-3">
-          <img
-            src="/landing-page.jpg"
-            className="aspect-video h-full w-full object-cover object-center"
-            alt=""
-            width={500}
-            height={500}
-          />
-        </div>
+      <div className="mx-auto mt-8 max-w-6xl">
+        <div className="mx-2 grid min-h-[60vh] grid-cols-5 md:overflow-hidden md:rounded-2xl md:border md:shadow-2xl">
+          <div className="col-span-full max-md:overflow-hidden max-md:rounded-2xl md:col-span-3">
+            <img
+              src="/landing-page.jpg"
+              className="aspect-video h-full w-full justify-end object-cover"
+              alt=""
+              width={500}
+              height={500}
+            />
+          </div>
 
-        <div className="col-span-full mx-auto flex max-w-4xl flex-col gap-5 lg:col-start-3 lg:col-end-4 lg:h-full lg:justify-center lg:gap-10">
-          <h1 className="text-7xl font-extrabold lowercase text-primary lg:text-8xl">
-            moku pona
-          </h1>
+          <div className="col-span-full flex flex-col justify-center gap-5 pt-8 md:col-span-2 md:gap-10 md:p-8">
+            <h1 className="text-7xl font-extrabold lowercase text-primary md:text-8xl">
+              moku pona
+            </h1>
 
-          <p className="text-balance text-3xl lg:text-4xl">
-            A dinner society located in Zurich. We love sharing food and stories
-            with our friends. And you?
-          </p>
+            <p className="text-balance text-3xl lg:text-4xl">
+              A dinner society located in Zurich. We love sharing food and
+              stories with our friends. And you?
+            </p>
 
-          <div className="flex gap-2 max-md:flex-col">
-            <Button asChild>
-              <Link to="/dinners">Join a dinner</Link>
-            </Button>
-            <Button variant="secondary" asChild>
-              <Link to="#vision">Get to know us</Link>
-            </Button>
+            <div className="flex gap-2 max-md:flex-col">
+              <Button asChild>
+                <Link to="/dinners">Join a dinner</Link>
+              </Button>
+              <Button variant="secondary" asChild>
+                <Link to="#vision">Get to know us</Link>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
