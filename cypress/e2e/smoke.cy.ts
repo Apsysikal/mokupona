@@ -42,6 +42,7 @@ describe("smoke tests", () => {
     cy.visitAndCheck("/");
 
     cy.findByRole("link", { name: /join a dinner/i }).click();
+    cy.location("pathname").should("equal", "/dinners");
     cy.findAllByRole("link", { name: /join/i }).first().click();
 
     cy.findByRole("textbox", { name: /name/i }).type(testCredentials.name);
