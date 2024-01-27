@@ -1,4 +1,10 @@
-import { conform, useForm } from "@conform-to/react";
+import {
+  FieldConfig,
+  list,
+  useFieldList,
+  useFieldset,
+  useForm,
+} from "@conform-to/react";
 import { getFieldsetConstraint, parse } from "@conform-to/zod";
 import {
   ActionFunctionArgs,
@@ -8,11 +14,12 @@ import {
   redirect,
 } from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import React, { useRef } from "react";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
 import { DinnerView } from "~/components/dinner-view";
-import { Field } from "~/components/forms";
+import { ErrorList, Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { prisma } from "~/db.server";
 import { createEventResponse } from "~/models/event-response.server";
@@ -20,12 +27,19 @@ import { getEventById } from "~/models/event.server";
 import { RootLoaderData } from "~/root";
 import { getEventImageUrl } from "~/utils";
 
-const schema = z.object({
+const person = z.object({
   name: z.string({ required_error: "Name is required" }).trim(),
   email: z
     .string({ required_error: "Email is required" })
     .email("Invalid email")
     .trim(),
+});
+
+const schema = z.object({
+  people: z
+    .array(person)
+    .min(1, "You must at least sign up one person")
+    .max(3, "You can't sign up more than 3 people"),
 });
 
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -51,23 +65,28 @@ export async function action({ params, request }: ActionFunctionArgs) {
       schema.superRefine(async (data, ctx) => {
         if (intent !== "submit") return { ...data };
 
-        const existingResponse = await prisma.eventResponse.findUnique({
-          where: {
-            email_eventId: {
-              email: data.email,
-              eventId: dinnerId,
+        const d = data.people.map(async ({ email }, index) => {
+          const existingResponse = await prisma.eventResponse.findUnique({
+            where: {
+              email_eventId: {
+                email: email,
+                eventId: dinnerId,
+              },
             },
-          },
+          });
+
+          console.log(existingResponse);
+
+          if (existingResponse) {
+            ctx.addIssue({
+              path: [`people[${index}].email`],
+              code: z.ZodIssueCode.custom,
+              message: "Someone is already signed up with this email",
+            });
+          }
         });
 
-        if (existingResponse) {
-          ctx.addIssue({
-            path: ["email"],
-            code: z.ZodIssueCode.custom,
-            message: "You already signed up using this email",
-          });
-          return;
-        }
+        await Promise.all(d);
       }),
     async: true,
   });
@@ -76,9 +95,13 @@ export async function action({ params, request }: ActionFunctionArgs) {
     return json(submission);
   }
 
-  const { name, email } = submission.value;
+  const { people } = submission.value;
 
-  await createEventResponse(dinnerId, name as string, email as string);
+  await Promise.all(
+    people.map(({ name, email }) => {
+      return createEventResponse(dinnerId, name, email);
+    }),
+  );
 
   return redirect("/dinners");
 }
@@ -114,32 +137,80 @@ export default function DinnerPage() {
     lastSubmission,
     shouldValidate: "onBlur",
     constraint: getFieldsetConstraint(schema),
+    defaultValue: { people: [{}] },
     onValidate({ formData }) {
       return parse(formData, { schema });
     },
   });
+  const people = useFieldList(form.ref, fields.people);
 
   return (
     <main className="mx-auto flex max-w-4xl grow flex-col gap-5 px-2 pb-8 pt-4">
       <DinnerView event={event} />
 
-      <Form method="post" {...form.props}>
-        <div className="flex flex-col gap-3">
-          <Field
-            labelProps={{ children: "Name" }}
-            inputProps={{ ...conform.input(fields.name, { type: "text" }) }}
-            errors={fields.name.errors}
-          />
+      <Form method="post" {...form.props} className="flex flex-col gap-4">
+        <ul className="flex flex-col gap-6">
+          {people.map((person, index) => {
+            return (
+              <li key={person.key} className="flex gap-3">
+                <PersonFieldSet
+                  config={person}
+                  removeButtonProps={{
+                    ...list.remove(fields.people.name, { index }),
+                    disabled: people.length === 1,
+                  }}
+                />
+              </li>
+            );
+          })}
+        </ul>
 
-          <Field
-            labelProps={{ children: "Email" }}
-            inputProps={{ ...conform.input(fields.email, { type: "email" }) }}
-            errors={fields.email.errors}
-          />
+        {people.length < 3 ? (
+          <Button
+            variant="outline"
+            {...list.insert(fields.people.name)}
+            className="mt-8"
+          >
+            Add a person
+          </Button>
+        ) : null}
 
-          <Button type="submit">Join</Button>
-        </div>
+        <ErrorList id={fields.people.id} errors={fields.people.errors} />
+
+        <Button type="submit">Join</Button>
       </Form>
     </main>
+  );
+}
+
+function PersonFieldSet({
+  config,
+  removeButtonProps,
+}: {
+  config: FieldConfig<z.infer<typeof person>>;
+  removeButtonProps: ReturnType<typeof list.remove> &
+    React.ButtonHTMLAttributes<HTMLButtonElement>;
+}) {
+  const ref = useRef<HTMLFieldSetElement>(null);
+  const { name, email } = useFieldset(ref, config);
+
+  return (
+    <fieldset ref={ref} className="flex w-full flex-col gap-4">
+      <Field
+        labelProps={{ children: "Name" }}
+        inputProps={{ ...name, type: "text" }}
+        errors={name.errors}
+      />
+
+      <Field
+        labelProps={{ children: "Email" }}
+        inputProps={{ ...email, type: "email" }}
+        errors={email.errors}
+      />
+
+      <Button {...removeButtonProps} variant="destructive">
+        Remove this person
+      </Button>
+    </fieldset>
   );
 }
