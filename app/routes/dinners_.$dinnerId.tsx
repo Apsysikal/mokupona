@@ -6,13 +6,7 @@ import {
   useForm,
 } from "@conform-to/react";
 import { getFieldsetConstraint, parse } from "@conform-to/zod";
-import {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  MetaFunction,
-  json,
-  redirect,
-} from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
 import React, { useRef } from "react";
 import invariant from "tiny-invariant";
@@ -24,8 +18,7 @@ import { Button } from "~/components/ui/button";
 import { prisma } from "~/db.server";
 import { createEventResponse } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
-import { RootLoaderData } from "~/root";
-import { getEventImageUrl } from "~/utils";
+import { redirectWithToast } from "~/utils/toast.server";
 
 const person = z.object({
   name: z.string({ required_error: "Name is required" }).trim(),
@@ -103,32 +96,12 @@ export async function action({ params, request }: ActionFunctionArgs) {
     }),
   );
 
-  return redirect("/dinners");
+  return redirectWithToast("/dinners", {
+    title: "Thank you for signing up",
+    description: "We'll email you, if you were lucky to get a seat.",
+    type: "success",
+  });
 }
-
-export const meta: MetaFunction<typeof loader> = ({ data, matches }) => {
-  if (!data) return [{ title: "Dinner" }];
-  const { domainUrl } = matches[0].data as RootLoaderData;
-
-  const { event } = data;
-  if (!event) return [{ title: "Dinner" }];
-
-  return [
-    { title: `Dinner - ${event.title}` },
-    {
-      property: "og:title",
-      content: `Dinner - ${event.title}`,
-    },
-    {
-      property: "og:image",
-      content: `${domainUrl}${getEventImageUrl(event.imageId)}`,
-    },
-    {
-      property: "og:url",
-      content: `${domainUrl}${matches.at(-1)?.pathname}`,
-    },
-  ];
-};
 
 export default function DinnerPage() {
   const { event } = useLoaderData<typeof loader>();

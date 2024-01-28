@@ -14,6 +14,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
   useLocation,
   useSubmit,
 } from "@remix-run/react";
@@ -31,8 +32,16 @@ import {
   DropdownMenuPortal,
   DropdownMenuTrigger,
 } from "./components/ui/dropdown-menu";
+import { Toaster } from "./components/ui/sonner";
+import { useToast } from "./hooks/useToast";
 import { cn } from "./lib/utils";
-import { getDomainUrl, useOptionalUser, useUser } from "./utils";
+import {
+  combineHeaders,
+  getDomainUrl,
+  useOptionalUser,
+  useUser,
+} from "./utils";
+import { getToast } from "./utils/toast.server";
 
 export type RootLoaderData = SerializeFrom<typeof loader>;
 
@@ -58,7 +67,8 @@ export const links: LinksFunction = () => [
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const domainUrl = getDomainUrl(request);
   const user = await getUserWithRole(request);
-  return json({ user, domainUrl });
+  const { toast, headers } = await getToast(request);
+  return json({ user, toast, domainUrl }, { headers: combineHeaders(headers) });
 };
 
 export default function App() {
@@ -75,14 +85,17 @@ export default function App() {
         <ScrollRestoration />
         <Scripts />
         <LiveReload />
+        <Toaster />
       </body>
     </html>
   );
 }
 
 function Document() {
+  const { toast } = useLoaderData<typeof loader>();
   const user = useOptionalUser();
   const location = useLocation();
+  useToast(toast);
 
   const isAdminSection = location.pathname.startsWith("/admin");
 
