@@ -149,6 +149,11 @@ export default function DinnerPage() {
       <DinnerView event={event} />
 
       <Form method="post" {...form.props} className="flex flex-col gap-4">
+        {/**
+         * This button is needed as hitting Enter would otherwise remove the first person.
+         * https://github.com/edmundhung/conform/issues/216
+         */}
+        <button type="submit" hidden />
         <ul className="flex flex-col gap-6">
           {people.map((person, index) => {
             return (
