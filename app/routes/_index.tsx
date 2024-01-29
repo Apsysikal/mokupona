@@ -11,13 +11,14 @@ export default function Index() {
       <div className="mx-auto mt-8 max-w-6xl">
         <div className="mx-2 grid min-h-[60vh] grid-cols-5 md:overflow-hidden md:rounded-2xl md:border md:shadow-2xl">
           <div className="col-span-full max-md:overflow-hidden max-md:rounded-2xl md:col-span-3">
-            <img
-              src="/landing-page.jpg"
-              className="aspect-video h-full w-full justify-end object-cover"
-              alt=""
-              width={500}
-              height={500}
-            />
+            <picture>
+              <img
+                srcSet="/landing-page-sm.webp 432w, /landing-page-md.webp 648w, /landing-page-lg.webp 864w, /landing-page-original.webp 1080w"
+                src="/landing-page.jpg"
+                className="aspect-video h-full w-full justify-end object-cover"
+                alt=""
+              />
+            </picture>
           </div>
 
           <div className="col-span-full flex flex-col justify-center gap-5 pt-8 md:col-span-2 md:gap-10 md:p-8">

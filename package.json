@@ -18,7 +18,7 @@
     "typecheck": "tsc && tsc -p cypress",
     "validate": "run-p \"test -- --run\" lint typecheck test:e2e:run",
     "prisma:studio": "prisma studio",
-    "data-migration:add_image": "ts-node ./prisma/migrations/20240115180531_add_event_image_as_optional/data-migration.ts"
+    "optimize:images": "ts-node -r tsconfig-paths/register app/optimize-images.ts"
   },
   "prettier": {
     "plugins": [
@@ -94,6 +94,7 @@
     "postcss": "^8.4.31",
     "prettier": "^3.0.3",
     "prettier-plugin-tailwindcss": "^0.5.11",
+    "sharp": "^0.33.2",
     "start-server-and-test": "^2.0.1",
     "tailwindcss": "^3.4.0",
     "ts-node": "^10.9.1",
