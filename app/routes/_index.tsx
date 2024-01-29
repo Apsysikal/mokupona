@@ -3,7 +3,16 @@ import { Link } from "@remix-run/react";
 
 import { Button } from "~/components/ui/button";
 
-export const meta: MetaFunction = () => [{ title: "moku pona" }];
+export const meta: MetaFunction = () => [
+  {
+    title: "moku pona",
+  },
+  {
+    name: "description",
+    content:
+      "A dinner society located in Zurich. We love sharing food and stories with our friends.",
+  },
+];
 
 export default function Index() {
   return (
