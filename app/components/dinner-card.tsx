@@ -2,7 +2,7 @@ import type { Event } from "@prisma/client";
 import type { SerializeFrom } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 
-import { getEventImageUrl } from "~/utils";
+import { getEventImageUrl } from "~/utils/misc";
 
 import { Button } from "./ui/button";
 

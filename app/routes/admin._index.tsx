@@ -2,7 +2,7 @@ import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 
 import { Button } from "~/components/ui/button";
-import { useUser } from "~/utils";
+import { useUser } from "~/utils/misc";
 import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {

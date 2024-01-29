@@ -68,8 +68,6 @@ export async function action({ params, request }: ActionFunctionArgs) {
             },
           });
 
-          console.log(existingResponse);
-
           if (existingResponse) {
             ctx.addIssue({
               path: [`people[${index}].email`],

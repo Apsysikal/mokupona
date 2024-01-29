@@ -1,7 +1,7 @@
 import type { Address, Event } from "@prisma/client";
 import { SerializeFrom } from "@remix-run/node";
 
-import { getEventImageUrl } from "~/utils";
+import { getEventImageUrl } from "~/utils/misc";
 
 export interface DinnerViewProps {
   event:
