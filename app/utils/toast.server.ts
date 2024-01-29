@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { combineHeaders } from "./misc";
 
-invariant(process.env.SESSION_SECRET, "SESSION_SECRET must be defined");
+invariant(process.env.SESSION_SECRET, "SESSION_SECRET must be set");
 
 const TOAST_COOKIE_KEY = "__toast";
 const TOAST_SESSION_KEY = "toast";
