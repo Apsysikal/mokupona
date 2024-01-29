@@ -20,8 +20,8 @@ import {
 } from "@remix-run/react";
 import { useRef } from "react";
 
-import { getUserWithRole } from "~/session.server";
 import stylesheet from "~/tailwind.css";
+import { getUserWithRole } from "~/utils/session.server";
 
 import { Footer } from "./components/footer";
 import { Button } from "./components/ui/button";
@@ -40,7 +40,7 @@ import {
   getDomainUrl,
   useOptionalUser,
   useUser,
-} from "./utils";
+} from "./utils/misc";
 import { getToast } from "./utils/toast.server";
 
 export type RootLoaderData = SerializeFrom<typeof loader>;

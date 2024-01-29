@@ -2,8 +2,8 @@ import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 
 import { Button } from "~/components/ui/button";
-import { requireUserWithRole } from "~/session.server";
 import { useUser } from "~/utils";
+import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);

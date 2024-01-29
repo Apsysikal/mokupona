@@ -2,7 +2,7 @@ import { ActionFunctionArgs, redirect } from "@remix-run/node";
 import invariant from "tiny-invariant";
 
 import { deleteEvent } from "~/models/event.server";
-import { requireUserWithRole } from "~/session.server";
+import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader() {
   return redirect("/admin/dinners");

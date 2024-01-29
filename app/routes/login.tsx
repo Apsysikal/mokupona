@@ -15,8 +15,8 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { verifyLogin } from "~/models/user.server";
-import { createUserSession, getUserId } from "~/session.server";
 import { safeRedirect } from "~/utils";
+import { createUserSession, getUserId } from "~/utils/session.server";
 
 const schema = z.object({
   email: z

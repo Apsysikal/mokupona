@@ -13,8 +13,8 @@ import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { createUser, getUserByEmail } from "~/models/user.server";
-import { createUserSession, getUserId } from "~/session.server";
 import { safeRedirect } from "~/utils";
+import { createUserSession, getUserId } from "~/utils/session.server";
 
 const schema = z
   .object({

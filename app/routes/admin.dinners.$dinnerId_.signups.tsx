@@ -14,7 +14,7 @@ import {
 } from "~/components/ui/table";
 import { getEventResponsesForEvent } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
-import { requireUserWithRole } from "~/session.server";
+import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);

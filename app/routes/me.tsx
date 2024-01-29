@@ -3,7 +3,7 @@ import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 
 import { prisma } from "~/db.server";
-import { logout, requireUserId } from "~/session.server";
+import { logout, requireUserId } from "~/utils/session.server";
 
 export const meta: MetaFunction = () => [{ title: "moku pona" }];
 

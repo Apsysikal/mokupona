@@ -2,7 +2,7 @@ import { createCookieSessionStorage, redirect } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
-import { combineHeaders } from "~/utils";
+import { combineHeaders } from "./misc";
 
 invariant(process.env.SESSION_SECRET, "SESSION_SECRET must be set");
 

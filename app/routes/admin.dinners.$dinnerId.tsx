@@ -5,7 +5,7 @@ import invariant from "tiny-invariant";
 import { DinnerView } from "~/components/dinner-view";
 import { Button } from "~/components/ui/button";
 import { getEventById } from "~/models/event.server";
-import { requireUserWithRole } from "~/session.server";
+import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);

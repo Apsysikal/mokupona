@@ -3,7 +3,7 @@ import { Form, Link, useLoaderData } from "@remix-run/react";
 
 import { Button } from "~/components/ui/button";
 import { prisma } from "~/db.server";
-import { requireUserWithRole } from "~/session.server";
+import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["admin"]);

@@ -13,8 +13,8 @@ import invariant from "tiny-invariant";
 import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { getAddressById, updateAddress } from "~/models/address.server";
-import { requireUserWithRole } from "~/session.server";
 import { AddressSchema } from "~/utils/address-validation";
+import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);

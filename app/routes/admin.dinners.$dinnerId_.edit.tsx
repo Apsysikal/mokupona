@@ -22,9 +22,9 @@ import { Button } from "~/components/ui/button";
 import { prisma } from "~/db.server";
 import { getAddresses } from "~/models/address.server";
 import { getEventById, updateEvent } from "~/models/event.server";
-import { requireUserWithRole } from "~/session.server";
 import { getTimezoneOffset, offsetDate } from "~/utils";
 import { EventSchema } from "~/utils/event-validation";
+import { requireUserWithRole } from "~/utils/session.server";
 
 const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
 

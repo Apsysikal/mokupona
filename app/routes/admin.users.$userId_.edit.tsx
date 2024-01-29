@@ -14,7 +14,7 @@ import { z } from "zod";
 import { SelectField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { prisma } from "~/db.server";
-import { requireUserWithRole } from "~/session.server";
+import { requireUserWithRole } from "~/utils/session.server";
 
 const schema = z.object({
   roleName: z.union([z.literal("user"), z.literal("moderator")]),

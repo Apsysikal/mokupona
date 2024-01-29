@@ -12,8 +12,8 @@ import { Form, useActionData } from "@remix-run/react";
 import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { createAddress } from "~/models/address.server";
-import { requireUserWithRole } from "~/session.server";
 import { AddressSchema } from "~/utils/address-validation";
+import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
