@@ -1,4 +1,3 @@
-import { cssBundleHref } from "@remix-run/css-bundle";
 import type {
   LinksFunction,
   LoaderFunctionArgs,
@@ -9,7 +8,6 @@ import {
   Form,
   Link,
   Links,
-  LiveReload,
   Meta,
   Outlet,
   Scripts,
@@ -20,7 +18,7 @@ import {
 } from "@remix-run/react";
 import { useRef } from "react";
 
-import stylesheet from "~/tailwind.css";
+import stylesheet from "~/tailwind.css?url";
 import { getUserWithRole } from "~/utils/session.server";
 
 import { Footer } from "./components/footer";
@@ -47,7 +45,6 @@ export type RootLoaderData = SerializeFrom<typeof loader>;
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
-  ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
   { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
   {
     rel: "icon",
@@ -84,7 +81,6 @@ export default function App() {
         <Document />
         <ScrollRestoration />
         <Scripts />
-        <LiveReload />
         <Toaster />
       </body>
     </html>
