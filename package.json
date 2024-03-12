@@ -19,7 +19,7 @@
     "typecheck": "tsc && tsc -p cypress",
     "validate": "run-p \"test -- --run\" lint typecheck test:e2e:run",
     "prisma:studio": "prisma studio",
-    "optimize:images": "ts-node -r tsconfig-paths/register app/optimize-images.ts"
+    "optimize:images": "tsx app/optimize-images.ts"
   },
   "prettier": {
     "plugins": [
