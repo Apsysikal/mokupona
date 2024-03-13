@@ -1,4 +1,3 @@
-import { NodeOnDiskFile } from "@remix-run/node";
 import { z } from "zod";
 
 export const EventSchema = z.object({
@@ -14,10 +13,7 @@ export const EventSchema = z.object({
     .min(0, "Price cannot be less than 0")
     .int(),
   cover: z
-    .union([
-      z.instanceof(File, { message: "You must select a file" }),
-      z.instanceof(NodeOnDiskFile, { message: "You must select a file" }),
-    ])
+    .instanceof(File, { message: "You must select a file" })
     .refine((file) => {
       return file.size !== 0;
     }, "You must select a file")
