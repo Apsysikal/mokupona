@@ -1,5 +1,11 @@
-import { conform, useForm } from "@conform-to/react";
-import { getFieldsetConstraint, parse } from "@conform-to/zod";
+import {
+  getFormProps,
+  getInputProps,
+  getSelectProps,
+  getTextareaProps,
+  useForm,
+} from "@conform-to/react";
+import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -70,10 +76,11 @@ export async function action({ request }: ActionFunctionArgs) {
     },
   );
 
-  const submission = parse(formData, {
+  const submission = parseWithZod(formData, {
     schema: (intent) =>
       EventSchema.superRefine((data, ctx) => {
-        if (intent !== "submit") return { ...data };
+        if (intent?.type !== "validate" && intent?.payload.name === "cover")
+          return { ...data };
         if (maximumFileSizeExceeded) {
           ctx.addIssue({
             path: ["cover"],
@@ -85,14 +92,18 @@ export async function action({ request }: ActionFunctionArgs) {
       }),
   });
 
-  if (submission.intent !== "submit" && submission.value) {
+  if (
+    submission.status !== "success" &&
+    submission.payload &&
+    submission.payload.cover
+  ) {
     // Remove the uploaded file from disk.
     // It will be sent again when submitting.
-    await (submission.value.cover as NodeOnDiskFile).remove();
+    await (submission.payload.cover as NodeOnDiskFile).remove();
   }
 
-  if (submission.intent !== "submit" || !submission.value) {
-    return json(submission);
+  if (submission.status !== "success" || submission.payload) {
+    return json(submission.reply());
   }
 
   const { title, description, date, slots, price, cover, addressId } =
@@ -126,13 +137,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function DinnersPage() {
   const { addresses, validImageTypes } = useLoaderData<typeof loader>();
-  const lastSubmission = useActionData<typeof action>();
+  const lastResult = useActionData<typeof action>();
   const [form, fields] = useForm({
-    lastSubmission,
+    lastResult,
     shouldValidate: "onBlur",
-    constraint: getFieldsetConstraint(EventSchema),
+    constraint: getZodConstraint(EventSchema),
     onValidate({ formData }) {
-      return parse(formData, { schema: EventSchema });
+      return parseWithZod(formData, { schema: EventSchema });
     },
   });
 
@@ -144,44 +155,44 @@ export default function DinnersPage() {
         encType="multipart/form-data"
         replace
         className="flex flex-col gap-2"
-        {...form.props}
+        {...getFormProps(form)}
       >
         <Field
           labelProps={{ children: "Title" }}
-          inputProps={{ ...conform.input(fields.title, { type: "text" }) }}
+          inputProps={{ ...getInputProps(fields.title, { type: "text" }) }}
           errors={fields.title.errors}
         />
 
         <TextareaField
           labelProps={{ children: "Description" }}
-          textareaProps={{ ...conform.textarea(fields.description) }}
+          textareaProps={{ ...getTextareaProps(fields.description) }}
           errors={fields.description.errors}
         />
 
         <Field
           labelProps={{ children: "Date" }}
           inputProps={{
-            ...conform.input(fields.date, { type: "datetime-local" }),
+            ...getInputProps(fields.date, { type: "datetime-local" }),
           }}
           errors={fields.date.errors}
         />
 
         <Field
           labelProps={{ children: "Slots" }}
-          inputProps={{ ...conform.input(fields.slots, { type: "number" }) }}
+          inputProps={{ ...getInputProps(fields.slots, { type: "number" }) }}
           errors={fields.slots.errors}
         />
 
         <Field
           labelProps={{ children: "Price" }}
-          inputProps={{ ...conform.input(fields.price, { type: "number" }) }}
+          inputProps={{ ...getInputProps(fields.price, { type: "number" }) }}
           errors={fields.price.errors}
         />
 
         <Field
           labelProps={{ children: "Cover" }}
           inputProps={{
-            ...conform.input(fields.cover, { type: "file" }),
+            ...getInputProps(fields.cover, { type: "file" }),
             tabIndex: 0,
             accept: validImageTypes.join(","),
             className: "file:text-foreground",
@@ -192,7 +203,7 @@ export default function DinnersPage() {
         <SelectField
           labelProps={{ children: "Address" }}
           selectProps={{
-            ...conform.select(fields.addressId),
+            ...getSelectProps(fields.addressId),
             children: addresses.map((address) => {
               const { id } = address;
 

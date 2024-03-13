@@ -1,5 +1,5 @@
-import { conform, useForm } from "@conform-to/react";
-import { getFieldsetConstraint, parse } from "@conform-to/zod";
+import { getFormProps, getInputProps, useForm } from "@conform-to/react";
+import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -29,10 +29,10 @@ export async function action({ request }: ActionFunctionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   const formData = await request.formData();
-  const submission = parse(formData, { schema: AddressSchema });
+  const submission = parseWithZod(formData, { schema: AddressSchema });
 
-  if (submission.intent !== "submit" || !submission.value) {
-    return json(submission);
+  if (submission.status !== "success" || !submission.value) {
+    return json(submission.reply());
   }
 
   const { streetName, houseNumber, zipCode, city } = submission.value;
@@ -48,13 +48,13 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function DinnersPage() {
-  const lastSubmission = useActionData<typeof action>();
+  const lastResult = useActionData<typeof action>();
   const [form, fields] = useForm({
-    lastSubmission,
+    lastResult,
     shouldValidate: "onBlur",
-    constraint: getFieldsetConstraint(AddressSchema),
+    constraint: getZodConstraint(AddressSchema),
     onValidate({ formData }) {
-      return parse(formData, { schema: AddressSchema });
+      return parseWithZod(formData, { schema: AddressSchema });
     },
   });
 
@@ -65,31 +65,31 @@ export default function DinnersPage() {
         method="POST"
         replace
         className="flex flex-col gap-2"
-        {...form.props}
+        {...getFormProps(form)}
       >
         <Field
           labelProps={{ children: "Street Name" }}
-          inputProps={{ ...conform.input(fields.streetName, { type: "text" }) }}
+          inputProps={{ ...getInputProps(fields.streetName, { type: "text" }) }}
           errors={fields.streetName.errors}
         />
 
         <Field
           labelProps={{ children: "House Number" }}
           inputProps={{
-            ...conform.input(fields.houseNumber, { type: "text" }),
+            ...getInputProps(fields.houseNumber, { type: "text" }),
           }}
           errors={fields.houseNumber.errors}
         />
 
         <Field
           labelProps={{ children: "Zip Code" }}
-          inputProps={{ ...conform.input(fields.zipCode, { type: "text" }) }}
+          inputProps={{ ...getInputProps(fields.zipCode, { type: "text" }) }}
           errors={fields.zipCode.errors}
         />
 
         <Field
           labelProps={{ children: "City Name" }}
-          inputProps={{ ...conform.input(fields.city, { type: "text" }) }}
+          inputProps={{ ...getInputProps(fields.city, { type: "text" }) }}
           errors={fields.city.errors}
         />
 

@@ -1,5 +1,5 @@
-import { conform, useForm } from "@conform-to/react";
-import { getFieldsetConstraint, parse } from "@conform-to/zod";
+import { getFormProps, getInputProps, useForm } from "@conform-to/react";
+import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -50,7 +50,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
 
-  const submission = await parse(formData, {
+  const submission = await parseWithZod(formData, {
     schema: schema.superRefine(async (data, ctx) => {
       const existingUser = await getUserByEmail(data.email);
       if (existingUser) {
@@ -65,8 +65,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     async: true,
   });
 
-  if (submission.intent !== "submit" || !submission.value) {
-    return json(submission);
+  if (submission.status !== "success" || !submission.value) {
+    return json(submission.reply());
   }
 
   const redirectTo = safeRedirect(submission.value.redirectTo, "/");
@@ -87,31 +87,31 @@ export const meta: MetaFunction = () => [{ title: "Sign Up" }];
 export default function Join() {
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
-  const lastSubmission = useActionData<typeof action>();
+  const lastResult = useActionData<typeof action>();
   const [form, fields] = useForm({
-    lastSubmission,
+    lastResult,
     shouldValidate: "onBlur",
-    constraint: getFieldsetConstraint(schema),
+    constraint: getZodConstraint(schema),
     defaultValue: { redirectTo },
     onValidate({ formData }) {
-      return parse(formData, { schema });
+      return parseWithZod(formData, { schema });
     },
   });
 
   return (
     <div className="flex min-h-full flex-col justify-center">
       <div className="mx-auto w-full max-w-md px-8">
-        <Form method="post" className="space-y-6" {...form.props}>
+        <Form method="post" className="space-y-6" {...getFormProps(form)}>
           <Field
             labelProps={{ children: "Email address" }}
-            inputProps={{ ...conform.input(fields.email, { type: "email" }) }}
+            inputProps={{ ...getInputProps(fields.email, { type: "email" }) }}
             errors={fields.email.errors}
           />
 
           <Field
             labelProps={{ children: "Password" }}
             inputProps={{
-              ...conform.input(fields.password, { type: "password" }),
+              ...getInputProps(fields.password, { type: "password" }),
             }}
             errors={fields.password.errors}
           />
@@ -119,7 +119,7 @@ export default function Join() {
           <Field
             labelProps={{ children: "Confirm Password" }}
             inputProps={{
-              ...conform.input(fields.confirmPassword, { type: "password" }),
+              ...getInputProps(fields.confirmPassword, { type: "password" }),
             }}
             errors={fields.confirmPassword.errors}
           />

@@ -1,5 +1,5 @@
-import { conform, useForm } from "@conform-to/react";
-import { getFieldsetConstraint, parse } from "@conform-to/zod";
+import { getFormProps, getInputProps, useForm } from "@conform-to/react";
+import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -40,11 +40,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
 
-  const submission = await parse(formData, {
+  const submission = await parseWithZod(formData, {
     schema: (intent) =>
       schema.transform(async (data, ctx) => {
-        if (intent !== "submit") return { ...data, user: null };
+        console.log("intent", intent);
+        if (intent?.type !== "validate") return { ...data, user: null };
         const user = await verifyLogin(data.email, data.password);
+        console.log(user);
         if (!user) {
           ctx.addIssue({
             path: ["password"],
@@ -60,11 +62,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   });
 
   if (
-    submission.intent !== "submit" ||
+    submission.status !== "success" ||
     !submission.value ||
     !submission.value.user
   ) {
-    return json(submission);
+    return json(submission.reply());
   }
 
   const redirectTo = safeRedirect(submission.value.redirectTo, "/");
@@ -83,31 +85,31 @@ export const meta: MetaFunction = () => [{ title: "Login" }];
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/dinners";
-  const lastSubmission = useActionData<typeof action>();
+  const lastResult = useActionData<typeof action>();
   const [form, fields] = useForm({
-    lastSubmission,
+    lastResult,
     shouldValidate: "onBlur",
-    constraint: getFieldsetConstraint(schema),
+    constraint: getZodConstraint(schema),
     defaultValue: { redirectTo },
     onValidate({ formData }) {
-      return parse(formData, { schema });
+      return parseWithZod(formData, { schema });
     },
   });
 
   return (
     <div className="flex min-h-full flex-col justify-center">
       <div className="mx-auto w-full max-w-md px-8">
-        <Form method="post" className="space-y-6" {...form.props}>
+        <Form method="post" className="space-y-6" {...getFormProps(form)}>
           <Field
             labelProps={{ children: "Email address" }}
-            inputProps={{ ...conform.input(fields.email, { type: "email" }) }}
+            inputProps={{ ...getInputProps(fields.email, { type: "email" }) }}
             errors={fields.email.errors}
           />
 
           <Field
             labelProps={{ children: "Password" }}
             inputProps={{
-              ...conform.input(fields.password, { type: "password" }),
+              ...getInputProps(fields.password, { type: "password" }),
             }}
             errors={fields.password.errors}
           />

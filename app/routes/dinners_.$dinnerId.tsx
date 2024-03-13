@@ -1,14 +1,7 @@
-import {
-  FieldConfig,
-  list,
-  useFieldList,
-  useFieldset,
-  useForm,
-} from "@conform-to/react";
-import { getFieldsetConstraint, parse } from "@conform-to/zod";
+import { getFormProps, useForm } from "@conform-to/react";
+import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
-import React, { useRef } from "react";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
@@ -53,10 +46,10 @@ export async function action({ params, request }: ActionFunctionArgs) {
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
 
   const formData = await request.formData();
-  const submission = await parse(formData, {
+  const submission = await parseWithZod(formData, {
     schema: (intent) =>
       schema.superRefine(async (data, ctx) => {
-        if (intent !== "submit") return { ...data };
+        if (intent?.type !== "validate") return { ...data };
 
         const d = data.people.map(async ({ email }, index) => {
           const existingResponse = await prisma.eventResponse.findUnique({
@@ -82,8 +75,8 @@ export async function action({ params, request }: ActionFunctionArgs) {
     async: true,
   });
 
-  if (submission.intent !== "submit" || !submission.value) {
-    return json(submission);
+  if (submission.status !== "success" || !submission.value) {
+    return json(submission.reply());
   }
 
   const { people } = submission.value;
@@ -103,23 +96,28 @@ export async function action({ params, request }: ActionFunctionArgs) {
 
 export default function DinnerPage() {
   const { event } = useLoaderData<typeof loader>();
-  const lastSubmission = useActionData<typeof action>();
+  const lastResult = useActionData<typeof action>();
   const [form, fields] = useForm({
-    lastSubmission,
+    lastResult,
     shouldValidate: "onBlur",
-    constraint: getFieldsetConstraint(schema),
+    constraint: getZodConstraint(schema),
     defaultValue: { people: [{}] },
     onValidate({ formData }) {
-      return parse(formData, { schema });
+      return parseWithZod(formData, { schema });
     },
   });
-  const people = useFieldList(form.ref, fields.people);
+  const people = fields.people.getFieldList();
+  // const people = useFieldList(form.ref, fields.people);
 
   return (
     <main className="mx-auto flex max-w-4xl grow flex-col gap-5 px-2 pb-8 pt-4">
       <DinnerView event={event} />
 
-      <Form method="post" {...form.props} className="flex flex-col gap-4">
+      <Form
+        method="post"
+        {...getFormProps(form)}
+        className="flex flex-col gap-4"
+      >
         {/**
          * This button is needed as hitting Enter would otherwise remove the first person.
          * https://github.com/edmundhung/conform/issues/216
@@ -127,15 +125,36 @@ export default function DinnerPage() {
         <button type="submit" hidden />
         <ul className="flex flex-col gap-6">
           {people.map((person, index) => {
+            const { name, email } = person.getFieldset();
+
             return (
               <li key={person.key} className="flex gap-3">
-                <PersonFieldSet
-                  config={person}
-                  removeButtonProps={{
-                    ...list.remove(fields.people.name, { index }),
-                    disabled: people.length === 1,
-                  }}
-                />
+                <fieldset className="flex w-full flex-col gap-4">
+                  <Field
+                    labelProps={{ children: "Name" }}
+                    inputProps={{ ...name, type: "text" }}
+                    errors={name.errors}
+                  />
+
+                  <Field
+                    labelProps={{ children: "Email" }}
+                    inputProps={{ ...email, type: "email" }}
+                    errors={email.errors}
+                  />
+
+                  <Button
+                    {...{
+                      ...form.remove.getButtonProps({
+                        name: fields.people.name,
+                        index,
+                      }),
+                      disabled: people.length === 1,
+                    }}
+                    variant="destructive"
+                  >
+                    Remove this person
+                  </Button>
+                </fieldset>
               </li>
             );
           })}
@@ -144,7 +163,7 @@ export default function DinnerPage() {
         {people.length < 3 ? (
           <Button
             variant="outline"
-            {...list.insert(fields.people.name)}
+            {...form.insert.getButtonProps({ name: fields.people.name })}
             className="mt-8"
           >
             Add a person
@@ -156,37 +175,5 @@ export default function DinnerPage() {
         <Button type="submit">Join</Button>
       </Form>
     </main>
-  );
-}
-
-function PersonFieldSet({
-  config,
-  removeButtonProps,
-}: {
-  config: FieldConfig<z.infer<typeof person>>;
-  removeButtonProps: ReturnType<typeof list.remove> &
-    React.ButtonHTMLAttributes<HTMLButtonElement>;
-}) {
-  const ref = useRef<HTMLFieldSetElement>(null);
-  const { name, email } = useFieldset(ref, config);
-
-  return (
-    <fieldset ref={ref} className="flex w-full flex-col gap-4">
-      <Field
-        labelProps={{ children: "Name" }}
-        inputProps={{ ...name, type: "text" }}
-        errors={name.errors}
-      />
-
-      <Field
-        labelProps={{ children: "Email" }}
-        inputProps={{ ...email, type: "email" }}
-        errors={email.errors}
-      />
-
-      <Button {...removeButtonProps} variant="destructive">
-        Remove this person
-      </Button>
-    </fieldset>
   );
 }
