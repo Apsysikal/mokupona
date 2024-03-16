@@ -59,7 +59,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const submission = await parseWithZod(formData, {
     schema: (intent) =>
       schema.transform(async (data, ctx) => {
-        if (intent?.type !== "validate") return { ...data, roleId: null };
+        if (intent !== null) return { ...data, roleId: null };
         const role = await prisma.role.findUnique({
           where: { name: data.roleName },
         });

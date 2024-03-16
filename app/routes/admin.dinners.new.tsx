@@ -79,8 +79,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const submission = parseWithZod(formData, {
     schema: (intent) =>
       EventSchema.superRefine((data, ctx) => {
-        if (intent?.type !== "validate" && intent?.payload.name === "cover")
-          return { ...data };
+        if (intent !== null) return { ...data };
         if (maximumFileSizeExceeded) {
           ctx.addIssue({
             path: ["cover"],
@@ -102,7 +101,7 @@ export async function action({ request }: ActionFunctionArgs) {
     await (submission.payload.cover as NodeOnDiskFile).remove();
   }
 
-  if (submission.status !== "success" || submission.payload) {
+  if (submission.status !== "success" || !submission.value) {
     return json(submission.reply());
   }
 

@@ -1,4 +1,4 @@
-import { getFormProps, useForm } from "@conform-to/react";
+import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
@@ -49,8 +49,8 @@ export async function action({ params, request }: ActionFunctionArgs) {
   const submission = await parseWithZod(formData, {
     schema: (intent) =>
       schema.superRefine(async (data, ctx) => {
-        if (intent?.type !== "validate") return { ...data };
-
+        console.log(data);
+        if (intent !== null) return { ...data };
         const d = data.people.map(async ({ email }, index) => {
           const existingResponse = await prisma.eventResponse.findUnique({
             where: {
@@ -132,13 +132,13 @@ export default function DinnerPage() {
                 <fieldset className="flex w-full flex-col gap-4">
                   <Field
                     labelProps={{ children: "Name" }}
-                    inputProps={{ ...name, type: "text" }}
+                    inputProps={{ ...getInputProps(name, { type: "text" }) }}
                     errors={name.errors}
                   />
 
                   <Field
                     labelProps={{ children: "Email" }}
-                    inputProps={{ ...email, type: "email" }}
+                    inputProps={{ ...getInputProps(email, { type: "email" }) }}
                     errors={email.errors}
                   />
 

@@ -43,10 +43,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const submission = await parseWithZod(formData, {
     schema: (intent) =>
       schema.transform(async (data, ctx) => {
-        console.log("intent", intent);
-        if (intent?.type !== "validate") return { ...data, user: null };
+        if (intent !== null) return { ...data, user: null };
         const user = await verifyLogin(data.email, data.password);
-        console.log(user);
         if (!user) {
           ctx.addIssue({
             path: ["password"],

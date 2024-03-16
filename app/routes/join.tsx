@@ -51,17 +51,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
 
   const submission = await parseWithZod(formData, {
-    schema: schema.superRefine(async (data, ctx) => {
-      const existingUser = await getUserByEmail(data.email);
-      if (existingUser) {
-        ctx.addIssue({
-          path: ["email"],
-          code: z.ZodIssueCode.custom,
-          message: "A user already exists with this email",
-        });
-        return;
-      }
-    }),
+    schema: (intent) =>
+      schema.superRefine(async (data, ctx) => {
+        if (intent !== null) return { ...data };
+        const existingUser = await getUserByEmail(data.email);
+        if (existingUser) {
+          ctx.addIssue({
+            path: ["email"],
+            code: z.ZodIssueCode.custom,
+            message: "A user already exists with this email",
+          });
+          return;
+        }
+      }),
     async: true,
   });
 
