@@ -92,7 +92,7 @@ module.exports = {
     {
       files: ["**/*.md"],
       plugins: ["markdown"],
-      extends: ["plugin:markdown/recommended", "prettier"],
+      extends: ["plugin:markdown/recommended-legacy", "prettier"],
     },
 
     // Jest/Vitest
@@ -127,7 +127,7 @@ module.exports = {
 
     // Node
     {
-      files: [".eslintrc.js", "mocks/**/*.js"],
+      files: [".eslintrc.cjs", "mocks/**/*.js"],
       env: {
         node: true,
       },
