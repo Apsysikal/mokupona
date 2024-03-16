@@ -49,7 +49,6 @@ export async function action({ params, request }: ActionFunctionArgs) {
   const submission = await parseWithZod(formData, {
     schema: (intent) =>
       schema.superRefine(async (data, ctx) => {
-        console.log(data);
         if (intent !== null) return { ...data };
         const d = data.people.map(async ({ email }, index) => {
           const existingResponse = await prisma.eventResponse.findUnique({
