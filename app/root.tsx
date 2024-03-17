@@ -119,7 +119,10 @@ function Document() {
             <Link to="/dinners" className="hover:underline">
               upcoming dinners
             </Link>
-            <Link to="/dinners" className="hover:underline">
+            <Link
+              to="/about"
+              className="pointer-events-none text-foreground/20"
+            >
               about
             </Link>
             <a

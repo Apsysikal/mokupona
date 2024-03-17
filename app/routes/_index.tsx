@@ -105,7 +105,7 @@ export default function Index() {
         </section>
       </div>
 
-      <div className="relative mt-32 w-full py-4 text-gray-950">
+      <div className="relative mt-32 w-full py-4 text-background">
         <div className="mx-auto flex max-w-4xl flex-col gap-2 px-2 after:absolute after:inset-0 after:-z-10 after:skew-y-3 after:bg-accent">
           <section className="my-5 grid max-w-4xl grid-cols-5 gap-5">
             <h2 className="col-span-full text-4xl">who we are</h2>
@@ -137,7 +137,10 @@ export default function Index() {
               })}
             </div>
 
-            <Link to="/about" className="flex items-center gap-4">
+            <Link
+              to="/about"
+              className="pointer-events-none flex items-center gap-4 text-background/20"
+            >
               <span className="shrink-0">get to know us</span>
               <Arrow className="shrink-0" />
             </Link>
