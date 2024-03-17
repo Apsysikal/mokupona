@@ -28,7 +28,8 @@ import { Button } from "~/components/ui/button";
 import { prisma } from "~/db.server";
 import { getAddresses } from "~/models/address.server";
 import { getEventById, updateEvent } from "~/models/event.server";
-import { EventSchema } from "~/utils/event-validation";
+import { ClientEventSchema } from "~/utils/event-validation.client";
+import { ServerEventSchema } from "~/utils/event-validation.server";
 import { getTimezoneOffset, offsetDate } from "~/utils/misc";
 import { requireUserWithRole } from "~/utils/session.server";
 
@@ -61,14 +62,8 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [{ title: `Admin - Dinner - ${dinner.title} - Edit` }];
 };
 
-/**
- * Make cover optional, to not force a reupload.
- * All other properties are still required, but
- * prefilled with the existing data.
- */
-const schema = EventSchema.partial({ cover: true });
-
 export async function action({ request, params }: ActionFunctionArgs) {
+  const schema = ServerEventSchema.partial({ cover: true });
   const user = await requireUserWithRole(request, ["moderator", "admin"]);
   const timeOffset = getTimezoneOffset(request);
   let maximumFileSizeExceeded = false;
@@ -113,6 +108,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
         }
       }),
   });
+
+  console.log(submission.status);
+  console.log(submission.payload?.cover);
 
   if (
     submission.status !== "success" &&
@@ -162,6 +160,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function DinnersPage() {
+  const schema = ClientEventSchema.partial({ cover: true });
   const { addresses, validImageTypes, dinner } = useLoaderData<typeof loader>();
   const lastResult = useActionData<typeof action>();
   const [form, fields] = useForm({

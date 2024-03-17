@@ -27,7 +27,8 @@ import { Button } from "~/components/ui/button";
 import { prisma } from "~/db.server";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
-import { EventSchema } from "~/utils/event-validation";
+import { ClientEventSchema } from "~/utils/event-validation.client";
+import { ServerEventSchema } from "~/utils/event-validation.server";
 import { getTimezoneOffset, offsetDate } from "~/utils/misc";
 import { requireUserWithRole } from "~/utils/session.server";
 
@@ -78,7 +79,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const submission = parseWithZod(formData, {
     schema: (intent) =>
-      EventSchema.superRefine((data, ctx) => {
+      ServerEventSchema.superRefine((data, ctx) => {
         if (intent !== null) return { ...data };
         if (maximumFileSizeExceeded) {
           ctx.addIssue({
@@ -140,9 +141,9 @@ export default function DinnersPage() {
   const [form, fields] = useForm({
     lastResult,
     shouldValidate: "onBlur",
-    constraint: getZodConstraint(EventSchema),
+    constraint: getZodConstraint(ClientEventSchema),
     onValidate({ formData }) {
-      return parseWithZod(formData, { schema: EventSchema });
+      return parseWithZod(formData, { schema: ClientEventSchema });
     },
   });
 
