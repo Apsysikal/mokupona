@@ -3,7 +3,7 @@ import { Link } from "@remix-run/react";
 
 export function Footer() {
   return (
-    <div className="mt-10 bg-muted text-muted-foreground">
+    <div className="mt-40 border-t border-gray-50 bg-gray-950 text-gray-50">
       <div className="mx-auto max-w-4xl p-2">
         <div className="flex flex-col gap-3">
           <p className="font-bold lowercase">moku pona</p>
