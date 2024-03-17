@@ -45,6 +45,20 @@ export type RootLoaderData = SerializeFrom<typeof loader>;
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
+  {
+    rel: "preload",
+    href: "/fonts/OpenSans-VF.woff2",
+    as: "font",
+    type: "font/woff2",
+    crossOrigin: "anonymous",
+  },
+  {
+    rel: "preload",
+    href: "/fonts/OpenSans-Italic-VF.woff2",
+    as: "font",
+    type: "font/woff2",
+    crossOrigin: "anonymous",
+  },
   { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
   {
     rel: "icon",
@@ -94,14 +108,12 @@ function Document() {
 
   return (
     <>
-      <nav className="h-16 border-b-2 border-gray-50 bg-gray-950 text-gray-50">
+      <nav className="h-20 border-b border-gray-50 bg-gray-950 text-gray-50">
         <div className="mx-auto flex h-full max-w-4xl flex-wrap items-center justify-between gap-4 px-2 sm:flex-nowrap md:gap-8">
-          <span className="flex items-center gap-6">
+          <Link to="/" className="flex items-center gap-6 font-bold">
             <Logo className="h-6 w-6" />
-            <Link to="/" className="font-bold">
-              moku pona
-            </Link>
-          </span>
+            moku pona
+          </Link>
 
           <div className="flex items-center gap-10">
             <Link to="/dinners" className="hover:underline">
@@ -116,8 +128,7 @@ function Document() {
               rel="noopener noreferrer"
               className="flex items-center gap-1 hover:underline"
             >
-              <InstagramLogoIcon />
-              Instagram
+              <InstagramLogoIcon className="h-7 w-7" />
             </a>
             {user ? (
               <UserDropdown />
@@ -141,7 +152,7 @@ function UserDropdown() {
   const formRef = useRef<HTMLFormElement>(null);
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost">
           <span className="text-body-sm">{user.email}</span>
