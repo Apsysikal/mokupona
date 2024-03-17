@@ -1,6 +1,11 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
+import {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction,
+  json,
+} from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
 import { z } from "zod";
@@ -27,6 +32,15 @@ const schema = z.object({
     .min(1, "You must at least sign up one person")
     .max(3, "You can't sign up more than 3 people"),
 });
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
+  if (!data) return [{ title: "Dinner" }];
+
+  const { event } = data;
+  if (!event) return [{ title: "Dinner" }];
+
+  return [{ title: `Dinner - ${event.title}` }];
+};
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const { dinnerId } = params;
