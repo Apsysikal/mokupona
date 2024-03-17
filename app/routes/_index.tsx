@@ -37,9 +37,9 @@ export default function Index() {
           </div>
 
           <div className="col-span-full flex flex-col justify-center gap-8 py-2 md:col-span-2">
-            <h1 className="text-6xl lowercase text-gray-50">moku pona</h1>
+            <h1 className="text-5xl lowercase text-gray-50">moku pona</h1>
 
-            <p className="text-balance text-3xl">
+            <p className="text-balance text-2xl font-thin leading-normal">
               A dinner society located in Zurich. We love sharing food and
               stories with our friends. And you?
             </p>
@@ -63,7 +63,7 @@ export default function Index() {
       >
         <section className="my-5 grid max-w-4xl grid-cols-5 gap-10">
           <h2 className="col-span-full text-4xl">our vision</h2>
-          <p className="col-span-full flex items-center gap-10 text-xl leading-relaxed">
+          <p className="col-span-full flex items-center gap-10 text-xl font-light leading-relaxed">
             Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam
             nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam
             erat, sed diam voluptua. At vero eos et accusam et justo duo dolores
@@ -94,7 +94,7 @@ export default function Index() {
               <CoffeeIllustration className="h-full w-full" />
             </span>
           </h2>
-          <p className="col-span-full text-xl leading-relaxed">
+          <p className="col-span-full text-xl font-thin leading-relaxed">
             Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam
             nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam
             erat, sed diam voluptua. At vero eos et accusam et justo duo dolores
@@ -110,7 +110,7 @@ export default function Index() {
           <section className="my-5 grid max-w-4xl grid-cols-5 gap-5">
             <h2 className="col-span-full text-4xl">who we are</h2>
 
-            <p className="col-span-2 my-auto text-xl leading-relaxed">
+            <p className="col-span-2 my-auto text-xl font-thin leading-relaxed">
               Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam
               nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam
             </p>
