@@ -1,3 +1,4 @@
+import { InstagramLogoIcon } from "@radix-ui/react-icons";
 import type {
   LinksFunction,
   LoaderFunctionArgs,
@@ -13,7 +14,6 @@ import {
   Scripts,
   ScrollRestoration,
   useLoaderData,
-  useLocation,
   useSubmit,
 } from "@remix-run/react";
 import { useRef } from "react";
@@ -22,6 +22,7 @@ import stylesheet from "~/tailwind.css?url";
 import { getUserWithRole } from "~/utils/session.server";
 
 import { Footer } from "./components/footer";
+import { Logo } from "./components/logo";
 import { Button } from "./components/ui/button";
 import {
   DropdownMenu,
@@ -32,7 +33,6 @@ import {
 } from "./components/ui/dropdown-menu";
 import { Toaster } from "./components/ui/sonner";
 import { useToast } from "./hooks/useToast";
-import { cn } from "./lib/utils";
 import {
   combineHeaders,
   getDomainUrl,
@@ -77,7 +77,7 @@ export default function App() {
         <Meta />
         <Links />
       </head>
-      <body className="h-full bg-background text-foreground">
+      <body className="h-full bg-gray-950 text-gray-50">
         <Document />
         <ScrollRestoration />
         <Scripts />
@@ -90,34 +90,39 @@ export default function App() {
 function Document() {
   const { toast } = useLoaderData<typeof loader>();
   const user = useOptionalUser();
-  const location = useLocation();
   useToast(toast);
-
-  const isAdminSection = location.pathname.startsWith("/admin");
 
   return (
     <>
-      <nav
-        className={cn(
-          "h-14",
-          isAdminSection
-            ? "bg-destructive text-destructive-foreground"
-            : "bg-primary text-primary-foreground",
-        )}
-      >
+      <nav className="h-16 border-b-2 border-gray-50 bg-gray-950 text-gray-50">
         <div className="mx-auto flex h-full max-w-4xl flex-wrap items-center justify-between gap-4 px-2 sm:flex-nowrap md:gap-8">
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-6">
+            <Logo className="h-6 w-6" />
             <Link to="/" className="font-bold">
               moku pona
             </Link>
-            {isAdminSection ? <Link to="/admin">Admin</Link> : null}
           </span>
 
           <div className="flex items-center gap-10">
+            <Link to="/dinners" className="hover:underline">
+              upcoming dinners
+            </Link>
+            <Link to="/dinners" className="hover:underline">
+              about
+            </Link>
+            <a
+              href="https://instagram.com/mokupona"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 hover:underline"
+            >
+              <InstagramLogoIcon />
+              Instagram
+            </a>
             {user ? (
               <UserDropdown />
             ) : (
-              <Button asChild variant="ghost" className="font-normal" size="sm">
+              <Button asChild variant="ghost" className="font-normal">
                 <Link to="/login">Log In</Link>
               </Button>
             )}
@@ -138,7 +143,7 @@ function UserDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="" size="sm">
+        <Button variant="ghost">
           <span className="text-body-sm">{user.email}</span>
         </Button>
       </DropdownMenuTrigger>
