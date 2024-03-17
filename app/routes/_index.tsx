@@ -81,7 +81,7 @@ export default function Index() {
         <img
           // srcSet="/landing-page-sm.webp 432w, /landing-page-md.webp 648w, /landing-page-lg.webp 864w, /landing-page-original.webp 1080w"
           src="/accent-image.png"
-          className="my-20 h-96 w-full justify-end object-cover"
+          className="my-40 h-96 w-full justify-end object-cover"
           alt=""
         />
       </picture>
@@ -105,8 +105,8 @@ export default function Index() {
         </section>
       </div>
 
-      <div className="relative mt-16 w-full py-4 text-gray-950">
-        <div className="mx-auto flex max-w-4xl flex-col gap-2 px-2 after:absolute after:inset-y-0 after:-z-10 after:w-[200%] after:-rotate-3 after:self-center after:bg-accent">
+      <div className="relative mt-32 w-full py-4 text-gray-950">
+        <div className="mx-auto flex max-w-4xl flex-col gap-2 px-2 after:absolute after:inset-0 after:-z-10 after:skew-y-3 after:bg-accent">
           <section className="my-5 grid max-w-4xl grid-cols-5 gap-5">
             <h2 className="col-span-full text-4xl">who we are</h2>
 
