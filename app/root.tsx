@@ -128,7 +128,7 @@ function Document() {
               rel="noopener noreferrer"
               className="flex items-center gap-1 hover:underline"
             >
-              <InstagramLogoIcon className="h-7 w-7" />
+              <InstagramLogoIcon className="h-6 w-6" />
             </a>
             {user ? (
               <UserDropdown />
