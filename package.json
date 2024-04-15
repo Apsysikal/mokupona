@@ -31,7 +31,7 @@
     "/public/build"
   ],
   "dependencies": {
-    "@conform-to/react": "^1.0.4",
+    "@conform-to/react": "^1.1.0",
     "@conform-to/zod": "^1.0.4",
     "@prisma/client": "^5.11.0",
     "@radix-ui/react-checkbox": "^1.0.4",
