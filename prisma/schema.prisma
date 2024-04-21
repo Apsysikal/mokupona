@@ -75,9 +75,13 @@ model Event {
 }
 
 model EventResponse {
-  id    String @id @default(cuid())
-  name  String
-  email String
+  id           String   @id @default(cuid())
+  name         String
+  email        String
+  vegetarian   Boolean?
+  student      Boolean?
+  restrictions String?
+  comment      String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

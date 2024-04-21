@@ -1,4 +1,9 @@
-import { getFormProps, getInputProps, useForm } from "@conform-to/react";
+import {
+  getFormProps,
+  getInputProps,
+  getTextareaProps,
+  useForm,
+} from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import {
   ActionFunctionArgs,
@@ -11,7 +16,12 @@ import invariant from "tiny-invariant";
 import { z } from "zod";
 
 import { DinnerView } from "~/components/dinner-view";
-import { ErrorList, Field } from "~/components/forms";
+import {
+  CheckboxField,
+  ErrorList,
+  Field,
+  TextareaField,
+} from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { prisma } from "~/db.server";
 import { createEventResponse } from "~/models/event-response.server";
@@ -24,13 +34,17 @@ const person = z.object({
     .string({ required_error: "Email is required" })
     .email("Invalid email")
     .trim(),
+  alternativeMenu: z.boolean().default(false),
+  student: z.boolean().default(false),
+  dietaryRestrictions: z.string().trim().optional(),
 });
 
 const schema = z.object({
   people: z
     .array(person)
     .min(1, "You must at least sign up one person")
-    .max(3, "You can't sign up more than 3 people"),
+    .max(3, "You can't sign up more than 4 people"),
+  comment: z.string().trim().optional(),
 });
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
@@ -92,12 +106,22 @@ export async function action({ params, request }: ActionFunctionArgs) {
     return json(submission.reply());
   }
 
-  const { people } = submission.value;
+  const { people, comment } = submission.value;
 
   await Promise.all(
-    people.map(({ name, email }) => {
-      return createEventResponse(dinnerId, name, email);
-    }),
+    people.map(
+      ({ name, email, alternativeMenu, student, dietaryRestrictions }) => {
+        return createEventResponse(
+          dinnerId,
+          name,
+          email,
+          alternativeMenu,
+          student,
+          dietaryRestrictions,
+          comment,
+        );
+      },
+    ),
   );
 
   return redirectWithToast("/dinners", {
@@ -120,7 +144,6 @@ export default function DinnerPage() {
     },
   });
   const people = fields.people.getFieldList();
-  // const people = useFieldList(form.ref, fields.people);
 
   return (
     <main className="mx-auto flex max-w-4xl grow flex-col gap-5 px-2 pb-8 pt-4">
@@ -138,10 +161,16 @@ export default function DinnerPage() {
         <button type="submit" hidden />
         <ul className="flex flex-col gap-6">
           {people.map((person, index) => {
-            const { name, email } = person.getFieldset();
+            const {
+              name,
+              email,
+              alternativeMenu,
+              dietaryRestrictions,
+              student,
+            } = person.getFieldset();
 
             return (
-              <li key={person.key} className="flex gap-3">
+              <li key={person.id} className="flex gap-3">
                 <fieldset className="flex w-full flex-col gap-4">
                   <Field
                     labelProps={{ children: "Name" }}
@@ -153,6 +182,30 @@ export default function DinnerPage() {
                     labelProps={{ children: "Email" }}
                     inputProps={{ ...getInputProps(email, { type: "email" }) }}
                     errors={email.errors}
+                  />
+
+                  <CheckboxField
+                    labelProps={{ children: "Vegan / Vegetarian" }}
+                    buttonProps={{
+                      ...getInputProps(alternativeMenu, { type: "checkbox" }),
+                    }}
+                    errors={alternativeMenu.errors}
+                  />
+
+                  <CheckboxField
+                    labelProps={{ children: "Student" }}
+                    buttonProps={{
+                      ...getInputProps(student, { type: "checkbox" }),
+                    }}
+                    errors={alternativeMenu.errors}
+                  />
+
+                  <Field
+                    labelProps={{ children: "Dietary restrictions" }}
+                    inputProps={{
+                      ...getInputProps(dietaryRestrictions, { type: "text" }),
+                    }}
+                    errors={dietaryRestrictions.errors}
                   />
 
                   <Button
@@ -184,6 +237,12 @@ export default function DinnerPage() {
         ) : null}
 
         <ErrorList id={fields.people.id} errors={fields.people.errors} />
+
+        <TextareaField
+          labelProps={{ children: "Comment" }}
+          textareaProps={{ ...getTextareaProps(fields.comment) }}
+          errors={fields.comment.errors}
+        />
 
         <Button type="submit">Join</Button>
       </Form>

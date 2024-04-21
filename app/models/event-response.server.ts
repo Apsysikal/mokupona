@@ -4,12 +4,20 @@ export async function createEventResponse(
   eventId: string,
   name: string,
   email: string,
+  vegetarian = false,
+  student = false,
+  restrictions?: string,
+  comment?: string,
 ) {
   return prisma.eventResponse.create({
     data: {
       name,
       email,
       eventId,
+      vegetarian,
+      student,
+      restrictions,
+      comment,
     },
   });
 }
