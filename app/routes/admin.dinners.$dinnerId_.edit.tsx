@@ -109,9 +109,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }),
   });
 
-  console.log(submission.status);
-  console.log(submission.payload?.cover);
-
   if (
     submission.status !== "success" &&
     submission.payload &&

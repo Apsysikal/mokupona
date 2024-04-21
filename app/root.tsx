@@ -1,4 +1,4 @@
-import { InstagramLogoIcon } from "@radix-ui/react-icons";
+import { HamburgerMenuIcon, InstagramLogoIcon } from "@radix-ui/react-icons";
 import type {
   LinksFunction,
   LoaderFunctionArgs,
@@ -115,13 +115,13 @@ function Document() {
             moku pona
           </Link>
 
-          <div className="flex items-center gap-10">
-            <Link to="/dinners" className="hover:underline">
+          <div className="flex items-center gap-10 max-md:gap-5">
+            <Link to="/dinners" className="hover:underline max-md:hidden">
               upcoming dinners
             </Link>
             <Link
               to="/about"
-              className="pointer-events-none text-foreground/20"
+              className="pointer-events-none text-foreground/20 max-md:hidden"
             >
               about
             </Link>
@@ -129,7 +129,7 @@ function Document() {
               href="https://instagram.com/mokupona"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 hover:underline"
+              className="flex items-center gap-1 hover:underline max-md:hidden"
             >
               <InstagramLogoIcon className="h-6 w-6" />
             </a>
@@ -140,12 +140,54 @@ function Document() {
                 <Link to="/login">Log In</Link>
               </Button>
             )}
+            <span className="md:hidden">
+              <GeneralDropdown />
+            </span>
           </div>
         </div>
       </nav>
       <Outlet />
       <Footer />
     </>
+  );
+}
+
+function GeneralDropdown() {
+  return (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="text-body.sm">
+          <HamburgerMenuIcon />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuPortal>
+        <DropdownMenuContent sideOffset={8} align="start">
+          <DropdownMenuItem>
+            <Link to="/dinners" className="hover:underline">
+              upcoming dinners
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <Link
+              to="/about"
+              className="pointer-events-none text-foreground/20"
+            >
+              about
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <a
+              href="https://instagram.com/mokupona"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 hover:underline"
+            >
+              <InstagramLogoIcon className="h-6 w-6" />
+            </a>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenuPortal>
+    </DropdownMenu>
   );
 }
 

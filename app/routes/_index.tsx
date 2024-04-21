@@ -70,7 +70,7 @@ export default function Index() {
             et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est
             Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur
             sadipscing elitr, sed diam
-            <span className="-mt-32 w-72 shrink-0">
+            <span className="-mt-32 w-72 shrink-0 max-md:hidden">
               <FruitDrinkIllustration className="h-full w-full" />
             </span>
           </p>
@@ -81,14 +81,14 @@ export default function Index() {
         <img
           // srcSet="/landing-page-sm.webp 432w, /landing-page-md.webp 648w, /landing-page-lg.webp 864w, /landing-page-original.webp 1080w"
           src="/accent-image.png"
-          className="my-40 h-96 w-full justify-end object-cover"
+          className="my-40 h-96 w-full justify-end object-cover max-md:my-20 max-md:h-48"
           alt=""
         />
       </picture>
 
       <div className="mx-auto flex max-w-4xl flex-col gap-2 px-2">
         <section className="my-5 grid max-w-4xl grid-cols-5 gap-10">
-          <h2 className="col-span-full flex items-end justify-between gap-10 text-4xl">
+          <h2 className="col-span-full flex items-end justify-between gap-10 text-4xl max-md:flex-col max-md:items-start">
             how&apos;s this different?
             <span className="w-80 shrink-0">
               <CoffeeIllustration className="h-full w-full" />
@@ -110,12 +110,12 @@ export default function Index() {
           <section className="my-5 grid max-w-4xl grid-cols-5 gap-5">
             <h2 className="col-span-full text-4xl">who we are</h2>
 
-            <p className="col-span-2 my-auto text-xl font-thin leading-relaxed">
+            <p className="col-span-2 my-auto text-xl font-thin leading-relaxed max-md:col-span-full">
               Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam
               nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam
             </p>
 
-            <div className="col-span-3 flex items-center justify-end self-center">
+            <div className="col-span-3 flex items-center justify-end self-center max-md:col-span-full max-md:items-start max-md:justify-start">
               {[0, 1, 2].map((_, index) => {
                 const offset = -1.5 * index;
 
@@ -125,7 +125,7 @@ export default function Index() {
                       // srcSet="/landing-page-sm.webp 432w, /landing-page-md.webp 648w, /landing-page-lg.webp 864w, /landing-page-original.webp 1080w"
                       src={`/portraits/portrait-${index}.jpg`}
                       className={cn(
-                        "h-40 w-40 translate-x-1 rounded-full border-2 border-accent object-cover",
+                        "h-40 w-40 translate-x-1 rounded-full border-2 border-accent object-cover max-md:h-28 max-md:w-28",
                       )}
                       style={{
                         transform: `translate(${offset}rem)`,
