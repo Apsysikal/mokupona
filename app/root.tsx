@@ -33,12 +33,7 @@ import {
 } from "./components/ui/dropdown-menu";
 import { Toaster } from "./components/ui/sonner";
 import { useToast } from "./hooks/useToast";
-import {
-  combineHeaders,
-  getDomainUrl,
-  useOptionalUser,
-  useUser,
-} from "./utils/misc";
+import { combineHeaders, getDomainUrl, useOptionalUser } from "./utils/misc";
 import { getToast } from "./utils/toast.server";
 
 export type RootLoaderData = SerializeFrom<typeof loader>;
@@ -102,8 +97,8 @@ export default function App() {
 }
 
 function Document() {
+  const optionalUser = useOptionalUser();
   const { toast } = useLoaderData<typeof loader>();
-  const user = useOptionalUser();
   useToast(toast);
 
   return (
@@ -119,12 +114,14 @@ function Document() {
             <Link to="/dinners" className="hover:underline max-md:hidden">
               upcoming dinners
             </Link>
+
             <Link
               to="/about"
               className="pointer-events-none text-foreground/20 max-md:hidden"
             >
               about
             </Link>
+
             <a
               href="https://instagram.com/mokupona"
               target="_blank"
@@ -133,13 +130,27 @@ function Document() {
             >
               <InstagramLogoIcon className="h-6 w-6" />
             </a>
-            {user ? (
-              <UserDropdown />
+
+            {["moderator", "admin"].includes(optionalUser?.role.name ?? "") ? (
+              <Link
+                prefetch="intent"
+                to="/admin"
+                className="hover:underline max-md:hidden"
+              >
+                admin area
+              </Link>
+            ) : null}
+
+            {optionalUser ? (
+              <Form action="/logout" method="POST" className="max-md:hidden">
+                <button className="hover:underline ">logout</button>
+              </Form>
             ) : (
-              <Button asChild variant="ghost" className="font-normal">
-                <Link to="/login">Log In</Link>
-              </Button>
+              <Link to="/login" className="hover:underline max-md:hidden">
+                login
+              </Link>
             )}
+
             <span className="md:hidden">
               <GeneralDropdown />
             </span>
@@ -153,6 +164,10 @@ function Document() {
 }
 
 function GeneralDropdown() {
+  const optionalUser = useOptionalUser();
+  const submit = useSubmit();
+  const formRef = useRef<HTMLFormElement>(null);
+
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
@@ -167,6 +182,7 @@ function GeneralDropdown() {
               upcoming dinners
             </Link>
           </DropdownMenuItem>
+
           <DropdownMenuItem>
             <Link
               to="/about"
@@ -175,6 +191,7 @@ function GeneralDropdown() {
               about
             </Link>
           </DropdownMenuItem>
+
           <DropdownMenuItem>
             <a
               href="https://instagram.com/mokupona"
@@ -183,47 +200,38 @@ function GeneralDropdown() {
               className="flex items-center gap-1 hover:underline"
             >
               <InstagramLogoIcon className="h-6 w-6" />
+              instagram
             </a>
           </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenuPortal>
-    </DropdownMenu>
-  );
-}
 
-function UserDropdown() {
-  const user = useUser();
-  const submit = useSubmit();
-  const formRef = useRef<HTMLFormElement>(null);
-
-  return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost">
-          <span className="text-body-sm">{user.email}</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuPortal>
-        <DropdownMenuContent sideOffset={8} align="start">
-          {["moderator", "admin"].includes(user.role.name) ? (
+          {["moderator", "admin"].includes(optionalUser?.role.name ?? "") ? (
             <DropdownMenuItem asChild>
               <Link prefetch="intent" to="/admin">
-                Admin Area
+                admin area
               </Link>
             </DropdownMenuItem>
           ) : null}
-          <DropdownMenuItem
-            asChild
-            // this prevents the menu from closing before the form submission is completed
-            onSelect={(event) => {
-              event.preventDefault();
-              submit(formRef.current);
-            }}
-          >
-            <Form action="/logout" method="POST" ref={formRef}>
-              <button type="submit">Logout</button>
-            </Form>
-          </DropdownMenuItem>
+
+          {optionalUser ? (
+            <DropdownMenuItem
+              asChild
+              // this prevents the menu from closing before the form submission is completed
+              onSelect={(event) => {
+                event.preventDefault();
+                submit(formRef.current);
+              }}
+            >
+              <Form action="/logout" method="POST" ref={formRef}>
+                <button type="submit">logout</button>
+              </Form>
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem asChild>
+              <Link prefetch="intent" to="/login">
+                login
+              </Link>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenuPortal>
     </DropdownMenu>
