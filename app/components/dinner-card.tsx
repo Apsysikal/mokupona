@@ -17,30 +17,29 @@ export function DinnerCard({
   const imageUrl = getEventImageUrl(event.imageId);
 
   return (
-    <div className="relative mx-auto w-full overflow-hidden rounded-lg border border-border bg-muted shadow-lg">
+    <div className="relative mx-auto w-full overflow-hidden">
       <img
         src={imageUrl}
         alt=""
         width={640}
         height={480}
-        className="max-h-28 w-full object-cover object-center"
+        className="max-h-96 w-full rounded-xl object-cover object-center"
       />
-      <div className="flex flex-col gap-3 p-5">
-        <div>
-          <strong className="text-3xl">{event.title}</strong>
-        </div>
-
+      <div className="mt-5 flex flex-col gap-7 p-5">
         <div>
           <time
-            className="text-sm font-semibold text-primary"
+            className="text-sm"
             dateTime={parsedDate.toISOString()}
             suppressHydrationWarning
           >
-            {`${parsedDate.toLocaleDateString(
-              preferredLocale,
-            )} - ${parsedDate.toLocaleTimeString(preferredLocale)}`}
+            {`${parsedDate.toLocaleDateString(preferredLocale, {
+              dateStyle: "medium",
+            })} - ${parsedDate.toLocaleTimeString(preferredLocale, { timeStyle: "short" })}`}
           </time>
         </div>
+
+        <div className="text-3xl text-primary">{event.title}</div>
+
         <div>
           <p className="line-clamp-5">{event.description}</p>
         </div>

@@ -146,8 +146,10 @@ export default function DinnerPage() {
   const people = fields.people.getFieldList();
 
   return (
-    <main className="mx-auto flex max-w-4xl grow flex-col gap-5 px-2 pb-8 pt-4">
+    <main className="mx-auto mt-16 flex max-w-4xl grow flex-col gap-5 px-2 pb-8 pt-4">
       <DinnerView event={event} />
+
+      <div className="my-8 border" />
 
       <Form
         method="post"
@@ -159,7 +161,7 @@ export default function DinnerPage() {
          * https://github.com/edmundhung/conform/issues/216
          */}
         <button type="submit" hidden />
-        <ul className="flex flex-col gap-6">
+        <ul className="flex flex-col gap-20">
           {people.map((person, index) => {
             const {
               name,
@@ -230,9 +232,9 @@ export default function DinnerPage() {
           <Button
             variant="outline"
             {...form.insert.getButtonProps({ name: fields.people.name })}
-            className="mt-8"
+            className="mt-20"
           >
-            Add a person
+            Add a friend
           </Button>
         ) : null}
 
