@@ -28,7 +28,7 @@ import { Button } from "~/components/ui/button";
 import { prisma } from "~/db.server";
 import { getAddresses } from "~/models/address.server";
 import { getEventById, updateEvent } from "~/models/event.server";
-import { ClientEventSchema } from "~/utils/event-validation.client";
+import { ClientEventSchema } from "~/utils/event-validation";
 import { ServerEventSchema } from "~/utils/event-validation.server";
 import { getTimezoneOffset, offsetDate } from "~/utils/misc";
 import { requireUserWithRole } from "~/utils/session.server";

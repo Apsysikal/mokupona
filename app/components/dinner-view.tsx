@@ -3,6 +3,8 @@ import { SerializeFrom } from "@remix-run/node";
 
 import { getEventImageUrl } from "~/utils/misc";
 
+import { AutoLink } from "./auto-link";
+
 export interface DinnerViewProps {
   event:
     | (Event & { address: Address })
@@ -47,7 +49,9 @@ export function DinnerView({ event }: DinnerViewProps) {
       </div> */}
 
       <div>
-        <p className="whitespace-pre-line">{event.description}</p>
+        <p className="whitespace-pre-line">
+          <AutoLink text={event.description} />
+        </p>
       </div>
     </div>
   );
