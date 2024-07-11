@@ -23,26 +23,34 @@ import {
   TextareaField,
 } from "~/components/forms";
 import { Button } from "~/components/ui/button";
-import { prisma } from "~/db.server";
 import { createEventResponse } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
 import { redirectWithToast } from "~/utils/toast.server";
 
-const person = z.object({
+const signupPerson = z.object({
   name: z.string({ required_error: "Name is required" }).trim(),
   email: z
     .string({ required_error: "Email is required" })
     .email("Invalid email")
     .trim(),
+  phone: z.string({ required_error: "Phone number is required" }).trim(),
+  alternativeMenu: z.boolean().default(false),
+  student: z.boolean().default(false),
+  dietaryRestrictions: z.string().trim().optional(),
+});
+
+const person = z.object({
+  name: z.string({ required_error: "Name is required" }).trim(),
   alternativeMenu: z.boolean().default(false),
   student: z.boolean().default(false),
   dietaryRestrictions: z.string().trim().optional(),
 });
 
 const schema = z.object({
+  signupPerson,
   people: z
     .array(person)
-    .min(1, "You must at least sign up one person")
+    .min(0, "You must at least sign up one person")
     .max(3, "You can't sign up more than 4 people"),
   comment: z.string().trim().optional(),
 });
@@ -74,59 +82,46 @@ export async function action({ params, request }: ActionFunctionArgs) {
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
 
   const formData = await request.formData();
-  const submission = await parseWithZod(formData, {
-    schema: (intent) =>
-      schema.superRefine(async (data, ctx) => {
-        if (intent !== null) return { ...data };
-        const d = data.people.map(async ({ email }, index) => {
-          const existingResponse = await prisma.eventResponse.findUnique({
-            where: {
-              email_eventId: {
-                email: email,
-                eventId: dinnerId,
-              },
-            },
-          });
-
-          if (existingResponse) {
-            ctx.addIssue({
-              path: [`people[${index}].email`],
-              code: z.ZodIssueCode.custom,
-              message: "Someone is already signed up with this email",
-            });
-          }
-        });
-
-        await Promise.all(d);
-      }),
-    async: true,
-  });
+  const submission = parseWithZod(formData, { schema });
 
   if (submission.status !== "success" || !submission.value) {
     return json(submission.reply());
   }
 
-  const { people, comment } = submission.value;
+  const { signupPerson, people, comment } = submission.value;
 
-  await Promise.all(
-    people.map(
-      ({ name, email, alternativeMenu, student, dietaryRestrictions }) => {
-        return createEventResponse(
-          dinnerId,
-          name,
-          email,
-          alternativeMenu,
-          student,
-          dietaryRestrictions,
-          comment,
-        );
-      },
-    ),
+  const allSignups = [
+    signupPerson,
+    ...people.map((person) => {
+      return {
+        email: signupPerson.email,
+        phone: signupPerson.phone,
+        ...person,
+      };
+    }),
+  ];
+
+  const allSignupsPromises = allSignups.map(
+    ({ name, email, phone, alternativeMenu, student, dietaryRestrictions }) => {
+      return createEventResponse(
+        dinnerId,
+        name,
+        email,
+        phone,
+        alternativeMenu,
+        student,
+        dietaryRestrictions,
+        comment,
+      );
+    },
   );
 
+  await Promise.all(allSignupsPromises);
+
   return redirectWithToast("/dinners", {
-    title: "Thank you for signing up",
-    description: "We'll email you, if you were lucky to get a seat.",
+    title: "Signup complete",
+    description:
+      "We'll contact you if you were able to get a spot on the event.",
     type: "success",
   });
 }
@@ -138,11 +133,11 @@ export default function DinnerPage() {
     lastResult,
     shouldValidate: "onBlur",
     constraint: getZodConstraint(schema),
-    defaultValue: { people: [{}] },
     onValidate({ formData }) {
       return parseWithZod(formData, { schema });
     },
   });
+  const signupPerson = fields.signupPerson.getFieldset();
   const people = fields.people.getFieldList();
 
   return (
@@ -161,15 +156,66 @@ export default function DinnerPage() {
          * https://github.com/edmundhung/conform/issues/216
          */}
         <button type="submit" hidden />
+
         <ul className="flex flex-col gap-20">
+          <li className="flex gap-3">
+            <fieldset className="flex w-full flex-col gap-4">
+              <Field
+                labelProps={{ children: "Name" }}
+                inputProps={{
+                  ...getInputProps(signupPerson.name, { type: "text" }),
+                }}
+                errors={signupPerson.name.errors}
+              />
+
+              <Field
+                labelProps={{ children: "Email" }}
+                inputProps={{
+                  ...getInputProps(signupPerson.email, { type: "email" }),
+                }}
+                errors={signupPerson.email.errors}
+              />
+
+              <Field
+                labelProps={{ children: "Phone number" }}
+                inputProps={{
+                  ...getInputProps(signupPerson.phone, { type: "tel" }),
+                }}
+                errors={signupPerson.phone.errors}
+              />
+
+              <CheckboxField
+                labelProps={{ children: "Vegan / Vegetarian" }}
+                buttonProps={{
+                  ...getInputProps(signupPerson.alternativeMenu, {
+                    type: "checkbox",
+                  }),
+                }}
+                errors={signupPerson.alternativeMenu.errors}
+              />
+
+              <CheckboxField
+                labelProps={{ children: "Student" }}
+                buttonProps={{
+                  ...getInputProps(signupPerson.student, { type: "checkbox" }),
+                }}
+                errors={signupPerson.student.errors}
+              />
+
+              <Field
+                labelProps={{ children: "Dietary restrictions" }}
+                inputProps={{
+                  ...getInputProps(signupPerson.dietaryRestrictions, {
+                    type: "text",
+                  }),
+                }}
+                errors={signupPerson.dietaryRestrictions.errors}
+              />
+            </fieldset>
+          </li>
           {people.map((person, index) => {
-            const {
-              name,
-              email,
-              alternativeMenu,
-              dietaryRestrictions,
-              student,
-            } = person.getFieldset();
+            const { name, alternativeMenu, dietaryRestrictions, student } =
+              person.getFieldset();
 
             return (
               <li key={person.id} className="flex gap-3">
@@ -178,12 +224,6 @@ export default function DinnerPage() {
                     labelProps={{ children: "Name" }}
                     inputProps={{ ...getInputProps(name, { type: "text" }) }}
                     errors={name.errors}
-                  />
-
-                  <Field
-                    labelProps={{ children: "Email" }}
-                    inputProps={{ ...getInputProps(email, { type: "email" }) }}
-                    errors={email.errors}
                   />
 
                   <CheckboxField
@@ -216,7 +256,7 @@ export default function DinnerPage() {
                         name: fields.people.name,
                         index,
                       }),
-                      disabled: people.length === 1,
+                      disabled: people.length === 0,
                     }}
                     variant="destructive"
                   >

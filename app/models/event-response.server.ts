@@ -4,6 +4,7 @@ export async function createEventResponse(
   eventId: string,
   name: string,
   email: string,
+  phone: string,
   vegetarian = false,
   student = false,
   restrictions?: string,
@@ -13,6 +14,7 @@ export async function createEventResponse(
     data: {
       name,
       email,
+      phone,
       eventId,
       vegetarian,
       student,

@@ -78,6 +78,7 @@ model EventResponse {
   id           String   @id @default(cuid())
   name         String
   email        String
+  phone        String   @default("")
   vegetarian   Boolean?
   student      Boolean?
   restrictions String?
@@ -88,8 +89,6 @@ model EventResponse {
 
   event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   eventId String
-
-  @@unique([email, eventId])
 }
 
 model Address {

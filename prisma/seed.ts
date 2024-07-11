@@ -138,6 +138,7 @@ async function seed() {
     await prisma.eventResponse.create({
       data: {
         email: faker.internet.email(),
+        phone: faker.phone.number(),
         name: faker.person.fullName(),
         eventId: event.id,
       },
