@@ -143,7 +143,7 @@ function Document() {
 
             {optionalUser ? (
               <Form action="/logout" method="POST" className="max-md:hidden">
-                <button className="hover:underline ">logout</button>
+                <button className="hover:underline">logout</button>
               </Form>
             ) : (
               <Link to="/login" className="hover:underline max-md:hidden">
@@ -151,7 +151,15 @@ function Document() {
               </Link>
             )}
 
-            <span className="md:hidden">
+            <span className="flex items-center gap-4 md:hidden">
+              <a
+                href="https://instagram.com/mokupona"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <InstagramLogoIcon className="h-6 w-6" />
+                <span className="sr-only">instagram</span>
+              </a>
               <GeneralDropdown />
             </span>
           </div>
@@ -190,18 +198,6 @@ function GeneralDropdown() {
             >
               about
             </Link>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem>
-            <a
-              href="https://instagram.com/mokupona"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 hover:underline"
-            >
-              <InstagramLogoIcon className="h-6 w-6" />
-              instagram
-            </a>
           </DropdownMenuItem>
 
           {["moderator", "admin"].includes(optionalUser?.role.name ?? "") ? (
