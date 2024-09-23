@@ -58,7 +58,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^8.4.1",
-    "@remix-run/dev": "^2.11.2",
+    "@remix-run/dev": "^2.12.1",
     "@testing-library/cypress": "^10.0.2",
     "@testing-library/jest-dom": "^6.5.0",
     "@types/bcryptjs": "^2.4.5",
