@@ -99,7 +99,7 @@ export async function action({ request }: ActionFunctionArgs) {
   ) {
     // Remove the uploaded file from disk.
     // It will be sent again when submitting.
-    await (submission.payload.cover as NodeOnDiskFile).remove();
+    await (submission.payload.cover as unknown as NodeOnDiskFile).remove();
   }
 
   if (submission.status !== "success" || !submission.value) {
