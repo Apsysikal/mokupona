@@ -7,7 +7,6 @@
  */
 export function AutoLink({ text }: { text: string }) {
   const delimiter =
-    // eslint-disable-next-line no-useless-escape
     /((?:https?:\/\/)?(?:(?:[a-z0-9]?(?:[a-z0-9\-]{1,61}[a-z0-9])?\.[^\.|\s])+[a-z\.]*[a-z]+|(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3})(?::\d{1,5})*[a-z0-9.,_\/~#&=;%+?\-\\(\\)]*)/gi;
 
   return (
@@ -17,7 +16,6 @@ export function AutoLink({ text }: { text: string }) {
         if (match) {
           const url = match[0];
           return (
-            // eslint-disable-next-line react/jsx-key
             <a
               target="_blank"
               rel="noreferrer"

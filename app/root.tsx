@@ -18,9 +18,6 @@ import {
 } from "@remix-run/react";
 import { useRef } from "react";
 
-import stylesheet from "~/tailwind.css?url";
-import { getUserWithRole } from "~/utils/session.server";
-
 import { Footer } from "./components/footer";
 import { Logo } from "./components/logo";
 import { Button } from "./components/ui/button";
@@ -35,6 +32,9 @@ import { Toaster } from "./components/ui/sonner";
 import { useToast } from "./hooks/useToast";
 import { combineHeaders, getDomainUrl, useOptionalUser } from "./utils/misc";
 import { getToast } from "./utils/toast.server";
+
+import stylesheet from "~/tailwind.css?url";
+import { getUserWithRole } from "~/utils/session.server";
 
 export type RootLoaderData = SerializeFrom<typeof loader>;
 
