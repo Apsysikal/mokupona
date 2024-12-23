@@ -1,5 +1,11 @@
-import { conform, useForm } from "@conform-to/react";
-import { getFieldsetConstraint, parse } from "@conform-to/zod";
+import {
+  getFormProps,
+  getInputProps,
+  getSelectProps,
+  getTextareaProps,
+  useForm,
+} from "@conform-to/react";
+import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -22,9 +28,10 @@ import { Button } from "~/components/ui/button";
 import { prisma } from "~/db.server";
 import { getAddresses } from "~/models/address.server";
 import { getEventById, updateEvent } from "~/models/event.server";
-import { requireUserWithRole } from "~/session.server";
-import { getTimezoneOffset, offsetDate } from "~/utils";
-import { EventSchema } from "~/utils/event-validation";
+import { ClientEventSchema } from "~/utils/event-validation";
+import { ServerEventSchema } from "~/utils/event-validation.server";
+import { getTimezoneOffset, offsetDate } from "~/utils/misc";
+import { requireUserWithRole } from "~/utils/session.server";
 
 const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
 
@@ -55,14 +62,8 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [{ title: `Admin - Dinner - ${dinner.title} - Edit` }];
 };
 
-/**
- * Make cover optional, to not force a reupload.
- * All other properties are still required, but
- * prefilled with the existing data.
- */
-const schema = EventSchema.partial({ cover: true });
-
 export async function action({ request, params }: ActionFunctionArgs) {
+  const schema = ServerEventSchema.partial({ cover: true });
   const user = await requireUserWithRole(request, ["moderator", "admin"]);
   const timeOffset = getTimezoneOffset(request);
   let maximumFileSizeExceeded = false;
@@ -93,10 +94,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     },
   );
 
-  const submission = parse(formData, {
+  const submission = parseWithZod(formData, {
     schema: (intent) =>
       schema.superRefine((data, ctx) => {
-        if (intent !== "submit") return { ...data };
+        if (intent !== null) return { ...data };
         if (maximumFileSizeExceeded) {
           ctx.addIssue({
             path: ["cover"],
@@ -109,17 +110,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (
-    submission.intent !== "submit" &&
-    submission.value &&
-    submission.value.cover
+    submission.status !== "success" &&
+    submission.payload &&
+    submission.payload.cover
   ) {
     // Remove the uploaded file from disk.
     // It will be sent again when submitting.
-    await (submission.value.cover as NodeOnDiskFile).remove();
+    await (submission.payload.cover as unknown as NodeOnDiskFile).remove();
   }
 
-  if (submission.intent !== "submit" || !submission.value) {
-    return json(submission);
+  if (submission.status !== "success" || !submission.value) {
+    return json(submission.reply());
   }
 
   const { title, description, date, slots, price, cover, addressId } =
@@ -156,12 +157,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function DinnersPage() {
+  const schema = ClientEventSchema.partial({ cover: true });
   const { addresses, validImageTypes, dinner } = useLoaderData<typeof loader>();
-  const lastSubmission = useActionData<typeof action>();
+  const lastResult = useActionData<typeof action>();
   const [form, fields] = useForm({
-    lastSubmission,
+    lastResult,
     shouldValidate: "onBlur",
-    constraint: getFieldsetConstraint(schema),
+    constraint: getZodConstraint(schema),
     defaultValue: {
       title: dinner.title,
       description: dinner.description,
@@ -171,7 +173,7 @@ export default function DinnersPage() {
       addressId: dinner.addressId,
     },
     onValidate({ formData }) {
-      return parse(formData, { schema });
+      return parseWithZod(formData, { schema });
     },
   });
 
@@ -182,44 +184,44 @@ export default function DinnersPage() {
         encType="multipart/form-data"
         replace
         className="flex flex-col gap-2"
-        {...form.props}
+        {...getFormProps(form)}
       >
         <Field
           labelProps={{ children: "Title" }}
-          inputProps={{ ...conform.input(fields.title, { type: "text" }) }}
+          inputProps={{ ...getInputProps(fields.title, { type: "text" }) }}
           errors={fields.title.errors}
         />
 
         <TextareaField
           labelProps={{ children: "Description" }}
-          textareaProps={{ ...conform.textarea(fields.description) }}
+          textareaProps={{ ...getTextareaProps(fields.description) }}
           errors={fields.description.errors}
         />
 
         <Field
           labelProps={{ children: "Date" }}
           inputProps={{
-            ...conform.input(fields.date, { type: "datetime-local" }),
+            ...getInputProps(fields.date, { type: "datetime-local" }),
           }}
           errors={fields.date.errors}
         />
 
         <Field
           labelProps={{ children: "Slots" }}
-          inputProps={{ ...conform.input(fields.slots, { type: "number" }) }}
+          inputProps={{ ...getInputProps(fields.slots, { type: "number" }) }}
           errors={fields.slots.errors}
         />
 
         <Field
           labelProps={{ children: "Price" }}
-          inputProps={{ ...conform.input(fields.price, { type: "number" }) }}
+          inputProps={{ ...getInputProps(fields.price, { type: "number" }) }}
           errors={fields.price.errors}
         />
 
         <Field
           labelProps={{ children: "Cover" }}
           inputProps={{
-            ...conform.input(fields.cover, { type: "file" }),
+            ...getInputProps(fields.cover, { type: "file" }),
             tabIndex: 0,
             accept: validImageTypes.join(","),
             className: "file:text-foreground",
@@ -230,7 +232,7 @@ export default function DinnersPage() {
         <SelectField
           labelProps={{ children: "Address" }}
           selectProps={{
-            ...conform.select(fields.addressId),
+            ...getSelectProps(fields.addressId),
             children: addresses.map((address) => {
               const { id } = address;
 

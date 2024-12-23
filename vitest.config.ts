@@ -1,3 +1,5 @@
+// @ts-nocheck (https://github.com/sveltejs/kit/issues/13102)
+
 /// <reference types="vitest" />
 /// <reference types="vite/client" />
 

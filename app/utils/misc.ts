@@ -122,3 +122,19 @@ export function getDomainUrl(request: Request) {
 export function getEventImageUrl(imageId: string) {
   return `/file/${imageId}`;
 }
+
+/**
+ * Combine multiple header objects into one (uses append so headers are not overridden)
+ */
+export function combineHeaders(
+  ...headers: (ResponseInit["headers"] | null | undefined)[]
+) {
+  const combined = new Headers();
+  for (const header of headers) {
+    if (!header) continue;
+    for (const [key, value] of new Headers(header).entries()) {
+      combined.append(key, value);
+    }
+  }
+  return combined;
+}

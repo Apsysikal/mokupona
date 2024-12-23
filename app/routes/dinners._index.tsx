@@ -20,7 +20,7 @@ export default function DinnersIndexPage() {
   const { events } = useLoaderData<typeof loader>();
 
   return (
-    <main className="flex grow flex-col gap-5 py-4">
+    <main className="mt-16 flex grow flex-col gap-32 py-4">
       {events.length > 0 ? (
         <>
           {events.map((event) => {

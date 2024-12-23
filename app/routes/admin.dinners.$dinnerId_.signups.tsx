@@ -14,7 +14,7 @@ import {
 } from "~/components/ui/table";
 import { getEventResponsesForEvent } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
-import { requireUserWithRole } from "~/session.server";
+import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
@@ -45,11 +45,6 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 export default function DinnerSignupsPage() {
   const { event, responses } = useLoaderData<typeof loader>();
 
-  const responsesForInvite = responses.slice(0, event.slots);
-  const mailToString = responsesForInvite
-    .map((response) => response.email)
-    .join(",");
-
   return (
     <main className="flex grow flex-col gap-5">
       <div className="flex items-center justify-between gap-2 rounded-md bg-secondary p-4 text-secondary-foreground">
@@ -59,7 +54,7 @@ export default function DinnerSignupsPage() {
 
         <span className="flex gap-2">
           <Button variant="ghost" asChild>
-            <a href={`mailto:?bcc=${mailToString}`}>Create inivations</a>
+            <a href="signups.csv">Export Responses</a>
           </Button>
         </span>
       </div>

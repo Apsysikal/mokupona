@@ -1,10 +1,12 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { faker } from "@faker-js/faker";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const prisma = new PrismaClient();
 
 async function seed() {
@@ -136,6 +138,7 @@ async function seed() {
     await prisma.eventResponse.create({
       data: {
         email: faker.internet.email(),
+        phone: faker.phone.number(),
         name: faker.person.fullName(),
         eventId: event.id,
       },

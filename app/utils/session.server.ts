@@ -6,6 +6,8 @@ import { getUserById, getUserByIdWithRole } from "~/models/user.server";
 
 invariant(process.env.SESSION_SECRET, "SESSION_SECRET must be set");
 
+const USER_SESSION_KEY = "userId";
+
 export const sessionStorage = createCookieSessionStorage({
   cookie: {
     name: "__session",
@@ -16,8 +18,6 @@ export const sessionStorage = createCookieSessionStorage({
     secure: process.env.NODE_ENV === "production",
   },
 });
-
-const USER_SESSION_KEY = "userId";
 
 export async function getSession(request: Request) {
   const cookie = request.headers.get("Cookie");

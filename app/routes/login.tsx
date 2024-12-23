@@ -1,5 +1,5 @@
-import { conform, useForm } from "@conform-to/react";
-import { getFieldsetConstraint, parse } from "@conform-to/zod";
+import { getFormProps, getInputProps, useForm } from "@conform-to/react";
+import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -15,8 +15,8 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { verifyLogin } from "~/models/user.server";
-import { createUserSession, getUserId } from "~/session.server";
-import { safeRedirect } from "~/utils";
+import { safeRedirect } from "~/utils/misc";
+import { createUserSession, getUserId } from "~/utils/session.server";
 
 const schema = z.object({
   email: z
@@ -40,10 +40,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
 
-  const submission = await parse(formData, {
+  const submission = await parseWithZod(formData, {
     schema: (intent) =>
       schema.transform(async (data, ctx) => {
-        if (intent !== "submit") return { ...data, user: null };
+        if (intent !== null) return { ...data, user: null };
         const user = await verifyLogin(data.email, data.password);
         if (!user) {
           ctx.addIssue({
@@ -60,11 +60,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   });
 
   if (
-    submission.intent !== "submit" ||
+    submission.status !== "success" ||
     !submission.value ||
     !submission.value.user
   ) {
-    return json(submission);
+    return json(submission.reply());
   }
 
   const redirectTo = safeRedirect(submission.value.redirectTo, "/");
@@ -83,38 +83,52 @@ export const meta: MetaFunction = () => [{ title: "Login" }];
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/dinners";
-  const lastSubmission = useActionData<typeof action>();
+  const lastResult = useActionData<typeof action>();
   const [form, fields] = useForm({
-    lastSubmission,
+    lastResult,
     shouldValidate: "onBlur",
-    constraint: getFieldsetConstraint(schema),
+    constraint: getZodConstraint(schema),
     defaultValue: { redirectTo },
     onValidate({ formData }) {
-      return parse(formData, { schema });
+      return parseWithZod(formData, { schema });
     },
   });
 
   return (
     <div className="flex min-h-full flex-col justify-center">
       <div className="mx-auto w-full max-w-md px-8">
-        <Form method="post" className="space-y-6" {...form.props}>
+        <Form method="post" className="space-y-6" {...getFormProps(form)}>
           <Field
             labelProps={{ children: "Email address" }}
-            inputProps={{ ...conform.input(fields.email, { type: "email" }) }}
+            inputProps={{ ...getInputProps(fields.email, { type: "email" }) }}
             errors={fields.email.errors}
           />
 
           <Field
             labelProps={{ children: "Password" }}
             inputProps={{
-              ...conform.input(fields.password, { type: "password" }),
+              ...getInputProps(fields.password, { type: "password" }),
             }}
             errors={fields.password.errors}
           />
 
           <Input type="hidden" name="redirectTo" value={redirectTo} />
 
-          <Button type="submit">Log in</Button>
+          <div className="flex items-center justify-between">
+            <Button type="submit">Log in</Button>
+            {/* <span className="text-sm">
+              <Button variant="link" asChild>
+                <Link
+                  to={{
+                    pathname: "/",
+                    search: searchParams.toString(),
+                  }}
+                >
+                  Forgot your password?
+                </Link>
+              </Button>
+            </span> */}
+          </div>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -123,14 +137,11 @@ export default function LoginPage() {
                 name="remember"
                 className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <Label
-                htmlFor="remember"
-                className="ml-2 block text-sm text-gray-900"
-              >
+              <Label htmlFor="remember" className="ml-2 block text-sm">
                 Remember me
               </Label>
             </div>
-            <div className="text-center text-sm text-gray-500">
+            <div className="text-center text-sm">
               Don&apos;t have an account?{" "}
               <Button variant="link" asChild>
                 <Link

@@ -1,5 +1,5 @@
-import { conform, useForm } from "@conform-to/react";
-import { getFieldsetConstraint, parse } from "@conform-to/zod";
+import { getFormProps, getSelectProps, useForm } from "@conform-to/react";
+import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -14,7 +14,7 @@ import { z } from "zod";
 import { SelectField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { prisma } from "~/db.server";
-import { requireUserWithRole } from "~/session.server";
+import { requireUserWithRole } from "~/utils/session.server";
 
 const schema = z.object({
   roleName: z.union([z.literal("user"), z.literal("moderator")]),
@@ -56,10 +56,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   invariant(typeof userId === "string", "Parameter userId is missing");
 
   const formData = await request.formData();
-  const submission = await parse(formData, {
+  const submission = await parseWithZod(formData, {
     schema: (intent) =>
       schema.transform(async (data, ctx) => {
-        if (intent !== "submit") return { ...data, roleId: null };
+        if (intent !== null) return { ...data, roleId: null };
         const role = await prisma.role.findUnique({
           where: { name: data.roleName },
         });
@@ -78,11 +78,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (
-    submission.intent !== "submit" ||
+    submission.status !== "success" ||
     !submission.value ||
     !submission.value.roleId
   ) {
-    return json(submission);
+    return json(submission.reply());
   }
 
   const { roleId } = submission.value;
@@ -106,16 +106,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function DinnersPage() {
   const { user } = useLoaderData<typeof loader>();
-  const lastSubmission = useActionData<typeof action>();
+  const lastResult = useActionData<typeof action>();
   const [form, fields] = useForm({
-    lastSubmission,
+    lastResult,
     shouldValidate: "onBlur",
-    constraint: getFieldsetConstraint(schema),
+    constraint: getZodConstraint(schema),
     defaultValue: {
       roleName: user.role.name,
     },
     onValidate({ formData }) {
-      return parse(formData, { schema });
+      return parseWithZod(formData, { schema });
     },
   });
 
@@ -129,12 +129,12 @@ export default function DinnersPage() {
         method="POST"
         replace
         className="flex flex-col gap-2"
-        {...form.props}
+        {...getFormProps(form)}
       >
         <SelectField
           labelProps={{ children: "Role" }}
           selectProps={{
-            ...conform.select(fields.roleName),
+            ...getSelectProps(fields.roleName),
             disabled: isAdmin,
             children: [
               { name: "User", value: "user" },

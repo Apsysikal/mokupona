@@ -15,7 +15,7 @@ describe("smoke tests", () => {
 
     cy.visitAndCheck("/");
 
-    cy.findByRole("link", { name: /log in/i }).click();
+    cy.findByRole("link", { name: /login/i }).click();
     cy.findByRole("link", { name: /sign up/i }).click();
 
     cy.findByRole("textbox", { name: /email/i }).type(loginForm.email);
@@ -27,9 +27,9 @@ describe("smoke tests", () => {
       .type(loginForm.password);
     cy.findByRole("button", { name: /create account/i }).click();
 
-    cy.findByRole("button", { name: loginForm.email }).click();
+    // cy.findByRole("button", { name: loginForm.email }).click();
     cy.findByRole("button", { name: /logout/i }).click();
-    cy.findByRole("link", { name: /log in/i });
+    cy.findByRole("link", { name: /login/i });
   });
 
   it("should allow you to join a dinner", () => {
@@ -42,6 +42,7 @@ describe("smoke tests", () => {
     cy.visitAndCheck("/");
 
     cy.findByRole("link", { name: /join a dinner/i }).click();
+    cy.location("pathname").should("equal", "/dinners");
     cy.findAllByRole("link", { name: /join/i }).first().click();
 
     cy.findByRole("textbox", { name: /name/i }).type(testCredentials.name);
