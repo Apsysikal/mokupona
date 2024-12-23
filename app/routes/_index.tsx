@@ -7,7 +7,6 @@ import {
   FruitDrinkIllustration,
 } from "~/components/illustrations";
 import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
 
 export const meta: MetaFunction = () => [
   {
@@ -40,8 +39,8 @@ export default function Index() {
             <h1 className="text-5xl lowercase text-gray-50">moku pona</h1>
 
             <p className="text-balance text-2xl font-thin leading-normal">
-              A dinner society located in Zurich. We love sharing food and
-              stories with our friends. And you?
+              A dinner society in Zurich, bringing people together through
+              shared meals, stories, and the joy of discovery.
             </p>
 
             <Button asChild size="lg">
@@ -51,7 +50,7 @@ export default function Index() {
             </Button>
           </div>
 
-          <Link to="#vision" className="col-span-full mx-auto  text-accent">
+          <Link to="#vision" className="col-span-full mx-auto text-accent">
             <Arrow orientation="down" />
           </Link>
         </div>
@@ -64,12 +63,14 @@ export default function Index() {
         <section className="my-5 grid max-w-4xl grid-cols-5 gap-10">
           <h2 className="col-span-full text-4xl">our vision</h2>
           <p className="col-span-full flex items-center gap-10 text-xl font-light leading-relaxed">
-            Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam
-            nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam
-            erat, sed diam voluptua. At vero eos et accusam et justo duo dolores
-            et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est
-            Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur
-            sadipscing elitr, sed diam
+            moku pona began as a passion project by a group of friends who love
+            cooking and wanted a creative way to explore our culinary interests.
+            For us, food is a way to express creativity, share experiences, and
+            connect with others. Through our dinner club, we aim to surprise our
+            guests with unique flavors and ingredients, introducing them to
+            diverse cuisines and the stories behind them. At its heart, moku
+            pona is about celebrating the art of food and inspiring curiosity
+            about global food cultures.
             <span className="-mt-32 w-72 shrink-0 max-md:hidden">
               <FruitDrinkIllustration className="h-full w-full" />
             </span>
@@ -95,12 +96,14 @@ export default function Index() {
             </span>
           </h2>
           <p className="col-span-full text-xl font-thin leading-relaxed">
-            Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam
-            nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam
-            erat, sed diam voluptua. At vero eos et accusam et justo duo dolores
-            et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est
-            Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur
-            sadipscing elitr, sed diam
+            At moku pona, we believe that food is a powerful way to bring people
+            together. Our dinner events go beyond the typical restaurant
+            experience, creating a warm and welcoming community space where
+            friends and strangers can forge new connections. We aim to make
+            every gathering an opportunity not just to enjoy a wonderful meal,
+            but also to meet new people, share stories, and build meaningful
+            relationships. It&apos;s a place to connect, learn, and experience
+            the magic of a shared table in a cozy, intimate setting.
           </p>
         </section>
       </div>
@@ -111,11 +114,10 @@ export default function Index() {
             <h2 className="col-span-full text-4xl">who we are</h2>
 
             <p className="col-span-2 my-auto text-xl font-thin leading-relaxed max-md:col-span-full">
-              Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam
-              nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam
+              Learn more about the people behind moku mona here (coming soon).
             </p>
 
-            <div className="col-span-3 flex items-center justify-end self-center max-md:col-span-full max-md:items-start max-md:justify-start">
+            {/* <div className="col-span-3 flex items-center justify-end self-center max-md:col-span-full max-md:items-start max-md:justify-start">
               {[0, 1, 2].map((_, index) => {
                 const offset = -1.5 * index;
 
@@ -135,11 +137,11 @@ export default function Index() {
                   </picture>
                 );
               })}
-            </div>
+            </div> */}
 
             <Link
               to="/about"
-              className="pointer-events-none flex items-center gap-4 text-background/20"
+              className="pointer-events-none col-span-full flex items-center gap-4 text-background/20"
             >
               <span className="shrink-0">get to know us</span>
               <Arrow className="shrink-0" />
