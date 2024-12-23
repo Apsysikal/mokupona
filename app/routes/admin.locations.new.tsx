@@ -4,7 +4,6 @@ import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction,
-  json,
   redirect,
 } from "@remix-run/node";
 import { Form, useActionData } from "@remix-run/react";
@@ -18,7 +17,7 @@ import { requireUserWithRole } from "~/utils/session.server";
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
-  return json({});
+  return {};
 }
 
 export const meta: MetaFunction<typeof loader> = () => {
@@ -32,7 +31,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const submission = parseWithZod(formData, { schema: AddressSchema });
 
   if (submission.status !== "success" || !submission.value) {
-    return json(submission.reply());
+    return submission.reply();
   }
 
   const { streetName, houseNumber, zipCode, city } = submission.value;

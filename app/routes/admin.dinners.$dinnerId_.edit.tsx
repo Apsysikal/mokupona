@@ -6,28 +6,25 @@ import {
   useForm,
 } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
+import { FileUpload, parseFormData } from "@mjackson/form-data-parser";
 import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
-  MaxPartSizeExceededError,
   MetaFunction,
-  NodeOnDiskFile,
-  json,
   redirect,
-  unstable_composeUploadHandlers,
-  unstable_createFileUploadHandler,
-  unstable_createMemoryUploadHandler,
-  unstable_parseMultipartFormData,
 } from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
-import { z } from "zod";
 
 import { Field, SelectField, TextareaField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { prisma } from "~/db.server";
 import { getAddresses } from "~/models/address.server";
 import { getEventById, updateEvent } from "~/models/event.server";
+import {
+  fileStorage,
+  getStorageKey,
+} from "~/utils/dinner-image-storage.server";
 import { ClientEventSchema } from "~/utils/event-validation";
 import { ServerEventSchema } from "~/utils/event-validation.server";
 import { getTimezoneOffset, offsetDate } from "~/utils/misc";
@@ -46,11 +43,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (!event) throw new Response("Not found", { status: 404 });
 
-  return json({
+  return {
     validImageTypes,
     addresses,
     dinner: event,
-  });
+  };
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
@@ -71,41 +68,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
 
-  const uploadHandler = unstable_composeUploadHandlers(
-    unstable_createFileUploadHandler({
-      directory: process.env.IMAGE_UPLOAD_FOLDER,
-    }),
-    unstable_createMemoryUploadHandler(),
-  );
+  const uploadHandler = async (fileUpload: FileUpload) => {
+    let storageKey = getStorageKey("temporary-key");
+    await fileStorage.set(storageKey, fileUpload);
+    return fileStorage.get(storageKey);
+  };
 
-  const formData = await unstable_parseMultipartFormData(
-    request,
-    async (part) => {
-      try {
-        const result = await uploadHandler(part);
-        return result;
-      } catch (error) {
-        if (error instanceof MaxPartSizeExceededError) {
-          maximumFileSizeExceeded = true;
-          return new File([], "cover");
-        }
-        throw error;
-      }
-    },
-  );
+  const formData = await parseFormData(request, uploadHandler);
 
   const submission = parseWithZod(formData, {
     schema: (intent) =>
-      schema.superRefine((data, ctx) => {
+      schema.superRefine((data) => {
         if (intent !== null) return { ...data };
-        if (maximumFileSizeExceeded) {
-          ctx.addIssue({
-            path: ["cover"],
-            code: z.ZodIssueCode.custom,
-            message: "File cannot be greater than 3MB",
-          });
-          return;
-        }
       }),
   });
 
@@ -116,11 +90,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   ) {
     // Remove the uploaded file from disk.
     // It will be sent again when submitting.
-    await (submission.payload.cover as unknown as NodeOnDiskFile).remove();
+    await fileStorage.remove(getStorageKey("temporary-key"));
   }
 
   if (submission.status !== "success" || !submission.value) {
-    return json(submission.reply());
+    return submission.reply();
   }
 
   const { title, description, date, slots, price, cover, addressId } =
@@ -138,7 +112,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     // Remove the file from disk.
     // It is in the database now.
-    await (cover as NodeOnDiskFile).remove();
+    await fileStorage.remove(getStorageKey("temporary-key"));
   }
 
   const event = await updateEvent(dinnerId, {
@@ -167,7 +141,7 @@ export default function DinnersPage() {
     defaultValue: {
       title: dinner.title,
       description: dinner.description,
-      date: dinner.date.substring(0, 16),
+      date: dinner.date.toISOString().substring(0, 16),
       slots: dinner.slots,
       price: dinner.price,
       addressId: dinner.addressId,

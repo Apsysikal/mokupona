@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
+import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 
 import { Button } from "~/components/ui/button";
@@ -9,7 +9,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
   const events = await getEvents();
 
-  return json({ events });
+  return { events };
 }
 
 export const meta: MetaFunction<typeof loader> = () => {

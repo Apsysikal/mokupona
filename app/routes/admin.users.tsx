@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
+import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
 
 import { requireUserWithRole } from "~/utils/session.server";
@@ -6,7 +6,7 @@ import { requireUserWithRole } from "~/utils/session.server";
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["admin"]);
 
-  return json({});
+  return {};
 }
 
 export const meta: MetaFunction<typeof loader> = () => {

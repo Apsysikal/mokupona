@@ -1,10 +1,6 @@
 import { HamburgerMenuIcon, InstagramLogoIcon } from "@radix-ui/react-icons";
-import type {
-  LinksFunction,
-  LoaderFunctionArgs,
-  SerializeFrom,
-} from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
+import { data } from "@remix-run/node";
 import {
   Form,
   Link,
@@ -36,7 +32,7 @@ import { getToast } from "./utils/toast.server";
 import stylesheet from "~/tailwind.css?url";
 import { getUserWithRole } from "~/utils/session.server";
 
-export type RootLoaderData = SerializeFrom<typeof loader>;
+export type RootLoaderData = typeof loader;
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
@@ -74,7 +70,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const domainUrl = getDomainUrl(request);
   const user = await getUserWithRole(request);
   const { toast, headers } = await getToast(request);
-  return json({ user, toast, domainUrl }, { headers: combineHeaders(headers) });
+  return data({ user, toast, domainUrl }, { headers: combineHeaders(headers) });
 };
 
 export default function App() {
@@ -86,7 +82,7 @@ export default function App() {
         <Meta />
         <Links />
       </head>
-      <body className="h-full bg-gray-950 text-gray-50">
+      <body className="dark h-full bg-gray-950 text-gray-50">
         <Document />
         <ScrollRestoration />
         <Scripts />

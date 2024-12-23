@@ -1,5 +1,4 @@
 import type { Event } from "@prisma/client";
-import type { SerializeFrom } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 
 import { Button } from "./ui/button";
@@ -10,7 +9,7 @@ export function DinnerCard({
   event,
   preferredLocale,
 }: {
-  event: Event | SerializeFrom<Event>;
+  event: Event;
   preferredLocale: string;
 }) {
   const parsedDate = new Date(event.date);

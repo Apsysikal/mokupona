@@ -9,7 +9,6 @@ import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction,
-  json,
 } from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
@@ -73,7 +72,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
   if (!event) throw new Response("Not found", { status: 404 });
 
-  return json({ event });
+  return { event };
 }
 
 export async function action({ params, request }: ActionFunctionArgs) {
@@ -85,7 +84,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
   const submission = parseWithZod(formData, { schema });
 
   if (submission.status !== "success" || !submission.value) {
-    return json(submission.reply());
+    return submission.reply();
   }
 
   const { signupPerson, people, comment } = submission.value;

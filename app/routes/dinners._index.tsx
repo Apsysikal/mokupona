@@ -1,4 +1,4 @@
-import { MetaFunction, json } from "@remix-run/node";
+import { MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 
 import { DinnerCard } from "~/components/dinner-card";
@@ -11,7 +11,7 @@ export const loader = async () => {
     },
   });
 
-  return json({ events });
+  return { events };
 };
 
 export const meta: MetaFunction = () => [{ title: "Dinners" }];

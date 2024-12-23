@@ -60,7 +60,7 @@ model Event {
   description String
   date        DateTime
   slots       Int
-  price       Decimal
+  price       Int
 
   image   EventImage @relation(fields: [imageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   imageId String     @unique

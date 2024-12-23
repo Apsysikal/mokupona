@@ -1,5 +1,5 @@
 import { Address } from "@prisma/client";
-import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
+import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 
 import { Button } from "~/components/ui/button";
@@ -10,7 +10,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
   const addresses = await getAddresses();
 
-  return json({ addresses });
+  return { addresses };
 }
 
 export const meta: MetaFunction<typeof loader> = () => {

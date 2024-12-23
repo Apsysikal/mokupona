@@ -1,14 +1,10 @@
-import type { Address, Event } from "@prisma/client";
-import { SerializeFrom } from "@remix-run/node";
-
 import { AutoLink } from "./auto-link";
 
+import { loader } from "~/routes/admin.dinners.$dinnerId";
 import { getEventImageUrl } from "~/utils/misc";
 
 export interface DinnerViewProps {
-  event:
-    | (Event & { address: Address })
-    | SerializeFrom<Event & { address: Address }>;
+  event: Awaited<ReturnType<typeof loader>>["event"];
 }
 
 export function DinnerView({ event }: DinnerViewProps) {
