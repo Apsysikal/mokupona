@@ -25,8 +25,7 @@ import {
   fileStorage,
   getStorageKey,
 } from "~/utils/dinner-image-storage.server";
-import { ClientEventSchema } from "~/utils/event-validation";
-import { ServerEventSchema } from "~/utils/event-validation.server";
+import { EventSchema } from "~/utils/event-validation";
 import { getTimezoneOffset, offsetDate } from "~/utils/misc";
 import { requireUserWithRole } from "~/utils/session.server";
 
@@ -60,10 +59,9 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 };
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const schema = ServerEventSchema.partial({ cover: true });
+  const schema = EventSchema.partial({ cover: true });
   const user = await requireUserWithRole(request, ["moderator", "admin"]);
   const timeOffset = getTimezoneOffset(request);
-  let maximumFileSizeExceeded = false;
 
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
@@ -131,7 +129,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function DinnersPage() {
-  const schema = ClientEventSchema.partial({ cover: true });
+  const schema = EventSchema.partial({ cover: true });
   const { addresses, validImageTypes, dinner } = useLoaderData<typeof loader>();
   const lastResult = useActionData<typeof action>();
   const [form, fields] = useForm({

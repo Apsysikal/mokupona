@@ -24,8 +24,7 @@ import {
   fileStorage,
   getStorageKey,
 } from "~/utils/dinner-image-storage.server";
-import { ClientEventSchema } from "~/utils/event-validation";
-import { ServerEventSchema } from "~/utils/event-validation.server";
+import { EventSchema } from "~/utils/event-validation";
 import { getTimezoneOffset, offsetDate } from "~/utils/misc";
 import { requireUserWithRole } from "~/utils/session.server";
 
@@ -61,12 +60,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const submission = parseWithZod(formData, {
     schema: (intent) =>
-      ServerEventSchema.superRefine((data) => {
+      EventSchema.superRefine((data) => {
         if (intent !== null) return { ...data };
       }),
   });
-
-  console.log(submission.payload);
 
   if (
     submission.status !== "success" &&
@@ -117,9 +114,9 @@ export default function DinnersPage() {
   const [form, fields] = useForm({
     lastResult,
     shouldValidate: "onBlur",
-    constraint: getZodConstraint(ClientEventSchema),
+    constraint: getZodConstraint(EventSchema),
     onValidate({ formData }) {
-      return parseWithZod(formData, { schema: ClientEventSchema });
+      return parseWithZod(formData, { schema: EventSchema });
     },
   });
 
