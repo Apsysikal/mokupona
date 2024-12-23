@@ -114,9 +114,9 @@ export default function LoginPage() {
 
           <Input type="hidden" name="redirectTo" value={redirectTo} />
 
-          {/* <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <Button type="submit">Log in</Button>
-            <span className="text-sm">
+            {/* <span className="text-sm">
               <Button variant="link" asChild>
                 <Link
                   to={{
@@ -127,8 +127,8 @@ export default function LoginPage() {
                   Forgot your password?
                 </Link>
               </Button>
-            </span>
-          </div> */}
+            </span> */}
+          </div>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center">
