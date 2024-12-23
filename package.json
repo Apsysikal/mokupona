@@ -60,7 +60,10 @@
   "devDependencies": {
     "@eslint/js": "^9.17.0",
     "@faker-js/faker": "^9.3.0",
+    "@react-router/remix-config-routes-adapter": "^0.0.0-nightly-bf7ecb711-20240911",
     "@remix-run/dev": "^2.15.2",
+    "@remix-run/fs-routes": "^2.15.2",
+    "@remix-run/route-config": "^2.15.2",
     "@testing-library/cypress": "^10.0.2",
     "@testing-library/jest-dom": "^6.6.3",
     "@types/bcryptjs": "^2.4.5",
@@ -87,6 +90,7 @@
     "postcss": "^8.4.39",
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.6.5",
+    "remix-flat-routes": "^0.6.5",
     "sharp": "^0.33.4",
     "start-server-and-test": "^2.0.9",
     "tailwindcss": "^3.4.17",
