@@ -1,8 +1,4 @@
-import {
-  LoaderFunctionArgs,
-  MetaFunction,
-  SerializeFrom,
-} from "@remix-run/node";
+import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 
 import { Button } from "~/components/ui/button";
@@ -48,7 +44,7 @@ export default function DinnersPage() {
   );
 }
 
-type User = Pick<SerializeFrom<typeof loader>, "users">["users"][number];
+type User = Pick<Awaited<ReturnType<typeof loader>>, "users">["users"][number];
 
 function User({ user }: { user: User }) {
   const deleteFetcher = useFetcher();

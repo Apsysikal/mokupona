@@ -1,9 +1,5 @@
 import { HamburgerMenuIcon, InstagramLogoIcon } from "@radix-ui/react-icons";
-import type {
-  LinksFunction,
-  LoaderFunctionArgs,
-  SerializeFrom,
-} from "@remix-run/node";
+import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { data } from "@remix-run/node";
 import {
   Form,
@@ -36,7 +32,7 @@ import { getToast } from "./utils/toast.server";
 import stylesheet from "~/tailwind.css?url";
 import { getUserWithRole } from "~/utils/session.server";
 
-export type RootLoaderData = SerializeFrom<typeof loader>;
+export type RootLoaderData = typeof loader;
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
