@@ -114,7 +114,21 @@ export default function LoginPage() {
 
           <Input type="hidden" name="redirectTo" value={redirectTo} />
 
-          <Button type="submit">Log in</Button>
+          <div className="flex items-center justify-between">
+            <Button type="submit">Log in</Button>
+            <span className="text-sm">
+              <Button variant="link" asChild>
+                <Link
+                  to={{
+                    pathname: "/",
+                    search: searchParams.toString(),
+                  }}
+                >
+                  Forgot your password?
+                </Link>
+              </Button>
+            </span>
+          </div>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -123,14 +137,11 @@ export default function LoginPage() {
                 name="remember"
                 className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <Label
-                htmlFor="remember"
-                className="ml-2 block text-sm text-gray-900"
-              >
+              <Label htmlFor="remember" className="ml-2 block text-sm">
                 Remember me
               </Label>
             </div>
-            <div className="text-center text-sm text-gray-500">
+            <div className="text-center text-sm">
               Don&apos;t have an account?{" "}
               <Button variant="link" asChild>
                 <Link
