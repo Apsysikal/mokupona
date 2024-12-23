@@ -178,17 +178,21 @@ export default function DinnersPage() {
           errors={fields.date.errors}
         />
 
-        <Field
-          labelProps={{ children: "Slots" }}
-          inputProps={{ ...getInputProps(fields.slots, { type: "number" }) }}
-          errors={fields.slots.errors}
-        />
+        <div className="sm:flex sm:justify-between sm:gap-2">
+          <Field
+            className="grow"
+            labelProps={{ children: "Slots" }}
+            inputProps={{ ...getInputProps(fields.slots, { type: "number" }) }}
+            errors={fields.slots.errors}
+          />
 
-        <Field
-          labelProps={{ children: "Price" }}
-          inputProps={{ ...getInputProps(fields.price, { type: "number" }) }}
-          errors={fields.price.errors}
-        />
+          <Field
+            className="grow"
+            labelProps={{ children: "Price" }}
+            inputProps={{ ...getInputProps(fields.price, { type: "number" }) }}
+            errors={fields.price.errors}
+          />
+        </div>
 
         <Field
           labelProps={{ children: "Cover" }}
