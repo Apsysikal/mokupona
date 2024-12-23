@@ -4,11 +4,8 @@
 // and that user will get deleted
 
 import { Prisma } from "@prisma/client";
-import { installGlobals } from "@remix-run/node";
 
 import { prisma } from "~/db.server";
-
-installGlobals();
 
 async function deleteUser(email: string) {
   if (!email) {

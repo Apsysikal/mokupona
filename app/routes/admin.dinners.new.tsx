@@ -12,7 +12,6 @@ import {
   MaxPartSizeExceededError,
   MetaFunction,
   NodeOnDiskFile,
-  json,
   redirect,
   unstable_composeUploadHandlers,
   unstable_createFileUploadHandler,
@@ -39,10 +38,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const addresses = await getAddresses();
 
-  return json({
+  return {
     validImageTypes,
     addresses,
-  });
+  };
 }
 
 export const meta: MetaFunction<typeof loader> = () => {
@@ -103,7 +102,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (submission.status !== "success" || !submission.value) {
-    return json(submission.reply());
+    return submission.reply();
   }
 
   const { title, description, date, slots, price, cover, addressId } =
@@ -177,17 +176,21 @@ export default function DinnersPage() {
           errors={fields.date.errors}
         />
 
-        <Field
-          labelProps={{ children: "Slots" }}
-          inputProps={{ ...getInputProps(fields.slots, { type: "number" }) }}
-          errors={fields.slots.errors}
-        />
+        <div className="sm:flex sm:justify-between sm:gap-2">
+          <Field
+            className="grow"
+            labelProps={{ children: "Slots" }}
+            inputProps={{ ...getInputProps(fields.slots, { type: "number" }) }}
+            errors={fields.slots.errors}
+          />
 
-        <Field
-          labelProps={{ children: "Price" }}
-          inputProps={{ ...getInputProps(fields.price, { type: "number" }) }}
-          errors={fields.price.errors}
-        />
+          <Field
+            className="grow"
+            labelProps={{ children: "Price" }}
+            inputProps={{ ...getInputProps(fields.price, { type: "number" }) }}
+            errors={fields.price.errors}
+          />
+        </div>
 
         <Field
           labelProps={{ children: "Cover" }}

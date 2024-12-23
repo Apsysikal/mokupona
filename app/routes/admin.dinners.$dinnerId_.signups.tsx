@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
+import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
 
@@ -27,10 +27,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (!event) throw new Response("Not found", { status: 404 });
 
-  return json({
+  return {
     event,
     responses,
-  });
+  };
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {

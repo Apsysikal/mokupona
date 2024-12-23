@@ -4,7 +4,6 @@ import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction,
-  json,
   redirect,
 } from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
@@ -40,9 +39,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (!user) throw new Response("Not found", { status: 404 });
 
-  return json({
+  return {
     user,
-  });
+  };
 }
 
 export const meta: MetaFunction<typeof loader> = () => {
@@ -82,7 +81,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     !submission.value ||
     !submission.value.roleId
   ) {
-    return json(submission.reply());
+    return submission.reply();
   }
 
   const { roleId } = submission.value;

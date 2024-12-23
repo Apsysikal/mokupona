@@ -12,7 +12,6 @@ import {
   MaxPartSizeExceededError,
   MetaFunction,
   NodeOnDiskFile,
-  json,
   redirect,
   unstable_composeUploadHandlers,
   unstable_createFileUploadHandler,
@@ -46,11 +45,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (!event) throw new Response("Not found", { status: 404 });
 
-  return json({
+  return {
     validImageTypes,
     addresses,
     dinner: event,
-  });
+  };
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
@@ -120,7 +119,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (submission.status !== "success" || !submission.value) {
-    return json(submission.reply());
+    return submission.reply();
   }
 
   const { title, description, date, slots, price, cover, addressId } =
@@ -167,7 +166,7 @@ export default function DinnersPage() {
     defaultValue: {
       title: dinner.title,
       description: dinner.description,
-      date: dinner.date.substring(0, 16),
+      date: dinner.date.toISOString().substring(0, 16),
       slots: dinner.slots,
       price: dinner.price,
       addressId: dinner.addressId,

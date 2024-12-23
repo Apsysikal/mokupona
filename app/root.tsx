@@ -4,7 +4,7 @@ import type {
   LoaderFunctionArgs,
   SerializeFrom,
 } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import { data } from "@remix-run/node";
 import {
   Form,
   Link,
@@ -74,7 +74,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const domainUrl = getDomainUrl(request);
   const user = await getUserWithRole(request);
   const { toast, headers } = await getToast(request);
-  return json({ user, toast, domainUrl }, { headers: combineHeaders(headers) });
+  return data({ user, toast, domainUrl }, { headers: combineHeaders(headers) });
 };
 
 export default function App() {
@@ -86,7 +86,7 @@ export default function App() {
         <Meta />
         <Links />
       </head>
-      <body className="h-full bg-gray-950 text-gray-50">
+      <body className="dark h-full bg-gray-950 text-gray-50">
         <Document />
         <ScrollRestoration />
         <Scripts />

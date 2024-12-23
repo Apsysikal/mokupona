@@ -2,7 +2,6 @@ import {
   LoaderFunctionArgs,
   MetaFunction,
   SerializeFrom,
-  json,
 } from "@remix-run/node";
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 
@@ -24,7 +23,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     },
   });
 
-  return json({ users });
+  return { users };
 }
 
 export const meta: MetaFunction<typeof loader> = () => {

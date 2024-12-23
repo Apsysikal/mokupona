@@ -4,7 +4,6 @@ import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction,
-  json,
   redirect,
 } from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
@@ -26,9 +25,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (!address) throw new Response("Not found", { status: 404 });
 
-  return json({
+  return {
     location: address,
-  });
+  };
 }
 
 export const meta: MetaFunction<typeof loader> = () => {
@@ -45,7 +44,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const submission = parseWithZod(formData, { schema: AddressSchema });
 
   if (submission.status !== "success" || !submission.value) {
-    return json(submission.reply());
+    return submission.reply();
   }
 
   const { streetName, houseNumber, zipCode, city } = submission.value;
