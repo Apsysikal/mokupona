@@ -10,7 +10,7 @@ import {
   LoaderFunctionArgs,
   MetaFunction,
 } from "@remix-run/node";
-import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import { Form, Link, useActionData, useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
@@ -45,14 +45,27 @@ const person = z.object({
   dietaryRestrictions: z.string().trim().optional(),
 });
 
-const schema = z.object({
-  signupPerson,
-  people: z
-    .array(person)
-    .min(0, "You must at least sign up one person")
-    .max(3, "You can't sign up more than 4 people"),
-  comment: z.string().trim().optional(),
-});
+const schema = z
+  .object({
+    signupPerson,
+    people: z
+      .array(person)
+      .min(0, "You must at least sign up one person")
+      .max(3, "You can't sign up more than 4 people"),
+    comment: z.string().trim().optional(),
+    acceptedPrivacy: z.boolean({
+      required_error: "You must agree to signup",
+    }),
+  })
+  .refine(
+    (data) => {
+      return data.acceptedPrivacy === true;
+    },
+    {
+      message: "You must agree to register",
+      path: ["acceptedPrivacy"],
+    },
+  );
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if (!data) return [{ title: "Dinner" }];
@@ -300,6 +313,23 @@ export default function DinnerPage() {
               labelProps={{ children: "Comment" }}
               textareaProps={{ ...getTextareaProps(fields.comment) }}
               errors={fields.comment.errors}
+            />
+
+            <CheckboxField
+              labelProps={{
+                children: (
+                  <span>
+                    Agree to{" "}
+                    <Link to="/privacy" className="text-primary">
+                      Privacy Policy
+                    </Link>
+                  </span>
+                ),
+              }}
+              buttonProps={{
+                ...getInputProps(fields.acceptedPrivacy, { type: "checkbox" }),
+              }}
+              errors={fields.acceptedPrivacy.errors}
             />
 
             <Button type="submit">Join</Button>

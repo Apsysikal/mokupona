@@ -9,7 +9,7 @@ import { redirect } from "@remix-run/node";
 import { Form, Link, useActionData, useSearchParams } from "@remix-run/react";
 import { z } from "zod";
 
-import { Field } from "~/components/forms";
+import { CheckboxField, Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { createUser, getUserByEmail } from "~/models/user.server";
@@ -29,6 +29,9 @@ const schema = z
     confirmPassword: z.string({
       required_error: "Please confirm your password",
     }),
+    acceptedPrivacy: z.boolean({
+      required_error: "You must agree to register",
+    }),
     redirectTo: z.string().optional(),
   })
   .refine(
@@ -38,6 +41,15 @@ const schema = z
     {
       message: "Passwords must match",
       path: ["confirmPassword"],
+    },
+  )
+  .refine(
+    (data) => {
+      return data.acceptedPrivacy === true;
+    },
+    {
+      message: "You must agree to register",
+      path: ["acceptedPrivacy"],
     },
   );
 
@@ -55,6 +67,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       schema.superRefine(async (data, ctx) => {
         if (intent !== null) return { ...data };
         const existingUser = await getUserByEmail(data.email);
+
         if (existingUser) {
           ctx.addIssue({
             path: ["email"],
@@ -124,6 +137,23 @@ export default function Join() {
               ...getInputProps(fields.confirmPassword, { type: "password" }),
             }}
             errors={fields.confirmPassword.errors}
+          />
+
+          <CheckboxField
+            labelProps={{
+              children: (
+                <span>
+                  Agree to{" "}
+                  <Link to="/privacy" className="text-primary">
+                    Privacy Policy
+                  </Link>
+                </span>
+              ),
+            }}
+            buttonProps={{
+              ...getInputProps(fields.acceptedPrivacy, { type: "checkbox" }),
+            }}
+            errors={fields.acceptedPrivacy.errors}
           />
 
           <Input type="hidden" name="redirectTo" value={redirectTo} />

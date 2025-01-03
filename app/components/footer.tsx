@@ -14,6 +14,11 @@ export function Footer() {
               </Link>
             </li>
             <li>
+              <Link to="/privacy" className="text-sm hover:underline">
+                Privacy Policy
+              </Link>
+            </li>
+            <li>
               <a
                 href="https://instagram.com/mokupona"
                 target="_blank"
