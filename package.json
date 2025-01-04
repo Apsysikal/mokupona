@@ -33,7 +33,6 @@
   "dependencies": {
     "@conform-to/react": "^1.2.2",
     "@conform-to/zod": "^1.2.2",
-    "@headlessui/react": "^2.2.0",
     "@mdx-js/rollup": "^3.1.0",
     "@mjackson/file-storage": "^0.3.0",
     "@mjackson/form-data-parser": "^0.5.1",
