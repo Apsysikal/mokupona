@@ -3,7 +3,7 @@ import * as React from "react";
 import { cn } from "~/lib/utils";
 
 export interface InputProps
-  extends React.InputHTMLAttributes<HTMLTextAreaElement> {}
+  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, InputProps>(
   ({ className, ...props }, ref) => {

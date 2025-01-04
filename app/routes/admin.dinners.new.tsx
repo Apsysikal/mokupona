@@ -127,19 +127,24 @@ export default function DinnersPage() {
         method="POST"
         encType="multipart/form-data"
         replace
-        className="flex flex-col gap-2"
+        className="flex flex-col gap-6"
         {...getFormProps(form)}
       >
         <Field
           labelProps={{ children: "Title" }}
           inputProps={{ ...getInputProps(fields.title, { type: "text" }) }}
           errors={fields.title.errors}
+          className="flex w-full flex-col gap-2"
         />
 
         <TextareaField
           labelProps={{ children: "Description" }}
-          textareaProps={{ ...getTextareaProps(fields.description) }}
+          textareaProps={{
+            ...getTextareaProps(fields.description),
+            rows: 10,
+          }}
           errors={fields.description.errors}
+          className="flex w-full flex-col gap-2"
         />
 
         <Field
@@ -148,18 +153,19 @@ export default function DinnersPage() {
             ...getInputProps(fields.date, { type: "datetime-local" }),
           }}
           errors={fields.date.errors}
+          className="flex w-full flex-col gap-2"
         />
 
-        <div className="sm:flex sm:justify-between sm:gap-2">
+        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
           <Field
-            className="grow"
+            className="flex grow flex-col gap-2"
             labelProps={{ children: "Slots" }}
             inputProps={{ ...getInputProps(fields.slots, { type: "number" }) }}
             errors={fields.slots.errors}
           />
 
           <Field
-            className="grow"
+            className="flex grow flex-col gap-2"
             labelProps={{ children: "Price" }}
             inputProps={{ ...getInputProps(fields.price, { type: "number" }) }}
             errors={fields.price.errors}
@@ -175,6 +181,7 @@ export default function DinnersPage() {
             className: "file:text-foreground",
           }}
           errors={fields.cover.errors}
+          className="flex w-full flex-col gap-2"
         />
 
         <SelectField
@@ -194,9 +201,10 @@ export default function DinnersPage() {
               "flex h-9 w-full appearance-none rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground file:placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
           }}
           errors={fields.addressId.errors}
+          className="flex w-full flex-col gap-2"
         />
 
-        <Button type="submit">Create Dinner</Button>
+        <Button type="submit">Update Dinner</Button>
       </Form>
     </>
   );

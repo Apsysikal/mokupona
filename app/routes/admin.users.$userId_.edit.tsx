@@ -122,12 +122,17 @@ export default function DinnersPage() {
 
   return (
     <div className="flex flex-col gap-2">
-      <p>{user.email}</p>
+      <div className="flex flex-col gap-4">
+        <h1 className="text-4xl">User Information</h1>
+        <p>
+          Information for <span className="text-primary">{user.email}</span>
+        </p>
+      </div>
 
       <Form
         method="POST"
         replace
-        className="flex flex-col gap-2"
+        className="mt-4 flex flex-col gap-4"
         {...getFormProps(form)}
       >
         <SelectField
@@ -151,6 +156,7 @@ export default function DinnersPage() {
               "flex h-9 w-full appearance-none rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground file:placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
           }}
           errors={fields.roleName.errors}
+          className="flex w-full flex-col gap-2"
         />
 
         <Button type="submit">Update User</Button>
