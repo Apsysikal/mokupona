@@ -24,26 +24,11 @@ import {
 import { Button } from "~/components/ui/button";
 import { createEventResponse } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
+import {
+  PersonSchema as person,
+  SignupPersonSchema as signupPerson,
+} from "~/utils/event-signup-validation";
 import { redirectWithToast } from "~/utils/toast.server";
-
-const signupPerson = z.object({
-  name: z.string({ required_error: "Name is required" }).trim(),
-  email: z
-    .string({ required_error: "Email is required" })
-    .email("Invalid email")
-    .trim(),
-  phone: z.string({ required_error: "Phone number is required" }).trim(),
-  alternativeMenu: z.boolean().default(false),
-  student: z.boolean().default(false),
-  dietaryRestrictions: z.string().trim().optional(),
-});
-
-const person = z.object({
-  name: z.string({ required_error: "Name is required" }).trim(),
-  alternativeMenu: z.boolean().default(false),
-  student: z.boolean().default(false),
-  dietaryRestrictions: z.string().trim().optional(),
-});
 
 const schema = z
   .object({
