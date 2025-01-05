@@ -14,6 +14,7 @@ import {
   redirect,
 } from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import { useEffect, useRef, useState } from "react";
 import invariant from "tiny-invariant";
 
 import { Field, SelectField, TextareaField } from "~/components/forms";
@@ -149,6 +150,21 @@ export default function DinnersPage() {
     },
   });
 
+  const [textContent, setTextContent] = useState<string>();
+  const textRef = useRef<HTMLTextAreaElement>(null);
+  const mountedRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    if (!canUseDOM()) return;
+    if (!textRef || !textRef.current) return;
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
+
+    textRef.current.style.height = `${textRef.current.scrollHeight}px`;
+  }, [textContent, textRef]);
+
   return (
     <>
       <Form
@@ -170,6 +186,9 @@ export default function DinnersPage() {
           textareaProps={{
             ...getTextareaProps(fields.description),
             rows: 10,
+            value: textContent,
+            onChange: (e) => setTextContent(e.target.value),
+            ref: textRef,
           }}
           errors={fields.description.errors}
           className="flex w-full flex-col gap-2"
@@ -235,5 +254,13 @@ export default function DinnersPage() {
         <Button type="submit">Update Dinner</Button>
       </Form>
     </>
+  );
+}
+
+export function canUseDOM() {
+  return !!(
+    typeof window !== "undefined" &&
+    typeof window.document !== "undefined" &&
+    typeof window.document.createElement !== "undefined"
   );
 }
