@@ -26,6 +26,9 @@ export default function DinnersPage() {
       <Button asChild>
         <Link to="locations">Manage Locations</Link>
       </Button>
+      <Button asChild>
+        <Link to="board-members/new">Board Members</Link>
+      </Button>
       {isAdmin ? (
         <Button asChild>
           <Link to="users">Manage Users</Link>
