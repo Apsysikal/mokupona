@@ -105,7 +105,7 @@
     "vitest": "^2.1.8"
   },
   "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "4.19.1"
+    "@rollup/rollup-linux-x64-gnu": "4.30.0"
   },
   "engines": {
     "node": ">=20.0.0"
