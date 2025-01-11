@@ -65,6 +65,9 @@ export async function action({ request }: ActionFunctionArgs) {
       }),
   });
 
+  console.log(submission.status);
+  console.log(submission.payload);
+
   if (
     submission.status !== "success" &&
     submission.payload &&
