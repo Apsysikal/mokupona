@@ -1,104 +1,26 @@
+import { PersonIcon } from "@radix-ui/react-icons";
+import { MetaFunction, useLoaderData } from "@remix-run/react";
 import { ClassValue } from "clsx";
 
+import { prisma } from "~/db.server";
 import { cn } from "~/lib/utils";
+import { getEventImageUrl } from "~/utils/misc";
+
+export const meta: MetaFunction<typeof loader> = () => {
+  return [{ title: "About" }];
+};
+
+export async function loader() {
+  const team = await prisma.boardMember.findMany({
+    include: {
+      image: true,
+    },
+  });
+  return { team };
+}
 
 export default function AboutPage() {
-  const team = [
-    {
-      name: "Michael Foster",
-      boardMember: true,
-      description: "President",
-      imageUrl:
-        "https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?ixlib=rb-=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=8&w=1024&h=1024&q=80",
-    },
-    {
-      name: "Dries Vincent",
-      boardMember: true,
-      description: "Vice President",
-      imageUrl:
-        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=8&w=1024&h=1024&q=80",
-    },
-    {
-      name: "Lindsay Walton",
-      boardMember: true,
-      description: "Actuary, Treasury",
-      imageUrl:
-        "https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=8&w=1024&h=1024&q=80",
-    },
-    {
-      name: "Tom Cook",
-      boardMember: true,
-      description: "Deputy",
-      imageUrl:
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=8&w=1024&h=1024&q=80",
-    },
-    {
-      name: "Michael Foster",
-      boardMember: false,
-      description: "lorem dolor",
-      imageUrl:
-        "https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?ixlib=rb-=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=8&w=1024&h=1024&q=80",
-    },
-    {
-      name: "Dries Vincent",
-      boardMember: false,
-      description: "short text",
-      imageUrl:
-        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=8&w=1024&h=1024&q=80",
-    },
-    {
-      name: "Lindsay Walton",
-      boardMember: false,
-      description: "text",
-      imageUrl:
-        "https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=8&w=1024&h=1024&q=80",
-    },
-    {
-      name: "Tom Cook",
-      description:
-        "Lorem ipsum odor amet, consectetuer adipiscing elit. Montes malesuada augue interdum feugiat volutpat? Varius ante magnis eu pharetra blandit.",
-      imageUrl:
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=8&w=1024&h=1024&q=80",
-    },
-    {
-      name: "Tom Cook",
-      description:
-        "Lorem ipsum odor amet, consectetuer adipiscing elit. Montes malesuada augue interdum feugiat volutpat? Varius ante magnis eu pharetra blandit.",
-      imageUrl:
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=8&w=1024&h=1024&q=80",
-    },
-    {
-      name: "Tom Cook",
-      description:
-        "Lorem ipsum odor amet, consectetuer adipiscing elit. Montes malesuada augue interdum feugiat volutpat? Varius ante magnis eu pharetra blandit.",
-      imageUrl:
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=8&w=1024&h=1024&q=80",
-    },
-    {
-      name: "Tom Cook",
-      description:
-        "Lorem ipsum odor amet, consectetuer adipiscing elit. Montes malesuada augue interdum feugiat volutpat? Varius ante magnis eu pharetra blandit.",
-      imageUrl:
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=8&w=1024&h=1024&q=80",
-    },
-    {
-      name: "Tom Cook",
-      description:
-        "Lorem ipsum odor amet, consectetuer adipiscing elit. Montes malesuada augue interdum feugiat volutpat? Varius ante magnis eu pharetra blandit.",
-      imageUrl:
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=8&w=1024&h=1024&q=80",
-    },
-    {
-      name: "Tom Cook",
-      description:
-        "Lorem ipsum odor amet, consectetuer adipiscing elit. Montes malesuada augue interdum feugiat volutpat? Varius ante magnis eu pharetra blandit.",
-      imageUrl:
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=8&w=1024&h=1024&q=80",
-    },
-  ];
-
-  const boardMembers = team.filter(({ boardMember }) => boardMember === true);
-  const teamMembers = team.filter(({ boardMember }) => !boardMember);
+  const { team } = useLoaderData<typeof loader>();
 
   return (
     <main className="mx-auto mt-20 max-w-4xl px-2">
@@ -137,29 +59,28 @@ export default function AboutPage() {
       </div>
 
       <div className="mt-20 flex flex-col gap-16">
-        <h2 className="text-4xl lowercase">Our Members</h2>
+        <h2 className="text-4xl lowercase">The Board</h2>
         <ul
           className={cn(
             "grid grid-cols-2 gap-x-8 gap-y-16",
-            boardMembers.length % 2 === 0 && "md:grid-cols-2",
-            boardMembers.length % 3 === 0 && "md:grid-cols-3",
-            boardMembers.length % 4 === 0 && "md:grid-cols-4",
-            boardMembers.length % 5 === 0 && "md:grid-cols-3 lg:grid-cols-5",
-            boardMembers.length % 6 === 0 && "md:grid-cols-3 lg:grid-cols-6",
-            boardMembers.length % 7 === 0 && "md:grid-cols-4 lg:grid-cols-7",
+            team.length % 2 === 0 && "md:grid-cols-2",
+            team.length % 3 === 0 && "md:grid-cols-3",
+            team.length % 4 === 0 && "md:grid-cols-4",
+            team.length % 5 === 0 && "md:grid-cols-3 lg:grid-cols-5",
+            team.length % 6 === 0 && "md:grid-cols-3 lg:grid-cols-6",
+            team.length % 7 === 0 && "md:grid-cols-4 lg:grid-cols-7",
           )}
         >
-          {boardMembers.map((member, index) => (
+          {team.map((member) => (
             <TeamMember
-              key={`${member.name}-${index}`}
-              {...member}
+              key={member.id}
+              name={member.name}
+              position={member.position}
+              imageUrl={
+                member.image ? getEventImageUrl(member.image.id) : undefined
+              }
               className="text-center"
             />
-          ))}
-        </ul>
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-x-8 gap-y-16">
-          {teamMembers.map((member, index) => (
-            <TeamMember key={`${member.name}-${index}`} {...member} />
           ))}
         </ul>
       </div>
@@ -168,27 +89,33 @@ export default function AboutPage() {
 }
 
 function TeamMember({
-  imageUrl,
   name,
-  description,
-  boardMember,
+  position,
+  imageUrl,
   className,
 }: {
   name: string;
-  imageUrl: string;
-  description: string;
-  boardMember?: boolean;
+  position: string;
+  imageUrl?: string;
   className?: ClassValue;
 }) {
   return (
     <li>
-      <img alt={name} src={imageUrl} className="mx-auto size-24 rounded-full" />
-      {boardMember ? (
-        <div className={cn(className)}>
-          <h3 className="mt-6 text-base/7 font-semibold">{name}</h3>
-          <p className="text-sm text-gray-50/80">{description}</p>
-        </div>
-      ) : null}
+      <div className={cn(className)}>
+        {imageUrl ? (
+          <img
+            alt={`Portrait of ${name}`}
+            src={imageUrl}
+            className="mx-auto size-24 flex-none rounded-full bg-gray-50"
+          />
+        ) : (
+          <div className="mx-auto flex size-24 shrink-0 items-center justify-center rounded-full bg-primary">
+            <PersonIcon className="size-12 text-primary-foreground" />
+          </div>
+        )}
+        <h3 className="mt-6 text-base/7 font-semibold">{name}</h3>
+        <p className="text-sm text-gray-50/80">{position}</p>
+      </div>
     </li>
   );
 }

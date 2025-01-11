@@ -111,10 +111,7 @@ function Document() {
               upcoming dinners
             </Link>
 
-            <Link
-              to="/about"
-              className="pointer-events-none text-foreground/20 max-md:hidden"
-            >
+            <Link to="/about" className="hover:underline max-md:hidden">
               about
             </Link>
 
