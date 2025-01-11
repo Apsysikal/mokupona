@@ -58,6 +58,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const formData = await parseFormData(request, uploadHandler);
 
+  console.log(formData);
+
   const submission = parseWithZod(formData, {
     schema: (intent) =>
       MemberSchema.superRefine((data) => {
