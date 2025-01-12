@@ -1,12 +1,7 @@
 import { parseWithZod } from "@conform-to/zod";
 import { parseFormData, type FileUpload } from "@mjackson/form-data-parser";
-import {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  MetaFunction,
-  redirect,
-} from "@remix-run/node";
-import { useActionData, useLoaderData } from "@remix-run/react";
+import { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction, redirect } from "react-router";
+import { useActionData, useLoaderData } from "react-router";
 
 import { AdminDinnerForm } from "~/components/admin-dinner-form";
 import { prisma } from "~/db.server";

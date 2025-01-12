@@ -1,6 +1,6 @@
 import { HamburgerMenuIcon, InstagramLogoIcon } from "@radix-ui/react-icons";
-import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
-import { data } from "@remix-run/node";
+import type { LinksFunction, LoaderFunctionArgs } from "react-router";
+import { data } from "react-router";
 import {
   Form,
   Link,
@@ -11,7 +11,7 @@ import {
   ScrollRestoration,
   useLoaderData,
   useSubmit,
-} from "@remix-run/react";
+} from "react-router";
 import { useRef } from "react";
 
 import { Footer } from "./components/footer";

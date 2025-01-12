@@ -1,5 +1,5 @@
 import type { EventResponse } from "@prisma/client";
-import { LoaderFunctionArgs } from "@remix-run/node";
+import { LoaderFunctionArgs } from "react-router";
 import invariant from "tiny-invariant";
 
 import { buildCSVObject } from "~/lib/csv-builder.server";

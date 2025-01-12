@@ -1,6 +1,6 @@
 import { Address } from "@prisma/client";
-import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { Link, useFetcher, useLoaderData } from "@remix-run/react";
+import { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { Link, useFetcher, useLoaderData } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { getAddresses } from "~/models/address.server";

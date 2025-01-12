@@ -1,6 +1,6 @@
 import { ChevronRightIcon, PersonIcon } from "@radix-ui/react-icons";
-import { LoaderFunctionArgs } from "@remix-run/node";
-import { Link, Outlet, useLoaderData } from "@remix-run/react";
+import { LoaderFunctionArgs } from "react-router";
+import { Link, Outlet, useLoaderData } from "react-router";
 
 import { prisma } from "~/db.server";
 import { getEventImageUrl } from "~/utils/misc";

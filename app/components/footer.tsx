@@ -1,5 +1,5 @@
 import { InstagramLogoIcon } from "@radix-ui/react-icons";
-import { Link } from "@remix-run/react";
+import { Link } from "react-router";
 
 export function Footer() {
   return (
