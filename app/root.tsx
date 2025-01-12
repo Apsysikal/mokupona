@@ -1,4 +1,5 @@
 import { HamburgerMenuIcon, InstagramLogoIcon } from "@radix-ui/react-icons";
+import { useRef } from "react";
 import type { LinksFunction, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
@@ -12,7 +13,6 @@ import {
   useLoaderData,
   useSubmit,
 } from "react-router";
-import { useRef } from "react";
 
 import { Footer } from "./components/footer";
 import { Logo } from "./components/logo";

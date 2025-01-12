@@ -42,7 +42,7 @@
     font-style: normal;
     font-display: optional;
     font-weight: 300 800;
-    src: url(/fonts/OpenSans-VF.woff2) format('woff2-variations');
+    src: url(/fonts/OpenSans-VF.woff2) format("woff2-variations");
   }
 
   @font-face {
@@ -50,6 +50,6 @@
     font-style: italic;
     font-display: optional;
     font-weight: 300 800;
-    src: url(/fonts/OpenSans-Italic-VF.woff2) format('woff2-variations');
+    src: url(/fonts/OpenSans-Italic-VF.woff2) format("woff2-variations");
   }
 }

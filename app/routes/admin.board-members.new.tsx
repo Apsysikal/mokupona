@@ -1,8 +1,14 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import { FileUpload, parseFormData } from "@mjackson/form-data-parser";
-import { ActionFunctionArgs, LoaderFunctionArgs, redirect } from "react-router";
-import { Form, useActionData, useLocation } from "react-router";
+import {
+  ActionFunctionArgs,
+  Form,
+  LoaderFunctionArgs,
+  redirect,
+  useActionData,
+  useLocation,
+} from "react-router";
 import { z } from "zod";
 
 import { Field } from "~/components/forms";
@@ -54,17 +60,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const formData = await parseFormData(request, uploadHandler);
 
-  console.log(formData);
-
   const submission = parseWithZod(formData, {
     schema: (intent) =>
       MemberSchema.superRefine((data) => {
         if (intent !== null) return { ...data };
       }),
   });
-
-  console.log(submission.status);
-  console.log(submission.payload);
 
   if (
     submission.status !== "success" &&

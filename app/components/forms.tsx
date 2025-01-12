@@ -65,7 +65,7 @@ export function TextareaField({
 }: {
   labelProps: React.InputHTMLAttributes<HTMLLabelElement>;
   textareaProps: React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
-    ref?: React.RefObject<HTMLTextAreaElement | null>;
+    ref?: React.RefObject<HTMLTextAreaElement>;
   };
   errors?: ListOfErrors;
   className?: string;

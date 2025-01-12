@@ -1,6 +1,6 @@
 import { PersonIcon } from "@radix-ui/react-icons";
-import { MetaFunction, useLoaderData } from "react-router";
 import { ClassValue } from "clsx";
+import { MetaFunction, useLoaderData } from "react-router";
 
 import { prisma } from "~/db.server";
 import { cn } from "~/lib/utils";
