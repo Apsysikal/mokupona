@@ -104,6 +104,7 @@ export default function BoardMemberNewRoute() {
   const lastSubmission = useActionData<typeof action>();
   const [form, fields] = useForm({
     // This id makes sure to clear out the form when redirecting to the same page
+    id: location.key,
     lastResult: lastSubmission,
     shouldValidate: "onBlur",
     constraint: getZodConstraint(MemberSchema),
