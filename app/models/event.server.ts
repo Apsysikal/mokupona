@@ -2,7 +2,12 @@ import type { Prisma } from "@prisma/client";
 
 import { prisma } from "~/db.server";
 
-export async function getEvents(filter?: Prisma.EventWhereInput) {
+type EventsFilter = Prisma.EventWhereInput;
+
+type EventCreateInput = Prisma.EventUncheckedCreateInput;
+type EventUpdateInput = Prisma.EventUncheckedUpdateInput;
+
+export async function getEvents(filter?: EventsFilter) {
   return prisma.event.findMany({
     where: filter,
     orderBy: {
@@ -20,73 +25,16 @@ export async function getEventById(id: string) {
   });
 }
 
-export async function createEvent({
-  title,
-  description,
-  date,
-  slots,
-  price,
-  imageId,
-  addressId,
-  creatorId,
-}: {
-  title: string;
-  description: string;
-  date: Date;
-  slots: number;
-  price: number;
-  imageId: string;
-  addressId: string;
-  creatorId: string;
-}) {
+export async function createEvent(data: EventCreateInput) {
   return prisma.event.create({
-    data: {
-      title,
-      description,
-      date,
-      slots,
-      price,
-      imageId,
-      addressId,
-      createdById: creatorId,
-    },
+    data,
   });
 }
 
-export async function updateEvent(
-  id: string,
-  {
-    title,
-    description,
-    date,
-    slots,
-    price,
-    imageId,
-    addressId,
-    creatorId,
-  }: {
-    title?: string;
-    description?: string;
-    date?: Date;
-    slots?: number;
-    price?: number;
-    imageId?: string;
-    addressId?: string;
-    creatorId?: string;
-  },
-) {
+export async function updateEvent(id: string, data: EventUpdateInput) {
   return prisma.event.update({
     where: { id },
-    data: {
-      title,
-      description,
-      date,
-      slots,
-      price,
-      addressId,
-      imageId,
-      createdById: creatorId,
-    },
+    data,
   });
 }
 

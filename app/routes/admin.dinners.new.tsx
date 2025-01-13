@@ -5,8 +5,9 @@ import {
   LoaderFunctionArgs,
   MetaFunction,
   redirect,
+  useActionData,
+  useLoaderData,
 } from "react-router";
-import { useActionData, useLoaderData } from "react-router";
 
 import { AdminDinnerForm } from "~/components/admin-dinner-form";
 import { prisma } from "~/db.server";
@@ -90,7 +91,7 @@ export async function action({ request }: ActionFunctionArgs) {
     price,
     addressId: addressId,
     imageId: eventImage.id,
-    creatorId: user.id,
+    createdById: user.id,
   });
 
   // Remove the file from disk.

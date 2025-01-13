@@ -2,17 +2,25 @@ import { getFormProps, getSelectProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import {
   ActionFunctionArgs,
+  Form,
   LoaderFunctionArgs,
   MetaFunction,
   redirect,
+  useActionData,
+  useLoaderData,
 } from "react-router";
-import { Form, useActionData, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
 import { SelectField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { prisma } from "~/db.server";
+import {
+  getUserById,
+  updateUser,
+  UserSelect,
+  UserWhereUnique,
+} from "~/models/user.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
 const schema = z.object({
@@ -25,17 +33,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { userId } = params;
   invariant(typeof userId === "string", "Parameter userId is missing");
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      email: true,
-      role: {
-        select: {
-          name: true,
-        },
+  const select = {
+    email: true,
+    role: {
+      select: {
+        name: true,
       },
     },
-  });
+  } satisfies UserSelect;
+
+  const user = await getUserById(userId, select);
 
   if (!user) throw new Response("Not found", { status: 404 });
 
@@ -86,19 +93,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { roleId } = submission.value;
 
-  await prisma.user.update({
-    where: {
-      id: userId,
-      role: {
-        NOT: {
-          name: "admin",
-        },
+  const where = {
+    id: userId,
+    role: {
+      NOT: {
+        name: "admin",
       },
     },
-    data: {
-      roleId,
-    },
-  });
+  } satisfies UserWhereUnique;
+
+  await updateUser(where, { roleId });
 
   return redirect(`/admin/users`);
 }

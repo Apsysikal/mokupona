@@ -7,8 +7,9 @@ import {
   LoaderFunctionArgs,
   MetaFunction,
   redirect,
+  useActionData,
+  useLoaderData,
 } from "react-router";
-import { useActionData, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
 
 import { AdminDinnerForm } from "~/components/admin-dinner-form";
@@ -116,7 +117,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     price,
     addressId,
     ...(eventImage && { imageId: eventImage.id }),
-    creatorId: user.id,
+    createdById: user.id,
   });
 
   return redirect(`/admin/dinners/${event.id}`);
