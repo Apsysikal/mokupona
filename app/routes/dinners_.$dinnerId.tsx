@@ -7,10 +7,13 @@ import {
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import {
   ActionFunctionArgs,
+  Form,
+  Link,
   LoaderFunctionArgs,
   MetaFunction,
+  useActionData,
+  useLoaderData,
 } from "react-router";
-import { Form, Link, useActionData, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
@@ -22,12 +25,14 @@ import {
   TextareaField,
 } from "~/components/forms";
 import { Button } from "~/components/ui/button";
+import { logger } from "~/logger.server";
 import { createEventResponse } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
 import {
   PersonSchema as person,
   SignupPersonSchema as signupPerson,
 } from "~/utils/event-signup-validation";
+import { getClientIPAddress, obscureEmail } from "~/utils/misc";
 import { redirectWithToast } from "~/utils/toast.server";
 
 const schema = z
@@ -89,6 +94,15 @@ export async function action({ params, request }: ActionFunctionArgs) {
   const submission = parseWithZod(formData, { schema });
 
   if (submission.status !== "success" || !submission.value) {
+    logger.info("Failed submission for dinner signup", {
+      ip: getClientIPAddress(request),
+      dinner: dinner.id,
+      email: obscureEmail(
+        submission.payload["email"].toString() ?? "unknown@no-domain.com",
+      ),
+      reason: submission.status === "error" ? submission.error : null,
+    });
+
     return submission.reply();
   }
 
@@ -120,7 +134,20 @@ export async function action({ params, request }: ActionFunctionArgs) {
     },
   );
 
-  await Promise.all(allSignupsPromises);
+  await Promise.all(allSignupsPromises).catch((reason) => {
+    logger.info("Failed submission for dinner signup", {
+      ip: getClientIPAddress(request),
+      dinner: dinner.id,
+      email: obscureEmail(submission.value.signupPerson.email),
+      reason: reason,
+    });
+  });
+
+  logger.info("Successful submission for dinner signup", {
+    ip: getClientIPAddress(request),
+    dinner: dinner.id,
+    email: obscureEmail(submission.value.signupPerson.email),
+  });
 
   return redirectWithToast("/dinners", {
     title: "Signup complete",

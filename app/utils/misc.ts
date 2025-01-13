@@ -119,6 +119,21 @@ export function getDomainUrl(request: Request) {
   return `${protocol}://${host}`;
 }
 
+export function obscureEmail(email: string) {
+  const [name, domain] = email.split("@");
+  return `${name[0]}${new Array(name.length).join("*")}@${domain}`;
+}
+
+export function getClientIPAddress(request: Request) {
+  const ip =
+    request.headers.get("X-Client-IP") ??
+    request.headers.get("X-Forwarded-For") ??
+    request.headers.get("HTTP-X-Forwarded-For") ??
+    request.headers.get("Fly-Client-IP");
+
+  return ip;
+}
+
 export function getEventImageUrl(imageId: string) {
   return `/file/${imageId}`;
 }

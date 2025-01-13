@@ -5,15 +5,21 @@ import type {
   LoaderFunctionArgs,
   MetaFunction,
 } from "react-router";
-import { redirect } from "react-router";
-import { Form, Link, useActionData, useSearchParams } from "react-router";
+import {
+  Form,
+  Link,
+  redirect,
+  useActionData,
+  useSearchParams,
+} from "react-router";
 import { z } from "zod";
 
 import { CheckboxField, Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { logger } from "~/logger.server";
 import { createUser, getUserByEmail } from "~/models/user.server";
-import { safeRedirect } from "~/utils/misc";
+import { getClientIPAddress, obscureEmail, safeRedirect } from "~/utils/misc";
 import { createUserSession, getUserId } from "~/utils/session.server";
 
 const schema = z
@@ -81,6 +87,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   });
 
   if (submission.status !== "success" || !submission.value) {
+    logger.info("Failed login request", {
+      ip: getClientIPAddress(request),
+      email: obscureEmail(
+        submission.payload["email"].toString() ?? "unknown@no-domain.com",
+      ),
+      reason: submission.status === "error" ? submission.error : null,
+    });
+
     return submission.reply();
   }
 
@@ -88,6 +102,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { email, password } = submission.value;
 
   const user = await createUser(email, password);
+
+  logger.info("Successful signup request", {
+    ip: getClientIPAddress(request),
+    email: obscureEmail(submission.value.email),
+  });
 
   return createUserSession({
     redirectTo,
