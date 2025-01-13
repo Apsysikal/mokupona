@@ -4,7 +4,10 @@ const PRODUCTION = process.env.NODE_ENV === "production";
 
 const logger = winston.createLogger({
   level: PRODUCTION ? "info" : "debug",
-  format: winston.format.json(),
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json(),
+  ),
   transports: PRODUCTION
     ? [
         new winston.transports.File({
@@ -17,6 +20,7 @@ const logger = winston.createLogger({
     : [
         new winston.transports.Console({
           format: winston.format.combine(
+            winston.format.timestamp(),
             winston.format.colorize({ all: true }),
             winston.format.simple(),
           ),
