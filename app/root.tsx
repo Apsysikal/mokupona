@@ -1,8 +1,8 @@
 import { HamburgerMenuIcon, InstagramLogoIcon } from "@radix-ui/react-icons";
 import { useRef } from "react";
 import type { LinksFunction, LoaderFunctionArgs } from "react-router";
-import { data } from "react-router";
 import {
+  data,
   Form,
   Link,
   Links,
@@ -185,10 +185,7 @@ function GeneralDropdown() {
           </DropdownMenuItem>
 
           <DropdownMenuItem>
-            <Link
-              to="/about"
-              className="pointer-events-none text-foreground/20"
-            >
+            <Link to="/about" className="hover:underline">
               about
             </Link>
           </DropdownMenuItem>

@@ -27,38 +27,24 @@ export default function AboutPage() {
       <div className="flex flex-col gap-8">
         <h1 className="text-5xl lowercase">About Us</h1>
         <p>
-          Lorem ipsum odor amet, consectetuer adipiscing elit. Eu urna tincidunt
-          class amet mi. Metus proin rhoncus vitae massa venenatis maximus
-          conubia arcu. Nunc quisque quam id nullam cras euismod. Praesent curae
-          aenean urna; curae lobortis rhoncus primis? Quam pharetra congue
-          pulvinar finibus quisque habitasse metus lacinia. Ornare quisque
-          sapien diam; primis mollis massa. Venenatis congue laoreet cubilia
-          augue consequat suspendisse elementum fringilla diam. Tortor odio
-          torquent integer, cubilia ridiculus sagittis. Dapibus purus in
-          vehicula nulla diam. Vulputate vehicula proin ipsum mus iaculis
-          vulputate aliquam; ex urna. Elit inceptos porttitor ex mattis dolor
-          mauris porta tincidunt. Pharetra mollis massa penatibus mollis nullam
-          elementum ultrices euismod. Litora mus diam pretium a morbi; suscipit
-          molestie etiam quisque.
-        </p>
-        <p>
-          Lorem ipsum odor amet, consectetuer adipiscing elit. Eu urna tincidunt
-          class amet mi. Metus proin rhoncus vitae massa venenatis maximus
-          conubia arcu. Nunc quisque quam id nullam cras euismod. Praesent curae
-          aenean urna; curae lobortis rhoncus primis? Quam pharetra congue
-          pulvinar finibus quisque habitasse metus lacinia. Ornare quisque
-          sapien diam; primis mollis massa. Venenatis congue laoreet cubilia
-          augue consequat suspendisse elementum fringilla diam. Tortor odio
-          torquent integer, cubilia ridiculus sagittis. Dapibus purus in
-          vehicula nulla diam. Vulputate vehicula proin ipsum mus iaculis
-          vulputate aliquam; ex urna. Elit inceptos porttitor ex mattis dolor
-          mauris porta tincidunt. Pharetra mollis massa penatibus mollis nullam
-          elementum ultrices euismod. Litora mus diam pretium a morbi; suscipit
-          molestie etiam quisque.
+          Welcome to moku pona, a Zurich-based dinner society founded in April
+          2024 by five friends: Dan, Bharat, Javi, Leo, and Benedikt. Our
+          community has since grown to include approximately 15 members who
+          share a love for cooking and the joy it brings. At moku pona, we see
+          food as a way to express creativity, share experiences, and connect
+          with others. Our dinner events go beyond the typical restaurant
+          experience, creating a warm and welcoming community space where
+          friends and strangers can forge new connections. We aim to make every
+          gathering an opportunity not just to enjoy a wonderful meal, but also
+          to meet new people, share stories, and build meaningful relationships.
+          We are always open to welcoming new members who share our passion for
+          cooking and community. If you're interested in joining us, please
+          reach out—we'd love to cook and share a meal with you. We look forward
+          to meeting you at our next gathering!
         </p>
       </div>
 
-      <div className="mt-20 flex flex-col gap-16">
+      <div className="mt-8 flex flex-col gap-16">
         <h2 className="text-4xl lowercase">The Board</h2>
         <ul
           className={cn(

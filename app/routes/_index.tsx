@@ -114,7 +114,7 @@ export default function Index() {
             <h2 className="col-span-full text-4xl">who we are</h2>
 
             <p className="col-span-2 my-auto text-xl font-thin leading-relaxed max-md:col-span-full">
-              Learn more about the people behind moku mona here.
+              Learn more about the people behind moku pona here.
             </p>
 
             {/* <div className="col-span-3 flex items-center justify-end self-center max-md:col-span-full max-md:items-start max-md:justify-start">
