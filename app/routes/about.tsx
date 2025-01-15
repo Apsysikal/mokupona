@@ -13,7 +13,11 @@ export const meta: MetaFunction<typeof loader> = () => {
 export async function loader() {
   const team = await prisma.boardMember.findMany({
     include: {
-      image: true,
+      image: {
+        select: {
+          id: true
+        }
+      }
     },
   });
   return { team };
@@ -63,7 +67,7 @@ export default function AboutPage() {
               name={member.name}
               position={member.position}
               imageUrl={
-                member.image ? getEventImageUrl(member.image.id) : undefined
+                member.image?.id ? getEventImageUrl(member.image.id) : undefined
               }
               className="text-center"
             />
