@@ -1,22 +1,15 @@
-import {
-  getFormProps,
-  getInputProps,
-  getSelectProps,
-  getTextareaProps,
-  useForm,
-} from "@conform-to/react";
-import { getZodConstraint, parseWithZod } from "@conform-to/zod";
+import { parseWithZod } from "@conform-to/zod";
 import { parseFormData, type FileUpload } from "@mjackson/form-data-parser";
 import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction,
   redirect,
-} from "@remix-run/node";
-import { Form, useActionData, useLoaderData } from "@remix-run/react";
+  useActionData,
+  useLoaderData,
+} from "react-router";
 
-import { Field, SelectField, TextareaField } from "~/components/forms";
-import { Button } from "~/components/ui/button";
+import { AdminDinnerForm } from "~/components/admin-dinner-form";
 import { prisma } from "~/db.server";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
@@ -24,8 +17,7 @@ import {
   fileStorage,
   getStorageKey,
 } from "~/utils/dinner-image-storage.server";
-import { ClientEventSchema } from "~/utils/event-validation";
-import { ServerEventSchema } from "~/utils/event-validation.server";
+import { EventSchema } from "~/utils/event-validation";
 import { getTimezoneOffset, offsetDate } from "~/utils/misc";
 import { requireUserWithRole } from "~/utils/session.server";
 
@@ -61,12 +53,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const submission = parseWithZod(formData, {
     schema: (intent) =>
-      ServerEventSchema.superRefine((data) => {
+      EventSchema.superRefine((data) => {
         if (intent !== null) return { ...data };
       }),
   });
-
-  console.log(submission.payload);
 
   if (
     submission.status !== "success" &&
@@ -101,7 +91,7 @@ export async function action({ request }: ActionFunctionArgs) {
     price,
     addressId: addressId,
     imageId: eventImage.id,
-    creatorId: user.id,
+    createdById: user.id,
   });
 
   // Remove the file from disk.
@@ -114,93 +104,17 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function DinnersPage() {
   const { addresses, validImageTypes } = useLoaderData<typeof loader>();
   const lastResult = useActionData<typeof action>();
-  const [form, fields] = useForm({
-    lastResult,
-    shouldValidate: "onBlur",
-    constraint: getZodConstraint(ClientEventSchema),
-    onValidate({ formData }) {
-      return parseWithZod(formData, { schema: ClientEventSchema });
-    },
-  });
 
   return (
     <>
       <div>Create a new dinner</div>
-      <Form
-        method="POST"
-        encType="multipart/form-data"
-        replace
-        className="flex flex-col gap-2"
-        {...getFormProps(form)}
-      >
-        <Field
-          labelProps={{ children: "Title" }}
-          inputProps={{ ...getInputProps(fields.title, { type: "text" }) }}
-          errors={fields.title.errors}
-        />
-
-        <TextareaField
-          labelProps={{ children: "Description" }}
-          textareaProps={{ ...getTextareaProps(fields.description) }}
-          errors={fields.description.errors}
-        />
-
-        <Field
-          labelProps={{ children: "Date" }}
-          inputProps={{
-            ...getInputProps(fields.date, { type: "datetime-local" }),
-          }}
-          errors={fields.date.errors}
-        />
-
-        <div className="sm:flex sm:justify-between sm:gap-2">
-          <Field
-            className="grow"
-            labelProps={{ children: "Slots" }}
-            inputProps={{ ...getInputProps(fields.slots, { type: "number" }) }}
-            errors={fields.slots.errors}
-          />
-
-          <Field
-            className="grow"
-            labelProps={{ children: "Price" }}
-            inputProps={{ ...getInputProps(fields.price, { type: "number" }) }}
-            errors={fields.price.errors}
-          />
-        </div>
-
-        <Field
-          labelProps={{ children: "Cover" }}
-          inputProps={{
-            ...getInputProps(fields.cover, { type: "file" }),
-            tabIndex: 0,
-            accept: validImageTypes.join(","),
-            className: "file:text-foreground",
-          }}
-          errors={fields.cover.errors}
-        />
-
-        <SelectField
-          labelProps={{ children: "Address" }}
-          selectProps={{
-            ...getSelectProps(fields.addressId),
-            children: addresses.map((address) => {
-              const { id } = address;
-
-              return (
-                <option key={id} value={id}>
-                  {`${address.streetName} ${address.houseNumber} - ${address.zip} ${address.city}`}
-                </option>
-              );
-            }),
-            className:
-              "flex h-9 w-full appearance-none rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground file:placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
-          }}
-          errors={fields.addressId.errors}
-        />
-
-        <Button type="submit">Create Dinner</Button>
-      </Form>
+      <AdminDinnerForm
+        schema={EventSchema}
+        validImageTypes={validImageTypes}
+        addresses={addresses}
+        lastResult={lastResult}
+        submitText="Create Dinner"
+      />
     </>
   );
 }

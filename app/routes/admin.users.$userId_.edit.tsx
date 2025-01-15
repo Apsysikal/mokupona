@@ -2,17 +2,25 @@ import { getFormProps, getSelectProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import {
   ActionFunctionArgs,
+  Form,
   LoaderFunctionArgs,
   MetaFunction,
   redirect,
-} from "@remix-run/node";
-import { Form, useActionData, useLoaderData } from "@remix-run/react";
+  useActionData,
+  useLoaderData,
+} from "react-router";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
 import { SelectField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { prisma } from "~/db.server";
+import {
+  getUserById,
+  updateUser,
+  UserSelect,
+  UserWhereUnique,
+} from "~/models/user.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
 const schema = z.object({
@@ -25,17 +33,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { userId } = params;
   invariant(typeof userId === "string", "Parameter userId is missing");
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      email: true,
-      role: {
-        select: {
-          name: true,
-        },
+  const select = {
+    email: true,
+    role: {
+      select: {
+        name: true,
       },
     },
-  });
+  } satisfies UserSelect;
+
+  const user = await getUserById(userId, select);
 
   if (!user) throw new Response("Not found", { status: 404 });
 
@@ -86,19 +93,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { roleId } = submission.value;
 
-  await prisma.user.update({
-    where: {
-      id: userId,
-      role: {
-        NOT: {
-          name: "admin",
-        },
+  const where = {
+    id: userId,
+    role: {
+      NOT: {
+        name: "admin",
       },
     },
-    data: {
-      roleId,
-    },
-  });
+  } satisfies UserWhereUnique;
+
+  await updateUser(where, { roleId });
 
   return redirect(`/admin/users`);
 }
@@ -122,12 +126,17 @@ export default function DinnersPage() {
 
   return (
     <div className="flex flex-col gap-2">
-      <p>{user.email}</p>
+      <div className="flex flex-col gap-4">
+        <h1 className="text-4xl">User Information</h1>
+        <p>
+          Information for <span className="text-primary">{user.email}</span>
+        </p>
+      </div>
 
       <Form
         method="POST"
         replace
-        className="flex flex-col gap-2"
+        className="mt-4 flex flex-col gap-4"
         {...getFormProps(form)}
       >
         <SelectField
@@ -151,6 +160,7 @@ export default function DinnersPage() {
               "flex h-9 w-full appearance-none rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground file:placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
           }}
           errors={fields.roleName.errors}
+          className="flex w-full flex-col gap-2"
         />
 
         <Button type="submit">Update User</Button>

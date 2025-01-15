@@ -1,7 +1,8 @@
-import { ActionFunctionArgs, redirect } from "@remix-run/node";
+import { ActionFunctionArgs, redirect } from "react-router";
 import invariant from "tiny-invariant";
 
 import { prisma } from "~/db.server";
+import { deleteUserById } from "~/models/user.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader() {
@@ -22,6 +23,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Admins can't be deleted from the admin ui
   if (userRole.name === "admin") return redirect("/admin/users");
 
-  await prisma.user.delete({ where: { id: userId } });
+  await deleteUserById(userId);
   return redirect("/admin/users");
 }

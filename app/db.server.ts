@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client/index.js";
 
 import { singleton } from "./utils/singleton.server";
 
@@ -6,4 +6,5 @@ import { singleton } from "./utils/singleton.server";
 const prisma = singleton("prisma", () => new PrismaClient());
 prisma.$connect();
 
+export * from "@prisma/client/index.js";
 export { prisma };

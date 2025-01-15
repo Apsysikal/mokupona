@@ -1,8 +1,7 @@
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { redirect, useLoaderData } from "react-router";
 
-import { prisma } from "~/db.server";
+import { getUserById } from "~/models/user.server";
 import { logout, requireUserId } from "~/utils/session.server";
 
 export const meta: MetaFunction = () => [{ title: "moku pona" }];
@@ -13,12 +12,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (!ENABLED) return redirect("/");
 
   const userId = await requireUserId(request);
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      email: true,
-      role: true,
-    },
+  const user = await getUserById(userId, {
+    email: true,
+    role: true,
   });
 
   if (!user) throw await logout(request);

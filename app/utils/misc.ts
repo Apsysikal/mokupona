@@ -1,6 +1,6 @@
 import type { Role } from "@prisma/client";
-import { useMatches } from "@remix-run/react";
 import { useMemo } from "react";
+import { useMatches } from "react-router";
 
 import type { User } from "~/models/user.server";
 
@@ -117,6 +117,21 @@ export function getDomainUrl(request: Request) {
     new URL(request.url).host;
   const protocol = host.includes("localhost") ? "http" : "https";
   return `${protocol}://${host}`;
+}
+
+export function obscureEmail(email: string) {
+  const [name, domain] = email.split("@");
+  return `${name[0]}${new Array(name.length).join("*")}@${domain}`;
+}
+
+export function getClientIPAddress(request: Request) {
+  const ip =
+    request.headers.get("X-Client-IP") ??
+    request.headers.get("X-Forwarded-For") ??
+    request.headers.get("HTTP-X-Forwarded-For") ??
+    request.headers.get("Fly-Client-IP");
+
+  return ip;
 }
 
 export function getEventImageUrl(imageId: string) {

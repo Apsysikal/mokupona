@@ -1,5 +1,5 @@
-import type { MetaFunction } from "@remix-run/node";
-import { Link } from "@remix-run/react";
+import type { MetaFunction } from "react-router";
+import { Link } from "react-router";
 
 import { Arrow } from "~/components/arrow";
 import {
@@ -114,7 +114,7 @@ export default function Index() {
             <h2 className="col-span-full text-4xl">who we are</h2>
 
             <p className="col-span-2 my-auto text-xl font-thin leading-relaxed max-md:col-span-full">
-              Learn more about the people behind moku mona here (coming soon).
+              Learn more about the people behind moku pona here.
             </p>
 
             {/* <div className="col-span-3 flex items-center justify-end self-center max-md:col-span-full max-md:items-start max-md:justify-start">
@@ -141,7 +141,7 @@ export default function Index() {
 
             <Link
               to="/about"
-              className="pointer-events-none col-span-full flex items-center gap-4 text-background/20"
+              className="col-span-full flex items-center gap-4 text-background"
             >
               <span className="shrink-0">get to know us</span>
               <Arrow className="shrink-0" />

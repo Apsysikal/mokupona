@@ -1,4 +1,4 @@
-import { ActionFunctionArgs, redirect } from "@remix-run/node";
+import { ActionFunctionArgs, redirect } from "react-router";
 import invariant from "tiny-invariant";
 
 import { deleteEvent } from "~/models/event.server";

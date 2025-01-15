@@ -1,12 +1,34 @@
-import type { Password, Role, User } from "@prisma/client";
+import { Password, Prisma, Role, User } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 import { prisma } from "~/db.server";
 
 export type { User } from "@prisma/client";
 
-export async function getUserById(id: User["id"]) {
-  return prisma.user.findUnique({ where: { id } });
+export type UserSelect = Prisma.UserSelect;
+export type UserWhere = Prisma.UserWhereInput;
+export type UserWhereUnique = Prisma.UserWhereUniqueInput;
+export type UserUpdateData = Prisma.UserUncheckedUpdateInput;
+
+type UserFindManyPayload<T extends UserSelect> = Array<
+  Prisma.UserGetPayload<{ select: T }>
+>;
+
+type UserFindUniquePayload<T extends UserSelect> = Prisma.UserGetPayload<{
+  select: T;
+}>;
+
+export async function getUsers<T extends UserSelect>(
+  select: T,
+): Promise<UserFindManyPayload<T>> {
+  return prisma.user.findMany({ select });
+}
+
+export async function getUserById<T extends UserSelect>(
+  id: User["id"],
+  select: T = {} as T,
+): Promise<UserFindUniquePayload<T> | null> {
+  return prisma.user.findUnique({ where: { id }, select });
 }
 
 export async function getUserByIdWithRole(id: User["id"]) {
@@ -42,6 +64,20 @@ export async function createUser(
 
 export async function deleteUserByEmail(email: User["email"]) {
   return prisma.user.delete({ where: { email } });
+}
+
+export async function deleteUserById(id: User["id"]) {
+  return prisma.user.delete({ where: { id } });
+}
+
+export async function updateUser<T extends UserWhereUnique>(
+  where: T = {} as T,
+  data: UserUpdateData,
+) {
+  return prisma.user.update({
+    where,
+    data,
+  });
 }
 
 export async function verifyLogin(

@@ -1,5 +1,5 @@
 import { InstagramLogoIcon } from "@radix-ui/react-icons";
-import { Link } from "@remix-run/react";
+import { Link } from "react-router";
 
 export function Footer() {
   return (
@@ -11,6 +11,11 @@ export function Footer() {
             <li>
               <Link to="/dinners" className="text-sm hover:underline">
                 Dinners
+              </Link>
+            </li>
+            <li>
+              <Link to="/privacy" className="text-sm hover:underline">
+                Privacy Policy
               </Link>
             </li>
             <li>

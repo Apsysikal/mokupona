@@ -1,23 +1,29 @@
-import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { Link, useFetcher, useLoaderData } from "@remix-run/react";
+import {
+  Link,
+  LoaderFunctionArgs,
+  MetaFunction,
+  useFetcher,
+  useLoaderData,
+} from "react-router";
 
 import { Button } from "~/components/ui/button";
-import { prisma } from "~/db.server";
+import { getUsers, UserSelect } from "~/models/user.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["admin"]);
-  const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      email: true,
-      role: {
-        select: {
-          name: true,
-        },
+
+  const select = {
+    id: true,
+    email: true,
+    role: {
+      select: {
+        name: true,
       },
     },
-  });
+  } satisfies UserSelect;
+
+  const users = await getUsers(select);
 
   return { users };
 }

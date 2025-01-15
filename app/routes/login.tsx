@@ -4,9 +4,14 @@ import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction,
-} from "@remix-run/node";
-import { redirect } from "@remix-run/node";
-import { Form, Link, useActionData, useSearchParams } from "@remix-run/react";
+} from "react-router";
+import {
+  Form,
+  Link,
+  redirect,
+  useActionData,
+  useSearchParams,
+} from "react-router";
 import { z } from "zod";
 
 import { Field } from "~/components/forms";
@@ -14,8 +19,9 @@ import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { logger } from "~/logger.server";
 import { verifyLogin } from "~/models/user.server";
-import { safeRedirect } from "~/utils/misc";
+import { getClientIPAddress, obscureEmail, safeRedirect } from "~/utils/misc";
 import { createUserSession, getUserId } from "~/utils/session.server";
 
 const schema = z.object({
@@ -64,8 +70,21 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     !submission.value ||
     !submission.value.user
   ) {
+    logger.info("Failed login request", {
+      ip: getClientIPAddress(request),
+      email: obscureEmail(
+        submission.payload["email"].toString() ?? "unknown@no-domain.com",
+      ),
+      reason: submission.status === "error" ? submission.error : null,
+    });
+
     return submission.reply();
   }
+
+  logger.info("Successful login request", {
+    ip: getClientIPAddress(request),
+    email: obscureEmail(submission.value.email),
+  });
 
   const redirectTo = safeRedirect(submission.value.redirectTo, "/");
   const { remember, user } = submission.value;

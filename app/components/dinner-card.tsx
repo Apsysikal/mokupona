@@ -1,5 +1,5 @@
 import type { Event } from "@prisma/client";
-import { Link } from "@remix-run/react";
+import { Link } from "react-router";
 
 import { Button } from "./ui/button";
 

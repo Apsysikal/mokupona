@@ -1,7 +1,8 @@
 import { HamburgerMenuIcon, InstagramLogoIcon } from "@radix-ui/react-icons";
-import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
-import { data } from "@remix-run/node";
+import { useRef } from "react";
+import type { LinksFunction, LoaderFunctionArgs } from "react-router";
 import {
+  data,
   Form,
   Link,
   Links,
@@ -11,8 +12,7 @@ import {
   ScrollRestoration,
   useLoaderData,
   useSubmit,
-} from "@remix-run/react";
-import { useRef } from "react";
+} from "react-router";
 
 import { Footer } from "./components/footer";
 import { Logo } from "./components/logo";
@@ -111,10 +111,7 @@ function Document() {
               upcoming dinners
             </Link>
 
-            <Link
-              to="/about"
-              className="pointer-events-none text-foreground/20 max-md:hidden"
-            >
+            <Link to="/about" className="hover:underline max-md:hidden">
               about
             </Link>
 
@@ -188,10 +185,7 @@ function GeneralDropdown() {
           </DropdownMenuItem>
 
           <DropdownMenuItem>
-            <Link
-              to="/about"
-              className="pointer-events-none text-foreground/20"
-            >
+            <Link to="/about" className="hover:underline">
               about
             </Link>
           </DropdownMenuItem>

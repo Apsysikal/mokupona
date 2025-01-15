@@ -4,16 +4,22 @@ import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction,
-} from "@remix-run/node";
-import { redirect } from "@remix-run/node";
-import { Form, Link, useActionData, useSearchParams } from "@remix-run/react";
+} from "react-router";
+import {
+  Form,
+  Link,
+  redirect,
+  useActionData,
+  useSearchParams,
+} from "react-router";
 import { z } from "zod";
 
-import { Field } from "~/components/forms";
+import { CheckboxField, Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { logger } from "~/logger.server";
 import { createUser, getUserByEmail } from "~/models/user.server";
-import { safeRedirect } from "~/utils/misc";
+import { getClientIPAddress, obscureEmail, safeRedirect } from "~/utils/misc";
 import { createUserSession, getUserId } from "~/utils/session.server";
 
 const schema = z
@@ -29,6 +35,9 @@ const schema = z
     confirmPassword: z.string({
       required_error: "Please confirm your password",
     }),
+    acceptedPrivacy: z.boolean({
+      required_error: "You must agree to register",
+    }),
     redirectTo: z.string().optional(),
   })
   .refine(
@@ -38,6 +47,15 @@ const schema = z
     {
       message: "Passwords must match",
       path: ["confirmPassword"],
+    },
+  )
+  .refine(
+    (data) => {
+      return data.acceptedPrivacy === true;
+    },
+    {
+      message: "You must agree to register",
+      path: ["acceptedPrivacy"],
     },
   );
 
@@ -55,6 +73,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       schema.superRefine(async (data, ctx) => {
         if (intent !== null) return { ...data };
         const existingUser = await getUserByEmail(data.email);
+
         if (existingUser) {
           ctx.addIssue({
             path: ["email"],
@@ -68,6 +87,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   });
 
   if (submission.status !== "success" || !submission.value) {
+    logger.info("Failed login request", {
+      ip: getClientIPAddress(request),
+      email: obscureEmail(
+        submission.payload["email"].toString() ?? "unknown@no-domain.com",
+      ),
+      reason: submission.status === "error" ? submission.error : null,
+    });
+
     return submission.reply();
   }
 
@@ -75,6 +102,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { email, password } = submission.value;
 
   const user = await createUser(email, password);
+
+  logger.info("Successful signup request", {
+    ip: getClientIPAddress(request),
+    email: obscureEmail(submission.value.email),
+  });
 
   return createUserSession({
     redirectTo,
@@ -124,6 +156,23 @@ export default function Join() {
               ...getInputProps(fields.confirmPassword, { type: "password" }),
             }}
             errors={fields.confirmPassword.errors}
+          />
+
+          <CheckboxField
+            labelProps={{
+              children: (
+                <span>
+                  Agree to{" "}
+                  <Link to="/privacy" className="text-primary">
+                    Privacy Policy
+                  </Link>
+                </span>
+              ),
+            }}
+            buttonProps={{
+              ...getInputProps(fields.acceptedPrivacy, { type: "checkbox" }),
+            }}
+            errors={fields.acceptedPrivacy.errors}
           />
 
           <Input type="hidden" name="redirectTo" value={redirectTo} />

@@ -1,5 +1,5 @@
-import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { Outlet } from "@remix-run/react";
+import { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { Outlet } from "react-router";
 
 import { requireUserWithRole } from "~/utils/session.server";
 

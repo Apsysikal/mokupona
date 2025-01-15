@@ -1,5 +1,5 @@
-import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { Link } from "@remix-run/react";
+import { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { Link } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { useUser } from "~/utils/misc";
@@ -25,6 +25,9 @@ export default function DinnersPage() {
       </Button>
       <Button asChild>
         <Link to="locations">Manage Locations</Link>
+      </Button>
+      <Button asChild>
+        <Link to="board-members/new">Board Members</Link>
       </Button>
       {isAdmin ? (
         <Button asChild>

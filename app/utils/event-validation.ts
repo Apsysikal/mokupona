@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const ClientEventSchema = z.object({
+export const EventSchema = z.object({
   title: z.string({ required_error: "Title is required" }).trim(),
   description: z.string({ required_error: "Description is required" }).trim(),
   date: z.coerce.date({ required_error: "Date is required" }),
