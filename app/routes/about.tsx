@@ -43,7 +43,7 @@ export default function AboutPage() {
           to meet new people, share stories, and build meaningful relationships.
           We are always open to welcoming new members who share our passion for
           cooking and community. If you're interested in joining us, please
-          reach out—we'd love to cook and share a meal with you. We look forward
+          reach out - we'd love to cook and share a meal with you. We look forward
           to meeting you at our next gathering!
         </p>
       </div>
