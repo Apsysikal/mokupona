@@ -1,4 +1,8 @@
+import clsx from "clsx";
+import { useState } from "react";
+
 import { AutoLink } from "./auto-link";
+import { Button } from "./ui/button";
 
 import { loader } from "~/routes/admin.dinners.$dinnerId";
 import { getEventImageUrl } from "~/utils/misc";
@@ -10,6 +14,7 @@ export interface DinnerViewProps {
 export function DinnerView({ event }: DinnerViewProps) {
   const eventDate = new Date(event.date);
   const imageUrl = getEventImageUrl(event.imageId);
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <div className="mx-auto flex max-w-4xl grow flex-col gap-5">
@@ -45,9 +50,21 @@ export function DinnerView({ event }: DinnerViewProps) {
       </div> */}
 
       <div>
-        <p className="whitespace-pre-line">
+        <p
+          className={clsx([
+            "whitespace-pre-line",
+            !expanded && "line-clamp-[20]",
+          ])}
+        >
           <AutoLink text={event.description} />
         </p>
+        <Button
+          variant="link"
+          className="px-0"
+          onClick={() => setExpanded(!expanded)}
+        >
+          {!expanded ? "Read more" : "Show less"}
+        </Button>
       </div>
     </div>
   );
