@@ -1,5 +1,10 @@
-import { LoaderFunctionArgs, MetaFunction } from "react-router";
-import { Form, Link, useLoaderData } from "react-router";
+import {
+  Form,
+  Link,
+  LoaderFunctionArgs,
+  MetaFunction,
+  useLoaderData,
+} from "react-router";
 import invariant from "tiny-invariant";
 
 import { DinnerView } from "~/components/dinner-view";

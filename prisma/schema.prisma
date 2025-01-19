@@ -42,12 +42,15 @@ model Password {
 }
 
 model Event {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  date        DateTime
-  slots       Int
-  price       Int
+  id                  String   @id @default(cuid())
+  title               String
+  description         String
+  menuDescription     String?
+  donationDescription String?
+  date                DateTime
+  slots               Int
+  price               Int
+  discounts           String?
 
   image   EventImage @relation(fields: [imageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   imageId String     @unique

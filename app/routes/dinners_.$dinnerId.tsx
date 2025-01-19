@@ -5,6 +5,7 @@ import {
   useForm,
 } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
+import { ArrowRightIcon } from "@radix-ui/react-icons";
 import {
   ActionFunctionArgs,
   Form,
@@ -66,7 +67,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [{ title: `Dinner - ${event.title}` }];
 };
 
-export async function loader({ params }: LoaderFunctionArgs) {
+export async function loader({ params, request }: LoaderFunctionArgs) {
   const { dinnerId } = params;
 
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
@@ -172,13 +173,24 @@ export default function DinnerPage() {
   const people = fields.people.getFieldList();
   const isPastEvent = event.date < new Date();
 
+  const JumpToFormButton = (
+    <Button variant="outline" asChild>
+      <div className="flex items-center gap-4">
+        <Link to="#sign-up">Go straight to sign-up</Link>
+        <ArrowRightIcon className="size-5 rotate-90" />
+      </div>
+    </Button>
+  );
+
   return (
     <main className="mx-auto mt-16 flex max-w-4xl grow flex-col gap-5 px-2 pb-8 pt-4">
-      <DinnerView event={event} />
+      <DinnerView event={event} topButton={JumpToFormButton} />
 
       {isPastEvent ? null : (
         <>
-          <div className="my-8 border" />
+          <h2 id="sign-up" className="mt-8 text-2xl font-bold text-primary">
+            Sign Up
+          </h2>
           <Form
             method="post"
             {...getFormProps(form)}

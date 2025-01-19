@@ -1,10 +1,9 @@
-import { MetaFunction } from "react-router";
-import { useLoaderData } from "react-router";
+import { LoaderFunctionArgs, MetaFunction, useLoaderData } from "react-router";
 
 import { DinnerCard } from "~/components/dinner-card";
 import { getEvents } from "~/models/event.server";
 
-export const loader = async () => {
+export const loader = async ({ request }: LoaderFunctionArgs) => {
   const events = await getEvents({
     date: {
       gte: new Date(),
@@ -24,13 +23,7 @@ export default function DinnersIndexPage() {
       {events.length > 0 ? (
         <>
           {events.map((event) => {
-            return (
-              <DinnerCard
-                key={event.id}
-                event={event}
-                preferredLocale={"de-CH"}
-              />
-            );
+            return <DinnerCard key={event.id} event={event} />;
           })}
         </>
       ) : (

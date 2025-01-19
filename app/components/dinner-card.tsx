@@ -3,17 +3,17 @@ import { Link } from "react-router";
 
 import { Button } from "./ui/button";
 
-import { getEventImageUrl } from "~/utils/misc";
+import { dateFormatBuilder, getEventImageUrl } from "~/utils/misc";
 
 export function DinnerCard({
   event,
-  preferredLocale,
+  preferredLocale = "de-CH",
 }: {
   event: Event;
-  preferredLocale: string;
+  preferredLocale?: string;
 }) {
-  const parsedDate = new Date(event.date);
   const imageUrl = getEventImageUrl(event.imageId);
+  const dateFormatter = dateFormatBuilder(preferredLocale);
 
   return (
     <div className="relative mx-auto w-full overflow-hidden">
@@ -28,12 +28,10 @@ export function DinnerCard({
         <div>
           <time
             className="text-sm"
-            dateTime={parsedDate.toISOString()}
+            dateTime={event.date.toISOString()}
             suppressHydrationWarning
           >
-            {`${parsedDate.toLocaleDateString(preferredLocale, {
-              dateStyle: "medium",
-            })} - ${parsedDate.toLocaleTimeString(preferredLocale, { timeStyle: "short" })}`}
+            {dateFormatter.format(event.date)}
           </time>
         </div>
 

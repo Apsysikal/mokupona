@@ -72,8 +72,18 @@ export async function action({ request }: ActionFunctionArgs) {
     return submission.reply();
   }
 
-  const { title, description, date, slots, price, cover, addressId } =
-    submission.value;
+  const {
+    title,
+    description,
+    menuDescription,
+    donationDescription,
+    date,
+    slots,
+    price,
+    discounts,
+    cover,
+    addressId,
+  } = submission.value;
 
   const eventImage = await prisma.eventImage.create({
     data: {
@@ -85,10 +95,13 @@ export async function action({ request }: ActionFunctionArgs) {
   const event = await createEvent({
     title,
     description,
+    menuDescription,
+    donationDescription,
     // Subtract user time offset to make the date utc
     date: offsetDate(date, -timeOffset),
     slots,
     price,
+    discounts,
     addressId: addressId,
     imageId: eventImage.id,
     createdById: user.id,

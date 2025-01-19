@@ -153,3 +153,11 @@ export function combineHeaders(
   }
   return combined;
 }
+
+export function dateFormatBuilder(preferredLocale: string) {
+  return Intl.DateTimeFormat(preferredLocale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Europe/Zurich",
+  });
+}

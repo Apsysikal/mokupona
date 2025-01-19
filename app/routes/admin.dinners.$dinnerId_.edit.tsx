@@ -28,6 +28,7 @@ const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
+  const timeOffset = getTimezoneOffset(request);
 
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
@@ -36,6 +37,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const event = await getEventById(dinnerId);
 
   if (!event) throw new Response("Not found", { status: 404 });
+
+  event.date = offsetDate(event.date, timeOffset);
 
   return {
     validImageTypes,
@@ -90,8 +93,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return submission.reply();
   }
 
-  const { title, description, date, slots, price, cover, addressId } =
-    submission.value;
+  const {
+    title,
+    description,
+    menuDescription,
+    donationDescription,
+    date,
+    slots,
+    price,
+    discounts,
+    cover,
+    addressId,
+  } = submission.value;
 
   let eventImage;
 
@@ -111,10 +124,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const event = await updateEvent(dinnerId, {
     title,
     description,
+    menuDescription,
+    donationDescription,
     // Subtract user time offset to make the date utc
     date: offsetDate(date, -timeOffset),
     slots,
     price,
+    discounts,
     addressId,
     ...(eventImage && { imageId: eventImage.id }),
     createdById: user.id,
@@ -134,9 +150,12 @@ export default function DinnersPage() {
     defaultValue: {
       title: dinner.title,
       description: dinner.description,
+      menuDescription: dinner.menuDescription,
+      donationDescription: dinner.donationDescription,
       date: dinner.date.toISOString().substring(0, 16),
       slots: dinner.slots,
       price: dinner.price,
+      discounts: dinner.discounts,
       addressId: dinner.addressId,
     },
     onValidate({ formData }) {
@@ -169,9 +188,12 @@ export default function DinnersPage() {
         defaultValues={{
           title: dinner.title,
           description: dinner.description,
+          menuDescription: dinner.menuDescription || undefined,
+          donationDescription: dinner.donationDescription || undefined,
           date: dinner.date.toISOString().substring(0, 16),
           slots: dinner.slots,
           price: dinner.price,
+          discounts: dinner.discounts || undefined,
           addressId: dinner.addressId,
         }}
         submitText="Update Dinner"
