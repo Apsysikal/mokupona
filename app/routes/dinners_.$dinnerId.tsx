@@ -188,7 +188,7 @@ export default function DinnerPage() {
 
       {isPastEvent ? null : (
         <>
-          <h2 id="sign-up" className="mt-8 text-2xl font-bold text-primary">
+          <h2 id="sign-up" className="mt-8 text-2xl text-primary">
             Sign Up
           </h2>
           <Form

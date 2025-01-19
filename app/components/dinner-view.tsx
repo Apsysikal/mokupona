@@ -5,7 +5,7 @@ import {
   SewingPinIcon,
 } from "@radix-ui/react-icons";
 import clsx from "clsx";
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 
 import { AutoLink } from "./auto-link";
 import {
@@ -38,7 +38,6 @@ export function DinnerView({
   const eventDate = new Date(event.date);
   const imageUrl = getEventImageUrl(event.imageId);
   const dateFormatter = dateFormatBuilder(preferredLocale);
-  const [expanded, setExpanded] = useState(false);
 
   return (
     <div className="mx-auto flex max-w-4xl grow flex-col gap-5">
