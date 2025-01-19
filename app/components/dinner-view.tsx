@@ -14,12 +14,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "./ui/accordion";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "./ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 import { loader } from "~/routes/admin.dinners.$dinnerId";
 import { dateFormatBuilder, getEventImageUrl } from "~/utils/misc";
@@ -78,19 +73,19 @@ export function DinnerView({
           <CreditCardIcon />
           <p>{`${event.price} CHF`}</p>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="underline">Discounts</span>
-                  <InfoCircledIcon className="size-4" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent className="whitespace-pre-line">
-                <p>{event.discounts ?? "No discounts currently available"}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Popover>
+            <PopoverTrigger>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="underline">Discounts</span>
+                <InfoCircledIcon className="size-4" />
+              </div>
+            </PopoverTrigger>
+            <PopoverContent>
+              <p className="whitespace-pre-line text-sm">
+                {event.discounts ?? "No discounts currently available"}
+              </p>
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="flex items-center gap-2">
