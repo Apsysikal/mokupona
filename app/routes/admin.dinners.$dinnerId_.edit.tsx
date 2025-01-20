@@ -10,6 +10,7 @@ import {
   useActionData,
   useLoaderData,
 } from "react-router";
+import { getClientLocales } from "remix-utils/locales/server";
 import invariant from "tiny-invariant";
 
 import { AdminDinnerForm } from "~/components/admin-dinner-form";
@@ -31,6 +32,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
   const timeOffset = getTimezoneOffset(request);
   const timeZone = getTimezone(request);
+  const locale = (getClientLocales(request) || ["de-CH,de"])[0].split(",")[1];
 
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
@@ -42,13 +44,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   logger.info(`Zone offset: ${timeOffset}`);
   logger.info(`Zone: ${timeZone}`);
+  logger.info(`Locale: ${locale}`);
+
+  const localDate = Date.parse(
+    event.date.toLocaleString(locale, {
+      timeZone: "Europe/Zurich",
+    }),
+  );
+  const userLocalizedDate = Date.parse(event.date.toLocaleString(locale));
+  const localeDifference = (localDate - userLocalizedDate) / (60 * 1000);
+
+  logger.debug(`Locale difference: ${localDate}`);
+  logger.debug(`Locale difference: ${userLocalizedDate}`);
+  logger.debug(`Locale difference: ${localeDifference}`);
 
   return {
     validImageTypes,
     addresses,
     dinner: {
       ...event,
-      date: offsetDate(event.date, timeOffset).toISOString().substring(0, 16),
+      date: offsetDate(event.date, localeDifference)
+        .toISOString()
+        .substring(0, 16),
     },
   };
 }
@@ -66,6 +83,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const schema = EventSchema.partial({ cover: true });
   const user = await requireUserWithRole(request, ["moderator", "admin"]);
   const timeOffset = getTimezoneOffset(request);
+  const timeZone = getTimezone(request);
+  const locale = getClientLocales(request);
 
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
@@ -127,13 +146,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
     await fileStorage.remove(getStorageKey("temporary-key"));
   }
 
+  logger.info(`Zone offset: ${timeOffset}`);
+  logger.info(`Zone: ${timeZone}`);
+  logger.info(`Locale: ${locale}`);
+
+  const localDate = Date.parse(
+    date.toLocaleString(locale, { timeZone: "Europe/Zurich" }),
+  );
+  const userLocalizedDate = Date.parse(date.toLocaleString(locale));
+  const localeDifference = (localDate - userLocalizedDate) / (60 * 1000);
+
+  logger.debug(`Locale difference: ${localeDifference}`);
+
   const event = await updateEvent(dinnerId, {
     title,
     description,
     menuDescription,
     donationDescription,
     // Subtract user time offset to make the date utc
-    date: offsetDate(date, -timeOffset),
+    date: offsetDate(date, -localeDifference),
     slots,
     price,
     discounts,
@@ -215,3 +246,5 @@ export function canUseDOM() {
     typeof window.document.createElement !== "undefined"
   );
 }
+
+function toISOString(date: Date) {}
