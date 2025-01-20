@@ -32,8 +32,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
   const timeOffset = getTimezoneOffset(request);
   const timeZone = getTimezone(request);
-  logger.info(`Accept-Language: ${request.headers.get("Accept-Language")}`);
-  const locale = (getClientLocales(request) || ["de-CH,de"])[0].split(",")[1];
+  const locale = (getClientLocales(request) ?? ["de-CH,de"])[0].split(",")[1];
 
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
@@ -85,8 +84,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const user = await requireUserWithRole(request, ["moderator", "admin"]);
   const timeOffset = getTimezoneOffset(request);
   const timeZone = getTimezone(request);
-
-  const locale = (getClientLocales(request) || ["de-CH,de"])[0].split(",")[1];
+  const locale = (getClientLocales(request) ?? ["de-CH,de"])[0].split(",")[1];
 
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
