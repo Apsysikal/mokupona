@@ -48,7 +48,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     addresses,
     dinner: {
       ...event,
-      date: event.date.toISOString().substring(0, 16),
+      date: offsetDate(event.date, timeOffset).toISOString().substring(0, 16),
     },
   };
 }
