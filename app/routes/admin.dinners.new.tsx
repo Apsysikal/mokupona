@@ -11,6 +11,7 @@ import {
 
 import { AdminDinnerForm } from "~/components/admin-dinner-form";
 import { prisma } from "~/db.server";
+import { logger } from "~/logger.server";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
 import {
@@ -18,7 +19,7 @@ import {
   getStorageKey,
 } from "~/utils/dinner-image-storage.server";
 import { EventSchema } from "~/utils/event-validation";
-import { getTimezoneOffset, offsetDate } from "~/utils/misc";
+import { getTimezone, getTimezoneOffset, offsetDate } from "~/utils/misc";
 import { requireUserWithRole } from "~/utils/session.server";
 
 const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
@@ -41,7 +42,7 @@ export const meta: MetaFunction<typeof loader> = () => {
 export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUserWithRole(request, ["moderator", "admin"]);
   const timeOffset = getTimezoneOffset(request);
-  let maximumFileSizeExceeded = false;
+  const timeZone = getTimezone(request);
 
   const uploadHandler = async (fileUpload: FileUpload) => {
     let storageKey = getStorageKey("temporary-key");
@@ -92,13 +93,24 @@ export async function action({ request }: ActionFunctionArgs) {
     },
   });
 
+  logger.info(`Zone offset: ${timeOffset}`);
+  logger.info(`Zone: ${timeZone}`);
+
+  const localDate = Date.parse(
+    date.toLocaleString(undefined, { timeZone: timeZone }),
+  );
+  const userLocalizedDate = Date.parse(date.toLocaleString(undefined));
+  const localeDifference = (localDate - userLocalizedDate) / (60 * 1000);
+
+  logger.debug(`Locale difference: ${localeDifference}`);
+
   const event = await createEvent({
     title,
     description,
     menuDescription,
     donationDescription,
     // Subtract user time offset to make the date utc
-    date: offsetDate(date, -timeOffset),
+    date: offsetDate(date, -localeDifference),
     slots,
     price,
     discounts,

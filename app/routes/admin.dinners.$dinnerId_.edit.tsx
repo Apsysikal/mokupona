@@ -10,7 +10,6 @@ import {
   useActionData,
   useLoaderData,
 } from "react-router";
-import { getClientLocales } from "remix-utils/locales/server";
 import invariant from "tiny-invariant";
 
 import { AdminDinnerForm } from "~/components/admin-dinner-form";
@@ -32,7 +31,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
   const timeOffset = getTimezoneOffset(request);
   const timeZone = getTimezone(request);
-  const locale = (getClientLocales(request) ?? ["de-CH,de"])[0].split(",")[1];
 
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
@@ -44,18 +42,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   logger.info(`Zone offset: ${timeOffset}`);
   logger.info(`Zone: ${timeZone}`);
-  logger.info(`Locale: ${locale}`);
 
   const localDate = Date.parse(
-    event.date.toLocaleString(locale, {
-      timeZone: "Europe/Zurich",
+    event.date.toLocaleString(undefined, {
+      timeZone,
     }),
   );
-  const userLocalizedDate = Date.parse(event.date.toLocaleString(locale));
+  const userLocalizedDate = Date.parse(event.date.toLocaleString());
   const localeDifference = (localDate - userLocalizedDate) / (60 * 1000);
 
-  logger.debug(`Locale difference: ${localDate}`);
-  logger.debug(`Locale difference: ${userLocalizedDate}`);
+  logger.debug(`Local Date: ${localDate}`);
+  logger.debug(`Localized Date: ${userLocalizedDate}`);
   logger.debug(`Locale difference: ${localeDifference}`);
 
   return {
@@ -84,7 +81,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const user = await requireUserWithRole(request, ["moderator", "admin"]);
   const timeOffset = getTimezoneOffset(request);
   const timeZone = getTimezone(request);
-  const locale = (getClientLocales(request) ?? ["de-CH,de"])[0].split(",")[1];
 
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
@@ -148,12 +144,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   logger.info(`Zone offset: ${timeOffset}`);
   logger.info(`Zone: ${timeZone}`);
-  logger.info(`Locale: ${locale}`);
 
   const localDate = Date.parse(
-    date.toLocaleString(locale, { timeZone: "Europe/Zurich" }),
+    date.toLocaleString(undefined, { timeZone: timeZone }),
   );
-  const userLocalizedDate = Date.parse(date.toLocaleString(locale));
+  const userLocalizedDate = Date.parse(date.toLocaleString(undefined));
   const localeDifference = (localDate - userLocalizedDate) / (60 * 1000);
 
   logger.debug(`Locale difference: ${localeDifference}`);
