@@ -84,7 +84,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const user = await requireUserWithRole(request, ["moderator", "admin"]);
   const timeOffset = getTimezoneOffset(request);
   const timeZone = getTimezone(request);
-  const locale = getClientLocales(request);
+  const locale = (getClientLocales(request) || ["de-CH,de"])[0].split(",")[1];
 
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
