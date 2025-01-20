@@ -43,7 +43,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     validImageTypes,
     addresses,
-    dinner: event,
+    dinner: {
+      ...event,
+      date: event.date.toISOString().substring(0, 16),
+    },
   };
 }
 
@@ -152,7 +155,7 @@ export default function DinnersPage() {
       description: dinner.description,
       menuDescription: dinner.menuDescription,
       donationDescription: dinner.donationDescription,
-      date: dinner.date.toISOString().substring(0, 16),
+      date: dinner.date,
       slots: dinner.slots,
       price: dinner.price,
       discounts: dinner.discounts,
@@ -190,7 +193,7 @@ export default function DinnersPage() {
           description: dinner.description,
           menuDescription: dinner.menuDescription || undefined,
           donationDescription: dinner.donationDescription || undefined,
-          date: dinner.date.toISOString().substring(0, 16),
+          date: dinner.date,
           slots: dinner.slots,
           price: dinner.price,
           discounts: dinner.discounts || undefined,
