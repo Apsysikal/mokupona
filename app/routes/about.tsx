@@ -15,9 +15,9 @@ export async function loader() {
     include: {
       image: {
         select: {
-          id: true
-        }
-      }
+          id: true,
+        },
+      },
     },
   });
   return { team };

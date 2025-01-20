@@ -119,6 +119,23 @@ export function getTimezone(request: Request): string {
   return String(timeZone);
 }
 
+export function getLocale(request: Request): string {
+  const cookies = request.headers.get("Cookie")?.split("; ");
+
+  if (!cookies) return "de-DE";
+
+  const localeCookie = cookies.filter((cookie) => {
+    return cookie.startsWith("locale");
+  });
+
+  if (localeCookie.length === 0) return "de-DE";
+
+  const locale = localeCookie[0].split("=")[1];
+
+  if (!locale) return "de-DE";
+  return String(locale);
+}
+
 export function offsetDate(date: Date, minutesOffset = 0): Date {
   const newDate = new Date(date);
 

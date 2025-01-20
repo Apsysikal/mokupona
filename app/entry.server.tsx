@@ -86,20 +86,25 @@ function handleBrowserRequest(
     const script = `
     document.cookie = 'clockOffset=' + (new Date().getTimezoneOffset() * -1) + '; path=/';
     document.cookie = 'timeZone=' + (Intl.DateTimeFormat().resolvedOptions().timeZone) + '; path=/';
+    document.cookie = 'locale=' + (Intl.DateTimeFormat().resolvedOptions().locale) + '; path=/';
     window.location.reload();
   `;
-    return new Response(
+
+    const response = new Response(
       `<html><body><script>${script}</script></body></html>`,
       {
         headers: {
           "Content-Type": "text/html",
-          "Set-Cookie": "clockOffset=0; path=/",
-          // @ts-ignore
-          "Set-Cookie": "timeZone=UTC; path=/",
           Refresh: `0; url=${request.url}`,
         },
       },
     );
+
+    response.headers.append("Set-Cookie", "clockOffset=0; path=/");
+    response.headers.append("Set-Cookie", "timeZone=UTC; path=/");
+    response.headers.append("Set-Cookie", "locale=de-DE; path=/");
+
+    return response;
   }
 
   return new Promise((resolve, reject) => {
