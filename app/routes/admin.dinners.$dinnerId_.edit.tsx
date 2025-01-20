@@ -14,6 +14,7 @@ import invariant from "tiny-invariant";
 
 import { AdminDinnerForm } from "~/components/admin-dinner-form";
 import { prisma } from "~/db.server";
+import { logger } from "~/logger.server";
 import { getAddresses } from "~/models/address.server";
 import { getEventById, updateEvent } from "~/models/event.server";
 import {
@@ -21,7 +22,7 @@ import {
   getStorageKey,
 } from "~/utils/dinner-image-storage.server";
 import { EventSchema } from "~/utils/event-validation";
-import { getTimezoneOffset, offsetDate } from "~/utils/misc";
+import { getTimezone, getTimezoneOffset, offsetDate } from "~/utils/misc";
 import { requireUserWithRole } from "~/utils/session.server";
 
 const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
@@ -29,6 +30,7 @@ const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
 export async function loader({ request, params }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
   const timeOffset = getTimezoneOffset(request);
+  const timeZone = getTimezone(request);
 
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
@@ -38,7 +40,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (!event) throw new Response("Not found", { status: 404 });
 
-  event.date = offsetDate(event.date, timeOffset);
+  logger.info(`Zone offset: ${timeOffset}`);
+  logger.info(`Zone: ${timeZone}`);
 
   return {
     validImageTypes,

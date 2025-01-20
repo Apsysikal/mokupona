@@ -102,6 +102,23 @@ export function getTimezoneOffset(request: Request): number {
   return Number(offset);
 }
 
+export function getTimezone(request: Request): string {
+  const cookies = request.headers.get("Cookie")?.split("; ");
+
+  if (!cookies) return "UTC";
+
+  const timeZoneCookie = cookies.filter((cookie) => {
+    return cookie.startsWith("timeZone");
+  });
+
+  if (timeZoneCookie.length === 0) return "UTC";
+
+  const timeZone = timeZoneCookie[0].split("=")[1];
+
+  if (!timeZone) return "UTC";
+  return String(timeZone);
+}
+
 export function offsetDate(date: Date, minutesOffset = 0): Date {
   const newDate = new Date(date);
 

@@ -79,9 +79,13 @@ function handleBrowserRequest(
   responseHeaders: Headers,
   reactRouterContext: EntryContext,
 ) {
-  if (!request.headers.get("cookie")?.includes("clockOffset")) {
+  if (
+    !request.headers.get("cookie")?.includes("clockOffset") ||
+    !request.headers.get("cookie")?.includes("timeZone")
+  ) {
     const script = `
     document.cookie = 'clockOffset=' + (new Date().getTimezoneOffset() * -1) + '; path=/';
+    document.cookie = 'timeZone=' + (Intl.DateTimeFormat().resolvedOptions().timeZone) + '; path=/';
     window.location.reload();
   `;
     return new Response(
@@ -90,6 +94,8 @@ function handleBrowserRequest(
         headers: {
           "Content-Type": "text/html",
           "Set-Cookie": "clockOffset=0; path=/",
+          // @ts-ignore
+          "Set-Cookie": "timeZone=UTC; path=/",
           Refresh: `0; url=${request.url}`,
         },
       },
