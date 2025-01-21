@@ -2,35 +2,40 @@ import { useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import { FileUpload, parseFormData } from "@mjackson/form-data-parser";
 import { useEffect, useRef, useState } from "react";
-import {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  MetaFunction,
-  redirect,
-  useActionData,
-  useLoaderData,
-} from "react-router";
+import { redirect, useActionData, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
+
+import type { Route } from "./+types/admin.dinners.$dinnerId_.edit";
 
 import { AdminDinnerForm } from "~/components/admin-dinner-form";
 import { prisma } from "~/db.server";
 import { logger } from "~/logger.server";
 import { getAddresses } from "~/models/address.server";
 import { getEventById, updateEvent } from "~/models/event.server";
+import { getClientHints } from "~/utils/client-hints.server";
 import {
   fileStorage,
   getStorageKey,
 } from "~/utils/dinner-image-storage.server";
 import { EventSchema } from "~/utils/event-validation";
-import { getTimezone, getTimezoneOffset, offsetDate } from "~/utils/misc";
+import { offsetDate } from "~/utils/misc";
 import { requireUserWithRole } from "~/utils/session.server";
 
-const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
+const VALID_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const EVENT_TIMEZONE = "Europe/Zurich";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export function meta({ data }: Route.MetaArgs) {
+  if (!data) return [{ title: "Admin - Dinner" }];
+
+  const { dinner } = data;
+  if (!dinner) return [{ title: "Admin - Dinner" }];
+
+  return [{ title: `Admin - Dinner - ${dinner.title} - Edit` }];
+}
+
+export async function loader({ request, params }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
-  const timeOffset = getTimezoneOffset(request);
-  const timeZone = getTimezone(request);
+  const { userTimezone, userTimezoneOffset } = getClientHints(request);
 
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
@@ -40,47 +45,37 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (!event) throw new Response("Not found", { status: 404 });
 
-  logger.info(`Zone offset: ${timeOffset}`);
-  logger.info(`Zone: ${timeZone}`);
+  logger.info(`Client zone offset: ${userTimezoneOffset}`);
+  logger.info(`Client zone: ${userTimezone}`);
 
-  const localDate = Date.parse(
-    event.date.toLocaleString(undefined, {
-      timeZone,
-    }),
+  const eventDate = Date.parse(
+    event.date.toLocaleString(undefined, { timeZone: EVENT_TIMEZONE }),
   );
-  const userLocalizedDate = Date.parse(event.date.toLocaleString());
-  const localeDifference = (localDate - userLocalizedDate) / (60 * 1000);
 
-  logger.debug(`Local Date: ${localDate}`);
-  logger.debug(`Localized Date: ${userLocalizedDate}`);
-  logger.debug(`Locale difference: ${localeDifference}`);
+  const userDate = Date.parse(
+    event.date.toLocaleString(undefined, { timeZone: userTimezone }),
+  );
+
+  const localeDifference = (eventDate - userDate) / (60 * 1000);
+
+  logger.info(`Difference in locales: ${localeDifference}`);
 
   return {
-    validImageTypes,
+    validImageTypes: VALID_IMAGE_TYPES,
     addresses,
     dinner: {
       ...event,
-      date: offsetDate(event.date, localeDifference)
+      date: offsetDate(event.date, localeDifference + userTimezoneOffset)
         .toISOString()
         .substring(0, 16),
     },
   };
 }
 
-export const meta: MetaFunction<typeof loader> = ({ data }) => {
-  if (!data) return [{ title: "Admin - Dinner" }];
-
-  const { dinner } = data;
-  if (!dinner) return [{ title: "Admin - Dinner" }];
-
-  return [{ title: `Admin - Dinner - ${dinner.title} - Edit` }];
-};
-
-export async function action({ request, params }: ActionFunctionArgs) {
+export async function action({ request, params }: Route.ActionArgs) {
   const schema = EventSchema.partial({ cover: true });
   const user = await requireUserWithRole(request, ["moderator", "admin"]);
-  const timeOffset = getTimezoneOffset(request);
-  const timeZone = getTimezone(request);
+  const { userTimezone, userTimezoneOffset } = getClientHints(request);
 
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
@@ -142,16 +137,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     await fileStorage.remove(getStorageKey("temporary-key"));
   }
 
-  logger.info(`Zone offset: ${timeOffset}`);
-  logger.info(`Zone: ${timeZone}`);
+  logger.info(`Client zone offset: ${userTimezoneOffset}`);
+  logger.info(`Client zone: ${userTimezone}`);
 
-  const localDate = Date.parse(
-    date.toLocaleString(undefined, { timeZone: timeZone }),
+  const eventDate = Date.parse(
+    date.toLocaleString(undefined, { timeZone: EVENT_TIMEZONE }),
   );
-  const userLocalizedDate = Date.parse(date.toLocaleString(undefined));
-  const localeDifference = (localDate - userLocalizedDate) / (60 * 1000);
 
-  logger.debug(`Locale difference: ${localeDifference}`);
+  const userDate = Date.parse(
+    date.toLocaleString(undefined, { timeZone: userTimezone }),
+  );
+
+  const localeDifference = (eventDate - userDate) / (60 * 1000);
+
+  logger.info(`Difference in locales: ${localeDifference}`);
 
   const event = await updateEvent(dinnerId, {
     title,
@@ -159,7 +158,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     menuDescription,
     donationDescription,
     // Subtract user time offset to make the date utc
-    date: offsetDate(date, -localeDifference),
+    date: offsetDate(date, -(localeDifference + userTimezoneOffset)),
     slots,
     price,
     discounts,
@@ -241,5 +240,3 @@ export function canUseDOM() {
     typeof window.document.createElement !== "undefined"
   );
 }
-
-function toISOString(date: Date) {}

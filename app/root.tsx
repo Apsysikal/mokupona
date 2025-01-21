@@ -26,6 +26,7 @@ import {
 } from "./components/ui/dropdown-menu";
 import { Toaster } from "./components/ui/sonner";
 import { useToast } from "./hooks/useToast";
+import { getClientHints } from "./utils/client-hints.server";
 import { combineHeaders, getDomainUrl, useOptionalUser } from "./utils/misc";
 import { getToast } from "./utils/toast.server";
 
@@ -69,8 +70,12 @@ export const links: LinksFunction = () => [
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const domainUrl = getDomainUrl(request);
   const user = await getUserWithRole(request);
+  const clientHints = getClientHints(request);
   const { toast, headers } = await getToast(request);
-  return data({ user, toast, domainUrl }, { headers: combineHeaders(headers) });
+  return data(
+    { user, toast, domainUrl, clientHints },
+    { headers: combineHeaders(headers) },
+  );
 };
 
 export default function App() {

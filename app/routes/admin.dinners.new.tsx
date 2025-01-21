@@ -14,15 +14,17 @@ import { prisma } from "~/db.server";
 import { logger } from "~/logger.server";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
+import { getClientHints } from "~/utils/client-hints.server";
 import {
   fileStorage,
   getStorageKey,
 } from "~/utils/dinner-image-storage.server";
 import { EventSchema } from "~/utils/event-validation";
-import { getTimezone, getTimezoneOffset, offsetDate } from "~/utils/misc";
+import { offsetDate } from "~/utils/misc";
 import { requireUserWithRole } from "~/utils/session.server";
 
 const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
+const EVENT_TIMEZONE = "Europe/Zurich";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
@@ -41,8 +43,7 @@ export const meta: MetaFunction<typeof loader> = () => {
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUserWithRole(request, ["moderator", "admin"]);
-  const timeOffset = getTimezoneOffset(request);
-  const timeZone = getTimezone(request);
+  const { userTimezone, userTimezoneOffset } = getClientHints(request);
 
   const uploadHandler = async (fileUpload: FileUpload) => {
     let storageKey = getStorageKey("temporary-key");
@@ -93,16 +94,20 @@ export async function action({ request }: ActionFunctionArgs) {
     },
   });
 
-  logger.info(`Zone offset: ${timeOffset}`);
-  logger.info(`Zone: ${timeZone}`);
+  logger.info(`Client zone offset: ${userTimezoneOffset}`);
+  logger.info(`Client zone: ${userTimezone}`);
 
-  const localDate = Date.parse(
-    date.toLocaleString(undefined, { timeZone: timeZone }),
+  const eventDate = Date.parse(
+    date.toLocaleString(undefined, { timeZone: EVENT_TIMEZONE }),
   );
-  const userLocalizedDate = Date.parse(date.toLocaleString(undefined));
-  const localeDifference = (localDate - userLocalizedDate) / (60 * 1000);
 
-  logger.debug(`Locale difference: ${localeDifference}`);
+  const userDate = Date.parse(
+    date.toLocaleString(undefined, { timeZone: userTimezone }),
+  );
+
+  const localeDifference = (eventDate - userDate) / (60 * 1000);
+
+  logger.info(`Difference in locales: ${localeDifference}`);
 
   const event = await createEvent({
     title,
@@ -110,7 +115,7 @@ export async function action({ request }: ActionFunctionArgs) {
     menuDescription,
     donationDescription,
     // Subtract user time offset to make the date utc
-    date: offsetDate(date, -localeDifference),
+    date: offsetDate(date, -(localeDifference + userTimezoneOffset)),
     slots,
     price,
     discounts,
