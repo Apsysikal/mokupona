@@ -31,9 +31,12 @@ export interface AdminDinnerFormProps {
   defaultValues?: Partial<{
     title: string;
     description: string;
+    menuDescription: string;
+    donationDescription: string;
     date: string;
     slots: number;
     price: number;
+    discounts: string;
     addressId: string;
     cover: never;
   }>;
@@ -82,6 +85,26 @@ export function AdminDinnerForm({
         className="flex w-full flex-col gap-2"
       />
 
+      <TextareaField
+        labelProps={{ children: "Menu" }}
+        textareaProps={{
+          ...getTextareaProps(fields.menuDescription),
+          rows: 10,
+        }}
+        errors={fields.menuDescription.errors}
+        className="flex w-full flex-col gap-2"
+      />
+
+      <TextareaField
+        labelProps={{ children: "Donation" }}
+        textareaProps={{
+          ...getTextareaProps(fields.donationDescription),
+          rows: 10,
+        }}
+        errors={fields.donationDescription.errors}
+        className="flex w-full flex-col gap-2"
+      />
+
       <Field
         labelProps={{ children: "Date" }}
         inputProps={{
@@ -106,6 +129,16 @@ export function AdminDinnerForm({
           errors={fields.price.errors}
         />
       </div>
+
+      <TextareaField
+        labelProps={{ children: "Discounts" }}
+        textareaProps={{
+          ...getTextareaProps(fields.discounts),
+          rows: 3,
+        }}
+        errors={fields.discounts.errors}
+        className="flex w-full flex-col gap-2"
+      />
 
       <Field
         labelProps={{ children: "Cover" }}

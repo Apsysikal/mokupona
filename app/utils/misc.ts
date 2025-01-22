@@ -85,23 +85,6 @@ export function validateEmail(email: unknown): email is string {
   return typeof email === "string" && email.length > 3 && email.includes("@");
 }
 
-export function getTimezoneOffset(request: Request): number {
-  const cookies = request.headers.get("Cookie")?.split("; ");
-
-  if (!cookies) return 0;
-
-  const offsetCookie = cookies.filter((cookie) => {
-    return cookie.startsWith("clockOffset");
-  });
-
-  if (offsetCookie.length === 0) return 0;
-
-  const offset = offsetCookie[0].split("=")[1];
-
-  if (!offset) return 0;
-  return Number(offset);
-}
-
 export function offsetDate(date: Date, minutesOffset = 0): Date {
   const newDate = new Date(date);
 
@@ -152,4 +135,12 @@ export function combineHeaders(
     }
   }
   return combined;
+}
+
+export function dateFormatBuilder(preferredLocale: string) {
+  return Intl.DateTimeFormat(preferredLocale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Europe/Zurich",
+  });
 }

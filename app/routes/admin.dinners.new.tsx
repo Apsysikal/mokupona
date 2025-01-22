@@ -11,17 +11,20 @@ import {
 
 import { AdminDinnerForm } from "~/components/admin-dinner-form";
 import { prisma } from "~/db.server";
+import { logger } from "~/logger.server";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
+import { getClientHints } from "~/utils/client-hints.server";
 import {
   fileStorage,
   getStorageKey,
 } from "~/utils/dinner-image-storage.server";
 import { EventSchema } from "~/utils/event-validation";
-import { getTimezoneOffset, offsetDate } from "~/utils/misc";
+import { offsetDate } from "~/utils/misc";
 import { requireUserWithRole } from "~/utils/session.server";
 
 const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
+const EVENT_TIMEZONE = "Europe/Zurich";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
@@ -40,8 +43,7 @@ export const meta: MetaFunction<typeof loader> = () => {
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUserWithRole(request, ["moderator", "admin"]);
-  const timeOffset = getTimezoneOffset(request);
-  let maximumFileSizeExceeded = false;
+  const { userTimezone, userTimezoneOffset } = getClientHints(request);
 
   const uploadHandler = async (fileUpload: FileUpload) => {
     let storageKey = getStorageKey("temporary-key");
@@ -72,8 +74,18 @@ export async function action({ request }: ActionFunctionArgs) {
     return submission.reply();
   }
 
-  const { title, description, date, slots, price, cover, addressId } =
-    submission.value;
+  const {
+    title,
+    description,
+    menuDescription,
+    donationDescription,
+    date,
+    slots,
+    price,
+    discounts,
+    cover,
+    addressId,
+  } = submission.value;
 
   const eventImage = await prisma.eventImage.create({
     data: {
@@ -82,13 +94,31 @@ export async function action({ request }: ActionFunctionArgs) {
     },
   });
 
+  logger.info(`Client zone offset: ${userTimezoneOffset}`);
+  logger.info(`Client zone: ${userTimezone}`);
+
+  const eventDate = Date.parse(
+    date.toLocaleString(undefined, { timeZone: EVENT_TIMEZONE }),
+  );
+
+  const userDate = Date.parse(
+    date.toLocaleString(undefined, { timeZone: userTimezone }),
+  );
+
+  const localeDifference = (eventDate - userDate) / (60 * 1000);
+
+  logger.info(`Difference in locales: ${localeDifference}`);
+
   const event = await createEvent({
     title,
     description,
+    menuDescription,
+    donationDescription,
     // Subtract user time offset to make the date utc
-    date: offsetDate(date, -timeOffset),
+    date: offsetDate(date, -(localeDifference + userTimezoneOffset)),
     slots,
     price,
+    discounts,
     addressId: addressId,
     imageId: eventImage.id,
     createdById: user.id,
