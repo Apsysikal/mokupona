@@ -28,7 +28,7 @@ export default function Index() {
             <picture>
               <img
                 srcSet="/landing-page-sm.webp 432w, /landing-page-md.webp 648w, /landing-page-lg.webp 864w, /landing-page-original.webp 1080w"
-                src="/landing-page.jpg"
+                src="/landing-page-default.jpg"
                 className="aspect-video h-full w-full justify-end rounded-2xl object-cover"
                 fetchPriority="high"
                 alt=""

@@ -52,6 +52,11 @@ async function optimize() {
       .toFile(optimizedPath);
   });
 
+  await sharp(landingPageImagePath)
+    .resize(432)
+    .jpeg()
+    .toFile(path.join(__dirname, "..", "public", `landing-page-default.jpg`));
+
   variants.forEach(async ({ size, width }) => {
     const optimizedPath = path.join(
       __dirname,
