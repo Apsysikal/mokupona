@@ -81,7 +81,7 @@ export const meta: MetaFunction<typeof loader, { root: RootLoaderData }> = ({
   const rootLoader = matches.find(({ id }) => id === "root")?.data.domainUrl;
   if (!rootLoader) return metaTags;
 
-  const imageUrl = new URL(getEventImageUrl(event.id), rootLoader);
+  const imageUrl = new URL(getEventImageUrl(event.imageId), rootLoader);
 
   return [
     { title: `Dinner - ${event.title}` },
