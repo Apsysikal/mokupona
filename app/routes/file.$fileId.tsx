@@ -17,7 +17,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     headers: {
       "Content-Type": contentType,
       "Content-Length": contentLength,
-      "Content-Disposition": `inline; filename="${params.imageId}"`,
+      "Content-Disposition": `inline; filename="${params.fileId}"`,
       "Cache-Control": "public, max-age=31536000, immutable",
     },
   });
