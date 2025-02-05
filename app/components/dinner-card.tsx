@@ -42,7 +42,7 @@ export function DinnerCard({
         </div>
         <div className="flex items-center justify-between">
           <Button asChild>
-            <Link to={`/dinners/${event.id}`}>Join</Link>
+            <Link to={`/dinners/${event.id}`}>Read more</Link>
           </Button>
         </div>
       </div>
