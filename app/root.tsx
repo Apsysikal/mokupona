@@ -177,7 +177,7 @@ function GeneralDropdown() {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="text-body.sm">
+        <Button variant="ghost" aria-label="Menu Button">
           <HamburgerMenuIcon />
         </Button>
       </DropdownMenuTrigger>

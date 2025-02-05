@@ -30,6 +30,7 @@ export default function Index() {
                 srcSet="/landing-page-sm.webp 432w, /landing-page-md.webp 648w, /landing-page-lg.webp 864w, /landing-page-original.webp 1080w"
                 src="/landing-page.jpg"
                 className="aspect-video h-full w-full justify-end rounded-2xl object-cover"
+                fetchPriority="high"
                 alt=""
               />
             </picture>
@@ -50,7 +51,11 @@ export default function Index() {
             </Button>
           </div>
 
-          <Link to="#vision" className="col-span-full mx-auto text-accent">
+          <Link
+            to="#vision"
+            className="col-span-full mx-auto text-accent"
+            aria-label="Scroll to vision"
+          >
             <Arrow orientation="down" />
           </Link>
         </div>
@@ -80,7 +85,7 @@ export default function Index() {
 
       <picture>
         <img
-          // srcSet="/landing-page-sm.webp 432w, /landing-page-md.webp 648w, /landing-page-lg.webp 864w, /landing-page-original.webp 1080w"
+          srcSet="/accent-image-sm.webp 432w, /accent-image-md.webp 648w, /accent-image-lg.webp 864w, /accent-image-original.webp 1080w"
           src="/accent-image.png"
           className="my-40 h-96 w-full justify-end object-cover max-md:my-20 max-md:h-48"
           alt=""
@@ -142,8 +147,8 @@ export default function Index() {
             <Link
               to="/about"
               className="col-span-full flex items-center gap-4 text-background"
+              aria-label="Go to about page"
             >
-              <span className="shrink-0">get to know us</span>
               <Arrow className="shrink-0" />
             </Link>
           </section>

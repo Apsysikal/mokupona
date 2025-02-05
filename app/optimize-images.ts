@@ -2,11 +2,20 @@ import path from "node:path";
 
 import sharp from "sharp";
 
-const landingPagePath = path.join(
+const __dirname = import.meta.dirname;
+
+const landingPageImagePath = path.join(
   __dirname,
   "..",
   "public",
   "landing-page.jpg",
+);
+
+const accentImagePath = path.join(
+  __dirname,
+  "..",
+  "public",
+  "accent-image.png",
 );
 
 async function optimize() {
@@ -37,7 +46,21 @@ async function optimize() {
       `landing-page-${size}.webp`,
     );
 
-    await sharp(landingPagePath).resize(width).webp().toFile(optimizedPath);
+    await sharp(landingPageImagePath)
+      .resize(width)
+      .webp()
+      .toFile(optimizedPath);
+  });
+
+  variants.forEach(async ({ size, width }) => {
+    const optimizedPath = path.join(
+      __dirname,
+      "..",
+      "public",
+      `accent-image-${size}.webp`,
+    );
+
+    await sharp(accentImagePath).resize(width).webp().toFile(optimizedPath);
   });
 }
 
