@@ -86,7 +86,7 @@ export const meta: MetaFunction<typeof loader, { root: RootLoaderData }> = ({
   return [
     { title: `Dinner - ${event.title}` },
     {
-      name: "og:image",
+      property: "og:image",
       content: imageUrl,
     },
   ];
