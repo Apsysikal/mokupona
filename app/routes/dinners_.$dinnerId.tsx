@@ -29,11 +29,16 @@ import { Button } from "~/components/ui/button";
 import { logger } from "~/logger.server";
 import { createEventResponse } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
+import { RootLoaderData } from "~/root";
 import {
   PersonSchema as person,
   SignupPersonSchema as signupPerson,
 } from "~/utils/event-signup-validation";
-import { getClientIPAddress, obscureEmail } from "~/utils/misc";
+import {
+  getClientIPAddress,
+  getEventImageUrl,
+  obscureEmail,
+} from "~/utils/misc";
 import { redirectWithToast } from "~/utils/toast.server";
 
 const schema = z
@@ -58,13 +63,33 @@ const schema = z
     },
   );
 
-export const meta: MetaFunction<typeof loader> = ({ data }) => {
-  if (!data) return [{ title: "Dinner" }];
+export const meta: MetaFunction<typeof loader, { root: RootLoaderData }> = ({
+  data,
+  matches,
+}) => {
+  const metaTags = [
+    {
+      title: "Dinner",
+    },
+  ];
+
+  if (!data) return metaTags;
 
   const { event } = data;
-  if (!event) return [{ title: "Dinner" }];
+  if (!event) return metaTags;
 
-  return [{ title: `Dinner - ${event.title}` }];
+  const rootLoader = matches.find(({ id }) => id === "root")?.data.domainUrl;
+  if (!rootLoader) return metaTags;
+
+  const imageUrl = new URL(getEventImageUrl(event.id), rootLoader);
+
+  return [
+    { title: `Dinner - ${event.title}` },
+    {
+      name: "og:image",
+      content: imageUrl,
+    },
+  ];
 };
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
