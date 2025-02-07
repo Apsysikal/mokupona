@@ -66,6 +66,7 @@ const schema = z
 export const meta: MetaFunction<typeof loader, { root: RootLoaderData }> = ({
   data,
   matches,
+  location,
 }) => {
   const metaTags = [
     {
@@ -78,17 +79,18 @@ export const meta: MetaFunction<typeof loader, { root: RootLoaderData }> = ({
   const { event } = data;
   if (!event) return metaTags;
 
-  const rootLoader = matches.find(({ id }) => id === "root")?.data.domainUrl;
-  if (!rootLoader) return metaTags;
+  const domainUrl = matches.find(({ id }) => id === "root")?.data.domainUrl;
+  if (!domainUrl) return metaTags;
 
-  const imageUrl = new URL(getEventImageUrl(event.imageId), rootLoader);
+  const dinnerUrl = new URL(location.pathname, domainUrl);
+  const imageUrl = new URL(getEventImageUrl(event.imageId), domainUrl);
 
   return [
     { title: `Dinner - ${event.title}` },
-    {
-      property: "og:image",
-      content: imageUrl,
-    },
+    { property: "og:title", content: event.title },
+    { property: "og:type", content: "website" },
+    { property: "og:image", content: imageUrl },
+    { property: "og:url", content: dinnerUrl },
   ];
 };
 

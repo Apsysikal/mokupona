@@ -7,17 +7,35 @@ import {
   FruitDrinkIllustration,
 } from "~/components/illustrations";
 import { Button } from "~/components/ui/button";
+import { RootLoaderData } from "~/root";
 
-export const meta: MetaFunction = () => [
-  {
-    title: "moku pona",
-  },
-  {
-    name: "description",
-    content:
-      "A dinner society located in Zurich. We love sharing food and stories with our friends.",
-  },
-];
+export const meta: MetaFunction<null, { root: RootLoaderData }> = ({
+  matches,
+  location,
+}) => {
+  const metaTags = [
+    { title: "moku pona" },
+    {
+      name: "description",
+      content:
+        "A dinner society in Zurich, bringing people together through shared meals, stories, and the joy of discovery.",
+    },
+  ] satisfies ReturnType<MetaFunction>;
+
+  const domainUrl = matches.find(({ id }) => id === "root")?.data.domainUrl;
+  if (!domainUrl) return metaTags;
+
+  const imageUrl = new URL("/landing-page-default.jpg", domainUrl);
+  const currentUrl = new URL(location.pathname, domainUrl);
+
+  return [
+    ...metaTags,
+    { property: "og:title", content: metaTags[0].title },
+    { property: "og:type", content: "website" },
+    { property: "og:image", content: imageUrl },
+    { property: "og:url", content: currentUrl },
+  ];
+};
 
 export default function Index() {
   return (
