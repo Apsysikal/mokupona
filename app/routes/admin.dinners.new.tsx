@@ -1,9 +1,10 @@
 import { parseWithZod } from "@conform-to/zod";
 import { parseFormData, type FileUpload } from "@mjackson/form-data-parser";
-import {
+import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
-  MetaFunction,
+  MetaFunction} from "react-router";
+import {
   redirect,
   useActionData,
   useLoaderData,

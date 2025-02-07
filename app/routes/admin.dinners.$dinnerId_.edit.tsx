@@ -1,6 +1,7 @@
 import { useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
-import { FileUpload, parseFormData } from "@mjackson/form-data-parser";
+import type { FileUpload} from "@mjackson/form-data-parser";
+import { parseFormData } from "@mjackson/form-data-parser";
 import { useEffect, useRef, useState } from "react";
 import { redirect, useActionData, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";

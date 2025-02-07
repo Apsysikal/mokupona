@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs, MetaFunction } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Link, useFetcher, useLoaderData } from "react-router";
 
 import { Button } from "~/components/ui/button";

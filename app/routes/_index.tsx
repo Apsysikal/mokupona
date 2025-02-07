@@ -7,7 +7,7 @@ import {
   FruitDrinkIllustration,
 } from "~/components/illustrations";
 import { Button } from "~/components/ui/button";
-import { RootLoaderData } from "~/root";
+import type { RootLoaderData } from "~/root";
 
 export const meta: MetaFunction<null, { root: RootLoaderData }> = ({
   matches,

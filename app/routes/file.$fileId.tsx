@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import invariant from "tiny-invariant";
 
 import { prisma } from "~/db.server";

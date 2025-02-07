@@ -1,7 +1,9 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
-import { FileUpload, parseFormData } from "@mjackson/form-data-parser";
-import { ActionFunctionArgs, LoaderFunctionArgs, redirect } from "react-router";
+import type { FileUpload} from "@mjackson/form-data-parser";
+import { parseFormData } from "@mjackson/form-data-parser";
+import type { ActionFunctionArgs, LoaderFunctionArgs} from "react-router";
+import { redirect } from "react-router";
 import {
   Form,
   Link,

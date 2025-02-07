@@ -1,5 +1,5 @@
 import { ChevronRightIcon, PersonIcon } from "@radix-ui/react-icons";
-import { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import { Link, Outlet, useLoaderData } from "react-router";
 
 import { prisma } from "~/db.server";

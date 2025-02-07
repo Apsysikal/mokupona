@@ -1,4 +1,5 @@
-import { LoaderFunctionArgs, MetaFunction, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction} from "react-router";
+import { useLoaderData } from "react-router";
 
 import { DinnerCard } from "~/components/dinner-card";
 import { getEvents } from "~/models/event.server";

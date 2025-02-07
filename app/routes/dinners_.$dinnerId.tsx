@@ -6,12 +6,13 @@ import {
 } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import { ArrowRightIcon } from "@radix-ui/react-icons";
-import {
+import type {
   ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction} from "react-router";
+import {
   Form,
   Link,
-  LoaderFunctionArgs,
-  MetaFunction,
   useActionData,
   useLoaderData,
 } from "react-router";
@@ -29,7 +30,7 @@ import { Button } from "~/components/ui/button";
 import { logger } from "~/logger.server";
 import { createEventResponse } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
-import { RootLoaderData } from "~/root";
+import type { RootLoaderData } from "~/root";
 import {
   PersonSchema as person,
   SignupPersonSchema as signupPerson,

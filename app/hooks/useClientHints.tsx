@@ -1,6 +1,6 @@
 import { useRouteLoaderData } from "react-router";
 
-import { RootLoaderData } from "~/root";
+import type { RootLoaderData } from "~/root";
 
 type ClientHints = Awaited<ReturnType<RootLoaderData>>["data"]["clientHints"];
 

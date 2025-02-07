@@ -5,7 +5,7 @@ import {
   SewingPinIcon,
 } from "@radix-ui/react-icons";
 import clsx from "clsx";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { AutoLink } from "./auto-link";
 import {
@@ -16,7 +16,7 @@ import {
 } from "./ui/accordion";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
-import { loader } from "~/routes/admin.dinners.$dinnerId";
+import type { loader } from "~/routes/admin.dinners.$dinnerId";
 import { dateFormatBuilder, getEventImageUrl } from "~/utils/misc";
 
 export interface DinnerViewProps {
