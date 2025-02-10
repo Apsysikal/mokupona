@@ -20,22 +20,10 @@ const accentImagePath = path.join(
 
 async function optimize() {
   const variants = [
-    {
-      size: "original",
-      width: 1080,
-    },
-    {
-      size: "lg",
-      width: 864,
-    },
-    {
-      size: "md",
-      width: 648,
-    },
-    {
-      size: "sm",
-      width: 432,
-    },
+    { size: "original", width: 1080 },
+    { size: "lg", width: 864 },
+    { size: "md", width: 648 },
+    { size: "sm", width: 432 },
   ];
 
   variants.forEach(async ({ size, width }) => {
@@ -47,8 +35,8 @@ async function optimize() {
     );
 
     await sharp(landingPageImagePath)
-      .resize(width)
-      .webp()
+      .resize({ width, height: Math.ceil((width / 16) * 12) })
+      .webp({ quality: 60 })
       .toFile(optimizedPath);
   });
 
