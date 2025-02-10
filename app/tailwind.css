@@ -40,7 +40,7 @@
   @font-face {
     font-family: "Open Sans";
     font-style: normal;
-    font-display: optional;
+    font-display: swap;
     font-weight: 300 800;
     src: url(/fonts/OpenSans-VF.woff2) format("woff2-variations");
   }
@@ -48,7 +48,7 @@
   @font-face {
     font-family: "Open Sans";
     font-style: italic;
-    font-display: optional;
+    font-display: swap;
     font-weight: 300 800;
     src: url(/fonts/OpenSans-Italic-VF.woff2) format("woff2-variations");
   }
