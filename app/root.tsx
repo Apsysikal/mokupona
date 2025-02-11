@@ -72,18 +72,24 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const user = await getUserWithRole(request);
   const clientHints = getClientHints(request);
   const { toast, headers } = await getToast(request);
+  const allowIndexing = process.env.ALLOW_INDEXING !== "false";
   return data(
-    { user, toast, domainUrl, clientHints },
+    { user, toast, domainUrl, clientHints, allowIndexing },
     { headers: combineHeaders(headers) },
   );
 };
 
 export default function App() {
+  const { allowIndexing } = useLoaderData<typeof loader>();
+
   return (
     <html lang="en" className="h-full scroll-smooth">
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
+        {allowIndexing ? null : (
+          <meta name="robots" content="noindex, nofollow" />
+        )}
         <Meta />
         <Links />
       </head>
