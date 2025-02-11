@@ -37,20 +37,6 @@ export type RootLoaderData = typeof loader;
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
-  {
-    rel: "preload",
-    href: "/fonts/OpenSans-VF.woff2",
-    as: "font",
-    type: "font/woff2",
-    crossOrigin: "anonymous",
-  },
-  {
-    rel: "preload",
-    href: "/fonts/OpenSans-Italic-VF.woff2",
-    as: "font",
-    type: "font/woff2",
-    crossOrigin: "anonymous",
-  },
   { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
   {
     rel: "icon",
