@@ -1,7 +1,8 @@
 import { useInputControl } from "@conform-to/react";
 import React, { useId } from "react";
 
-import { Checkbox, CheckboxProps } from "./ui/checkbox";
+import type { CheckboxProps } from "./ui/checkbox";
+import { Checkbox } from "./ui/checkbox";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";

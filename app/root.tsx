@@ -4,6 +4,7 @@ import type { LinksFunction, LoaderFunctionArgs } from "react-router";
 import {
   data,
   Form,
+  isRouteErrorResponse,
   Link,
   Links,
   Meta,
@@ -14,6 +15,7 @@ import {
   useSubmit,
 } from "react-router";
 
+import type { Route } from "./+types/root";
 import { Footer } from "./components/footer";
 import { Logo } from "./components/logo";
 import { Button } from "./components/ui/button";
@@ -37,20 +39,6 @@ export type RootLoaderData = typeof loader;
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
-  {
-    rel: "preload",
-    href: "/fonts/OpenSans-VF.woff2",
-    as: "font",
-    type: "font/woff2",
-    crossOrigin: "anonymous",
-  },
-  {
-    rel: "preload",
-    href: "/fonts/OpenSans-Italic-VF.woff2",
-    as: "font",
-    type: "font/woff2",
-    crossOrigin: "anonymous",
-  },
   { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
   {
     rel: "icon",
@@ -72,18 +60,24 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const user = await getUserWithRole(request);
   const clientHints = getClientHints(request);
   const { toast, headers } = await getToast(request);
+  const allowIndexing = process.env.ALLOW_INDEXING !== "false";
   return data(
-    { user, toast, domainUrl, clientHints },
+    { user, toast, domainUrl, clientHints, allowIndexing },
     { headers: combineHeaders(headers) },
   );
 };
 
 export default function App() {
+  const { allowIndexing } = useLoaderData<typeof loader>();
+
   return (
     <html lang="en" className="h-full scroll-smooth">
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
+        {allowIndexing ? null : (
+          <meta name="robots" content="noindex, nofollow" />
+        )}
         <Meta />
         <Links />
       </head>
@@ -177,7 +171,7 @@ function GeneralDropdown() {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="text-body.sm">
+        <Button variant="ghost" aria-label="Menu Button">
           <HamburgerMenuIcon />
         </Button>
       </DropdownMenuTrigger>
@@ -227,4 +221,30 @@ function GeneralDropdown() {
       </DropdownMenuPortal>
     </DropdownMenu>
   );
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  if (isRouteErrorResponse(error)) {
+    return (
+      <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
+        <h1 className="font-semibold">
+          {error.status} {error.statusText}
+        </h1>
+        <p>{error.data}</p>
+      </div>
+    );
+  } else if (error instanceof Error) {
+    return (
+      <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
+        <h1 className="font-semibold">Error</h1>
+        <p>{error.message}</p>
+      </div>
+    );
+  } else {
+    return (
+      <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
+        <h1 className="font-semibold">Unknown Error</h1>
+      </div>
+    );
+  }
 }

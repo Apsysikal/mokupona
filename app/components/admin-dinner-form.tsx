@@ -1,9 +1,10 @@
+import type {
+  SubmissionResult} from "@conform-to/react";
 import {
   getFormProps,
   getInputProps,
   getSelectProps,
   getTextareaProps,
-  SubmissionResult,
   useForm,
 } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";

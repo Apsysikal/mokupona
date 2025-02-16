@@ -1,13 +1,15 @@
+import type {
+  LoaderFunctionArgs,
+  MetaFunction} from "react-router";
 import {
   Link,
-  LoaderFunctionArgs,
-  MetaFunction,
   useFetcher,
   useLoaderData,
 } from "react-router";
 
 import { Button } from "~/components/ui/button";
-import { getUsers, UserSelect } from "~/models/user.server";
+import type { UserSelect } from "~/models/user.server";
+import { getUsers } from "~/models/user.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {

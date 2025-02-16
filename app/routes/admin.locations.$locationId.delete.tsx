@@ -1,4 +1,5 @@
-import { ActionFunctionArgs, redirect } from "react-router";
+import type { ActionFunctionArgs} from "react-router";
+import { redirect } from "react-router";
 import invariant from "tiny-invariant";
 
 import { deleteAddress } from "~/models/address.server";

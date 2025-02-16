@@ -63,6 +63,9 @@ export default [
     plugins: {
       "@typescript-eslint": (await import("typescript-eslint")).plugin,
     },
+    rules: {
+      "@typescript-eslint/consistent-type-imports": "error"
+    }
   },
   {
     // Jest

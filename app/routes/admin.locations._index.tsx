@@ -1,5 +1,5 @@
-import { Address } from "@prisma/client";
-import { LoaderFunctionArgs, MetaFunction } from "react-router";
+import type { Address } from "@prisma/client";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Link, useFetcher, useLoaderData } from "react-router";
 
 import { Button } from "~/components/ui/button";

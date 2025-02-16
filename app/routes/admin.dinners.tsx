@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs, MetaFunction } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Outlet } from "react-router";
 
 import { requireUserWithRole } from "~/utils/session.server";

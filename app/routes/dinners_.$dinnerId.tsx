@@ -6,17 +6,22 @@ import {
 } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import { ArrowRightIcon } from "@radix-ui/react-icons";
-import {
+import type {
   ActionFunctionArgs,
-  Form,
-  Link,
   LoaderFunctionArgs,
   MetaFunction,
+} from "react-router";
+import {
+  Form,
+  isRouteErrorResponse,
+  Link,
   useActionData,
   useLoaderData,
 } from "react-router";
 import invariant from "tiny-invariant";
 import { z } from "zod";
+
+import type { Route } from "./+types/dinners_.$dinnerId";
 
 import { DinnerView } from "~/components/dinner-view";
 import {
@@ -29,11 +34,16 @@ import { Button } from "~/components/ui/button";
 import { logger } from "~/logger.server";
 import { createEventResponse } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
+import type { RootLoaderData } from "~/root";
 import {
   PersonSchema as person,
   SignupPersonSchema as signupPerson,
 } from "~/utils/event-signup-validation";
-import { getClientIPAddress, obscureEmail } from "~/utils/misc";
+import {
+  getClientIPAddress,
+  getEventImageUrl,
+  obscureEmail,
+} from "~/utils/misc";
 import { redirectWithToast } from "~/utils/toast.server";
 
 const schema = z
@@ -58,13 +68,35 @@ const schema = z
     },
   );
 
-export const meta: MetaFunction<typeof loader> = ({ data }) => {
-  if (!data) return [{ title: "Dinner" }];
+export const meta: MetaFunction<typeof loader, { root: RootLoaderData }> = ({
+  data,
+  matches,
+  location,
+}) => {
+  const metaTags = [
+    {
+      title: "Dinner",
+    },
+  ];
+
+  if (!data) return metaTags;
 
   const { event } = data;
-  if (!event) return [{ title: "Dinner" }];
+  if (!event) return metaTags;
 
-  return [{ title: `Dinner - ${event.title}` }];
+  const domainUrl = matches.find(({ id }) => id === "root")?.data.domainUrl;
+  if (!domainUrl) return metaTags;
+
+  const dinnerUrl = new URL(location.pathname, domainUrl);
+  const imageUrl = new URL(getEventImageUrl(event.imageId), domainUrl);
+
+  return [
+    { title: `Dinner - ${event.title}` },
+    { property: "og:title", content: event.title },
+    { property: "og:type", content: "website" },
+    { property: "og:image", content: imageUrl },
+    { property: "og:url", content: dinnerUrl },
+  ];
 };
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
@@ -362,4 +394,30 @@ export default function DinnerPage() {
       )}
     </main>
   );
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  if (isRouteErrorResponse(error)) {
+    return (
+      <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
+        <h1 className="font-semibold">
+          {error.status} {error.statusText}
+        </h1>
+        <p>{error.data}</p>
+      </div>
+    );
+  } else if (error instanceof Error) {
+    return (
+      <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
+        <h1 className="font-semibold">Error</h1>
+        <p>{error.message}</p>
+      </div>
+    );
+  } else {
+    return (
+      <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
+        <h1 className="font-semibold">Unknown Error</h1>
+      </div>
+    );
+  }
 }

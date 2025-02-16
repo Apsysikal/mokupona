@@ -1,10 +1,11 @@
 import { getFormProps, getSelectProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
-import {
+import type {
   ActionFunctionArgs,
-  Form,
   LoaderFunctionArgs,
-  MetaFunction,
+  MetaFunction} from "react-router";
+import {
+  Form,
   redirect,
   useActionData,
   useLoaderData,
@@ -15,11 +16,12 @@ import { z } from "zod";
 import { SelectField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { prisma } from "~/db.server";
+import type {
+  UserSelect,
+  UserWhereUnique} from "~/models/user.server";
 import {
   getUserById,
-  updateUser,
-  UserSelect,
-  UserWhereUnique,
+  updateUser
 } from "~/models/user.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
