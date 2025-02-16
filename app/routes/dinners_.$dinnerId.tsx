@@ -9,15 +9,19 @@ import { ArrowRightIcon } from "@radix-ui/react-icons";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
-  MetaFunction} from "react-router";
+  MetaFunction,
+} from "react-router";
 import {
   Form,
+  isRouteErrorResponse,
   Link,
   useActionData,
   useLoaderData,
 } from "react-router";
 import invariant from "tiny-invariant";
 import { z } from "zod";
+
+import type { Route } from "./+types/dinners_.$dinnerId";
 
 import { DinnerView } from "~/components/dinner-view";
 import {
@@ -390,4 +394,30 @@ export default function DinnerPage() {
       )}
     </main>
   );
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  if (isRouteErrorResponse(error)) {
+    return (
+      <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
+        <h1 className="font-semibold">
+          {error.status} {error.statusText}
+        </h1>
+        <p>{error.data}</p>
+      </div>
+    );
+  } else if (error instanceof Error) {
+    return (
+      <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
+        <h1 className="font-semibold">Error</h1>
+        <p>{error.message}</p>
+      </div>
+    );
+  } else {
+    return (
+      <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
+        <h1 className="font-semibold">Unknown Error</h1>
+      </div>
+    );
+  }
 }
