@@ -5,33 +5,56 @@
 
 @custom-variant dark (&:is(.dark *));
 
+:root {
+  --background: rgb(17 17 17);
+  --foreground: rgb(245 243 245);
+  --card: rgb(17 17 17);
+  --card-foreground: rgb(245 243 245);
+  --popover: rgb(17 17 17);
+  --popover-foreground: rgb(245 243 245);
+  --primary: rgb(237 130 94);
+  --primary-foreground: rgb(17 17 17);
+  --secondary: rgb(17 17 17);
+  --secondary-foreground: rgb(245 243 245);
+  --muted: rgb(17 17 17);
+  --muted-foreground: rgb(245 243 245);
+  --accent: rgb(237 130 94);
+  --accent-foreground: rgb(17 17 17);
+  --destructive: rgb(167 29 49);
+  --destructive-foreground: rgb(245 243 245);
+  --border: rgb(245 243 245);
+  --input: rgb(245 243 245);
+  --ring: rgb(237 130 94);
+  --radius: 0.5rem;
+}
+
 @theme {
-  --color-border: rgb(var(--border));
-  --color-input: rgb(var(--input));
-  --color-ring: rgb(var(--ring));
-  --color-background: rgb(var(--background));
-  --color-foreground: rgb(var(--foreground));
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
 
-  --color-primary: rgb(var(--primary));
-  --color-primary-foreground: rgb(var(--primary-foreground));
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
 
-  --color-secondary: rgb(var(--secondary));
-  --color-secondary-foreground: rgb(var(--secondary-foreground));
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
 
-  --color-destructive: rgb(var(--destructive));
-  --color-destructive-foreground: rgb(var(--destructive-foreground));
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
 
-  --color-muted: rgb(var(--muted));
-  --color-muted-foreground: rgb(var(--muted-foreground));
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
 
-  --color-accent: rgb(var(--accent));
-  --color-accent-foreground: rgb(var(--accent-foreground));
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
 
-  --color-popover: rgb(var(--popover));
-  --color-popover-foreground: rgb(var(--popover-foreground));
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
 
-  --color-card: rgb(var(--card));
-  --color-card-foreground: rgb(var(--card-foreground));
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
 
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
@@ -88,31 +111,6 @@
   ::backdrop,
   ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
-  }
-}
-
-@layer base {
-  :root {
-    --background: 17 17 17;
-    --foreground: 245 243 245;
-    --card: 17 17 17;
-    --card-foreground: 245 243 245;
-    --popover: 17 17 17;
-    --popover-foreground: 245 243 245;
-    --primary: 237 130 94;
-    --primary-foreground: 17 17 17;
-    --secondary: 17 17 17;
-    --secondary-foreground: 245 243 245;
-    --muted: 17 17 17;
-    --muted-foreground: 245 243 245;
-    --accent: 237 130 94;
-    --accent-foreground: 17 17 17;
-    --destructive: 167 29 49;
-    --destructive-foreground: 245 243 245;
-    --border: 245 243 245;
-    --input: 245 243 245;
-    --ring: 237 130 94;
-    --radius: 0.5rem;
   }
 }
 
