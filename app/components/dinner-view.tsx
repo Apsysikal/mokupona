@@ -100,7 +100,7 @@ export function DinnerView({
         <div
           className={clsx([
             "whitespace-pre-line",
-            // !expanded && "line-clamp-[20]",
+            // !expanded && "line-clamp-20",
           ])}
         >
           <p>{event.description}</p>
