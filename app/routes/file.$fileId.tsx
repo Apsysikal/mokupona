@@ -8,7 +8,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
   invariant(typeof fileId === "string", "Parameter fileId must be provided");
 
-  const file = await prisma.eventImage.findUnique({ where: { id: fileId } });
+  const file = await prisma.image.findUnique({ where: { id: fileId } });
   if (!file) throw new Response("Not found", { status: 404 });
   const contentType = file.contentType;
   const contentLength = file.blob.byteLength.toString();

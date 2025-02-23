@@ -1,6 +1,6 @@
 import { useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
-import type { FileUpload} from "@mjackson/form-data-parser";
+import type { FileUpload } from "@mjackson/form-data-parser";
 import { parseFormData } from "@mjackson/form-data-parser";
 import { useEffect, useRef, useState } from "react";
 import { redirect, useActionData, useLoaderData } from "react-router";
@@ -126,7 +126,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   let eventImage;
 
   if (cover) {
-    eventImage = await prisma.eventImage.create({
+    eventImage = await prisma.image.create({
       data: {
         contentType: cover.type,
         blob: Buffer.from(await cover.arrayBuffer()),

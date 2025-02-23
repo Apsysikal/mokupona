@@ -1,12 +1,12 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
-import type { FileUpload} from "@mjackson/form-data-parser";
+import type { FileUpload } from "@mjackson/form-data-parser";
 import { parseFormData } from "@mjackson/form-data-parser";
-import type { ActionFunctionArgs, LoaderFunctionArgs} from "react-router";
-import { redirect } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   Form,
   Link,
+  redirect,
   useActionData,
   useLoaderData,
   useLocation,
@@ -100,7 +100,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   await prisma.$transaction(async ($prisma) => {
-    await $prisma.eventImage
+    await $prisma.image
       .deleteMany({ where: { boardMemberId: userId } })
       .catch(() => {});
     await $prisma.boardMember.update({

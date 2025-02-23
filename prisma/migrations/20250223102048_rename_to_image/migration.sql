@@ -5,24 +5,30 @@
 
 */
 -- DropIndex
-DROP INDEX "EventImage_boardMemberId_key";
+-- DROP INDEX "EventImage_boardMemberId_key";
 
 -- DropTable
-PRAGMA foreign_keys=off;
-DROP TABLE "EventImage";
-PRAGMA foreign_keys=on;
+-- PRAGMA foreign_keys=off;
+-- DROP TABLE "EventImage";
+-- PRAGMA foreign_keys=on;
 
 -- CreateTable
-CREATE TABLE "Image" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "altText" TEXT,
-    "contentType" TEXT NOT NULL,
-    "blob" BLOB NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
-    "boardMemberId" TEXT,
-    CONSTRAINT "Image_boardMemberId_fkey" FOREIGN KEY ("boardMemberId") REFERENCES "BoardMember" ("id") ON DELETE CASCADE ON UPDATE CASCADE
-);
+-- CREATE TABLE "Image" (
+--    "id" TEXT NOT NULL PRIMARY KEY,
+--    "altText" TEXT,
+--    "contentType" TEXT NOT NULL,
+--    "blob" BLOB NOT NULL,
+--    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--    "updatedAt" DATETIME NOT NULL,
+--    "boardMemberId" TEXT,
+--    CONSTRAINT "Image_boardMemberId_fkey" FOREIGN KEY ("boardMemberId") REFERENCES "BoardMember" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+--);
+
+-- Rename Table
+ALTER TABLE "EventImage" RENAME TO "Image";
+
+-- Drop the old index and create one on the new Table
+DROP INDEX "EventImage_boardMemberId_key";
 
 -- RedefineTables
 PRAGMA defer_foreign_keys=ON;
