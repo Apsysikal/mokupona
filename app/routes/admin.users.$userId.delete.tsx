@@ -1,6 +1,7 @@
-import type { ActionFunctionArgs} from "react-router";
 import { redirect } from "react-router";
 import invariant from "tiny-invariant";
+
+import type { Route } from "./+types/admin.users.$userId.delete";
 
 import { prisma } from "~/db.server";
 import { deleteUserById } from "~/models/user.server";
@@ -10,7 +11,7 @@ export async function loader() {
   return redirect("/admin/users");
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
+export async function action({ request, params }: Route.ActionArgs) {
   await requireUserWithRole(request, ["admin"]);
 
   const { userId } = params;

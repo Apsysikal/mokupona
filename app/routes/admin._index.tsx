@@ -1,16 +1,17 @@
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Link } from "react-router";
+
+import type { Route } from "./+types/admin._index";
 
 import { Button } from "~/components/ui/button";
 import { useUser } from "~/utils/misc";
 import { requireUserWithRole } from "~/utils/session.server";
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
   return {};
 }
 
-export const meta: MetaFunction<typeof loader> = () => {
+export const meta: Route.MetaFunction = () => {
   return [{ title: "Admin" }];
 };
 

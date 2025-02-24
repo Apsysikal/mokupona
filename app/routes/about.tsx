@@ -1,13 +1,14 @@
 import { PersonIcon } from "@radix-ui/react-icons";
 import type { ClassValue } from "clsx";
-import type { MetaFunction} from "react-router";
 import { useLoaderData } from "react-router";
+
+import type { Route } from "./+types/about";
 
 import { prisma } from "~/db.server";
 import { cn } from "~/lib/utils";
 import { getEventImageUrl } from "~/utils/misc";
 
-export const meta: MetaFunction<typeof loader> = () => {
+export const meta: Route.MetaFunction = () => {
   return [{ title: "About" }];
 };
 
@@ -44,8 +45,8 @@ export default function AboutPage() {
           to meet new people, share stories, and build meaningful relationships.
           We are always open to welcoming new members who share our passion for
           cooking and community. If you're interested in joining us, please
-          reach out - we'd love to cook and share a meal with you. We look forward
-          to meeting you at our next gathering!
+          reach out - we'd love to cook and share a meal with you. We look
+          forward to meeting you at our next gathering!
         </p>
       </div>
 
@@ -100,8 +101,8 @@ function TeamMember({
             className="mx-auto size-24 flex-none rounded-full bg-gray-50"
           />
         ) : (
-          <div className="mx-auto flex size-24 shrink-0 items-center justify-center rounded-full bg-primary">
-            <PersonIcon className="size-12 text-primary-foreground" />
+          <div className="bg-primary mx-auto flex size-24 shrink-0 items-center justify-center rounded-full">
+            <PersonIcon className="text-primary-foreground size-12" />
           </div>
         )}
         <h3 className="mt-6 text-base/7 font-semibold">{name}</h3>

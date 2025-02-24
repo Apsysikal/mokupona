@@ -1,35 +1,23 @@
 import { getFormProps, getSelectProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  MetaFunction} from "react-router";
-import {
-  Form,
-  redirect,
-  useActionData,
-  useLoaderData,
-} from "react-router";
+import { Form, redirect, useActionData, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
 import { z } from "zod";
+
+import type { Route } from "./+types/admin.users.$userId_.edit";
 
 import { SelectField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { prisma } from "~/db.server";
-import type {
-  UserSelect,
-  UserWhereUnique} from "~/models/user.server";
-import {
-  getUserById,
-  updateUser
-} from "~/models/user.server";
+import type { UserSelect, UserWhereUnique } from "~/models/user.server";
+import { getUserById, updateUser } from "~/models/user.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
 const schema = z.object({
   roleName: z.union([z.literal("user"), z.literal("moderator")]),
 });
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export async function loader({ request, params }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["admin"]);
 
   const { userId } = params;
@@ -53,11 +41,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export const meta: MetaFunction<typeof loader> = () => {
+export const meta: Route.MetaFunction = () => {
   return [{ title: "Admin - Edit User" }];
 };
 
-export async function action({ request, params }: ActionFunctionArgs) {
+export async function action({ request, params }: Route.ActionArgs) {
   await requireUserWithRole(request, ["admin"]);
 
   const { userId } = params;

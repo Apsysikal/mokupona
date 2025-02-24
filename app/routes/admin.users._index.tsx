@@ -1,18 +1,13 @@
-import type {
-  LoaderFunctionArgs,
-  MetaFunction} from "react-router";
-import {
-  Link,
-  useFetcher,
-  useLoaderData,
-} from "react-router";
+import { Link, useFetcher, useLoaderData } from "react-router";
+
+import type { Route } from "./+types/admin.users._index";
 
 import { Button } from "~/components/ui/button";
 import type { UserSelect } from "~/models/user.server";
 import { getUsers } from "~/models/user.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["admin"]);
 
   const select = {
@@ -30,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { users };
 }
 
-export const meta: MetaFunction<typeof loader> = () => {
+export const meta: Route.MetaFunction = () => {
   return [{ title: "Admin - Users" }];
 };
 
@@ -62,7 +57,7 @@ function User({ user }: { user: User }) {
 
   return (
     <div key={id} className="flex items-center justify-between gap-2">
-      <span className="text-sm font-medium leading-none">{email}</span>
+      <span className="text-sm leading-none font-medium">{email}</span>
 
       <span className="flex gap-2">
         <Button variant="secondary" asChild>

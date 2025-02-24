@@ -1,13 +1,9 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  MetaFunction} from "react-router";
-import {
-  redirect,
-} from "react-router";
-import { Form, useActionData } from "react-router";
+import type { MetaFunction } from "react-router";
+import { Form, redirect, useActionData } from "react-router";
+
+import type { Route } from "./+types/admin.locations.new";
 
 import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
@@ -15,7 +11,7 @@ import { createAddress } from "~/models/address.server";
 import { AddressSchema } from "~/utils/address-validation";
 import { requireUserWithRole } from "~/utils/session.server";
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   return {};
@@ -25,7 +21,7 @@ export const meta: MetaFunction<typeof loader> = () => {
   return [{ title: "Admin - Create Location" }];
 };
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request }: Route.ActionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   const formData = await request.formData();

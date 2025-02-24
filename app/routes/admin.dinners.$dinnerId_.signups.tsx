@@ -1,6 +1,7 @@
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
+
+import type { Route } from "./+types/admin.dinners.$dinnerId_.signups";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -16,7 +17,7 @@ import { getEventResponsesForEvent } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export async function loader({ request, params }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   const { dinnerId } = params;
@@ -33,7 +34,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export const meta: MetaFunction<typeof loader> = ({ data }) => {
+export const meta: Route.MetaFunction = ({ data }) => {
   if (!data) return [{ title: "Admin - Dinner" }];
 
   const { event } = data;
@@ -47,8 +48,8 @@ export default function DinnerSignupsPage() {
 
   return (
     <main className="flex grow flex-col gap-5">
-      <div className="flex items-center justify-between gap-2 rounded-md bg-secondary p-4 text-secondary-foreground">
-        <p className="text-sm font-medium leading-none">
+      <div className="bg-secondary text-secondary-foreground flex items-center justify-between gap-2 rounded-md p-4">
+        <p className="text-sm leading-none font-medium">
           You are viewing the submissons for the {`${event.title}`} dinner.
         </p>
 

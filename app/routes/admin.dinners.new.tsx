@@ -1,11 +1,9 @@
 import { parseWithZod } from "@conform-to/zod";
 import { parseFormData, type FileUpload } from "@mjackson/form-data-parser";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  MetaFunction,
-} from "react-router";
+import type { MetaFunction } from "react-router";
 import { redirect, useActionData, useLoaderData } from "react-router";
+
+import type { Route } from "./+types/admin.dinners.new";
 
 import { AdminDinnerForm } from "~/components/admin-dinner-form";
 import { prisma } from "~/db.server";
@@ -24,7 +22,7 @@ import { requireUserWithRole } from "~/utils/session.server";
 const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
 const EVENT_TIMEZONE = "Europe/Zurich";
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   const addresses = await getAddresses();
@@ -39,7 +37,7 @@ export const meta: MetaFunction<typeof loader> = () => {
   return [{ title: "Admin - Create Dinner" }];
 };
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request }: Route.ActionArgs) {
   const user = await requireUserWithRole(request, ["moderator", "admin"]);
   const { userTimezone, userTimezoneOffset } = getClientHints(request);
 

@@ -6,11 +6,6 @@ import {
 } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import { ArrowRightIcon } from "@radix-ui/react-icons";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  MetaFunction,
-} from "react-router";
 import {
   Form,
   isRouteErrorResponse,
@@ -34,7 +29,6 @@ import { Button } from "~/components/ui/button";
 import { logger } from "~/logger.server";
 import { createEventResponse } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
-import type { RootLoaderData } from "~/root";
 import {
   PersonSchema as person,
   SignupPersonSchema as signupPerson,
@@ -68,11 +62,7 @@ const schema = z
     },
   );
 
-export const meta: MetaFunction<typeof loader, { root: RootLoaderData }> = ({
-  data,
-  matches,
-  location,
-}) => {
+export const meta: Route.MetaFunction = ({ data, matches, location }) => {
   const metaTags = [
     {
       title: "Dinner",
@@ -84,7 +74,7 @@ export const meta: MetaFunction<typeof loader, { root: RootLoaderData }> = ({
   const { event } = data;
   if (!event) return metaTags;
 
-  const domainUrl = matches.find(({ id }) => id === "root")?.data.domainUrl;
+  const domainUrl = matches[0].data.domainUrl;
   if (!domainUrl) return metaTags;
 
   const dinnerUrl = new URL(location.pathname, domainUrl);
@@ -99,7 +89,7 @@ export const meta: MetaFunction<typeof loader, { root: RootLoaderData }> = ({
   ];
 };
 
-export async function loader({ params, request }: LoaderFunctionArgs) {
+export async function loader({ params }: Route.LoaderArgs) {
   const { dinnerId } = params;
 
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
@@ -111,7 +101,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   return { event };
 }
 
-export async function action({ params, request }: ActionFunctionArgs) {
+export async function action({ params, request }: Route.ActionArgs) {
   const { dinnerId } = params;
 
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
@@ -215,12 +205,12 @@ export default function DinnerPage() {
   );
 
   return (
-    <main className="mx-auto mt-16 flex max-w-4xl grow flex-col gap-5 px-2 pb-8 pt-4">
+    <main className="mx-auto mt-16 flex max-w-4xl grow flex-col gap-5 px-2 pt-4 pb-8">
       <DinnerView event={event} topButton={JumpToFormButton} />
 
       {isPastEvent ? null : (
         <>
-          <h2 id="sign-up" className="mt-8 text-2xl text-primary">
+          <h2 id="sign-up" className="text-primary mt-8 text-2xl">
             Sign Up
           </h2>
           <Form

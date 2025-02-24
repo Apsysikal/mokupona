@@ -1,10 +1,5 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  MetaFunction,
-} from "react-router";
 import {
   Form,
   Link,
@@ -13,6 +8,8 @@ import {
   useSearchParams,
 } from "react-router";
 import { z } from "zod";
+
+import type { Route } from "./+types/login";
 
 import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
@@ -37,13 +34,13 @@ const schema = z.object({
   remember: z.boolean().optional().default(false),
 });
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request }: Route.LoaderArgs) => {
   const userId = await getUserId(request);
   if (userId) return redirect("/");
   return {};
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
+export const action = async ({ request }: Route.ActionArgs) => {
   const formData = await request.formData();
 
   const submission = await parseWithZod(formData, {
@@ -97,7 +94,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   });
 };
 
-export const meta: MetaFunction = () => [{ title: "Login" }];
+export const meta: Route.MetaFunction = () => [{ title: "Login" }];
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();

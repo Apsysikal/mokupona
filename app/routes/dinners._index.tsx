@@ -1,10 +1,11 @@
-import type { LoaderFunctionArgs, MetaFunction} from "react-router";
 import { useLoaderData } from "react-router";
+
+import type { Route } from "./+types/dinners._index";
 
 import { DinnerCard } from "~/components/dinner-card";
 import { getEvents } from "~/models/event.server";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async () => {
   const events = await getEvents({
     date: {
       gte: new Date(),
@@ -14,7 +15,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return { events };
 };
 
-export const meta: MetaFunction = () => [{ title: "Dinners" }];
+export const meta: Route.MetaFunction = () => [{ title: "Dinners" }];
 
 export default function DinnersIndexPage() {
   const { events } = useLoaderData<typeof loader>();

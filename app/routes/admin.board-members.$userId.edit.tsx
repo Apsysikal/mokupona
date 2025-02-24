@@ -2,7 +2,6 @@ import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import type { FileUpload } from "@mjackson/form-data-parser";
 import { parseFormData } from "@mjackson/form-data-parser";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   Form,
   Link,
@@ -13,6 +12,8 @@ import {
 } from "react-router";
 import invariant from "tiny-invariant";
 import { z } from "zod";
+
+import type { Route } from "./+types/admin.board-members.$userId.edit";
 
 import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
@@ -47,7 +48,7 @@ const MemberSchema = z.object({
 
 const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export async function loader({ request, params }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   const { userId } = params;
@@ -64,7 +65,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { boardMember };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
+export async function action({ request, params }: Route.ActionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   const { userId } = params;

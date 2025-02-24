@@ -1,9 +1,10 @@
-import type { LoaderFunctionArgs } from "react-router";
 import invariant from "tiny-invariant";
+
+import type { Route } from "./+types/file.$fileId";
 
 import { prisma } from "~/db.server";
 
-export async function loader({ params }: LoaderFunctionArgs) {
+export async function loader({ params }: Route.LoaderArgs) {
   const { fileId } = params;
 
   invariant(typeof fileId === "string", "Parameter fileId must be provided");
