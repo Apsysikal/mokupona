@@ -101,9 +101,11 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 
   await prisma.$transaction(async ($prisma) => {
-    await $prisma.image
-      .deleteMany({ where: { boardMemberId: userId } })
-      .catch(() => {});
+    if (submission.value.image) {
+      await $prisma.image
+        .deleteMany({ where: { boardMemberId: userId } })
+        .catch(() => {});
+    }
     await $prisma.boardMember.update({
       where: {
         id: userId,
