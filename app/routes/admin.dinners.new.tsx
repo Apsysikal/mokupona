@@ -3,12 +3,9 @@ import { parseFormData, type FileUpload } from "@mjackson/form-data-parser";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
-  MetaFunction} from "react-router";
-import {
-  redirect,
-  useActionData,
-  useLoaderData,
+  MetaFunction,
 } from "react-router";
+import { redirect, useActionData, useLoaderData } from "react-router";
 
 import { AdminDinnerForm } from "~/components/admin-dinner-form";
 import { prisma } from "~/db.server";
@@ -88,7 +85,7 @@ export async function action({ request }: ActionFunctionArgs) {
     addressId,
   } = submission.value;
 
-  const eventImage = await prisma.eventImage.create({
+  const eventImage = await prisma.image.create({
     data: {
       contentType: cover.type,
       blob: Buffer.from(await cover.arrayBuffer()),

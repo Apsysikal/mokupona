@@ -95,13 +95,13 @@ async function seed() {
   });
 
   const defaultImage = await readFile(path.join(__dirname, "default.jpg"));
-  const image = await prisma.eventImage.create({
+  const image = await prisma.image.create({
     data: {
       contentType: "image/jpg",
       blob: Buffer.from(defaultImage.buffer),
     },
   });
-  const image2 = await prisma.eventImage.create({
+  const image2 = await prisma.image.create({
     data: {
       contentType: "image/jpg",
       blob: Buffer.from(defaultImage.buffer),
