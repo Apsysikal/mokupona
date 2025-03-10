@@ -1,3 +1,4 @@
+import { LazyFile } from "@mjackson/lazy-file";
 import type { ComponentProps } from "react";
 import sharp, { type FitEnum } from "sharp";
 import invariant from "tiny-invariant";
@@ -7,6 +8,10 @@ import type { Route } from "./+types/file.$fileId";
 
 import { prisma } from "~/db.server";
 import { logger } from "~/logger.server";
+import {
+  fileStorage as cache,
+  getStorageKey as getCacheKey,
+} from "~/utils/file-chache-storage.server";
 import { getImageUrl } from "~/utils/misc";
 
 const SearchParamsSchema = z.object({
@@ -89,10 +94,35 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   invariant(typeof fileId === "string", "Parameter fileId must be provided");
 
+  const { width, height, fit } = options.data;
+  const cacheKey = getCacheKey(`${fileId}-${width}-${height}-${fit}`);
+
+  logger.info(`Checking cache with: ${cacheKey}`);
+
+  if (await cache.has(cacheKey)) {
+    const fileStream = await cache.get(cacheKey);
+    if (!fileStream) {
+      // Key exists but no file.
+      // Continue as if no cache exists
+      logger.info(`Cache miss with: ${cacheKey}`);
+    } else {
+      // Cache hit successful
+      logger.info(`Cache hit with: ${cacheKey}`);
+      return new Response(fileStream.stream(), {
+        headers: {
+          "Content-Type": "image/webp",
+          "Content-Disposition": `inline; filename="${params.fileId}"`,
+          "Cache-Control": "public, max-age=31536000, immutable",
+          "Transfer-Encoding": "chunked",
+        },
+      });
+    }
+  } else {
+    logger.info(`Cache miss with: ${cacheKey}`);
+  }
+
   const file = await prisma.image.findUnique({ where: { id: fileId } });
   if (!file) throw new Response("Not found", { status: 404 });
-
-  const { width, height, fit } = options.data;
 
   const optimizedImage = sharp(file.blob)
     .webp()
@@ -102,14 +132,27 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       fit: isAllowedFit(fit) ? fit : "cover",
     });
 
-  const body = new ReadableStream({
+  const imageStream = new ReadableStream({
     start(controller) {
-      optimizedImage.on("data", (chunk) => controller.enqueue(chunk)),
-        optimizedImage.on("end", () => controller.close());
+      optimizedImage.on("data", (chunk) => controller.enqueue(chunk));
+      optimizedImage.on("end", () => {
+        controller.close();
+      });
     },
   });
 
-  return new Response(body, {
+  // Filesize of the optimized image is unknown
+  const lazyFile = new LazyFile(
+    {
+      byteLength: 0,
+      stream() {
+        return imageStream;
+      },
+    },
+    fileId,
+  );
+
+  return new Response(await cache.put(cacheKey, lazyFile), {
     headers: {
       "Content-Type": "image/webp",
       "Content-Disposition": `inline; filename="${params.fileId}"`,
