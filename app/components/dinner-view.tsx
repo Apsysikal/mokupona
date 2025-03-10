@@ -17,7 +17,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 import type { loader } from "~/routes/admin.dinners.$dinnerId";
-import { dateFormatBuilder, getEventImageUrl } from "~/utils/misc";
+import { OptimizedImage } from "~/routes/file.$fileId";
+import { dateFormatBuilder } from "~/utils/misc";
 
 export interface DinnerViewProps {
   event: Awaited<ReturnType<typeof loader>>["event"];
@@ -31,14 +32,13 @@ export function DinnerView({
   topButton,
 }: DinnerViewProps) {
   const eventDate = new Date(event.date);
-  const imageUrl = getEventImageUrl(event.imageId);
   const dateFormatter = dateFormatBuilder(preferredLocale);
 
   return (
     <div className="mx-auto flex max-w-4xl grow flex-col gap-5">
       <div className="flex flex-col gap-7">
-        <img
-          src={imageUrl}
+        <OptimizedImage
+          imageId={event.imageId}
           alt=""
           width={640}
           height={480}
@@ -46,7 +46,7 @@ export function DinnerView({
         />
 
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl text-primary">{event.title}</h1>
+          <h1 className="text-primary text-3xl">{event.title}</h1>
         </div>
       </div>
 
@@ -81,7 +81,7 @@ export function DinnerView({
               </div>
             </PopoverTrigger>
             <PopoverContent>
-              <p className="whitespace-pre-line text-sm">
+              <p className="text-sm whitespace-pre-line">
                 {event.discounts ?? "No discounts currently available"}
               </p>
             </PopoverContent>
@@ -113,7 +113,7 @@ export function DinnerView({
             >
               {event.menuDescription ? (
                 <AccordionItem value="menu">
-                  <AccordionTrigger className="font-bold text-primary">
+                  <AccordionTrigger className="text-primary font-bold">
                     Menu
                   </AccordionTrigger>
                   <AccordionContent>{event.menuDescription}</AccordionContent>
@@ -122,7 +122,7 @@ export function DinnerView({
 
               {event.donationDescription ? (
                 <AccordionItem value="donation">
-                  <AccordionTrigger className="font-bold text-primary">
+                  <AccordionTrigger className="text-primary font-bold">
                     Donation
                   </AccordionTrigger>
                   <AccordionContent>

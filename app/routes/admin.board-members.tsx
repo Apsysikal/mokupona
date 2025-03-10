@@ -2,9 +2,9 @@ import { ChevronRightIcon, PersonIcon } from "@radix-ui/react-icons";
 import { Link, Outlet, useLoaderData } from "react-router";
 
 import type { Route } from "./+types/admin.board-members";
+import { OptimizedImage } from "./file.$fileId";
 
 import { prisma } from "~/db.server";
-import { getEventImageUrl } from "~/utils/misc";
 import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -24,11 +24,6 @@ export default function BoardMembersIndexRoute() {
       <ul className="mt-8 divide-y">
         {boardMembers.map((boardMember) => {
           const { id, name, position, image } = boardMember;
-          let imageUrl = "";
-
-          if (image) {
-            imageUrl = getEventImageUrl(image.id);
-          }
 
           return (
             <li
@@ -36,10 +31,12 @@ export default function BoardMembersIndexRoute() {
               className="relative flex justify-between gap-x-6 py-5"
             >
               <div className="flex min-w-0 gap-x-4">
-                {imageUrl !== "" ? (
-                  <img
+                {image?.id ? (
+                  <OptimizedImage
+                    imageId={image.id}
                     alt={`Portrait of ${name}`}
-                    src={imageUrl}
+                    width={50}
+                    height={50}
                     className="size-12 flex-none rounded-full bg-gray-50"
                   />
                 ) : (

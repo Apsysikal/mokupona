@@ -3,10 +3,10 @@ import type { ClassValue } from "clsx";
 import { useLoaderData } from "react-router";
 
 import type { Route } from "./+types/about";
+import { OptimizedImage } from "./file.$fileId";
 
 import { prisma } from "~/db.server";
 import { cn } from "~/lib/utils";
-import { getEventImageUrl } from "~/utils/misc";
 
 export const meta: Route.MetaFunction = () => {
   return [{ title: "About" }];
@@ -68,9 +68,7 @@ export default function AboutPage() {
               key={member.id}
               name={member.name}
               position={member.position}
-              imageUrl={
-                member.image?.id ? getEventImageUrl(member.image.id) : undefined
-              }
+              imageId={member.image?.id}
               className="text-center"
             />
           ))}
@@ -83,21 +81,23 @@ export default function AboutPage() {
 function TeamMember({
   name,
   position,
-  imageUrl,
+  imageId,
   className,
 }: {
   name: string;
   position: string;
-  imageUrl?: string;
+  imageId?: string;
   className?: ClassValue;
 }) {
   return (
     <li>
       <div className={cn(className)}>
-        {imageUrl ? (
-          <img
+        {imageId ? (
+          <OptimizedImage
+            imageId={imageId}
             alt={`Portrait of ${name}`}
-            src={imageUrl}
+            width={100}
+            height={100}
             className="mx-auto size-24 flex-none rounded-full bg-gray-50"
           />
         ) : (

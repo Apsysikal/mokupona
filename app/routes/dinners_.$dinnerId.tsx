@@ -33,11 +33,7 @@ import {
   PersonSchema as person,
   SignupPersonSchema as signupPerson,
 } from "~/utils/event-signup-validation";
-import {
-  getClientIPAddress,
-  getEventImageUrl,
-  obscureEmail,
-} from "~/utils/misc";
+import { getClientIPAddress, getImageUrl, obscureEmail } from "~/utils/misc";
 import { redirectWithToast } from "~/utils/toast.server";
 
 const schema = z
@@ -78,7 +74,7 @@ export const meta: Route.MetaFunction = ({ data, matches, location }) => {
   if (!domainUrl) return metaTags;
 
   const dinnerUrl = new URL(location.pathname, domainUrl);
-  const imageUrl = new URL(getEventImageUrl(event.imageId), domainUrl);
+  const imageUrl = new URL(getImageUrl(event.imageId), domainUrl);
 
   return [
     { title: `Dinner - ${event.title}` },
