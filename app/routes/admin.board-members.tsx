@@ -1,12 +1,13 @@
 import { ChevronRightIcon, PersonIcon } from "@radix-ui/react-icons";
-import type { LoaderFunctionArgs } from "react-router";
 import { Link, Outlet, useLoaderData } from "react-router";
 
+import type { Route } from "./+types/admin.board-members";
+import { OptimizedImage } from "./file.$fileId";
+
 import { prisma } from "~/db.server";
-import { getEventImageUrl } from "~/utils/misc";
 import { requireUserWithRole } from "~/utils/session.server";
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
   const boardMembers = await prisma.boardMember.findMany({
     include: { image: { select: { id: true } } },
@@ -23,11 +24,6 @@ export default function BoardMembersIndexRoute() {
       <ul className="mt-8 divide-y">
         {boardMembers.map((boardMember) => {
           const { id, name, position, image } = boardMember;
-          let imageUrl = "";
-
-          if (image) {
-            imageUrl = getEventImageUrl(image.id);
-          }
 
           return (
             <li
@@ -35,15 +31,17 @@ export default function BoardMembersIndexRoute() {
               className="relative flex justify-between gap-x-6 py-5"
             >
               <div className="flex min-w-0 gap-x-4">
-                {imageUrl !== "" ? (
-                  <img
+                {image?.id ? (
+                  <OptimizedImage
+                    imageId={image.id}
                     alt={`Portrait of ${name}`}
-                    src={imageUrl}
+                    width={50}
+                    height={50}
                     className="size-12 flex-none rounded-full bg-gray-50"
                   />
                 ) : (
-                  <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary">
-                    <PersonIcon className="size-8 text-primary-foreground" />
+                  <div className="bg-primary flex size-12 shrink-0 items-center justify-center rounded-full">
+                    <PersonIcon className="text-primary-foreground size-8" />
                   </div>
                 )}
                 <div className="min-w-0 flex-auto">

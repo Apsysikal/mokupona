@@ -117,7 +117,7 @@ export function getClientIPAddress(request: Request) {
   return ip;
 }
 
-export function getEventImageUrl(imageId: string) {
+export function getImageUrl(imageId: string) {
   return `/file/${imageId}`;
 }
 

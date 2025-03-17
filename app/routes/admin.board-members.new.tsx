@@ -1,17 +1,11 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
-import type { FileUpload} from "@mjackson/form-data-parser";
+import type { FileUpload } from "@mjackson/form-data-parser";
 import { parseFormData } from "@mjackson/form-data-parser";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs} from "react-router";
-import {
-  Form,
-  redirect,
-  useActionData,
-  useLocation,
-} from "react-router";
+import { Form, redirect, useActionData, useLocation } from "react-router";
 import { z } from "zod";
+
+import type { Route } from "./+types/admin.board-members.new";
 
 import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
@@ -46,12 +40,12 @@ const MemberSchema = z.object({
 
 const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
   return {};
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request }: Route.ActionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   const uploadHandler = async (fileUpload: FileUpload) => {

@@ -1,19 +1,14 @@
-import type {
-  LoaderFunctionArgs,
-  MetaFunction} from "react-router";
-import {
-  Form,
-  Link,
-  useLoaderData,
-} from "react-router";
+import { Form, Link, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
+
+import type { Route } from "./+types/admin.dinners.$dinnerId";
 
 import { DinnerView } from "~/components/dinner-view";
 import { Button } from "~/components/ui/button";
 import { getEventById } from "~/models/event.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
-export async function loader({ params, request }: LoaderFunctionArgs) {
+export async function loader({ params, request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   const { dinnerId } = params;
@@ -26,7 +21,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   return { event };
 }
 
-export const meta: MetaFunction<typeof loader> = ({ data }) => {
+export const meta: Route.MetaFunction = ({ data }) => {
   if (!data) return [{ title: "Admin - Dinner" }];
 
   const { event } = data;
@@ -40,8 +35,8 @@ export default function DinnerPage() {
 
   return (
     <main className="mx-auto flex max-w-4xl grow flex-col gap-5">
-      <div className="flex items-center justify-between gap-2 rounded-md bg-secondary p-4 text-secondary-foreground">
-        <p className="text-sm font-medium leading-none">
+      <div className="bg-secondary text-secondary-foreground flex items-center justify-between gap-2 rounded-md p-4">
+        <p className="text-sm leading-none font-medium">
           You are viewing the admin view of this dinner.
         </p>
 

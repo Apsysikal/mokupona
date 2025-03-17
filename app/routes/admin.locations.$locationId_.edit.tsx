@@ -1,14 +1,9 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  MetaFunction} from "react-router";
-import {
-  redirect,
-} from "react-router";
-import { Form, useActionData, useLoaderData } from "react-router";
+import { Form, redirect, useActionData, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
+
+import type { Route } from "./+types/admin.locations.$locationId_.edit";
 
 import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
@@ -16,7 +11,7 @@ import { getAddressById, updateAddress } from "~/models/address.server";
 import { AddressSchema } from "~/utils/address-validation";
 import { requireUserWithRole } from "~/utils/session.server";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export async function loader({ request, params }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   const { locationId } = params;
@@ -31,11 +26,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export const meta: MetaFunction<typeof loader> = () => {
+export const meta: Route.MetaFunction = () => {
   return [{ title: "Admin - Edit Location" }];
 };
 
-export async function action({ request, params }: ActionFunctionArgs) {
+export async function action({ request, params }: Route.ActionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   const { locationId } = params;

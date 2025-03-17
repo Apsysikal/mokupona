@@ -1,6 +1,7 @@
 import type { EventResponse } from "@prisma/client";
-import type { LoaderFunctionArgs } from "react-router";
 import invariant from "tiny-invariant";
+
+import type { Route } from "./+types/admin.dinners.$dinnerId.[signups.csv]";
 
 import { buildCSVObject } from "~/lib/csv-builder.server";
 import { getEventResponsesForEvent } from "~/models/event-response.server";
@@ -17,7 +18,7 @@ const HEADER_ROW = [
   "Comment",
 ];
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export async function loader({ request, params }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   const { dinnerId } = params;

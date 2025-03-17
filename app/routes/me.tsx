@@ -1,14 +1,15 @@
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { redirect, useLoaderData } from "react-router";
+
+import type { Route } from "./+types/me";
 
 import { getUserById } from "~/models/user.server";
 import { logout, requireUserId } from "~/utils/session.server";
 
-export const meta: MetaFunction = () => [{ title: "moku pona" }];
+export const meta: Route.MetaFunction = () => [{ title: "moku pona" }];
 
 const ENABLED = false;
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request }: Route.LoaderArgs) => {
   if (!ENABLED) return redirect("/");
 
   const userId = await requireUserId(request);

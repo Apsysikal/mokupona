@@ -1,18 +1,19 @@
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Link, useFetcher, useLoaderData } from "react-router";
+
+import type { Route } from "./+types/admin.dinners._index";
 
 import { Button } from "~/components/ui/button";
 import { getEvents } from "~/models/event.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
   const events = await getEvents();
 
   return { events };
 }
 
-export const meta: MetaFunction<typeof loader> = () => {
+export const meta: Route.MetaFunction = () => {
   return [{ title: "Admin - Dinners" }];
 };
 
@@ -44,7 +45,7 @@ function Dinner({ id, title }: { id: string; title: string }) {
 
   return (
     <div className="flex items-center justify-between gap-2">
-      <Link to={id} className="text-sm font-medium leading-none">
+      <Link to={id} className="text-sm leading-none font-medium">
         {title}
       </Link>
 

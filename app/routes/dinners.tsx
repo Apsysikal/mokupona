@@ -1,7 +1,8 @@
-import type { MetaFunction } from "react-router";
 import { Outlet } from "react-router";
 
-export const meta: MetaFunction = () => [{ title: "Dinners" }];
+import type { Route } from "./+types/dinners";
+
+export const meta: Route.MetaFunction = () => [{ title: "Dinners" }];
 
 export default function DinnersPage() {
   return (

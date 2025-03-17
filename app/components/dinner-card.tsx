@@ -3,7 +3,8 @@ import { Link } from "react-router";
 
 import { Button } from "./ui/button";
 
-import { dateFormatBuilder, getEventImageUrl } from "~/utils/misc";
+import { OptimizedImage } from "~/routes/file.$fileId";
+import { dateFormatBuilder } from "~/utils/misc";
 
 export function DinnerCard({
   event,
@@ -12,13 +13,12 @@ export function DinnerCard({
   event: Event;
   preferredLocale?: string;
 }) {
-  const imageUrl = getEventImageUrl(event.imageId);
   const dateFormatter = dateFormatBuilder(preferredLocale);
 
   return (
     <div className="relative mx-auto w-full overflow-hidden">
-      <img
-        src={imageUrl}
+      <OptimizedImage
+        imageId={event.imageId}
         alt=""
         width={640}
         height={480}
@@ -35,7 +35,7 @@ export function DinnerCard({
           </time>
         </div>
 
-        <div className="text-3xl text-primary">{event.title}</div>
+        <div className="text-primary text-3xl">{event.title}</div>
 
         <div>
           <p className="line-clamp-5">{event.description}</p>
