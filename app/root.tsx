@@ -101,7 +101,7 @@ function Document() {
       <nav className="h-20 border-b border-gray-50 bg-gray-950 text-gray-50">
         <div className="mx-auto flex h-full max-w-4xl flex-wrap items-center justify-between gap-4 px-2 sm:flex-nowrap md:gap-8">
           <Link to="/" className="flex items-center gap-6 font-bold">
-            <Logo className="h-6 w-6" />
+            <Logo className="size-6" />
             moku pona
           </Link>
 
@@ -120,7 +120,7 @@ function Document() {
               rel="noopener noreferrer"
               className="flex items-center gap-1 hover:underline max-md:hidden"
             >
-              <InstagramLogoIcon className="h-6 w-6" />
+              <InstagramLogoIcon className="size-6" />
             </a>
 
             {["moderator", "admin"].includes(optionalUser?.role.name ?? "") ? (
@@ -149,7 +149,7 @@ function Document() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <InstagramLogoIcon className="h-6 w-6" />
+                <InstagramLogoIcon className="size-6" />
                 <span className="sr-only">instagram</span>
               </a>
               <GeneralDropdown />

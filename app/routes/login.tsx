@@ -151,7 +151,7 @@ export default function LoginPage() {
               <Checkbox
                 id="remember"
                 name="remember"
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
               <Label htmlFor="remember" className="ml-2 block text-sm">
                 Remember me
