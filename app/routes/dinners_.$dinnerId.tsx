@@ -191,14 +191,14 @@ export default function DinnerPage() {
   const people = fields.people.getFieldList();
   const isPastEvent = event.date < new Date();
 
-  const JumpToFormButton = (
+  const JumpToFormButton = !isPastEvent ? (
     <Button variant="outline" asChild>
       <div className="flex items-center gap-4">
         <Link to="#sign-up">Go straight to sign-up</Link>
         <ArrowRightIcon className="size-5 rotate-90" />
       </div>
     </Button>
-  );
+  ) : null;
 
   return (
     <main className="mx-auto mt-16 flex max-w-4xl grow flex-col gap-5 px-2 pt-4 pb-8">

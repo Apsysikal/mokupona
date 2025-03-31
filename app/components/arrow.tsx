@@ -13,13 +13,13 @@ export function Arrow({ orientation = "right", className }: ArrowProps) {
     <>
       <div
         className={cn(
-          "flex h-12 w-12 items-center rounded-full border border-current text-current",
+          "flex size-12 items-center rounded-full border border-current text-current",
           className,
         )}
       >
         <ArrowRightIcon
           className={cn(
-            "mx-auto h-8 w-8",
+            "mx-auto size-8",
             orientation === "down" && "rotate-90",
             orientation === "left" && "rotate-180",
             orientation === "up" && "-rotate-90",
