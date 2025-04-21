@@ -205,7 +205,7 @@ export default function Index() {
                   <img
                     srcSet="/accent-image-sm.webp 432w, /accent-image-md.webp 648w, /accent-image-lg.webp 864w, /accent-image-original.webp 1080w"
                     src="/accent-image.png"
-                    className="h-48 w-full object-cover lg:h-96"
+                    className="h-48 object-cover lg:h-96"
                     alt=""
                     loading="lazy"
                   />
@@ -217,7 +217,7 @@ export default function Index() {
                   <img
                     srcSet="/accent-image-sm.webp 432w, /accent-image-md.webp 648w, /accent-image-lg.webp 864w, /accent-image-original.webp 1080w"
                     src="/accent-image.png"
-                    className="h-48 w-full object-cover lg:h-96"
+                    className="h-48 object-cover lg:h-96"
                     alt=""
                     loading="lazy"
                   />
@@ -229,7 +229,7 @@ export default function Index() {
                   <img
                     srcSet="/accent-image-sm.webp 432w, /accent-image-md.webp 648w, /accent-image-lg.webp 864w, /accent-image-original.webp 1080w"
                     src="/accent-image.png"
-                    className="h-48 w-full object-cover lg:h-96"
+                    className="h-48 object-cover lg:h-96"
                     alt=""
                     loading="lazy"
                   />
