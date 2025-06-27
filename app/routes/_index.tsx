@@ -46,6 +46,14 @@ export const meta: MetaFunction<null, { root: RootLoaderData }> = ({
 };
 
 export default function Index() {
+  const images = [
+    "https://plus.unsplash.com/premium_photo-1675252369719-dd52bc69c3df?q=80&w=3687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=3540&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=3571&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "https://images.unsplash.com/photo-1565958011703-44f9829ba187?q=80&w=3465&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "https://images.unsplash.com/photo-1484723091739-30a097e8f929?q=80&w=1547&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  ];
+
   return (
     <main>
       <div className="mx-auto mt-20 max-w-4xl">
@@ -178,6 +186,106 @@ export default function Index() {
               <Arrow className="shrink-0" />
             </Link>
           </section>
+        </div>
+      </div>
+
+      <div className="mx-auto mt-32 max-w-4xl">
+        <div className="columns-4 gap-4 space-y-4 *:inline-block *:break-inside-avoid">
+          <img
+            src="https://picsum.photos/200/300"
+            alt=""
+            className="aspect-2/3 h-auto w-full rounded-2xl object-cover"
+          />
+
+          <img
+            src="https://picsum.photos/200/300"
+            alt=""
+            className="aspect-4/5 h-auto w-full rounded-2xl object-cover"
+          />
+
+          <img
+            src="https://picsum.photos/200/300"
+            alt=""
+            className="aspect-square h-auto w-full rounded-2xl object-cover"
+          />
+
+          <img
+            src="https://picsum.photos/200/300"
+            alt=""
+            className="aspect-square h-auto w-full rounded-2xl object-cover"
+          />
+
+          <img
+            src="https://picsum.photos/200/300"
+            alt=""
+            className="aspect-5/4 h-auto w-full rounded-2xl object-cover"
+          />
+
+          <img
+            src="https://picsum.photos/200/300"
+            alt=""
+            className="aspect-6/8 h-auto w-full rounded-2xl object-cover"
+          />
+
+          <img
+            src="https://picsum.photos/200/300"
+            alt=""
+            className="aspect-3/2 h-auto w-full rounded-2xl object-cover"
+          />
+
+          <img
+            src="https://picsum.photos/200/300"
+            alt=""
+            className="aspect-4/5 h-auto w-full rounded-2xl object-cover"
+          />
+
+          <img
+            src="https://picsum.photos/200/300"
+            alt=""
+            className="aspect-square h-auto w-full rounded-2xl object-cover"
+          />
+
+          <img
+            src="https://picsum.photos/200/300"
+            alt=""
+            className="aspect-square h-auto w-full rounded-2xl object-cover"
+          />
+
+          <img
+            src="https://picsum.photos/200/300"
+            alt=""
+            className="aspect-3/2 h-auto w-full rounded-2xl object-cover"
+          />
+
+          <img
+            src="https://picsum.photos/200/300"
+            alt=""
+            className="aspect-3/2 h-auto w-full rounded-2xl object-cover"
+          />
+
+          <img
+            src="https://picsum.photos/200/300"
+            alt=""
+            className="aspect-3/2 h-auto w-full rounded-2xl object-cover"
+          />
+
+          <img
+            src="https://picsum.photos/200/300"
+            alt=""
+            className="aspect-square h-auto w-full rounded-2xl object-cover"
+          />
+
+          <img
+            src="https://picsum.photos/200/300"
+            alt=""
+            className="aspect-square h-auto w-full rounded-2xl object-cover"
+          />
+
+          <img
+            src="https://picsum.photos/200/300"
+            alt=""
+            className="aspect-3/2 h-auto w-full rounded-2xl object-cover"
+          />
         </div>
       </div>
 
