@@ -35,7 +35,7 @@
     "@conform-to/zod": "^1.7.2",
     "@mdx-js/rollup": "^3.1.0",
     "@mjackson/file-storage": "^0.7.0",
-    "@mjackson/form-data-parser": "^0.7.0",
+    "@mjackson/form-data-parser": "^0.9.1",
     "@mjackson/lazy-file": "^3.4.0",
     "@prisma/client": "^6.10.1",
     "@radix-ui/react-accordion": "^1.2.11",
