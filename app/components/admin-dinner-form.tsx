@@ -6,7 +6,7 @@ import {
   getTextareaProps,
   useForm,
 } from "@conform-to/react";
-import { getZodConstraint, parseWithZod } from "@conform-to/zod";
+import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { Form } from "react-router";
 
 import { Field, SelectField, TextareaField } from "./forms";

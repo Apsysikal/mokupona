@@ -1,5 +1,5 @@
 import { useForm } from "@conform-to/react";
-import { getZodConstraint, parseWithZod } from "@conform-to/zod";
+import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import type { FileUpload } from "@mjackson/form-data-parser";
 import { parseFormData } from "@mjackson/form-data-parser";
 import { useEffect, useRef, useState } from "react";
@@ -90,10 +90,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   const formData = await parseFormData(request, uploadHandler);
 
   const submission = parseWithZod(formData, {
-    schema: (intent) =>
-      schema.superRefine((data) => {
-        if (intent !== null) return { ...data };
-      }),
+    schema,
   });
 
   if (

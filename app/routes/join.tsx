@@ -1,5 +1,5 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
-import { getZodConstraint, parseWithZod } from "@conform-to/zod";
+import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import type { MetaFunction } from "react-router";
 import {
   Form,
@@ -22,19 +22,17 @@ import { createUserSession, getUserId } from "~/utils/session.server";
 
 const schema = z
   .object({
-    email: z
-      .string({ required_error: "Email is required" })
-      .email("Invalid email"),
+    email: z.string({ error: "Email is required" }).email("Invalid email"),
     password: z
       .string({
-        required_error: "Password is required",
+        error: "Password is required",
       })
       .min(8, "Password must be greater than 8 characters"),
     confirmPassword: z.string({
-      required_error: "Please confirm your password",
+      error: "Please confirm your password",
     }),
     acceptedPrivacy: z.boolean({
-      required_error: "You must agree to register",
+      error: "You must agree to register",
     }),
     redirectTo: z.string().optional(),
   })
@@ -68,17 +66,16 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
   const submission = await parseWithZod(formData, {
     schema: (intent) =>
-      schema.superRefine(async (data, ctx) => {
-        if (intent !== null) return { ...data };
-        const existingUser = await getUserByEmail(data.email);
+      schema.check(async (ctx) => {
+        const existingUser = await getUserByEmail(ctx.value.email);
 
         if (existingUser) {
-          ctx.addIssue({
+          ctx.issues.push({
+            code: "custom",
             path: ["email"],
-            code: z.ZodIssueCode.custom,
             message: "A user already exists with this email",
+            input: ctx.value.email,
           });
-          return;
         }
       }),
     async: true,
