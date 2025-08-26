@@ -1,4 +1,4 @@
-import { LazyFile } from "@mjackson/lazy-file";
+import { LazyFile } from "@remix-run/lazy-file";
 import type { ComponentProps } from "react";
 import sharp, { type FitEnum } from "sharp";
 import invariant from "tiny-invariant";
@@ -152,6 +152,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     fileId,
   );
 
+  // @ts-expect-error LazyFile
   return new Response(await cache.put(cacheKey, lazyFile), {
     headers: {
       "Content-Type": "image/webp",

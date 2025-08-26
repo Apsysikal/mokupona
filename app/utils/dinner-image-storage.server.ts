@@ -2,7 +2,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { sep } from "node:path";
 
-import { LocalFileStorage } from "@mjackson/file-storage/local";
+import { LocalFileStorage } from "@remix-run/file-storage/local";
 
 const tmpDir = tmpdir();
 const tmpPath = mkdtempSync(`${tmpDir}${sep}`);

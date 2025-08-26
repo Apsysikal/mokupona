@@ -1,5 +1,5 @@
 import { parseWithZod } from "@conform-to/zod/v4";
-import { parseFormData, type FileUpload } from "@mjackson/form-data-parser";
+import { parseFormData, type FileUpload } from "@remix-run/form-data-parser";
 import type { MetaFunction } from "react-router";
 import { redirect, useActionData, useLoaderData } from "react-router";
 
