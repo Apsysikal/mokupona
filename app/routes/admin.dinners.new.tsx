@@ -1,5 +1,5 @@
-import { parseWithZod } from "@conform-to/zod";
-import { parseFormData, type FileUpload } from "@mjackson/form-data-parser";
+import { parseWithZod } from "@conform-to/zod/v4";
+import { parseFormData, type FileUpload } from "@remix-run/form-data-parser";
 import type { MetaFunction } from "react-router";
 import { redirect, useActionData, useLoaderData } from "react-router";
 
@@ -50,10 +50,7 @@ export async function action({ request }: Route.ActionArgs) {
   const formData = await parseFormData(request, uploadHandler);
 
   const submission = parseWithZod(formData, {
-    schema: (intent) =>
-      EventSchema.superRefine((data) => {
-        if (intent !== null) return { ...data };
-      }),
+    schema: EventSchema,
   });
 
   if (

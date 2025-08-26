@@ -4,7 +4,7 @@ import {
   getTextareaProps,
   useForm,
 } from "@conform-to/react";
-import { getZodConstraint, parseWithZod } from "@conform-to/zod";
+import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { ArrowRightIcon } from "@radix-ui/react-icons";
 import {
   Form,
@@ -45,7 +45,7 @@ const schema = z
       .max(3, "You can't sign up more than 4 people"),
     comment: z.string().trim().optional(),
     acceptedPrivacy: z.boolean({
-      required_error: "You must agree to signup",
+      error: "You must agree to signup",
     }),
   })
   .refine(

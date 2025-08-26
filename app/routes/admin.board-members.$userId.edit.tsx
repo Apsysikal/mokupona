@@ -1,7 +1,7 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
-import { getZodConstraint, parseWithZod } from "@conform-to/zod";
-import type { FileUpload } from "@mjackson/form-data-parser";
-import { parseFormData } from "@mjackson/form-data-parser";
+import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
+import type { FileUpload } from "@remix-run/form-data-parser";
+import { parseFormData } from "@remix-run/form-data-parser";
 import {
   Form,
   Link,
@@ -26,11 +26,11 @@ import { requireUserWithRole } from "~/utils/session.server";
 
 const MemberSchema = z.object({
   name: z
-    .string({ required_error: "You must enter a name for the board member" })
+    .string({ error: "You must enter a name for the board member" })
     .trim(),
   position: z
     .string({
-      required_error: "You must enter a position for the board member",
+      error: "You must enter a position for the board member",
     })
     .trim(),
   image: z
@@ -80,10 +80,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   const formData = await parseFormData(request, uploadHandler);
 
   const submission = parseWithZod(formData, {
-    schema: (intent) =>
-      MemberSchema.superRefine((data) => {
-        if (intent !== null) return { ...data };
-      }),
+    schema: MemberSchema,
   });
 
   if (

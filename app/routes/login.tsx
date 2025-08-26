@@ -1,5 +1,5 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
-import { getZodConstraint, parseWithZod } from "@conform-to/zod";
+import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import {
   Form,
   Link,
@@ -22,12 +22,10 @@ import { getClientIPAddress, obscureEmail, safeRedirect } from "~/utils/misc";
 import { createUserSession, getUserId } from "~/utils/session.server";
 
 const schema = z.object({
-  email: z
-    .string({ required_error: "Email is required" })
-    .email("Invalid email"),
+  email: z.string({ error: "Email is required" }).email("Invalid email"),
   password: z
     .string({
-      required_error: "Password is required",
+      error: "Password is required",
     })
     .min(8, "Password must be greater than 8 characters"),
   redirectTo: z.string().optional(),

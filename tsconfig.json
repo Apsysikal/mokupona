@@ -3,7 +3,7 @@
   "include": ["**/*.ts", "**/*.tsx", ".react-router/types/**/*"],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2020"],
-    "types": ["@react-router/node", "vite/client", "vitest/globals"],
+    "types": ["@react-router/node", "vite/client", "vitest/globals", "mdx"],
     "isolatedModules": true,
     "esModuleInterop": true,
     "jsx": "react-jsx",

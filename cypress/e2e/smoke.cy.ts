@@ -7,7 +7,7 @@ describe("smoke tests", () => {
 
   it("should allow you to register and login", () => {
     const loginForm = {
-      email: `${faker.internet.userName()}@example.com`,
+      email: `${faker.internet.username()}@example.com`,
       password: faker.internet.password(),
     };
 
@@ -36,7 +36,7 @@ describe("smoke tests", () => {
   it("should allow you to join a dinner", () => {
     const testCredentials = {
       name: faker.person.fullName(),
-      email: `${faker.internet.userName()}@example.com`,
+      email: `${faker.internet.username()}@example.com`,
     };
 
     cy.login();
@@ -44,7 +44,9 @@ describe("smoke tests", () => {
 
     cy.findByRole("link", { name: /join a dinner/i }).click();
     cy.location("pathname").should("equal", "/dinners");
-    cy.findAllByRole("link", { name: /read more/i }).first().click();
+    cy.findAllByRole("link", { name: /read more/i })
+      .first()
+      .click();
 
     cy.findByRole("textbox", { name: /name/i }).type(testCredentials.name);
     cy.findByRole("textbox", { name: /email/i }).type(testCredentials.email);

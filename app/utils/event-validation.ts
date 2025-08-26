@@ -1,17 +1,17 @@
 import { z } from "zod";
 
 export const EventSchema = z.object({
-  title: z.string({ required_error: "Title is required" }).trim(),
-  description: z.string({ required_error: "Description is required" }).trim(),
+  title: z.string({ error: "Title is required" }).trim(),
+  description: z.string({ error: "Description is required" }).trim(),
   menuDescription: z.string().trim().optional(),
   donationDescription: z.string().trim().optional(),
-  date: z.coerce.date({ required_error: "Date is required" }),
+  date: z.coerce.date({ error: "Date is required" }),
   slots: z
-    .number({ required_error: "Slots is required" })
+    .number({ error: "Slots is required" })
     .min(0, "Slots cannot be less than 0")
     .int(),
   price: z
-    .number({ required_error: "Price is required" })
+    .number({ error: "Price is required" })
     .min(0, "Price cannot be less than 0")
     .int(),
   discounts: z.string().trim().optional(),
@@ -23,5 +23,5 @@ export const EventSchema = z.object({
     .refine((file) => {
       return file.size <= 1024 * 1024 * 3;
     }, "File cannot be greater than 3MB"),
-  addressId: z.string({ required_error: "Address is required" }).trim(),
+  addressId: z.string({ error: "Address is required" }).trim(),
 });
