@@ -24,6 +24,7 @@ async function deleteUser(email: string) {
     ) {
       console.log("User not found, so no need to delete");
     } else {
+      console.error(error);
       throw error;
     }
   } finally {
