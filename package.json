@@ -49,7 +49,7 @@
     "@radix-ui/react-tooltip": "^1.2.7",
     "@react-router/fs-routes": "^7.7.0",
     "@react-router/node": "^7.7.0",
-    "@react-router/serve": "^7.7.0",
+    "@react-router/serve": "^7.8.2",
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
