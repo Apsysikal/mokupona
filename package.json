@@ -45,7 +45,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@react-router/fs-routes": "^7.8.2",
-    "@react-router/node": "^7.7.0",
+    "@react-router/node": "^7.9.1",
     "@react-router/serve": "^7.8.2",
     "@remix-run/file-storage": "^0.9.0",
     "@remix-run/form-data-parser": "^0.10.1",
