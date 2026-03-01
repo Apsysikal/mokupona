@@ -31,8 +31,8 @@
     "/public/build"
   ],
   "dependencies": {
-    "@conform-to/react": "^1.8.2",
-    "@conform-to/zod": "^1.8.2",
+    "@conform-to/react": "^1.17.1",
+    "@conform-to/zod": "^1.17.1",
     "@mdx-js/rollup": "^3.1.0",
     "@prisma/client": "^6.15.0",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -110,7 +110,7 @@
     "@rollup/rollup-linux-x64-gnu": "^4.50.0"
   },
   "engines": {
-    "node": ">=20.18.0"
+    "node": ">=24.13.0"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
