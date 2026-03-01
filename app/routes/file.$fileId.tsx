@@ -1,4 +1,3 @@
-import { LazyFile, type LazyContent } from "@remix-run/lazy-file";
 import type { ComponentProps } from "react";
 import sharp, { type FitEnum } from "sharp";
 import invariant from "tiny-invariant";
@@ -124,33 +123,20 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const file = await prisma.image.findUnique({ where: { id: fileId } });
   if (!file) throw new Response("Not found", { status: 404 });
 
-  const optimizedImage = sharp(file.blob)
+  const optimizedImage = await sharp(file.blob)
     .webp()
     .resize({
       ...(width && { width: Number(width) }),
       ...(height && { height: Number(height) }),
       fit: isAllowedFit(fit) ? fit : "cover",
-    });
+    })
+    .toBuffer();
 
-  const imageStream = new ReadableStream({
-    start(controller) {
-      optimizedImage.on("data", (chunk) => controller.enqueue(chunk));
-      optimizedImage.on("end", () => {
-        controller.close();
-      });
-    },
-  });
-
-  const lazyContent: LazyContent = {
-    byteLength: 0, // We don't know the byte length of the optimized image
-    stream: () => imageStream,
-  };
-
-  // Filesize of the optimized image is unknown
-  const lazyFile = new LazyFile(lazyContent, fileId);
+  const test = new Uint8Array(optimizedImage);
+  const testFile = new File([test], fileId);
 
   // @ts-ignore
-  return new Response(await cache.put(cacheKey, await lazyFile.toFile()), {
+  return new Response((await cache.put(cacheKey, testFile)).stream(), {
     headers: {
       "Content-Type": "image/webp",
       "Content-Disposition": `inline; filename="${params.fileId}"`,
