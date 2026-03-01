@@ -1,4 +1,4 @@
-import { LazyFile } from "@remix-run/lazy-file";
+import { LazyFile, type LazyContent } from "@remix-run/lazy-file";
 import type { ComponentProps } from "react";
 import sharp, { type FitEnum } from "sharp";
 import invariant from "tiny-invariant";
@@ -141,19 +141,16 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     },
   });
 
-  // Filesize of the optimized image is unknown
-  const lazyFile = new LazyFile(
-    {
-      byteLength: 0,
-      stream() {
-        return imageStream;
-      },
-    },
-    fileId,
-  );
+  const lazyContent: LazyContent = {
+    byteLength: 0, // We don't know the byte length of the optimized image
+    stream: () => imageStream,
+  };
 
-  // @ts-expect-error LazyFile
-  return new Response(await cache.put(cacheKey, lazyFile), {
+  // Filesize of the optimized image is unknown
+  const lazyFile = new LazyFile(lazyContent, fileId);
+
+  // @ts-ignore
+  return new Response(await cache.put(cacheKey, await lazyFile.toFile()), {
     headers: {
       "Content-Type": "image/webp",
       "Content-Disposition": `inline; filename="${params.fileId}"`,
