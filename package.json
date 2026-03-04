@@ -4,7 +4,7 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "build": "react-router build",
+    "build": "prisma generate && react-router build",
     "dev": "node ./mocks/index.js & react-router dev --host",
     "format": "prettier --write .",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
