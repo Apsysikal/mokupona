@@ -1,9 +1,16 @@
+import "dotenv/config";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 
-const prisma = new PrismaClient();
+import { PrismaClient } from "#prisma/generated/client";
+
+const prisma = new PrismaClient({
+  adapter: new PrismaBetterSqlite3({
+    url: process.env.DATABASE_URL,
+  }),
+});
 
 async function main() {
   const defaultImage = await readFile(path.join(__dirname, "default.jpg"));

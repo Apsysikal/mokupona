@@ -1,8 +1,8 @@
-import type { Event } from "@prisma/client";
 import { Link } from "react-router";
 
 import { Button } from "./ui/button";
 
+import type { Event } from "#prisma/generated/client";
 import { OptimizedImage } from "~/routes/file.$fileId";
 import { dateFormatBuilder } from "~/utils/misc";
 
