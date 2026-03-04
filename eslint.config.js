@@ -3,7 +3,12 @@ import globals from "globals";
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   {
-    ignores: ["**/node_modules/**", "**/build/**", "**/public/build**", "**/.react-router/**"],
+    ignores: [
+      "**/node_modules/**",
+      "**/build/**",
+      "**/public/build**",
+      "**/.react-router/**",
+    ],
   },
   {
     // Global
@@ -64,8 +69,8 @@ export default [
       "@typescript-eslint": (await import("typescript-eslint")).plugin,
     },
     rules: {
-      "@typescript-eslint/consistent-type-imports": "error"
-    }
+      "@typescript-eslint/consistent-type-imports": "error",
+    },
   },
   {
     // Jest

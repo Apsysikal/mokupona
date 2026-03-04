@@ -117,7 +117,7 @@ export async function action({ params, request }: Route.ActionArgs) {
       ip: getClientIPAddress(request),
       dinner: dinner.id,
       email: obscureEmail(
-        submission.payload["email"].toString() ?? "unknown@no-domain.com",
+        submission.payload["email"]?.toString() ?? "unknown@no-domain.com",
       ),
       reason: submission.status === "error" ? submission.error : null,
     });

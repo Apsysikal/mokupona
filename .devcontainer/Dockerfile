@@ -1,5 +1,5 @@
-ARG VARIANT=20-bullseye
-FROM mcr.microsoft.com/devcontainers/typescript-node:1-${VARIANT}
+ARG VARIANT=24-bookworm
+FROM mcr.microsoft.com/devcontainers/typescript-node:4-${VARIANT}
 
 # Update packages
 RUN apt-get update && apt-get upgrade -y
