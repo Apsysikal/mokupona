@@ -31,8 +31,12 @@ WORKDIR /myapp
 
 COPY --from=deps /myapp/node_modules /myapp/node_modules
 
+
 ADD prisma .
 RUN npx prisma generate
+
+# Set it for prisma, as it is needed to generate
+ENV DATABASE_URL=file:/data/sqlite.db
 
 ADD . .
 RUN npm run build
