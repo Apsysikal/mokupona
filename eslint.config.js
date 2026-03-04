@@ -8,6 +8,7 @@ export default [
       "**/build/**",
       "**/public/build**",
       "**/.react-router/**",
+      "**/prisma/generated/**",
     ],
   },
   {

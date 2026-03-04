@@ -16,7 +16,8 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./app/*"]
+      "~/*": ["./app/*"],
+      "#prisma/*": ["./prisma/*"]
     },
     "skipLibCheck": true,
     "rootDirs": [".", "./.react-router/types"],

@@ -1,14 +1,15 @@
 # base node image
-FROM node:24-bullseye-slim as base
+FROM node:24-bullseye-slim AS base
 
 # set for base and all layer that inherit from it
-ENV NODE_ENV production
+ENV NODE_ENV=production
+ENV DATABASE_URL=file:/data/sqlite.db
 
 # Install openssl for Prisma
 RUN apt-get update && apt-get install -y openssl sqlite3
 
 # Install all node_modules, including dev dependencies
-FROM base as deps
+FROM base AS deps
 
 WORKDIR /myapp
 
@@ -16,7 +17,7 @@ ADD package.json package-lock.json .npmrc ./
 RUN npm install --include=dev
 
 # Setup production node_modules
-FROM base as production-deps
+FROM base AS production-deps
 
 WORKDIR /myapp
 
@@ -25,7 +26,7 @@ ADD package.json package-lock.json .npmrc ./
 RUN npm prune --omit=dev
 
 # Build the app
-FROM base as build
+FROM base AS build
 
 WORKDIR /myapp
 
@@ -40,7 +41,6 @@ RUN npm run build
 # Finally, build the production image with minimal footprint
 FROM base
 
-ENV DATABASE_URL=file:/data/sqlite.db
 ENV IMAGE_UPLOAD_FOLDER=/data/uploads/images
 ENV PORT="8080"
 ENV NODE_ENV="production"
@@ -51,7 +51,7 @@ RUN echo "#!/bin/sh\nset -x\nsqlite3 \$DATABASE_URL" > /usr/local/bin/database-c
 WORKDIR /myapp
 
 COPY --from=production-deps /myapp/node_modules /myapp/node_modules
-COPY --from=build /myapp/node_modules/.prisma /myapp/node_modules/.prisma
+# COPY --from=build /myapp/node_modules/.prisma /myapp/node_modules/.prisma
 
 COPY --from=build /myapp/build/server /myapp/build/server
 COPY --from=build /myapp/build/client /myapp/build/client

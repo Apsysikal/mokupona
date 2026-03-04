@@ -1,9 +1,9 @@
-import type { Password, Prisma, Role, User } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
+import type { Password, Prisma, Role, User } from "#prisma/generated/client";
 import { prisma } from "~/db.server";
 
-export type { User } from "@prisma/client";
+export type { User } from "#prisma/generated/client";
 
 export type UserSelect = Prisma.UserSelect;
 export type UserWhere = Prisma.UserWhereInput;

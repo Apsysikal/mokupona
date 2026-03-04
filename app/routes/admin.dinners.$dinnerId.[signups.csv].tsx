@@ -1,8 +1,8 @@
-import type { EventResponse } from "@prisma/client";
 import invariant from "tiny-invariant";
 
 import type { Route } from "./+types/admin.dinners.$dinnerId.[signups.csv]";
 
+import type { EventResponse } from "#prisma/generated/client";
 import { buildCSVObject } from "~/lib/csv-builder.server";
 import { getEventResponsesForEvent } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
