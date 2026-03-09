@@ -142,7 +142,7 @@ async function seed() {
     },
   });
 
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < event.slots - 5; i++) {
     await prisma.eventResponse.create({
       data: {
         email: faker.internet.email(),
