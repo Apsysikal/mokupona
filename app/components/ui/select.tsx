@@ -4,8 +4,8 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
 } from "@radix-ui/react-icons";
-import * as SelectPrimitive from "@radix-ui/react-select";
 import type { ClassValue } from "clsx";
+import { Select as SelectPrimitive } from "radix-ui";
 import React from "react";
 
 import { cn } from "~/lib/utils";
