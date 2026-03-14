@@ -35,7 +35,7 @@ async function optimize() {
     );
 
     await sharp(landingPageImagePath)
-      .resize({ width, height: Math.ceil((width / 16) * 12) })
+      .resize({ width })
       .webp({ quality: 60 })
       .toFile(optimizedPath);
   });

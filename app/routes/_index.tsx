@@ -40,7 +40,8 @@ export const meta: MetaFunction<null, { root: RootLoaderData }> = ({
 export default function Index() {
   return (
     <main>
-      <div className="mx-auto mt-20 max-w-4xl">
+      <Hero />
+      {/* <div className="mx-auto mt-20 max-w-4xl">
         <div className="mx-2 grid grid-cols-5 gap-20">
           <div className="col-span-full max-md:overflow-hidden md:col-span-3">
             <picture>
@@ -55,9 +56,9 @@ export default function Index() {
           </div>
 
           <div className="col-span-full flex flex-col justify-center gap-8 py-2 md:col-span-2">
-            <h1 className="text-5xl lowercase text-gray-50">moku pona</h1>
+            <h1 className="text-5xl text-gray-50 lowercase">moku pona</h1>
 
-            <p className="text-balance text-2xl font-thin leading-normal">
+            <p className="text-2xl leading-normal font-thin text-balance">
               A dinner society in Zurich, bringing people together through
               shared meals, stories, and the joy of discovery.
             </p>
@@ -71,13 +72,13 @@ export default function Index() {
 
           <Link
             to="#vision"
-            className="col-span-full mx-auto text-accent"
+            className="text-accent col-span-full mx-auto"
             aria-label="Scroll to vision"
           >
             <Arrow orientation="down" />
           </Link>
         </div>
-      </div>
+      </div> */}
 
       <div
         id="vision"
@@ -85,7 +86,7 @@ export default function Index() {
       >
         <section className="my-5 grid max-w-4xl grid-cols-5 gap-10">
           <h2 className="col-span-full text-4xl">our vision</h2>
-          <p className="col-span-full flex items-center gap-10 text-xl font-light leading-relaxed">
+          <p className="col-span-full flex items-center gap-10 text-xl leading-relaxed font-light">
             moku pona began as a passion project by a group of friends who love
             cooking and wanted a creative way to explore our culinary interests.
             For us, food is a way to express creativity, share experiences, and
@@ -118,7 +119,7 @@ export default function Index() {
               <CoffeeIllustration className="h-full w-full" />
             </span>
           </h2>
-          <p className="col-span-full text-xl font-thin leading-relaxed">
+          <p className="col-span-full text-xl leading-relaxed font-thin">
             At moku pona, we believe that food is a powerful way to bring people
             together. Our dinner events go beyond the typical restaurant
             experience, creating a warm and welcoming community space where
@@ -131,12 +132,12 @@ export default function Index() {
         </section>
       </div>
 
-      <div className="relative mt-32 w-full py-4 text-background">
-        <div className="mx-auto flex max-w-4xl flex-col gap-2 px-2 after:absolute after:inset-0 after:-z-10 after:skew-y-3 after:bg-accent">
+      <div className="text-background relative mt-32 w-full py-4">
+        <div className="after:bg-accent mx-auto flex max-w-4xl flex-col gap-2 px-2 after:absolute after:inset-0 after:-z-10 after:skew-y-3">
           <section className="my-5 grid max-w-4xl grid-cols-5 gap-5">
             <h2 className="col-span-full text-4xl">who we are</h2>
 
-            <p className="col-span-2 my-auto text-xl font-thin leading-relaxed max-md:col-span-full">
+            <p className="col-span-2 my-auto text-xl leading-relaxed font-thin max-md:col-span-full">
               Learn more about the people behind moku pona here.
             </p>
 
@@ -164,7 +165,7 @@ export default function Index() {
 
             <Link
               to="/about"
-              className="col-span-full flex items-center gap-4 text-background"
+              className="text-background col-span-full flex items-center gap-4"
               aria-label="Go to about page"
             >
               <Arrow className="shrink-0" />
@@ -173,5 +174,79 @@ export default function Index() {
         </div>
       </div>
     </main>
+  );
+}
+
+type HeroBlock = {
+  type: "hero";
+  title: string;
+  body: string;
+  actions: [];
+  media?: string;
+  align?: "left" | "right";
+  theme?: "light" | "dark";
+};
+
+function Hero() {
+  const data: HeroBlock = {
+    type: "hero",
+    title: "moku pona",
+    body: "A dinner society in Zurich, bringing people together through shared meals, stories, and the joy of discovery.",
+    actions: [],
+    media: "/hero-image.jpg",
+  };
+
+  return (
+    <section className="relative isolate overflow-hidden">
+      <div
+        aria-hidden="true"
+        className="absolute top-20 left-[calc(20%-20rem)] -z-10 transform-gpu blur-3xl not-lg:left-[calc(20%-30rem)]"
+      >
+        <div
+          style={{
+            clipPath:
+              "polygon(73.6% 51.7%, 91.7% 11.8%, 100% 46.4%, 97.4% 82.2%, 92.5% 84.9%, 75.7% 64%, 55.3% 47.5%, 46.5% 49.4%, 45% 62.9%, 50.3% 87.2%, 21.3% 64.1%, 0.1% 100%, 5.4% 51.1%, 21.4% 63.9%, 58.9% 0.2%, 73.6% 51.7%)",
+          }}
+          className="aspect-2/1 w-200 bg-linear-to-r from-orange-400 to-red-800 opacity-40"
+        />
+      </div>
+
+      <div className="mx-auto mt-20 max-w-4xl md:flex">
+        <div className="flex shrink-0 flex-col justify-center gap-10 px-4 md:max-w-md lg:max-w-lg">
+          <h1 className="text-foreground text-5xl">{data.title}</h1>
+          <p className="text-foreground text-2xl font-thin text-balance">
+            {data.body}
+          </p>
+
+          <div className="flex gap-4">
+            <Button asChild>
+              <Link to="/dinners" className="lowercase">
+                Join a dinner
+              </Link>
+            </Button>
+
+            <Button variant="link" asChild className="text-foreground">
+              <Link to="#vision" className="lowercase">
+                Learn more
+              </Link>
+            </Button>
+          </div>
+        </div>
+
+        <div className="mx-auto flex not-lg:mt-10">
+          <div className="max-w-3xl flex-none not-md:pl-4 md:max-w-3xl lg:max-w-4xl 2xl:max-w-none">
+            <picture>
+              <img
+                srcSet="/landing-page-sm.webp 432w, /landing-page-md.webp 648w, /landing-page-lg.webp 864w, /landing-page-original.webp 1080w"
+                src="/landing-page-default.jpg"
+                className="w-304 rounded-md object-center"
+                fetchPriority="high"
+                alt=""
+              />
+            </picture>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
