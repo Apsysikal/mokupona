@@ -110,10 +110,6 @@ function Document() {
               upcoming dinners
             </Link>
 
-            <Link to="/about" className="hover:underline max-md:hidden">
-              about
-            </Link>
-
             <a
               href="https://instagram.com/mokupona"
               target="_blank"
@@ -180,12 +176,6 @@ function GeneralDropdown() {
           <DropdownMenuItem>
             <Link to="/dinners" className="hover:underline">
               upcoming dinners
-            </Link>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem>
-            <Link to="/about" className="hover:underline">
-              about
             </Link>
           </DropdownMenuItem>
 

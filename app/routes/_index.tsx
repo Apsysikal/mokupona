@@ -63,8 +63,7 @@ const differenceSectionData: TextSectionBlock = {
 
 const aboutSectionData: SlantedTextSectionBlock = {
   heading: "who we are",
-  body: "Learn more about the people behind moku pona here.",
-  actions: [{ href: "/about", label: "meet the team" }],
+  body: "What started as a shared love of cooking has grown into a community of around 15 members who come together to create, host, and share meals. We see food as a way to bring people together: to exchange ideas, build friendships, and create meaningful experiences around the table. As an association, moku pona is about community, creativity, and hospitality - not just dining, but making people feel welcome.",
 };
 
 export default function Index() {
