@@ -16,6 +16,18 @@ declare global {
       login: typeof login;
 
       /**
+       * Logs in as one of the seeded role accounts.
+       *
+       * @returns {typeof loginAsRole}
+       * @memberof Chainable
+       * @example
+       *    cy.loginAsRole()
+       * @example
+       *    cy.loginAsRole("admin")
+       */
+      loginAsRole: typeof loginAsRole;
+
+      /**
        * Deletes the current @user
        *
        * @returns {typeof cleanupUser}
@@ -59,6 +71,17 @@ function login({
   return cy.get("@user");
 }
 
+function loginAsRole(role: "moderator" | "admin" = "moderator") {
+  cy.exec(`npx tsx ./cypress/support/create-role-session.ts "${role}"`).then(
+    ({ stdout }) => {
+      const cookieValue = stdout
+        .replace(/.*<cookie>(?<cookieValue>.*)<\/cookie>.*/s, "$<cookieValue>")
+        .trim();
+      cy.setCookie("__session", cookieValue);
+    },
+  );
+}
+
 function cleanupUser({ email }: { email?: string } = {}) {
   if (email) {
     deleteUserByEmail(email);
@@ -90,6 +113,7 @@ function visitAndCheck(url: string, waitTime = 1000) {
 
 export const registerCommands = () => {
   Cypress.Commands.add("login", login);
+  Cypress.Commands.add("loginAsRole", loginAsRole);
   Cypress.Commands.add("cleanupUser", cleanupUser);
   Cypress.Commands.add("visitAndCheck", visitAndCheck);
 };
