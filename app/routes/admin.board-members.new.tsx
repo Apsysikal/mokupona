@@ -1,7 +1,12 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import type { FileUpload } from "@remix-run/form-data-parser";
-import { parseFormData } from "@remix-run/form-data-parser";
+import {
+  FormDataParseError,
+  MaxFilesExceededError,
+  MaxFileSizeExceededError,
+  parseFormData,
+} from "@remix-run/form-data-parser";
 import { Form, redirect, useActionData, useLocation } from "react-router";
 import { z } from "zod";
 
@@ -49,12 +54,44 @@ export async function action({ request }: Route.ActionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   const uploadHandler = async (fileUpload: FileUpload) => {
-    let storageKey = getStorageKey("temporary-key");
-    await fileStorage.set(storageKey, fileUpload);
-    return fileStorage.get(storageKey);
+    if (fileUpload.fieldName === "image") {
+      let storageKey = getStorageKey("temporary-key");
+      await fileStorage.set(storageKey, fileUpload);
+      return fileUpload;
+    }
   };
 
-  const formData = await parseFormData(request, uploadHandler);
+  let formData: FormData;
+
+  try {
+    formData = await parseFormData(
+      request,
+      { maxFileSize: 1024 * 1024 * 4, maxFiles: 1 },
+      uploadHandler,
+    );
+  } catch (error) {
+    if (
+      error instanceof MaxFileSizeExceededError ||
+      (error instanceof FormDataParseError &&
+        "cause" in error &&
+        error.cause instanceof MaxFileSizeExceededError)
+    ) {
+      return {
+        uploadHandlerError: "File cannot be greater than 3MB",
+      };
+    } else if (
+      error instanceof MaxFilesExceededError ||
+      (error instanceof FormDataParseError &&
+        "cause" in error &&
+        error.cause instanceof MaxFilesExceededError)
+    ) {
+      return {
+        uploadHandlerError: "You can only upload one file",
+      };
+    } else {
+      throw error;
+    }
+  }
 
   const submission = parseWithZod(formData, {
     schema: MemberSchema,
@@ -98,13 +135,21 @@ export default function BoardMemberNewRoute() {
   const [form, fields] = useForm({
     // This id makes sure to clear out the form when redirecting to the same page
     id: location.key,
-    lastResult: lastSubmission,
+    lastResult:
+      lastSubmission && "uploadHandlerError" in lastSubmission
+        ? null
+        : lastSubmission,
     shouldValidate: "onBlur",
     constraint: getZodConstraint(MemberSchema),
     onValidate({ formData }) {
       return parseWithZod(formData, { schema: MemberSchema });
     },
   });
+
+  const fileUploadErros =
+    lastSubmission && "uploadHandlerError" in lastSubmission
+      ? [lastSubmission.uploadHandlerError]
+      : undefined;
 
   return (
     <>
@@ -145,7 +190,7 @@ export default function BoardMemberNewRoute() {
             accept: validImageTypes.join(","),
             className: "file:text-foreground",
           }}
-          errors={fields.image.errors}
+          errors={fields.image.errors ?? fileUploadErros}
           className="flex flex-col gap-3"
         />
 
