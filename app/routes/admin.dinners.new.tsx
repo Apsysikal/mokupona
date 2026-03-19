@@ -9,13 +9,9 @@ import { logger } from "~/logger.server";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
 import { getClientHints } from "~/utils/client-hints.server";
-import {
-  discardTempEventImage,
-  parseEventFormData,
-  persistEventCoverImage,
-} from "~/utils/event-image.server";
 import { toUtcEventDate } from "~/utils/event-timezone.server";
 import { EventSchema } from "~/utils/event-validation";
+import { parseImageFormData } from "~/utils/image-upload.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
 const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
@@ -39,13 +35,13 @@ export async function action({ request }: Route.ActionArgs) {
   const user = await requireUserWithRole(request, ["moderator", "admin"]);
   const clientHints = getClientHints(request);
 
-  const parseResult = await parseEventFormData(request);
+  const uploadResult = await parseImageFormData(request, "cover");
 
-  if (!parseResult.success) {
-    return { uploadHandlerError: parseResult.uploadError };
+  if (!uploadResult.success) {
+    return { uploadHandlerError: uploadResult.uploadError };
   }
 
-  const submission = parseWithZod(parseResult.formData, {
+  const submission = parseWithZod(uploadResult.formData, {
     schema: EventSchema,
   });
 
@@ -56,7 +52,7 @@ export async function action({ request }: Route.ActionArgs) {
   ) {
     // Remove the uploaded file from disk.
     // It will be sent again when submitting.
-    await discardTempEventImage();
+    await uploadResult.discardImage();
   }
 
   if (submission.status !== "success" || !submission.value) {
@@ -79,7 +75,7 @@ export async function action({ request }: Route.ActionArgs) {
   logger.info(`Client zone offset: ${clientHints.userTimezoneOffset}`);
   logger.info(`Client zone: ${clientHints.userTimezone}`);
 
-  const imageId = await persistEventCoverImage(cover);
+  const imageId = await uploadResult.persistImage(cover);
 
   const event = await createEvent({
     title,
