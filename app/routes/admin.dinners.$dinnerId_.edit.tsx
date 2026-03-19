@@ -12,15 +12,11 @@ import { getAddresses } from "~/models/address.server";
 import { getEventById, updateEvent } from "~/models/event.server";
 import { getClientHints } from "~/utils/client-hints.server";
 import {
-  discardTempEventImage,
-  parseEventFormData,
-  persistEventCoverImage,
-} from "~/utils/event-image.server";
-import {
   toDisplayEventDate,
   toUtcEventDate,
 } from "~/utils/event-timezone.server";
 import { EventSchema } from "~/utils/event-validation";
+import { parseImageFormData } from "~/utils/image-upload.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
 const VALID_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -67,13 +63,13 @@ export async function action({ request, params }: Route.ActionArgs) {
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
 
-  const parseResult = await parseEventFormData(request);
+  const uploadResult = await parseImageFormData(request, "cover");
 
-  if (!parseResult.success) {
-    return { uploadHandlerError: parseResult.uploadError };
+  if (!uploadResult.success) {
+    return { uploadHandlerError: uploadResult.uploadError };
   }
 
-  const submission = parseWithZod(parseResult.formData, {
+  const submission = parseWithZod(uploadResult.formData, {
     schema,
   });
 
@@ -84,7 +80,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   ) {
     // Remove the uploaded file from disk.
     // It will be sent again when submitting.
-    await discardTempEventImage();
+    await uploadResult.discardImage();
   }
 
   if (submission.status !== "success" || !submission.value) {
@@ -107,7 +103,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   logger.info(`Client zone offset: ${clientHints.userTimezoneOffset}`);
   logger.info(`Client zone: ${clientHints.userTimezone}`);
 
-  const imageId = cover ? await persistEventCoverImage(cover) : undefined;
+  const imageId = cover ? await uploadResult.persistImage(cover) : undefined;
 
   const event = await updateEvent(dinnerId, {
     title,
