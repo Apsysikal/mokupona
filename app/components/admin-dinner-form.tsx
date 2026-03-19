@@ -9,6 +9,7 @@ import {
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { Form } from "react-router";
 
+import type { ListOfErrors } from "./forms";
 import { Field, SelectField, TextareaField } from "./forms";
 import { Button } from "./ui/button";
 
@@ -27,6 +28,7 @@ export interface AdminDinnerFormProps {
     city: string;
   }[];
   lastResult?: SubmissionResult<string[]>;
+  coverErrors?: ListOfErrors;
   submitText: string;
   defaultValues?: Partial<{
     title: string;
@@ -47,6 +49,7 @@ export function AdminDinnerForm({
   validImageTypes,
   addresses,
   lastResult,
+  coverErrors,
   submitText,
   defaultValues,
 }: AdminDinnerFormProps) {
@@ -148,7 +151,7 @@ export function AdminDinnerForm({
           accept: validImageTypes.join(","),
           className: "file:text-foreground",
         }}
-        errors={fields.cover.errors}
+        errors={fields.cover.errors ?? coverErrors}
         className="flex w-full flex-col gap-2"
       />
 

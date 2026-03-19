@@ -1,7 +1,12 @@
 import { useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import type { FileUpload } from "@remix-run/form-data-parser";
-import { parseFormData } from "@remix-run/form-data-parser";
+import {
+  FormDataParseError,
+  MaxFilesExceededError,
+  MaxFileSizeExceededError,
+  parseFormData,
+} from "@remix-run/form-data-parser";
 import { useEffect, useRef, useState } from "react";
 import { redirect, useActionData, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
@@ -82,12 +87,44 @@ export async function action({ request, params }: Route.ActionArgs) {
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
 
   const uploadHandler = async (fileUpload: FileUpload) => {
-    let storageKey = getStorageKey("temporary-key");
-    await fileStorage.set(storageKey, fileUpload);
-    return fileStorage.get(storageKey);
+    if (fileUpload.fieldName === "cover") {
+      let storageKey = getStorageKey("temporary-key");
+      await fileStorage.set(storageKey, fileUpload);
+      return fileUpload;
+    }
   };
 
-  const formData = await parseFormData(request, uploadHandler);
+  let formData: FormData;
+
+  try {
+    formData = await parseFormData(
+      request,
+      { maxFileSize: 1024 * 1024 * 4, maxFiles: 1 },
+      uploadHandler,
+    );
+  } catch (error) {
+    if (
+      error instanceof MaxFileSizeExceededError ||
+      (error instanceof FormDataParseError &&
+        "cause" in error &&
+        error.cause instanceof MaxFileSizeExceededError)
+    ) {
+      return {
+        uploadHandlerError: "File cannot be greater than 3MB",
+      };
+    } else if (
+      error instanceof MaxFilesExceededError ||
+      (error instanceof FormDataParseError &&
+        "cause" in error &&
+        error.cause instanceof MaxFilesExceededError)
+    ) {
+      return {
+        uploadHandlerError: "You can only upload one file",
+      };
+    } else {
+      throw error;
+    }
+  }
 
   const submission = parseWithZod(formData, {
     schema,
@@ -171,7 +208,15 @@ export async function action({ request, params }: Route.ActionArgs) {
 export default function DinnersPage() {
   const schema = EventSchema.partial({ cover: true });
   const { addresses, validImageTypes, dinner } = useLoaderData<typeof loader>();
-  const lastResult = useActionData<typeof action>();
+  const lastSubmission = useActionData<typeof action>();
+  const coverErrors =
+    lastSubmission && "uploadHandlerError" in lastSubmission
+      ? [lastSubmission.uploadHandlerError]
+      : undefined;
+  const lastResult =
+    lastSubmission && "uploadHandlerError" in lastSubmission
+      ? undefined
+      : lastSubmission;
   const [form, fields] = useForm({
     lastResult,
     shouldValidate: "onBlur",
@@ -214,6 +259,7 @@ export default function DinnersPage() {
         validImageTypes={validImageTypes}
         addresses={addresses}
         lastResult={lastResult}
+        coverErrors={coverErrors}
         defaultValues={{
           title: dinner.title,
           description: dinner.description,

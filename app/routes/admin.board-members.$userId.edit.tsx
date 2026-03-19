@@ -1,7 +1,12 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import type { FileUpload } from "@remix-run/form-data-parser";
-import { parseFormData } from "@remix-run/form-data-parser";
+import {
+  FormDataParseError,
+  MaxFilesExceededError,
+  MaxFileSizeExceededError,
+  parseFormData,
+} from "@remix-run/form-data-parser";
 import {
   Form,
   Link,
@@ -72,12 +77,44 @@ export async function action({ request, params }: Route.ActionArgs) {
   invariant(typeof userId === "string", "Parameter userId is missing");
 
   const uploadHandler = async (fileUpload: FileUpload) => {
-    let storageKey = getStorageKey("temporary-key");
-    await fileStorage.set(storageKey, fileUpload);
-    return fileStorage.get(storageKey);
+    if (fileUpload.fieldName === "image") {
+      let storageKey = getStorageKey("temporary-key");
+      await fileStorage.set(storageKey, fileUpload);
+      return fileUpload;
+    }
   };
 
-  const formData = await parseFormData(request, uploadHandler);
+  let formData: FormData;
+
+  try {
+    formData = await parseFormData(
+      request,
+      { maxFileSize: 1024 * 1024 * 4, maxFiles: 1 },
+      uploadHandler,
+    );
+  } catch (error) {
+    if (
+      error instanceof MaxFileSizeExceededError ||
+      (error instanceof FormDataParseError &&
+        "cause" in error &&
+        error.cause instanceof MaxFileSizeExceededError)
+    ) {
+      return {
+        uploadHandlerError: "File cannot be greater than 3MB",
+      };
+    } else if (
+      error instanceof MaxFilesExceededError ||
+      (error instanceof FormDataParseError &&
+        "cause" in error &&
+        error.cause instanceof MaxFilesExceededError)
+    ) {
+      return {
+        uploadHandlerError: "You can only upload one file",
+      };
+    } else {
+      throw error;
+    }
+  }
 
   const submission = parseWithZod(formData, {
     schema: MemberSchema,
@@ -132,7 +169,10 @@ export default function BoardMemberEditRoute() {
   const [form, fields] = useForm({
     // This key makes sure, that when selecting another member the form updates to the new default values
     id: location.key,
-    lastResult: lastSubmission,
+    lastResult:
+      lastSubmission && "uploadHandlerError" in lastSubmission
+        ? null
+        : lastSubmission,
     shouldValidate: "onBlur",
     constraint: getZodConstraint(MemberSchema),
     defaultValue: {
@@ -143,6 +183,11 @@ export default function BoardMemberEditRoute() {
       return parseWithZod(formData, { schema: MemberSchema });
     },
   });
+
+  const fileUploadErrors =
+    lastSubmission && "uploadHandlerError" in lastSubmission
+      ? [lastSubmission.uploadHandlerError]
+      : undefined;
 
   return (
     <>
@@ -187,7 +232,7 @@ export default function BoardMemberEditRoute() {
             accept: validImageTypes.join(","),
             className: "file:text-foreground",
           }}
-          errors={fields.image.errors}
+          errors={fields.image.errors ?? fileUploadErrors}
           className="flex flex-col gap-3"
         />
 

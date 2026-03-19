@@ -1,11 +1,10 @@
-import type { CheckedState } from "@radix-ui/react-checkbox";
-import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import {
   CheckIcon,
   ChevronRightIcon,
   DotFilledIcon,
 } from "@radix-ui/react-icons";
 import type { ClassValue } from "clsx";
+import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import React from "react";
 
 import { cn } from "~/lib/utils";
@@ -124,7 +123,6 @@ const DropdownMenuCheckboxItem = ({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem> & {
   className?: string | ClassValue[];
-  checked?: CheckedState;
 }) => (
   <DropdownMenuPrimitive.CheckboxItem
     ref={ref}
