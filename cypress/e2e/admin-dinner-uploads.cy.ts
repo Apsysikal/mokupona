@@ -15,60 +15,6 @@ type DinnerCleanup = {
   extraImageIds?: string[];
 };
 
-function getFirstAddressId() {
-  return cy
-    .findByLabelText(/^address$/i)
-    .find("option")
-    .first()
-    .then(($option) => {
-      const addressId = $option.val();
-
-      if (typeof addressId !== "string") {
-        throw new Error("Address value missing from dinner form");
-      }
-
-      return addressId;
-    });
-}
-
-function selectFirstAddress() {
-  getFirstAddressId().then((addressId) => {
-    cy.findByLabelText(/^address$/i).select(addressId);
-  });
-}
-
-function fillDinnerForm(values: ReturnType<typeof dinnerFormValues>) {
-  cy.findByLabelText(/^title$/i)
-    .clear()
-    .type(values.title);
-  cy.findByLabelText(/^description$/i)
-    .clear()
-    .type(values.description);
-  cy.findByLabelText(/^menu$/i)
-    .clear()
-    .type(values.menuDescription);
-  cy.findByLabelText(/^donation$/i)
-    .clear()
-    .type(values.donationDescription);
-  cy.findByLabelText(/^date$/i)
-    .clear()
-    .type(values.date);
-  cy.findByLabelText(/^slots$/i)
-    .clear()
-    .type(values.slots);
-  cy.findByLabelText(/^price$/i)
-    .clear()
-    .type(values.price);
-  cy.findByLabelText(/^discounts$/i)
-    .clear()
-    .type(values.discounts);
-  selectFirstAddress();
-}
-
-function uploadDinnerCover(file: string | Cypress.FileReferenceObject) {
-  cy.findByLabelText(/^cover$/i).selectFile(file, { force: true });
-}
-
 function getDinnerIdFromPathname(pathname: string) {
   const dinnerId = pathname.match(
     /\/admin\/dinners\/([^/.]+)(?:\.data)?$/,
@@ -101,8 +47,27 @@ describe("admin dinner uploads", () => {
     const values = dinnerFormValues("new-success");
 
     cy.visitAndCheck("/admin/dinners/new");
-    fillDinnerForm(values);
-    uploadDinnerCover(VALID_UPLOAD_FIXTURE_PATH);
+    cy.findByLabelText(/^title$/i).clear().type(values.title);
+    cy.findByLabelText(/^description$/i).clear().type(values.description);
+    cy.findByLabelText(/^menu$/i).clear().type(values.menuDescription);
+    cy.findByLabelText(/^donation$/i).clear().type(values.donationDescription);
+    cy.findByLabelText(/^date$/i).clear().type(values.date);
+    cy.findByLabelText(/^slots$/i).clear().type(values.slots);
+    cy.findByLabelText(/^price$/i).clear().type(values.price);
+    cy.findByLabelText(/^discounts$/i).clear().type(values.discounts);
+    cy.findByLabelText(/^address$/i)
+      .find("option")
+      .first()
+      .then(($option) => {
+        const addressId = $option.val();
+        if (typeof addressId !== "string") {
+          throw new Error("Address value missing from dinner form");
+        }
+        cy.findByLabelText(/^address$/i).select(addressId);
+      });
+    cy.findByLabelText(/^cover$/i).selectFile(VALID_UPLOAD_FIXTURE_PATH, {
+      force: true,
+    });
     cy.findByRole("button", { name: /create dinner/i }).click();
 
     cy.findByRole("heading", { name: values.title }).should("be.visible");
@@ -126,9 +91,27 @@ describe("admin dinner uploads", () => {
     const values = dinnerFormValues("new-zod-error");
 
     cy.visitAndCheck("/admin/dinners/new");
-    fillDinnerForm(values);
-    uploadDinnerCover(
+    cy.findByLabelText(/^title$/i).clear().type(values.title);
+    cy.findByLabelText(/^description$/i).clear().type(values.description);
+    cy.findByLabelText(/^menu$/i).clear().type(values.menuDescription);
+    cy.findByLabelText(/^donation$/i).clear().type(values.donationDescription);
+    cy.findByLabelText(/^date$/i).clear().type(values.date);
+    cy.findByLabelText(/^slots$/i).clear().type(values.slots);
+    cy.findByLabelText(/^price$/i).clear().type(values.price);
+    cy.findByLabelText(/^discounts$/i).clear().type(values.discounts);
+    cy.findByLabelText(/^address$/i)
+      .find("option")
+      .first()
+      .then(($option) => {
+        const addressId = $option.val();
+        if (typeof addressId !== "string") {
+          throw new Error("Address value missing from dinner form");
+        }
+        cy.findByLabelText(/^address$/i).select(addressId);
+      });
+    cy.findByLabelText(/^cover$/i).selectFile(
       uploadFileInput(ZOD_LIMIT_BYTES + 1, { fileName: "zod-too-large.jpg" }),
+      { force: true },
     );
     cy.findByRole("button", { name: /create dinner/i }).click();
 
@@ -140,23 +123,30 @@ describe("admin dinner uploads", () => {
     const values = dinnerFormValues("new-handler-error");
 
     cy.visitAndCheck("/admin/dinners/new");
-    getFirstAddressId().then((addressId) => {
-      submitMultipartRequest({
-        action: "/admin/dinners/new",
-        fields: {
-          ...values,
-          addressId,
-        },
-        fileFieldName: "cover",
-        file: {
-          size: UPLOAD_HANDLER_LIMIT_BYTES + 1,
-          name: "handler-too-large.jpg",
-        },
-      }).then((response) => {
-        expect(response.status).to.not.equal(500);
-        expect(response.body).to.include(FILE_TOO_LARGE_ERROR);
+    cy.findByLabelText(/^address$/i)
+      .find("option")
+      .first()
+      .then(($option) => {
+        const addressId = $option.val();
+        if (typeof addressId !== "string") {
+          throw new Error("Address value missing from dinner form");
+        }
+        submitMultipartRequest({
+          action: "/admin/dinners/new",
+          fields: {
+            ...values,
+            addressId,
+          },
+          fileFieldName: "cover",
+          file: {
+            size: UPLOAD_HANDLER_LIMIT_BYTES + 1,
+            name: "handler-too-large.jpg",
+          },
+        }).then((response) => {
+          expect(response.status).to.not.equal(500);
+          expect(response.body).to.include(FILE_TOO_LARGE_ERROR);
+        });
       });
-    });
   });
 
   it("updates non-file fields without overriding the existing dinner image", () => {
@@ -169,9 +159,7 @@ describe("admin dinner uploads", () => {
       const updatedTitle = "Dinner edit keep image updated";
 
       cy.visitAndCheck(`/admin/dinners/${dinner.id}/edit`);
-      cy.findByLabelText(/^title$/i)
-        .clear()
-        .type(updatedTitle);
+      cy.findByLabelText(/^title$/i).clear().type(updatedTitle);
       cy.findByRole("button", { name: /update dinner/i }).click();
       cy.location("pathname").should("eq", `/admin/dinners/${dinner.id}`);
 
@@ -194,10 +182,10 @@ describe("admin dinner uploads", () => {
       const updatedTitle = "Dinner edit replace image updated";
 
       cy.visitAndCheck(`/admin/dinners/${dinner.id}/edit`);
-      cy.findByLabelText(/^title$/i)
-        .clear()
-        .type(updatedTitle);
-      uploadDinnerCover(VALID_UPLOAD_FIXTURE_PATH);
+      cy.findByLabelText(/^title$/i).clear().type(updatedTitle);
+      cy.findByLabelText(/^cover$/i).selectFile(VALID_UPLOAD_FIXTURE_PATH, {
+        force: true,
+      });
       cy.findByRole("button", { name: /update dinner/i }).click();
       cy.location("pathname").should("eq", `/admin/dinners/${dinner.id}`);
 
@@ -218,8 +206,9 @@ describe("admin dinner uploads", () => {
       dinnersToCleanup.push({ id: dinner.id });
 
       cy.visitAndCheck(`/admin/dinners/${dinner.id}/edit`);
-      uploadDinnerCover(
+      cy.findByLabelText(/^cover$/i).selectFile(
         uploadFileInput(ZOD_LIMIT_BYTES + 1, { fileName: "zod-too-large.jpg" }),
+        { force: true },
       );
       cy.findByRole("button", { name: /update dinner/i }).click();
 
