@@ -130,6 +130,68 @@ If you run into any issues deploying to Fly, make sure you've followed all of th
 
 We use GitHub Actions for continuous integration and deployment. Anything that gets into the `main` branch will be deployed to production after running tests/build/etc. Anything in the `dev` branch will be deployed to staging.
 
+## Architecture refactor review workflow
+
+When using an architecture-focused refactoring assistant for this repository, use this exact sequence:
+
+1. **Phase 1: Explore the codebase organically**
+   - Inspect the codebase naturally and look for friction signals:
+     - understanding one concept requires jumping across many files,
+     - interfaces are almost as complicated as implementations,
+     - pure functions extracted mainly for unit testing while orchestration bugs remain,
+     - tightly-coupled modules create fragile seams,
+     - important behavior is difficult to test without mocking internals,
+     - concepts are split across modules that belong together.
+
+2. **Phase 2: Present refactor candidates**
+   - Present numbered candidates and include for each:
+     1. Cluster (files/modules/concepts),
+     2. Why they are coupled (shared types, repeated orchestration, implicit invariants, etc.),
+     3. Dependency category (`pure in-process logic`, `stateful internal dependency`, `external boundary / IO dependency`, `cross-boundary integration / adapter dependency`),
+     4. Test impact (which seam-heavy tests could become stronger boundary tests).
+   - End this phase with exactly:
+     - `Which of these would you like to explore?`
+
+3. **Phase 3: Frame the selected problem space**
+   - Before proposing a solution, explain:
+     - constraints the interface must satisfy,
+     - dependencies it must rely on,
+     - what must stay easy for callers,
+     - what complexity should be hidden.
+   - Include a rough illustrative code sketch (not the final proposal).
+
+4. **Phase 4: Design multiple radically different interfaces**
+   - Provide at least 3 substantially different designs (and a 4th ports/adapters design when relevant).
+   - Each design must include:
+     1. interface signature,
+     2. usage example,
+     3. hidden complexity,
+     4. dependency strategy,
+     5. trade-offs.
+   - Compare options in prose and make a strong recommendation.
+
+5. **Phase 5: Produce a refactor RFC as a GitHub issue draft**
+   - Include these sections:
+     - Title
+     - Problem
+     - Why now
+     - Current coupling
+     - Proposed module
+     - Interface sketch
+     - Hidden complexity
+     - Dependency strategy
+     - Testing strategy
+     - Migration plan
+     - Risks / trade-offs
+     - Acceptance criteria
+
+Quality bar for recommendations:
+- Prefer deeper modules over more abstraction layers.
+- Prefer fewer, stronger boundaries over many tiny helpers.
+- Prefer boundary behavior tests over testing internal implementation fragments.
+- Avoid speculative abstractions.
+- Ground recommendations in real coupling in the codebase.
+
 ## Testing
 
 ### Cypress
