@@ -1,13 +1,12 @@
 import {
   dinnerFormValues,
   FILE_TOO_LARGE_ERROR,
+  handlerOversizedFile,
   runUploadDbCommand,
   submitMultipartRequest,
-  UPLOAD_HANDLER_LIMIT_BYTES,
-  uploadFileInput,
   VALID_UPLOAD_FIXTURE_PATH,
   type DinnerRecord,
-  ZOD_LIMIT_BYTES,
+  zodOversizedFileInput,
 } from "../support/upload-test-utils";
 
 type DinnerCleanup = {
@@ -127,9 +126,7 @@ describe("admin dinner uploads", () => {
 
     cy.visitAndCheck("/admin/dinners/new");
     fillDinnerForm(values);
-    uploadDinnerCover(
-      uploadFileInput(ZOD_LIMIT_BYTES + 1, { fileName: "zod-too-large.jpg" }),
-    );
+    uploadDinnerCover(zodOversizedFileInput());
     cy.findByRole("button", { name: /create dinner/i }).click();
 
     cy.findByText(FILE_TOO_LARGE_ERROR).should("be.visible");
@@ -148,10 +145,7 @@ describe("admin dinner uploads", () => {
           addressId,
         },
         fileFieldName: "cover",
-        file: {
-          size: UPLOAD_HANDLER_LIMIT_BYTES + 1,
-          name: "handler-too-large.jpg",
-        },
+        file: handlerOversizedFile(),
       }).then((response) => {
         expect(response.status).to.not.equal(500);
         expect(response.body).to.include(FILE_TOO_LARGE_ERROR);
@@ -218,9 +212,7 @@ describe("admin dinner uploads", () => {
       dinnersToCleanup.push({ id: dinner.id });
 
       cy.visitAndCheck(`/admin/dinners/${dinner.id}/edit`);
-      uploadDinnerCover(
-        uploadFileInput(ZOD_LIMIT_BYTES + 1, { fileName: "zod-too-large.jpg" }),
-      );
+      uploadDinnerCover(zodOversizedFileInput());
       cy.findByRole("button", { name: /update dinner/i }).click();
 
       cy.findByText(FILE_TOO_LARGE_ERROR).should("be.visible");
@@ -249,10 +241,7 @@ describe("admin dinner uploads", () => {
           addressId: dinner.addressId,
         },
         fileFieldName: "cover",
-        file: {
-          size: UPLOAD_HANDLER_LIMIT_BYTES + 1,
-          name: "handler-too-large.jpg",
-        },
+        file: handlerOversizedFile(),
       }).then((response) => {
         expect(response.status).to.not.equal(500);
         expect(response.body).to.include(FILE_TOO_LARGE_ERROR);

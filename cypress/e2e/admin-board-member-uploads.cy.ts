@@ -1,14 +1,28 @@
 import {
   boardMemberFormValues,
   FILE_TOO_LARGE_ERROR,
+  handlerOversizedFile,
   runUploadDbCommand,
   submitMultipartRequest,
-  UPLOAD_HANDLER_LIMIT_BYTES,
-  uploadFileInput,
   VALID_UPLOAD_FIXTURE_PATH,
   type BoardMemberRecord,
-  ZOD_LIMIT_BYTES,
+  zodOversizedFileInput,
 } from "../support/upload-test-utils";
+
+function fillBoardMemberForm(
+  values: ReturnType<typeof boardMemberFormValues>,
+) {
+  cy.findByLabelText(/name/i)
+    .clear()
+    .type(values.name);
+  cy.findByLabelText(/position/i)
+    .clear()
+    .type(values.position);
+}
+
+function uploadBoardMemberPhoto(file: string | Cypress.FileReferenceObject) {
+  cy.findByLabelText(/photo/i).selectFile(file, { force: true });
+}
 
 describe("admin board member uploads", () => {
   let boardMemberIdsToCleanup: string[];
@@ -30,11 +44,8 @@ describe("admin board member uploads", () => {
     const values = boardMemberFormValues("new-success");
 
     cy.visitAndCheck("/admin/board-members/new");
-    cy.findByLabelText(/name/i).type(values.name);
-    cy.findByLabelText(/position/i).type(values.position);
-    cy.findByLabelText(/photo/i).selectFile(VALID_UPLOAD_FIXTURE_PATH, {
-      force: true,
-    });
+    fillBoardMemberForm(values);
+    uploadBoardMemberPhoto(VALID_UPLOAD_FIXTURE_PATH);
     cy.findByRole("button", { name: /add new board member/i }).click();
     cy.location("pathname").should("eq", "/admin/board-members/new");
 
@@ -58,12 +69,8 @@ describe("admin board member uploads", () => {
     const values = boardMemberFormValues("new-zod-error");
 
     cy.visitAndCheck("/admin/board-members/new");
-    cy.findByLabelText(/name/i).type(values.name);
-    cy.findByLabelText(/position/i).type(values.position);
-    cy.findByLabelText(/photo/i).selectFile(
-      uploadFileInput(ZOD_LIMIT_BYTES + 1, { fileName: "zod-too-large.jpg" }),
-      { force: true },
-    );
+    fillBoardMemberForm(values);
+    uploadBoardMemberPhoto(zodOversizedFileInput());
     cy.findByRole("button", { name: /add new board member/i }).click();
 
     cy.findByText(FILE_TOO_LARGE_ERROR).should("be.visible");
@@ -78,10 +85,7 @@ describe("admin board member uploads", () => {
       action: "/admin/board-members/new",
       fields: values,
       fileFieldName: "image",
-      file: {
-        size: UPLOAD_HANDLER_LIMIT_BYTES + 1,
-        name: "handler-too-large.jpg",
-      },
+      file: handlerOversizedFile(),
     }).then((response) => {
       expect(response.status).to.not.equal(500);
       expect(response.body).to.include(FILE_TOO_LARGE_ERROR);
@@ -123,9 +127,7 @@ describe("admin board member uploads", () => {
       cy.findByLabelText(/position/i)
         .clear()
         .type(updatedPosition);
-      cy.findByLabelText(/photo/i).selectFile(VALID_UPLOAD_FIXTURE_PATH, {
-        force: true,
-      });
+      uploadBoardMemberPhoto(VALID_UPLOAD_FIXTURE_PATH);
       cy.findByRole("button", { name: /update /i }).click();
       cy.location("pathname").should("eq", "/admin/board-members/new");
 
@@ -146,10 +148,7 @@ describe("admin board member uploads", () => {
       boardMemberIdsToCleanup.push(boardMember.id);
 
       cy.visitAndCheck(`/admin/board-members/${boardMember.id}/edit`);
-      cy.findByLabelText(/photo/i).selectFile(
-        uploadFileInput(ZOD_LIMIT_BYTES + 1, { fileName: "zod-too-large.jpg" }),
-        { force: true },
-      );
+      uploadBoardMemberPhoto(zodOversizedFileInput());
       cy.findByRole("button", { name: /update /i }).click();
 
       cy.findByText(FILE_TOO_LARGE_ERROR).should("be.visible");
@@ -174,10 +173,7 @@ describe("admin board member uploads", () => {
           position: boardMember.position,
         },
         fileFieldName: "image",
-        file: {
-          size: UPLOAD_HANDLER_LIMIT_BYTES + 1,
-          name: "handler-too-large.jpg",
-        },
+        file: handlerOversizedFile(),
       }).then((response) => {
         expect(response.status).to.not.equal(500);
         expect(response.body).to.include(FILE_TOO_LARGE_ERROR);

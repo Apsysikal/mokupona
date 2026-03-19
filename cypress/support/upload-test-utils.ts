@@ -77,6 +77,17 @@ export function uploadFileInput(
   };
 }
 
+export function zodOversizedFileInput() {
+  return uploadFileInput(ZOD_LIMIT_BYTES + 1, { fileName: "zod-too-large.jpg" });
+}
+
+export function handlerOversizedFile() {
+  return {
+    size: UPLOAD_HANDLER_LIMIT_BYTES + 1,
+    name: "handler-too-large.jpg",
+  };
+}
+
 export function runUploadDbCommand<T>(
   action: UploadDbAction,
   payload?: unknown,
