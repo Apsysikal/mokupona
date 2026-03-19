@@ -1,12 +1,5 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import type { FileUpload } from "@remix-run/form-data-parser";
-import {
-  FormDataParseError,
-  MaxFilesExceededError,
-  MaxFileSizeExceededError,
-  parseFormData,
-} from "@remix-run/form-data-parser";
 import {
   Form,
   Link,
@@ -23,10 +16,7 @@ import type { Route } from "./+types/admin.board-members.$userId.edit";
 import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { prisma } from "~/db.server";
-import {
-  fileStorage,
-  getStorageKey,
-} from "~/utils/dinner-image-storage.server";
+import { parseImageFormData } from "~/utils/image-upload.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
 const MemberSchema = z.object({
@@ -76,47 +66,13 @@ export async function action({ request, params }: Route.ActionArgs) {
   const { userId } = params;
   invariant(typeof userId === "string", "Parameter userId is missing");
 
-  const uploadHandler = async (fileUpload: FileUpload) => {
-    if (fileUpload.fieldName === "image") {
-      let storageKey = getStorageKey("temporary-key");
-      await fileStorage.set(storageKey, fileUpload);
-      return fileUpload;
-    }
-  };
+  const uploadResult = await parseImageFormData(request, "image");
 
-  let formData: FormData;
-
-  try {
-    formData = await parseFormData(
-      request,
-      { maxFileSize: 1024 * 1024 * 4, maxFiles: 1 },
-      uploadHandler,
-    );
-  } catch (error) {
-    if (
-      error instanceof MaxFileSizeExceededError ||
-      (error instanceof FormDataParseError &&
-        "cause" in error &&
-        error.cause instanceof MaxFileSizeExceededError)
-    ) {
-      return {
-        uploadHandlerError: "File cannot be greater than 3MB",
-      };
-    } else if (
-      error instanceof MaxFilesExceededError ||
-      (error instanceof FormDataParseError &&
-        "cause" in error &&
-        error.cause instanceof MaxFilesExceededError)
-    ) {
-      return {
-        uploadHandlerError: "You can only upload one file",
-      };
-    } else {
-      throw error;
-    }
+  if (!uploadResult.success) {
+    return { uploadHandlerError: uploadResult.uploadError };
   }
 
-  const submission = parseWithZod(formData, {
+  const submission = parseWithZod(uploadResult.formData, {
     schema: MemberSchema,
   });
 
@@ -127,15 +83,17 @@ export async function action({ request, params }: Route.ActionArgs) {
   ) {
     // Remove the uploaded file from disk.
     // It will be sent again when submitting.
-    await fileStorage.remove(getStorageKey("temporary-key"));
+    await uploadResult.discardImage();
   }
 
   if (submission.status !== "success" || !submission.value) {
     return submission.reply();
   }
 
+  const { name, position, image } = submission.value;
+
   await prisma.$transaction(async ($prisma) => {
-    if (submission.value.image) {
+    if (image) {
       await $prisma.image
         .deleteMany({ where: { boardMemberId: userId } })
         .catch(() => {});
@@ -145,19 +103,22 @@ export async function action({ request, params }: Route.ActionArgs) {
         id: userId,
       },
       data: {
-        name: submission.value.name,
-        position: submission.value.position,
-        ...(submission.value.image && {
+        name,
+        position,
+        ...(image && {
           image: {
             create: {
-              contentType: submission.value.image.type,
-              blob: Buffer.from(await submission.value.image.arrayBuffer()),
+              contentType: image.type,
+              blob: Buffer.from(await image.arrayBuffer()),
             },
           },
         }),
       },
     });
   });
+
+  // Remove the staged file from disk now that its bytes have been read.
+  await uploadResult.discardImage();
 
   return redirect("/admin/board-members/new");
 }

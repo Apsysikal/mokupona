@@ -1,12 +1,5 @@
 import { useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import type { FileUpload } from "@remix-run/form-data-parser";
-import {
-  FormDataParseError,
-  MaxFilesExceededError,
-  MaxFileSizeExceededError,
-  parseFormData,
-} from "@remix-run/form-data-parser";
 import { useEffect, useRef, useState } from "react";
 import { redirect, useActionData, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
@@ -14,21 +7,19 @@ import invariant from "tiny-invariant";
 import type { Route } from "./+types/admin.dinners.$dinnerId_.edit";
 
 import { AdminDinnerForm } from "~/components/admin-dinner-form";
-import { prisma } from "~/db.server";
 import { logger } from "~/logger.server";
 import { getAddresses } from "~/models/address.server";
 import { getEventById, updateEvent } from "~/models/event.server";
 import { getClientHints } from "~/utils/client-hints.server";
 import {
-  fileStorage,
-  getStorageKey,
-} from "~/utils/dinner-image-storage.server";
+  toDisplayEventDate,
+  toUtcEventDate,
+} from "~/utils/event-timezone.server";
 import { EventSchema } from "~/utils/event-validation";
-import { offsetDate } from "~/utils/misc";
+import { parseImageFormData } from "~/utils/image-upload.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
 const VALID_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const EVENT_TIMEZONE = "Europe/Zurich";
 
 export function meta({ data }: Route.MetaArgs) {
   if (!data) return [{ title: "Admin - Dinner" }];
@@ -41,7 +32,7 @@ export function meta({ data }: Route.MetaArgs) {
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
-  const { userTimezone, userTimezoneOffset } = getClientHints(request);
+  const clientHints = getClientHints(request);
 
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
@@ -51,29 +42,15 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   if (!event) throw new Response("Not found", { status: 404 });
 
-  logger.info(`Client zone offset: ${userTimezoneOffset}`);
-  logger.info(`Client zone: ${userTimezone}`);
-
-  const eventDate = Date.parse(
-    event.date.toLocaleString(undefined, { timeZone: EVENT_TIMEZONE }),
-  );
-
-  const userDate = Date.parse(
-    event.date.toLocaleString(undefined, { timeZone: userTimezone }),
-  );
-
-  const localeDifference = (eventDate - userDate) / (60 * 1000);
-
-  logger.info(`Difference in locales: ${localeDifference}`);
+  logger.info(`Client zone offset: ${clientHints.userTimezoneOffset}`);
+  logger.info(`Client zone: ${clientHints.userTimezone}`);
 
   return {
     validImageTypes: VALID_IMAGE_TYPES,
     addresses,
     dinner: {
       ...event,
-      date: offsetDate(event.date, localeDifference + userTimezoneOffset)
-        .toISOString()
-        .substring(0, 16),
+      date: toDisplayEventDate(event.date, clientHints),
     },
   };
 }
@@ -81,52 +58,18 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 export async function action({ request, params }: Route.ActionArgs) {
   const schema = EventSchema.partial({ cover: true });
   const user = await requireUserWithRole(request, ["moderator", "admin"]);
-  const { userTimezone, userTimezoneOffset } = getClientHints(request);
+  const clientHints = getClientHints(request);
 
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
 
-  const uploadHandler = async (fileUpload: FileUpload) => {
-    if (fileUpload.fieldName === "cover") {
-      let storageKey = getStorageKey("temporary-key");
-      await fileStorage.set(storageKey, fileUpload);
-      return fileUpload;
-    }
-  };
+  const uploadResult = await parseImageFormData(request, "cover");
 
-  let formData: FormData;
-
-  try {
-    formData = await parseFormData(
-      request,
-      { maxFileSize: 1024 * 1024 * 4, maxFiles: 1 },
-      uploadHandler,
-    );
-  } catch (error) {
-    if (
-      error instanceof MaxFileSizeExceededError ||
-      (error instanceof FormDataParseError &&
-        "cause" in error &&
-        error.cause instanceof MaxFileSizeExceededError)
-    ) {
-      return {
-        uploadHandlerError: "File cannot be greater than 3MB",
-      };
-    } else if (
-      error instanceof MaxFilesExceededError ||
-      (error instanceof FormDataParseError &&
-        "cause" in error &&
-        error.cause instanceof MaxFilesExceededError)
-    ) {
-      return {
-        uploadHandlerError: "You can only upload one file",
-      };
-    } else {
-      throw error;
-    }
+  if (!uploadResult.success) {
+    return { uploadHandlerError: uploadResult.uploadError };
   }
 
-  const submission = parseWithZod(formData, {
+  const submission = parseWithZod(uploadResult.formData, {
     schema,
   });
 
@@ -137,7 +80,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   ) {
     // Remove the uploaded file from disk.
     // It will be sent again when submitting.
-    await fileStorage.remove(getStorageKey("temporary-key"));
+    await uploadResult.discardImage();
   }
 
   if (submission.status !== "success" || !submission.value) {
@@ -157,48 +100,22 @@ export async function action({ request, params }: Route.ActionArgs) {
     addressId,
   } = submission.value;
 
-  let eventImage;
+  logger.info(`Client zone offset: ${clientHints.userTimezoneOffset}`);
+  logger.info(`Client zone: ${clientHints.userTimezone}`);
 
-  if (cover) {
-    eventImage = await prisma.image.create({
-      data: {
-        contentType: cover.type,
-        blob: Buffer.from(await cover.arrayBuffer()),
-      },
-    });
-
-    // Remove the file from disk.
-    // It is in the database now.
-    await fileStorage.remove(getStorageKey("temporary-key"));
-  }
-
-  logger.info(`Client zone offset: ${userTimezoneOffset}`);
-  logger.info(`Client zone: ${userTimezone}`);
-
-  const eventDate = Date.parse(
-    date.toLocaleString(undefined, { timeZone: EVENT_TIMEZONE }),
-  );
-
-  const userDate = Date.parse(
-    date.toLocaleString(undefined, { timeZone: userTimezone }),
-  );
-
-  const localeDifference = (eventDate - userDate) / (60 * 1000);
-
-  logger.info(`Difference in locales: ${localeDifference}`);
+  const imageId = cover ? await uploadResult.persistImage(cover) : undefined;
 
   const event = await updateEvent(dinnerId, {
     title,
     description,
     menuDescription,
     donationDescription,
-    // Subtract user time offset to make the date utc
-    date: offsetDate(date, -(localeDifference + userTimezoneOffset)),
+    date: toUtcEventDate(date, clientHints),
     slots,
     price,
     discounts,
     addressId,
-    ...(eventImage && { imageId: eventImage.id }),
+    ...(imageId && { imageId }),
     createdById: user.id,
   });
 
