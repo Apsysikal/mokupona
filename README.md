@@ -172,3 +172,90 @@ This project uses ESLint for linting. That is configured in `.eslintrc.js`.
 ### Formatting
 
 We use [Prettier](https://prettier.io/) for auto-formatting in this project. It's recommended to install an editor plugin (like the [VSCode Prettier plugin](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)) to get auto-formatting on save. There's also a `npm run format` script you can run to format all files in the project.
+
+## Architecture refactor review workflow
+
+When doing architecture-focused refactors, use this sequence to find and design deeper modules.
+
+### Phase 1: Explore the codebase organically
+
+Inspect the codebase naturally and follow friction signals such as:
+
+- understanding one concept requires jumping across many files
+- interfaces are almost as complicated as their implementations
+- pure functions were extracted mainly for unit testing while bugs live in orchestration and calling patterns
+- tightly-coupled modules create fragile seams
+- important behavior is difficult to test without mocking internals
+- concepts are split across modules that obviously belong together
+
+The friction is the signal. Do not force findings that are not there.
+
+### Phase 2: Present refactor candidates
+
+Provide a numbered list of the best architectural deepening opportunities. For each candidate, include:
+
+- **Cluster:** files/modules/concepts involved
+- **Why they are coupled:** shared types, call patterns, repeated orchestration, co-ownership of a concept, or implicit invariants spread across modules
+- **Dependency category:** pure in-process logic, stateful internal dependency, external boundary/IO dependency, or cross-boundary integration/adapter dependency
+- **Test impact:** which seam-heavy tests could be replaced by stronger boundary tests
+
+Do not propose interfaces in this phase.
+
+End this phase with: “Which of these would you like to explore?”
+
+### Phase 3: Frame the selected problem space
+
+Before proposing a solution, explain:
+
+- constraints a new interface must satisfy
+- dependencies it must rely on
+- behavior that must remain easy for callers
+- complexity that should be hidden internally
+- a rough illustrative code sketch to make constraints concrete (not the final proposal)
+
+### Phase 4: Design multiple radically different interfaces
+
+Produce at least 3 substantially different designs. Each design must include:
+
+- interface signature (names, methods, parameters, relevant types)
+- caller usage example
+- hidden complexity
+- dependency strategy (injected, encapsulated, ports/adapters, policies/services)
+- trade-offs (weaknesses, costs, risks)
+
+Designs should differ in philosophy:
+
+- **Design A:** minimal interface surface (ideally 1-3 entry points)
+- **Design B:** maximum flexibility and extension points
+- **Design C:** optimize for the most common caller/default path
+- **Design D:** if relevant, use ports-and-adapters for external dependencies
+
+After presenting designs, compare them, recommend one strongly, and only propose a hybrid if it is clearly better.
+
+### Phase 5: Produce a refactor RFC as a GitHub issue draft
+
+Write a GitHub issue/RFC draft with:
+
+- Title
+- Problem
+- Why now
+- Current coupling
+- Proposed module
+- Interface sketch
+- Hidden complexity
+- Dependency strategy
+- Testing strategy
+- Migration plan
+- Risks/trade-offs
+- Acceptance criteria
+
+If issue creation tooling is available, create the issue; otherwise output the complete markdown draft.
+
+### Quality bar
+
+- Prefer deeper modules over more abstraction layers
+- Prefer fewer, stronger boundaries over many tiny helpers
+- Prefer testing behavior at the module boundary over testing implementation fragments
+- Avoid speculative abstractions
+- Do not recommend refactors unless coupling is real
+- Ground recommendations in actual code structure and calling patterns
