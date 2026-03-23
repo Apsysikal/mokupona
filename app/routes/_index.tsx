@@ -1,7 +1,13 @@
 import type { MetaFunction } from "react-router";
-import { Link } from "react-router";
 
-import { Button } from "~/components/ui/button";
+import { HeroBlockView } from "~/features/cms/blocks/hero";
+import type { HeroBlockType } from "~/features/cms/blocks/hero/model";
+import type { ImageBlockType } from "~/features/cms/blocks/image/model";
+import { ImageBlockView } from "~/features/cms/blocks/image/view";
+import {
+  TextSectionBlockView,
+  type TextSectionBlockType,
+} from "~/features/cms/blocks/text-section";
 import type { RootLoaderData } from "~/root";
 
 export const meta: MetaFunction<null, { root: RootLoaderData }> = ({
@@ -32,127 +38,76 @@ export const meta: MetaFunction<null, { root: RootLoaderData }> = ({
   ];
 };
 
-const heroSectionData: HeroBlock = {
+const heroSectionData: HeroBlockType = {
   type: "hero",
-  title: "moku pona",
-  body: "A dinner society in Zurich, bringing people together through shared meals, stories, and the joy of discovery.",
-  actions: [{ href: "/dinners", label: "join a dinner" }],
-  media: {
-    src: "/landing-page-default.jpg",
-    srcSet:
-      "/landing-page-sm.webp 432w, /landing-page-md.webp 648w, /landing-page-lg.webp 864w, /landing-page-original.webp 1080w",
+  version: 1,
+  data: {
+    eyebrow: "our next event is on may 9th",
+    headline: "moku pona",
+    description:
+      "A dinner society in Zurich, bringing people together through shared meals, stories, and the joy of discovery.",
+    actions: [{ href: "/dinners", label: "join a dinner" }],
+    image: {
+      src: "/hero-image.jpg",
+    },
   },
 };
 
-const visionSectionData: TextSectionBlock = {
-  heading: "our vision",
-  body: "moku pona began as a passion project by a group of friends who love cooking and wanted a creative way to explore our culinary interests. For us, food is a way to express creativity, share experiences, and connect with others. Through our dinner club, we aim to surprise our guests with unique flavors and ingredients, introducing them to diverse cuisines and the stories behind them. At its heart, moku pona is about celebrating the art of food and inspiring curiosity about global food cultures.",
+const visionSectionData: TextSectionBlockType = {
+  type: "text-section",
+  version: 1,
+  data: {
+    headline: "our vision",
+    body: "moku pona began as a passion project by a group of friends who love cooking and wanted a creative way to explore our culinary interests. For us, food is a way to express creativity, share experiences, and connect with others. Through our dinner club, we aim to surprise our guests with unique flavors and ingredients, introducing them to diverse cuisines and the stories behind them. At its heart, moku pona is about celebrating the art of food and inspiring curiosity about global food cultures.",
+    variant: "plain",
+  },
 };
 
-const imageSectionData: ImageSectionBlock = {
-  src: "/accent-image.png",
-  srcSet:
-    "/accent-image-sm.webp 432w, /accent-image-md.webp 648w, /accent-image-lg.webp 864w, /accent-image-original.webp 1080w",
-  alt: "",
+const imageSectionData: ImageBlockType = {
+  type: "image",
+  version: 1,
+  data: {
+    image: {
+      src: "/accent-image.png",
+      alt: "",
+    },
+    variant: "full-width",
+  },
 };
 
-const differenceSectionData: TextSectionBlock = {
-  heading: "how's this different?",
-  body: "At moku pona, we believe that food is a powerful way to bring people together. Our dinner events go beyond the typical restaurant experience, creating a warm and welcoming community space where friends and strangers can forge new connections. We aim to make every gathering an opportunity not just to enjoy a wonderful meal, but also to meet new people, share stories, and build meaningful relationships. It's a place to connect, learn, and experience the magic of a shared table in a cozy, intimate setting.",
+const differenceSectionData: TextSectionBlockType = {
+  type: "text-section",
+  version: 1,
+  data: {
+    headline: "how's this different?",
+    body: "At moku pona, we believe that food is a powerful way to bring people together. Our dinner events go beyond the typical restaurant experience, creating a warm and welcoming community space where friends and strangers can forge new connections. We aim to make every gathering an opportunity not just to enjoy a wonderful meal, but also to meet new people, share stories, and build meaningful relationships. It's a place to connect, learn, and experience the magic of a shared table in a cozy, intimate setting.",
+    variant: "plain",
+  },
 };
 
-const aboutSectionData: SlantedTextSectionBlock = {
-  heading: "who we are",
-  body: "What started as a shared love of cooking has grown into a community of around 15 members who come together to create, host, and share meals. We see food as a way to bring people together: to exchange ideas, build friendships, and create meaningful experiences around the table. As an association, moku pona is about community, creativity, and hospitality - not just dining, but making people feel welcome.",
+const aboutSectionData: TextSectionBlockType = {
+  type: "text-section",
+  version: 1,
+  data: {
+    headline: "who we are",
+    body: "What started as a shared love of cooking has grown into a community of around 15 members who come together to create, host, and share meals. We see food as a way to bring people together: to exchange ideas, build friendships, and create meaningful experiences around the table. As an association, moku pona is about community, creativity, and hospitality - not just dining, but making people feel welcome.",
+    variant: "slanted",
+  },
 };
 
 export default function Index() {
   return (
     <main>
-      <Hero data={heroSectionData} />
+      <HeroBlockView blockData={heroSectionData} />
 
-      <div className="h-20" />
+      <TextSectionBlockView blockData={visionSectionData} />
 
-      <TextSection data={visionSectionData} />
+      <ImageBlockView blockData={imageSectionData} />
 
-      <ImageSection data={imageSectionData} />
+      <TextSectionBlockView blockData={differenceSectionData} />
 
-      <TextSection data={differenceSectionData} />
-
-      <SlantedTextSection data={aboutSectionData} />
+      <TextSectionBlockView blockData={aboutSectionData} />
     </main>
-  );
-}
-
-type HeroBlock = {
-  type: "hero";
-  title: string;
-  body: string;
-  actions: { href: string; label: string }[];
-  media: {
-    src: string;
-    srcSet?: string;
-    alt?: string;
-  };
-  align?: "left" | "right";
-  theme?: "light" | "dark";
-};
-
-function Hero({ data }: { data: HeroBlock }) {
-  return (
-    <section className="relative isolate overflow-hidden">
-      <div
-        aria-hidden="true"
-        className="absolute top-20 left-[calc(20%-20rem)] -z-10 transform-gpu blur-3xl not-lg:left-[calc(20%-30rem)]"
-      >
-        <div
-          style={{
-            clipPath:
-              "polygon(73.6% 51.7%, 91.7% 11.8%, 100% 46.4%, 97.4% 82.2%, 92.5% 84.9%, 75.7% 64%, 55.3% 47.5%, 46.5% 49.4%, 45% 62.9%, 50.3% 87.2%, 21.3% 64.1%, 0.1% 100%, 5.4% 51.1%, 21.4% 63.9%, 58.9% 0.2%, 73.6% 51.7%)",
-          }}
-          className="aspect-2/1 w-200 bg-linear-to-r from-orange-400 to-red-800 opacity-40"
-        />
-      </div>
-
-      <div className="mx-auto mt-20 max-w-4xl md:flex">
-        <div className="flex shrink-0 flex-col justify-center gap-10 px-4 md:max-w-md lg:max-w-lg">
-          <h1 className="text-foreground text-5xl">{data.title}</h1>
-          <p className="text-foreground text-2xl font-thin text-balance">
-            {data.body}
-          </p>
-
-          {data.actions.length > 0 ? (
-            <div className="flex gap-4">
-              {data.actions.map((action, index) => (
-                <Button
-                  key={index}
-                  variant={index > 0 ? "link" : "default"}
-                  asChild
-                >
-                  <Link to={action.href} className="lowercase">
-                    {action.label}
-                  </Link>
-                </Button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="mx-auto flex not-lg:mt-10">
-          <div className="max-w-3xl flex-none not-md:pl-4 md:max-w-3xl lg:max-w-4xl 2xl:max-w-none">
-            <picture>
-              <img
-                srcSet={data.media.srcSet}
-                src={data.media.src}
-                className="w-304 rounded-md object-center"
-                fetchPriority="high"
-                alt={data.media.alt}
-              />
-            </picture>
-          </div>
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -213,80 +168,6 @@ function SplitSectionMedia() {
       {/* Right block */}
       <div className="col-span-3 border border-solid border-green-500">
         {data.mediaPosition === "right" ? media : content}
-      </div>
-    </div>
-  );
-}
-
-type TextSectionBlock = {
-  heading: string;
-  body: string;
-  actions?: [];
-  theme?: "light" | "dark";
-};
-
-function TextSection({ data }: { data: TextSectionBlock }) {
-  return (
-    <section className="mx-auto flex max-w-4xl flex-col gap-10 px-4">
-      <h2 className="text-4xl">{data.heading}</h2>
-      <p className="text-xl leading-relaxed font-light">{data.body}</p>
-    </section>
-  );
-}
-
-type ImageSectionBlock = {
-  src: string;
-  srcSet?: string;
-  alt?: string;
-  theme?: "light" | "dark";
-};
-
-function ImageSection({ data }: { data: ImageSectionBlock }) {
-  return (
-    <picture>
-      <img
-        srcSet={data.srcSet}
-        src={data.src}
-        className="my-20 h-96 w-full justify-end object-cover"
-        alt={data.alt}
-      />
-    </picture>
-  );
-}
-
-type SlantedTextSectionBlock = {
-  heading: string;
-  body: string;
-  actions?: { href: string; label: string }[];
-  theme?: "light" | "dark";
-};
-
-function SlantedTextSection({ data }: { data: SlantedTextSectionBlock }) {
-  return (
-    <div className="text-background relative my-20 w-full py-10">
-      <div className="after:bg-accent mx-auto flex max-w-4xl flex-col gap-2 px-4 after:absolute after:inset-0 after:-z-10 after:skew-y-3">
-        <section className="my-5 grid max-w-4xl grid-cols-5 gap-5">
-          <h2 className="col-span-full text-4xl">{data.heading}</h2>
-
-          <p className="col-span-full my-auto text-xl leading-relaxed font-thin">
-            {data.body}
-          </p>
-
-          {data.actions?.length ? (
-            <div className="col-span-full flex items-center gap-4">
-              {data.actions.map((action, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  className="bg-accent border-background hover:bg-background/5 text-background"
-                  asChild
-                >
-                  <Link to={action.href}>{action.label}</Link>
-                </Button>
-              ))}
-            </div>
-          ) : null}
-        </section>
       </div>
     </div>
   );

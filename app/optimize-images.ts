@@ -8,22 +8,22 @@ const landingPageImagePath = path.join(
   __dirname,
   "..",
   "public",
-  "landing-page.jpg",
+  "hero-image-original.jpg",
 );
 
 const accentImagePath = path.join(
   __dirname,
   "..",
   "public",
-  "accent-image.png",
+  "accent-image-original.png",
 );
 
 async function optimize() {
   const variants = [
-    { size: "original", width: 1080 },
-    { size: "lg", width: 864 },
-    { size: "md", width: 648 },
-    { size: "sm", width: 432 },
+    { size: "1080", width: 1080 },
+    { size: "864", width: 864 },
+    { size: "648", width: 648 },
+    { size: "432", width: 432 },
   ];
 
   variants.forEach(async ({ size, width }) => {
@@ -31,7 +31,7 @@ async function optimize() {
       __dirname,
       "..",
       "public",
-      `landing-page-${size}.webp`,
+      `hero-image-${size}.webp`,
     );
 
     await sharp(landingPageImagePath)
@@ -41,9 +41,9 @@ async function optimize() {
   });
 
   await sharp(landingPageImagePath)
-    .resize(432)
+    .resize({ width: 432 })
     .jpeg()
-    .toFile(path.join(__dirname, "..", "public", `landing-page-default.jpg`));
+    .toFile(path.join(__dirname, "..", "public", "hero-image.jpg"));
 
   variants.forEach(async ({ size, width }) => {
     const optimizedPath = path.join(
@@ -53,8 +53,16 @@ async function optimize() {
       `accent-image-${size}.webp`,
     );
 
-    await sharp(accentImagePath).resize(width).webp().toFile(optimizedPath);
+    await sharp(accentImagePath)
+      .resize({ width })
+      .webp({ quality: 60 })
+      .toFile(optimizedPath);
   });
+
+  await sharp(accentImagePath)
+    .resize({ width: 432 })
+    .jpeg()
+    .toFile(path.join(__dirname, "..", "public", "accent-image.jpg"));
 }
 
 optimize().catch((e) => {
