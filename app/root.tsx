@@ -107,7 +107,7 @@ function Document() {
 
           <div className="flex items-center gap-10 max-md:gap-5">
             <Link to="/dinners" className="hover:underline max-md:hidden">
-              upcoming dinners
+              dinners
             </Link>
 
             <a
@@ -175,7 +175,7 @@ function GeneralDropdown() {
         <DropdownMenuContent sideOffset={8} align="start">
           <DropdownMenuItem>
             <Link to="/dinners" className="hover:underline">
-              upcoming dinners
+              dinners
             </Link>
           </DropdownMenuItem>
 
