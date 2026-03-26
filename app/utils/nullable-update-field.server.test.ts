@@ -8,7 +8,6 @@ describe("nullableStringUpdateValue", () => {
     const updateValue = nullableStringUpdateValue({
       formData,
       fieldName: "menuDescription",
-      parsedValue: undefined,
     });
 
     expect(updateValue).toBeUndefined();
@@ -21,7 +20,6 @@ describe("nullableStringUpdateValue", () => {
     const updateValue = nullableStringUpdateValue({
       formData,
       fieldName: "menuDescription",
-      parsedValue: "new menu",
     });
 
     expect(updateValue).toBe("new menu");
@@ -34,7 +32,6 @@ describe("nullableStringUpdateValue", () => {
     const updateValue = nullableStringUpdateValue({
       formData,
       fieldName: "menuDescription",
-      parsedValue: "",
     });
 
     expect(updateValue).toBeNull();
@@ -47,7 +44,6 @@ describe("nullableStringUpdateValue", () => {
     const updateValue = nullableStringUpdateValue({
       formData,
       fieldName: "donationDescription",
-      parsedValue: "",
     });
 
     expect(updateValue).toBeNull();
@@ -60,7 +56,6 @@ describe("nullableStringUpdateValue", () => {
     const updateValue = nullableStringUpdateValue({
       formData,
       fieldName: "donationDescription",
-      parsedValue: "new donation",
     });
 
     expect(updateValue).toBe("new donation");
@@ -73,7 +68,6 @@ describe("nullableStringUpdateValue", () => {
     const updateValue = nullableStringUpdateValue({
       formData,
       fieldName: "menuDescription",
-      parsedValue: "should-not-be-used",
     });
 
     expect(updateValue).toBeUndefined();

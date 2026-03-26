@@ -1,11 +1,9 @@
 export function nullableStringUpdateValue({
   formData,
   fieldName,
-  parsedValue,
 }: {
   formData: FormData;
   fieldName: string;
-  parsedValue: string | undefined;
 }) {
   if (!formData.has(fieldName)) {
     return undefined;
@@ -21,5 +19,5 @@ export function nullableStringUpdateValue({
     return null;
   }
 
-  return parsedValue;
+  return rawValue.trim();
 }

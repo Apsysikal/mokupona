@@ -91,8 +91,6 @@ export async function action({ request, params }: Route.ActionArgs) {
   const {
     title,
     description,
-    menuDescription,
-    donationDescription,
     date,
     slots,
     price,
@@ -108,12 +106,10 @@ export async function action({ request, params }: Route.ActionArgs) {
   const menuDescriptionUpdateValue = nullableStringUpdateValue({
     formData: uploadResult.formData,
     fieldName: "menuDescription",
-    parsedValue: menuDescription,
   });
   const donationDescriptionUpdateValue = nullableStringUpdateValue({
     formData: uploadResult.formData,
     fieldName: "donationDescription",
-    parsedValue: donationDescription,
   });
 
   const event = await updateEvent(dinnerId, {
