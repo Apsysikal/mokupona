@@ -49,23 +49,12 @@ function getTimezoneOffsetMinutes(date: Date, timeZone: string): number {
 }
 
 /**
- * Return minute-offset between EVENT_TIMEZONE and `userTimezone` for `date`.
- */
-function getTimezoneDifferenceMinutes(date: Date, userTimezone: string): number {
-  const eventOffset = getTimezoneOffsetMinutes(date, EVENT_TIMEZONE);
-  const userOffset = getTimezoneOffsetMinutes(date, userTimezone);
-
-  return eventOffset - userOffset;
-}
-
-/**
  * Convert a user-supplied date (expressed in the user's browser timezone) to
  * UTC so it can be stored correctly in the database.
  */
 export function toUtcEventDate(date: Date, clientHints: ClientHints): Date {
-  const diff = getTimezoneDifferenceMinutes(date, clientHints.userTimezone);
-  const userOffset = getTimezoneOffsetMinutes(date, clientHints.userTimezone);
-  return offsetDate(date, -(diff + userOffset));
+  const eventOffset = getTimezoneOffsetMinutes(date, EVENT_TIMEZONE);
+  return offsetDate(date, -eventOffset);
 }
 
 /**
@@ -74,9 +63,8 @@ export function toUtcEventDate(date: Date, clientHints: ClientHints): Date {
  * can display in the user's timezone.
  */
 export function toDisplayEventDate(date: Date, clientHints: ClientHints): string {
-  const diff = getTimezoneDifferenceMinutes(date, clientHints.userTimezone);
-  const userOffset = getTimezoneOffsetMinutes(date, clientHints.userTimezone);
-  return offsetDate(date, diff + userOffset)
+  const eventOffset = getTimezoneOffsetMinutes(date, EVENT_TIMEZONE);
+  return offsetDate(date, eventOffset)
     .toISOString()
     .substring(0, 16);
 }
