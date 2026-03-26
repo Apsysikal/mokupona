@@ -82,7 +82,7 @@ export async function action({ request }: Route.ActionArgs) {
     description,
     menuDescription,
     donationDescription,
-    date: toUtcEventDate(date, clientHints),
+    date: toUtcEventDate(date),
     slots,
     price,
     discounts,

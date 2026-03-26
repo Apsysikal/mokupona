@@ -32,7 +32,6 @@ export function meta({ data }: Route.MetaArgs) {
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
-  const clientHints = getClientHints(request);
 
   const { dinnerId } = params;
   invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
@@ -42,15 +41,12 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   if (!event) throw new Response("Not found", { status: 404 });
 
-  logger.info(`Client zone offset: ${clientHints.userTimezoneOffset}`);
-  logger.info(`Client zone: ${clientHints.userTimezone}`);
-
   return {
     validImageTypes: VALID_IMAGE_TYPES,
     addresses,
     dinner: {
       ...event,
-      date: toDisplayEventDate(event.date, clientHints),
+      date: toDisplayEventDate(event.date),
     },
   };
 }
@@ -110,7 +106,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     description,
     menuDescription,
     donationDescription,
-    date: toUtcEventDate(date, clientHints),
+    date: toUtcEventDate(date),
     slots,
     price,
     discounts,
