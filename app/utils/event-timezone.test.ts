@@ -38,4 +38,50 @@ describe("toUtcEventDate / toDisplayEventDate round-trip", () => {
     const result = toUtcEventDate(new Date("2024-06-15T19:00:00.000Z"), clientHints);
     expect(result).toBeInstanceOf(Date);
   });
+
+  test("Europe/Zurich winter (CET): 18:00 local is stored as 17:00Z", () => {
+    const clientHints = {
+      userTimezone: "Europe/Zurich",
+      // Simulate stale cookie offset from summer time (+120)
+      userTimezoneOffset: 120,
+    };
+    const datetimeLocalAsDate = new Date("2024-12-10T18:00:00.000Z");
+    const utc = toUtcEventDate(datetimeLocalAsDate, clientHints);
+
+    expect(utc.toISOString()).toBe("2024-12-10T17:00:00.000Z");
+  });
+
+  test("Europe/Zurich summer (CEST): 18:00 local is stored as 16:00Z", () => {
+    const clientHints = {
+      userTimezone: "Europe/Zurich",
+      // Simulate stale cookie offset from winter time (+60)
+      userTimezoneOffset: 60,
+    };
+    const datetimeLocalAsDate = new Date("2024-06-10T18:00:00.000Z");
+    const utc = toUtcEventDate(datetimeLocalAsDate, clientHints);
+
+    expect(utc.toISOString()).toBe("2024-06-10T16:00:00.000Z");
+  });
+
+  test("Europe/Zurich winter (CET): 17:00Z displays as 18:00", () => {
+    const clientHints = {
+      userTimezone: "Europe/Zurich",
+      // Simulate stale cookie offset from summer time (+120)
+      userTimezoneOffset: 120,
+    };
+    const storedUtcDate = new Date("2024-12-10T17:00:00.000Z");
+
+    expect(toDisplayEventDate(storedUtcDate, clientHints)).toBe("2024-12-10T18:00");
+  });
+
+  test("Europe/Zurich summer (CEST): 16:00Z displays as 18:00", () => {
+    const clientHints = {
+      userTimezone: "Europe/Zurich",
+      // Simulate stale cookie offset from winter time (+60)
+      userTimezoneOffset: 60,
+    };
+    const storedUtcDate = new Date("2024-06-10T16:00:00.000Z");
+
+    expect(toDisplayEventDate(storedUtcDate, clientHints)).toBe("2024-06-10T18:00");
+  });
 });
