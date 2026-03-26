@@ -52,4 +52,30 @@ describe("nullableStringUpdateValue", () => {
 
     expect(updateValue).toBeNull();
   });
+
+  it("updates existing donation value if changed", () => {
+    const formData = new FormData();
+    formData.set("donationDescription", "new donation");
+
+    const updateValue = nullableStringUpdateValue({
+      formData,
+      fieldName: "donationDescription",
+      parsedValue: "new donation",
+    });
+
+    expect(updateValue).toBe("new donation");
+  });
+
+  it("returns undefined for non-string FormData values", () => {
+    const formData = new FormData();
+    formData.set("menuDescription", new File(["x"], "x.txt"));
+
+    const updateValue = nullableStringUpdateValue({
+      formData,
+      fieldName: "menuDescription",
+      parsedValue: "should-not-be-used",
+    });
+
+    expect(updateValue).toBeUndefined();
+  });
 });

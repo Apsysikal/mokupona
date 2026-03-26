@@ -13,7 +13,11 @@ export function nullableStringUpdateValue({
 
   const rawValue = formData.get(fieldName);
 
-  if (typeof rawValue === "string" && rawValue.trim() === "") {
+  if (typeof rawValue !== "string") {
+    return undefined;
+  }
+
+  if (rawValue.trim() === "") {
     return null;
   }
 
