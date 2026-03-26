@@ -13,6 +13,7 @@ export type ClientHints = {
  * Positive values are east of UTC (e.g. Europe/Zurich winter => 60).
  */
 function getTimezoneOffsetMinutes(date: Date, timeZone: string): number {
+  // Use a fixed Latin-digit locale so Number(...) parsing is deterministic.
   const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone,
     hour12: false,
@@ -43,6 +44,7 @@ function getTimezoneOffsetMinutes(date: Date, timeZone: string): number {
   const minute = getPart("minute");
   const second = getPart("second");
 
+  // Date.UTC expects a zero-based month (January = 0), so subtract 1.
   const tzAsUtc = Date.UTC(year, month - 1, day, hour, minute, second);
 
   return (tzAsUtc - date.getTime()) / (60 * 1000);
