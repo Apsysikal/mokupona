@@ -17,6 +17,7 @@ import {
 } from "~/utils/event-timezone.server";
 import { EventSchema } from "~/utils/event-validation";
 import { parseImageFormData } from "~/utils/image-upload.server";
+import { nullableStringUpdateValue } from "~/utils/nullable-update-field.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
 const VALID_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -90,8 +91,6 @@ export async function action({ request, params }: Route.ActionArgs) {
   const {
     title,
     description,
-    menuDescription,
-    donationDescription,
     date,
     slots,
     price,
@@ -104,12 +103,24 @@ export async function action({ request, params }: Route.ActionArgs) {
   logger.info(`Client zone: ${clientHints.userTimezone}`);
 
   const imageId = cover ? await uploadResult.persistImage(cover) : undefined;
+  const menuDescriptionUpdateValue = nullableStringUpdateValue({
+    formData: uploadResult.formData,
+    fieldName: "menuDescription",
+  });
+  const donationDescriptionUpdateValue = nullableStringUpdateValue({
+    formData: uploadResult.formData,
+    fieldName: "donationDescription",
+  });
 
   const event = await updateEvent(dinnerId, {
     title,
     description,
-    menuDescription,
-    donationDescription,
+    ...(menuDescriptionUpdateValue !== undefined && {
+      menuDescription: menuDescriptionUpdateValue,
+    }),
+    ...(donationDescriptionUpdateValue !== undefined && {
+      donationDescription: donationDescriptionUpdateValue,
+    }),
     date: toUtcEventDate(date, clientHints),
     slots,
     price,
