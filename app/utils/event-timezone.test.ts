@@ -25,6 +25,15 @@ describe("toUtcEventDate / toDisplayEventDate round-trip", () => {
     expect(roundTripped.toISOString()).toBe(original.toISOString());
   });
 
+  test("toUtcEventDate converts a datetime-local value to the Zurich UTC instant", () => {
+    const clientHints = { userTimezone: "UTC", userTimezoneOffset: 0 };
+    const datetimeLocalAsDate = new Date("2024-06-15T21:00");
+
+    expect(toUtcEventDate(datetimeLocalAsDate, clientHints).toISOString()).toBe(
+      "2024-06-15T19:00:00.000Z",
+    );
+  });
+
   test("toDisplayEventDate returns a datetime-local compatible string", () => {
     const clientHints = { userTimezone: "UTC", userTimezoneOffset: 0 };
     const date = new Date("2024-06-15T19:00:00.000Z");
@@ -39,25 +48,23 @@ describe("toUtcEventDate / toDisplayEventDate round-trip", () => {
     expect(result).toBeInstanceOf(Date);
   });
 
-  test("Europe/Zurich winter (CET): 18:00 local is stored as 17:00Z", () => {
+  test("Europe/Zurich winter (CET): 18:00 local converts to 17:00Z", () => {
     const clientHints = {
       userTimezone: "Europe/Zurich",
-      // Simulate stale cookie offset from summer time (+120)
-      userTimezoneOffset: 120,
+      userTimezoneOffset: 60,
     };
-    const datetimeLocalAsDate = new Date("2024-12-10T18:00:00.000Z");
+    const datetimeLocalAsDate = new Date("2024-12-10T18:00");
     const utc = toUtcEventDate(datetimeLocalAsDate, clientHints);
 
     expect(utc.toISOString()).toBe("2024-12-10T17:00:00.000Z");
   });
 
-  test("Europe/Zurich summer (CEST): 18:00 local is stored as 16:00Z", () => {
+  test("Europe/Zurich summer (CEST): 18:00 local converts to 16:00Z", () => {
     const clientHints = {
       userTimezone: "Europe/Zurich",
-      // Simulate stale cookie offset from winter time (+60)
-      userTimezoneOffset: 60,
+      userTimezoneOffset: 120,
     };
-    const datetimeLocalAsDate = new Date("2024-06-10T18:00:00.000Z");
+    const datetimeLocalAsDate = new Date("2024-06-10T18:00");
     const utc = toUtcEventDate(datetimeLocalAsDate, clientHints);
 
     expect(utc.toISOString()).toBe("2024-06-10T16:00:00.000Z");
@@ -66,8 +73,7 @@ describe("toUtcEventDate / toDisplayEventDate round-trip", () => {
   test("Europe/Zurich winter (CET): 17:00Z displays as 18:00", () => {
     const clientHints = {
       userTimezone: "Europe/Zurich",
-      // Simulate stale cookie offset from summer time (+120)
-      userTimezoneOffset: 120,
+      userTimezoneOffset: 60,
     };
     const storedUtcDate = new Date("2024-12-10T17:00:00.000Z");
 
@@ -77,11 +83,20 @@ describe("toUtcEventDate / toDisplayEventDate round-trip", () => {
   test("Europe/Zurich summer (CEST): 16:00Z displays as 18:00", () => {
     const clientHints = {
       userTimezone: "Europe/Zurich",
-      // Simulate stale cookie offset from winter time (+60)
-      userTimezoneOffset: 60,
+      userTimezoneOffset: 120,
     };
     const storedUtcDate = new Date("2024-06-10T16:00:00.000Z");
 
     expect(toDisplayEventDate(storedUtcDate, clientHints)).toBe("2024-06-10T18:00");
+  });
+
+  test("Europe/Zurich fall-back boundary: 00:30Z displays as 02:30", () => {
+    const clientHints = {
+      userTimezone: "Europe/Zurich",
+      userTimezoneOffset: 120,
+    };
+    const storedUtcDate = new Date("2024-10-27T00:30:00.000Z");
+
+    expect(toDisplayEventDate(storedUtcDate, clientHints)).toBe("2024-10-27T02:30");
   });
 });
