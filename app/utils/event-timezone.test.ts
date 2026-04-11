@@ -44,7 +44,10 @@ describe("toUtcEventDate / toDisplayEventDate round-trip", () => {
 
   test("toUtcEventDate produces a Date instance", () => {
     const clientHints = { userTimezone: "UTC", userTimezoneOffset: 0 };
-    const result = toUtcEventDate(new Date("2024-06-15T19:00:00.000Z"), clientHints);
+    const result = toUtcEventDate(
+      new Date("2024-06-15T19:00:00.000Z"),
+      clientHints,
+    );
     expect(result).toBeInstanceOf(Date);
   });
 
@@ -77,7 +80,9 @@ describe("toUtcEventDate / toDisplayEventDate round-trip", () => {
     };
     const storedUtcDate = new Date("2024-12-10T17:00:00.000Z");
 
-    expect(toDisplayEventDate(storedUtcDate, clientHints)).toBe("2024-12-10T18:00");
+    expect(toDisplayEventDate(storedUtcDate, clientHints)).toBe(
+      "2024-12-10T18:00",
+    );
   });
 
   test("Europe/Zurich summer (CEST): 16:00Z displays as 18:00", () => {
@@ -87,7 +92,9 @@ describe("toUtcEventDate / toDisplayEventDate round-trip", () => {
     };
     const storedUtcDate = new Date("2024-06-10T16:00:00.000Z");
 
-    expect(toDisplayEventDate(storedUtcDate, clientHints)).toBe("2024-06-10T18:00");
+    expect(toDisplayEventDate(storedUtcDate, clientHints)).toBe(
+      "2024-06-10T18:00",
+    );
   });
 
   test("Europe/Zurich fall-back boundary: 00:30Z displays as 02:30", () => {
@@ -97,6 +104,8 @@ describe("toUtcEventDate / toDisplayEventDate round-trip", () => {
     };
     const storedUtcDate = new Date("2024-10-27T00:30:00.000Z");
 
-    expect(toDisplayEventDate(storedUtcDate, clientHints)).toBe("2024-10-27T02:30");
+    expect(toDisplayEventDate(storedUtcDate, clientHints)).toBe(
+      "2024-10-27T02:30",
+    );
   });
 });
