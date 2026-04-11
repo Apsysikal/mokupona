@@ -1,9 +1,8 @@
-#!/bin/sh -ex
+#!/bin/sh -e
 
-# This file is how Fly starts the server (configured in fly.toml). Before starting
-# the server though, we need to run any prisma migrations that haven't yet been
-# run, which is why this file exists in the first place.
-# Learn more: https://community.fly.io/t/sqlite-not-getting-setup-properly/4386
+# Fly starts the container through this entrypoint. We intentionally run Prisma
+# migrations on boot because this app stores SQLite on the mounted /data volume,
+# and Fly release commands do not attach persistent volumes.
 
 # allocate swap space
 fallocate -l 512M /swapfile
@@ -14,4 +13,4 @@ swapon /swapfile
 echo 1 > /proc/sys/vm/overcommit_memory
 
 npx prisma migrate deploy
-npm run start
+exec npm run start
