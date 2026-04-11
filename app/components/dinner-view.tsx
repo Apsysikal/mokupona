@@ -103,7 +103,9 @@ export function DinnerView({
             // !expanded && "line-clamp-20",
           ])}
         >
-          <p>{event.description}</p>
+          <p>
+            <AutoLink text={event.description} />
+          </p>
 
           {event.menuDescription || event.donationDescription ? (
             <Accordion
@@ -116,7 +118,9 @@ export function DinnerView({
                   <AccordionTrigger className="text-primary font-bold">
                     Menu
                   </AccordionTrigger>
-                  <AccordionContent>{event.menuDescription}</AccordionContent>
+                  <AccordionContent>
+                    <AutoLink text={event.menuDescription} />
+                  </AccordionContent>
                 </AccordionItem>
               ) : null}
 
