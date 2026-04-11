@@ -112,3 +112,27 @@ jobs:
 
       - name: Run Cypress
         run: npm run test:e2e:ci
+
+  deploy-staging:
+    name: Deploy staging
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    needs:
+      - lint
+      - typecheck
+      - vitest
+      - cypress
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment_name: staging
+
+  deploy-production:
+    name: Deploy production
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs:
+      - lint
+      - typecheck
+      - vitest
+      - cypress
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment_name: production
