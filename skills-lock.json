@@ -41,6 +41,11 @@
       "sourceType": "github",
       "computedHash": "6834b87393bff8f529b3126b9f761c1c2b9706af8a784ad1061961c34bbdb4a9"
     },
+    "ubiquitous-language": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "32f8a3426cb2d2c3db05977369e70d793e342c38ea87f5447eb22108c03c8d7a"
+    },
     "write-a-prd": {
       "source": "mattpocock/skills",
       "sourceType": "github",
