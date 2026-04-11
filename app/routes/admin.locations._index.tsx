@@ -1,8 +1,9 @@
 import { Link, useFetcher, useLoaderData } from "react-router";
 
+import type { Address } from "#prisma/generated/client";
+
 import type { Route } from "./+types/admin.locations._index";
 
-import type { Address } from "#prisma/generated/client";
 import { Button } from "~/components/ui/button";
 import { getAddresses } from "~/models/address.server";
 import { requireUserWithRole } from "~/utils/session.server";

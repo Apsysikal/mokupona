@@ -1,4 +1,5 @@
 import type { Prisma } from "#prisma/generated/client";
+
 import { prisma } from "~/db.server";
 
 export async function getAddresses(filter?: Prisma.AddressWhereInput) {
