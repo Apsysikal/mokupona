@@ -4,16 +4,49 @@ const URL_DELIMITER =
   /((?:https?:\/\/)?(?:(?:[a-z0-9]?(?:[a-z0-9\-]{1,61}[a-z0-9])?\.[^\.|\s])+[a-z\.]*[a-z]+|(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3})(?::\d{1,5})*[a-z0-9.,_\/~#&=;%+?\-\\(\\)]*)/gi;
 
 /**
- * Strips unbalanced trailing closing parentheses from a URL string.
- * For example, "https://example.com)" becomes "https://example.com",
- * while "https://en.wikipedia.org/wiki/Tokyo_(Japan)" is left unchanged.
+ * Normalizes a regex-matched URL token into link URL + trailing text.
+ * Rules:
+ * - sentence punctuation at the end stays outside links
+ * - unbalanced closing parens at the end stay outside links
  */
-function stripTrailingUnbalancedParens(url: string): string {
-  const openCount = (url.match(/\(/g) ?? []).length;
-  const closeCount = (url.match(/\)/g) ?? []).length;
-  const excess = closeCount - openCount;
-  if (excess <= 0) return url;
-  return url.replace(new RegExp(`\\){${excess}}$`), "");
+function normalizeMatchedUrl(rawUrl: string): {
+  url: string;
+  trailingText: string;
+} {
+  const trailingPunctuation = rawUrl.match(/[.,!?;:]+$/)?.[0] ?? "";
+  const withoutTrailingPunctuation = trailingPunctuation
+    ? rawUrl.slice(0, -trailingPunctuation.length)
+    : rawUrl;
+
+  const openCount = (withoutTrailingPunctuation.match(/\(/g) ?? []).length;
+  const closeCount = (withoutTrailingPunctuation.match(/\)/g) ?? []).length;
+  const excessTrailingCloseParens = Math.max(0, closeCount - openCount);
+
+  const trailingCloseParensCount =
+    withoutTrailingPunctuation.match(/\)+$/)?.[0].length ?? 0;
+  const removableCloseParens = Math.min(
+    trailingCloseParensCount,
+    excessTrailingCloseParens,
+  );
+
+  const url = removableCloseParens
+    ? withoutTrailingPunctuation.slice(0, -removableCloseParens)
+    : withoutTrailingPunctuation;
+  const trailingCloseParens = ")".repeat(removableCloseParens);
+
+  return {
+    url,
+    trailingText: `${trailingCloseParens}${trailingPunctuation}`,
+  };
+}
+
+function toHref(url: string): string {
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
+
+function isValidUrlMatch(url: string): boolean {
+  if (/^https?:\/\//i.test(url)) return true;
+  return /^[a-z0-9]/i.test(url);
 }
 
 export type AutoLinkPart =
@@ -25,18 +58,49 @@ export type AutoLinkPart =
  * is either a plain-text segment or a detected URL.
  */
 export function parseAutoLinks(text: string): AutoLinkPart[] {
-  return text.split(URL_DELIMITER).flatMap((word): AutoLinkPart[] => {
-    const match = word.match(URL_DELIMITER);
-    if (match) {
-      const url = stripTrailingUnbalancedParens(match[0]);
-      const trailing = match[0].slice(url.length);
-      return [
-        { type: "link", url },
-        ...(trailing ? [{ type: "text" as const, value: trailing }] : []),
-      ];
+  const matcher = new RegExp(URL_DELIMITER.source, URL_DELIMITER.flags);
+  const parts: AutoLinkPart[] = [];
+  let lastIndex = 0;
+
+  const pushText = (value: string) => {
+    if (!value) return;
+
+    const lastPart = parts[parts.length - 1];
+    if (lastPart?.type === "text") {
+      lastPart.value += value;
+      return;
     }
-    return word ? [{ type: "text", value: word }] : [];
-  });
+
+    parts.push({ type: "text", value });
+  };
+
+  for (const match of text.matchAll(matcher)) {
+    const rawUrl = match[0];
+    const start = match.index ?? 0;
+
+    if (start > lastIndex) {
+      pushText(text.slice(lastIndex, start));
+    }
+
+    const { url, trailingText } = normalizeMatchedUrl(rawUrl);
+    if (isValidUrlMatch(url)) {
+      parts.push({ type: "link", url });
+
+      if (trailingText) {
+        pushText(trailingText);
+      }
+    } else {
+      pushText(rawUrl);
+    }
+
+    lastIndex = start + rawUrl.length;
+  }
+
+  if (lastIndex < text.length) {
+    pushText(text.slice(lastIndex));
+  }
+
+  return parts;
 }
 
 /**
@@ -63,16 +127,14 @@ export function AutoLink({
               key={`link-${index}-${url}`}
               target="_blank"
               rel="noopener noreferrer"
-              href={url.startsWith("http") ? url : `http://${url}`}
+              href={toHref(url)}
               className="underline"
             >
               {url}
             </a>
           );
         }
-        return (
-          <span key={`text-${index}-${part.value}`}>{part.value}</span>
-        );
+        return <span key={`text-${index}-${part.value}`}>{part.value}</span>;
       })}
       {children}
     </>
