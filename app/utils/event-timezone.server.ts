@@ -51,12 +51,50 @@ function getTimezoneOffsetMinutes(date: Date, timeZone: string): number {
 }
 
 /**
- * Convert a user-supplied date (expressed in the user's browser timezone) to
- * UTC so it can be stored correctly in the database.
+ * Convert a `datetime-local` value into UTC for storage in the database while
+ * treating the wall-clock value as being in `EVENT_TIMEZONE`.
  */
 export function toUtcEventDate(date: Date, clientHints: ClientHints): Date {
-  const eventOffset = getTimezoneOffsetMinutes(date, EVENT_TIMEZONE);
-  return offsetDate(date, -eventOffset);
+  void clientHints;
+
+  // `datetime-local` inputs encode a wall-clock date/time without timezone
+  // information. By the time it reaches the server, `z.coerce.date()` has
+  // already interpreted that value in the server's local timezone. Recover the
+  // original wall-clock components and reinterpret them in the event timezone.
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate();
+  const hour = date.getHours();
+  const minute = date.getMinutes();
+  const second = date.getSeconds();
+  const millisecond = date.getMilliseconds();
+
+  const localDateTimeAsUtc = Date.UTC(
+    year,
+    month,
+    day,
+    hour,
+    minute,
+    second,
+    millisecond,
+  );
+
+  let utcTimestamp = localDateTimeAsUtc;
+
+  // Recompute once after applying the offset so DST edges settle on the
+  // correct instant for the event timezone.
+  for (let iteration = 0; iteration < 2; iteration++) {
+    const eventOffset = getTimezoneOffsetMinutes(
+      new Date(utcTimestamp),
+      EVENT_TIMEZONE,
+    );
+    const adjustedUtcTimestamp = localDateTimeAsUtc - eventOffset * 60 * 1000;
+
+    if (adjustedUtcTimestamp === utcTimestamp) break;
+    utcTimestamp = adjustedUtcTimestamp;
+  }
+
+  return new Date(utcTimestamp);
 }
 
 /**

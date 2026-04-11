@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useMatches } from "react-router";
 
 import type { Role } from "#prisma/generated/client";
+
 import type { User } from "~/models/user.server";
 
 const DEFAULT_REDIRECT = "/";
@@ -86,11 +87,7 @@ export function validateEmail(email: unknown): email is string {
 }
 
 export function offsetDate(date: Date, minutesOffset = 0): Date {
-  const newDate = new Date(date);
-
-  newDate.setMinutes(date.getMinutes() + minutesOffset);
-
-  return newDate;
+  return new Date(date.getTime() + minutesOffset * 60 * 1000);
 }
 
 export function getDomainUrl(request: Request) {

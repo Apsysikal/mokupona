@@ -1,4 +1,5 @@
 import type { Prisma } from "#prisma/generated/client";
+
 import { prisma } from "~/db.server";
 
 type EventsFilter = Prisma.EventWhereInput;

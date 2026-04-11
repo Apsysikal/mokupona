@@ -10,9 +10,10 @@
     "../node_modules/@testing-library/cypress"
   ],
   "compilerOptions": {
-    "baseUrl": ".",
     "noEmit": true,
     "types": ["node", "cypress", "@testing-library/cypress"],
+    // https://github.com/cypress-io/cypress/issues/33385
+    "ignoreDeprecations": "6.0",
     "esModuleInterop": true,
     "jsx": "react-jsx",
     "moduleResolution": "Bundler",
@@ -22,8 +23,7 @@
     "resolveJsonModule": true,
 
     "paths": {
-      "~/*": ["../app/*"],
-      "#prisma/*": ["../prisma/*"]
+      "~/*": ["../app/*"]
     }
   }
 }
