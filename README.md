@@ -37,7 +37,7 @@ The app includes:
 2. Create your env file (`.env`) with at least:
 
    ```env
-   DATABASE_URL="file:./dev.db"
+   DATABASE_URL="file:./prisma/data.db"
    SESSION_SECRET="replace-with-a-random-secret"
    ```
 
@@ -88,6 +88,7 @@ Optional:
 - `npm run optimize:images`: run image optimization helper
 - `npm run test`: run unit tests
 - `npm run test:e2e:dev`: open Cypress against dev server
+- `npm run test:e2e:ci`: run the CI-oriented Cypress command against a prebuilt app
 - `npm run test:e2e:run`: run Cypress in headless mode
 - `npm run lint`: run ESLint
 - `npm run typecheck`: run TypeScript checks
@@ -104,23 +105,50 @@ Optional:
 
 ## Deployment (Fly.io)
 
-This project includes Fly configuration in `fly.toml` and container build steps in `Dockerfile`.
+This project uses:
+
+- `fly.toml` for Fly runtime configuration
+- `Dockerfile` for the production image build
+- `start.sh` for boot-time Prisma migrations and server startup
+- `.github/workflows/ci.yml` for CI
 
 Runtime details:
 
 - App listens on port `8080`
 - SQLite database is stored at `/data/sqlite.db`
+- Uploaded images are stored under `/data/uploads/images`
 - `start.sh` runs `prisma migrate deploy` before starting the app
+- The migration step happens on boot intentionally because the app depends on the mounted `/data` volume
 - Health endpoint: `/healthcheck`
 
-Before deploying, ensure:
+### Deployment flow
 
-1. Fly app exists and `fly.toml` app name is correct.
-2. Persistent volume is mounted at `/data`.
-3. `SESSION_SECRET` is set as a Fly secret.
-4. `DATABASE_URL` is set to `file:/data/sqlite.db`.
+- Pull requests run CI only.
+- Pushes to `dev` that pass CI trigger a `staging` deployment in the same workflow run.
+- Pushes to `main` that pass CI trigger a `production` deployment job in the same workflow run and wait for environment approval.
+- The CI workflow is the single source of truth for both verification and deployment.
 
-Useful commands:
+### Environment configuration
+
+1. Create GitHub Environments named `staging` and `production`.
+2. Add `FLY_APP_NAME` as an environment variable to both environments.
+3. Add `FLY_API_TOKEN` as an environment secret to both environments.
+4. Configure required reviewers on the `production` environment.
+5. Confirm both Fly apps exist and have a persistent volume mounted at `/data`.
+6. Set `SESSION_SECRET` as a Fly secret for both apps.
+
+`DATABASE_URL`, `IMAGE_UPLOAD_FOLDER`, and `PORT` are set in `fly.toml` and do not need to be duplicated as Fly secrets.
+
+### Operational checks
+
+Keep these repository settings aligned with the workflow:
+
+1. GitHub Actions policy must allow the selected actions and shell steps.
+2. The `production` environment should require approval before deployment.
+3. Both `FLY_API_TOKEN` secrets should have the intended scope.
+4. Branch policy should match the promotion flow: `dev` to staging, `main` to production.
+
+### Useful Fly commands
 
 ```sh
 fly secrets set SESSION_SECRET=$(openssl rand -hex 32) --app <fly-app-name>
@@ -132,7 +160,8 @@ fly ssh console -C database-cli --app <fly-app-name>
 
 - Unit/integration tests: `npm run test`
 - E2E interactive: `npm run test:e2e:dev`
-- E2E CI/headless: `npm run test:e2e:run`
+- E2E CI/headless: `npm run test:e2e:ci`
+- E2E local headless: `npm run test:e2e:run`
 
 For full local verification, run:
 
