@@ -3,6 +3,9 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "imports": {
+    "#prisma/*": "./prisma/*.ts"
+  },
   "scripts": {
     "build": "prisma generate && react-router build",
     "dev": "node ./mocks/index.js & react-router dev --host",

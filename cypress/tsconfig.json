@@ -23,8 +23,7 @@
     "resolveJsonModule": true,
 
     "paths": {
-      "~/*": ["../app/*"],
-      "#prisma/*": ["../prisma/*"]
+      "~/*": ["../app/*"]
     }
   }
 }
