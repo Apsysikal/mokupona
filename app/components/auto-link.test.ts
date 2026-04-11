@@ -44,7 +44,7 @@ describe("parseAutoLinks", () => {
     });
   });
 
-  describe("URLs wrapped in braces (desired behaviour)", () => {
+  describe("URLs wrapped in parentheses (desired behaviour)", () => {
     test("strips trailing ) when URL is wrapped in parentheses", () => {
       const result = parseAutoLinks("Check out (https://example.com) for more.");
       expect(result).toContainEqual({ type: "link", url: "https://example.com" });
