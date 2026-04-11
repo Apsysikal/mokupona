@@ -130,7 +130,7 @@ Phases 1 and 2 are implemented in-repo:
 - Pushes to `dev` that pass CI trigger a `staging` deployment.
 - Pushes to `main` that pass CI trigger a `production` deployment job, which should pause for environment approval.
 
-The deploy workflow is triggered by the `CI` workflow via `workflow_run`, so deployment only starts after the push-based CI run completes successfully.
+The deploy workflow is implemented as a reusable workflow that is called by `CI` after the test jobs succeed, so deployment runs in the same top-level workflow execution and does not depend on `workflow_run`.
 
 ### Environment configuration
 
