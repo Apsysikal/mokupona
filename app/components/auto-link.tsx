@@ -62,7 +62,7 @@ export function AutoLink({
             <a
               key={`link-${index}-${url}`}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               href={url.startsWith("http") ? url : `http://${url}`}
               className="underline"
             >
