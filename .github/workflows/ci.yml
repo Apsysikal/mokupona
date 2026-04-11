@@ -104,6 +104,7 @@ jobs:
       - name: Setup database
         run: |
           npx prisma migrate reset --force
+          npx prisma generate
           npx prisma db seed
 
       - name: Build app
