@@ -121,13 +121,12 @@ Runtime details:
 - The migration step happens on boot intentionally because the app depends on the mounted `/data` volume
 - Health endpoint: `/healthcheck`
 
-### Current migration status
-
-Phases 1 and 2 are implemented in-repo:
+### Deployment flow
 
 - Pull requests run CI only.
 - Pushes to `dev` that pass CI trigger a `staging` deployment in the same workflow run.
-- Pushes to `main` that pass CI trigger a `production` deployment job in the same workflow run, which should pause for environment approval.
+- Pushes to `main` that pass CI trigger a `production` deployment job in the same workflow run and wait for environment approval.
+- The CI workflow is the single source of truth for both verification and deployment.
 
 ### Environment configuration
 
@@ -140,14 +139,14 @@ Phases 1 and 2 are implemented in-repo:
 
 `DATABASE_URL`, `IMAGE_UPLOAD_FOLDER`, and `PORT` are set in `fly.toml` and do not need to be duplicated as Fly secrets.
 
-### Gate 2: required external validation
+### Operational checks
 
-Before relying on the new deploy flow, validate these settings outside the repo:
+Keep these repository settings aligned with the workflow:
 
-1. Confirm GitHub Actions policy allows the workflow to run the selected actions and shell steps.
-2. Confirm the `production` environment reviewer gate behaves as intended.
-3. Confirm both `FLY_API_TOKEN` secrets have the intended scope.
-4. Confirm branch policy matches the promotion flow: `dev` to staging, `main` to production.
+1. GitHub Actions policy must allow the selected actions and shell steps.
+2. The `production` environment should require approval before deployment.
+3. Both `FLY_API_TOKEN` secrets should have the intended scope.
+4. Branch policy should match the promotion flow: `dev` to staging, `main` to production.
 
 ### Useful Fly commands
 
