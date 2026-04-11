@@ -111,7 +111,6 @@ This project uses:
 - `Dockerfile` for the production image build
 - `start.sh` for boot-time Prisma migrations and server startup
 - `.github/workflows/ci.yml` for CI
-- `.github/workflows/deploy.yml` for environment-aware Fly deployment after successful CI
 
 Runtime details:
 
@@ -127,10 +126,8 @@ Runtime details:
 Phases 1 and 2 are implemented in-repo:
 
 - Pull requests run CI only.
-- Pushes to `dev` that pass CI trigger a `staging` deployment.
-- Pushes to `main` that pass CI trigger a `production` deployment job, which should pause for environment approval.
-
-The deploy workflow is implemented as a reusable workflow that is called by `CI` after the test jobs succeed, so deployment runs in the same top-level workflow execution and does not depend on `workflow_run`.
+- Pushes to `dev` that pass CI trigger a `staging` deployment in the same workflow run.
+- Pushes to `main` that pass CI trigger a `production` deployment job in the same workflow run, which should pause for environment approval.
 
 ### Environment configuration
 
