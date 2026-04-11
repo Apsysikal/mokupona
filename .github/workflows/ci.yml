@@ -121,9 +121,26 @@ jobs:
       - typecheck
       - vitest
       - cypress
-    uses: ./.github/workflows/deploy.yml
-    with:
-      environment_name: staging
+    environment: staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tested commit
+        uses: actions/checkout@v6
+
+      - name: Install flyctl
+        run: |
+          curl -L https://fly.io/install.sh | sh
+          echo "$HOME/.fly/bin" >> "$GITHUB_PATH"
+
+      - name: Show flyctl version
+        run: flyctl version
+
+      - name: Deploy to Fly staging
+        env:
+          FLY_ACCESS_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          FLY_APP_NAME: ${{ vars.FLY_APP_NAME }}
+          NO_COLOR: "1"
+        run: flyctl deploy --remote-only --yes --app "$FLY_APP_NAME"
 
   deploy-production:
     name: Deploy production
@@ -133,6 +150,23 @@ jobs:
       - typecheck
       - vitest
       - cypress
-    uses: ./.github/workflows/deploy.yml
-    with:
-      environment_name: production
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tested commit
+        uses: actions/checkout@v6
+
+      - name: Install flyctl
+        run: |
+          curl -L https://fly.io/install.sh | sh
+          echo "$HOME/.fly/bin" >> "$GITHUB_PATH"
+
+      - name: Show flyctl version
+        run: flyctl version
+
+      - name: Deploy to Fly production
+        env:
+          FLY_ACCESS_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          FLY_APP_NAME: ${{ vars.FLY_APP_NAME }}
+          NO_COLOR: "1"
+        run: flyctl deploy --remote-only --yes --app "$FLY_APP_NAME"
