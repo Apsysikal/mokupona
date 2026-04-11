@@ -10,7 +10,7 @@ describe("parseAutoLinks", () => {
     });
   });
 
-  describe("plain URLs (current behaviour)", () => {
+  describe("plain URLs", () => {
     test("detects a bare https URL", () => {
       const result = parseAutoLinks("Visit https://example.com for more.");
       expect(result).toContainEqual({ type: "link", url: "https://example.com" });
