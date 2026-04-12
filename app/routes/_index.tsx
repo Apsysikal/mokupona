@@ -9,14 +9,16 @@ export const meta: MetaFunction<null, { root: RootLoaderData }> = ({
   location,
 }) => {
   const domainUrl = matches.find(({ id }) => id === "root")?.data.domainUrl;
-  return siteCmsCatalog.projectPublic("home", {
+  const snapshot = siteCmsCatalog.readPageSnapshot("home");
+  return siteCmsCatalog.projectPublic(snapshot, {
     domainUrl,
     pathname: location.pathname,
   }).meta;
 };
 
 export default function Index() {
-  const projection = siteCmsCatalog.projectPublic("home", { pathname: "/" });
+  const snapshot = siteCmsCatalog.readPageSnapshot("home");
+  const projection = siteCmsCatalog.projectPublic(snapshot, { pathname: "/" });
 
   return (
     <PublicPageRenderer catalog={siteCmsCatalog} projection={projection} />

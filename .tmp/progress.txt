@@ -11,3 +11,40 @@ Specialties and workflow notes: use the terms from `UBIQUITOUS_LANGUAGE.md` cons
 Relevant commits:
 - `b351ebf` Add registry-backed home page renderer
 - `98552f9` Format glossary and skill docs
+
+---
+
+Issue `#363` kickoff note
+
+Approved direction for this slice:
+- keep a narrow CMS page service rather than pushing persistence into routes or bloating `catalog.ts`
+- preserve the `Page Definition -> Page Snapshot -> Public Projection` seam
+- change `projectPublic(...)` so it derives a `Public Projection` from an already-resolved `Page Snapshot`
+- keep writes behind a typed `Page Command` entry point so later block commands can extend the same mutation seam
+
+Planned TDD order:
+1. tracer bullet in catalog tests for `Public Projection` from `Page Snapshot`
+2. service tests for `Default-backed Page` reads and first-write `Materialization`
+3. route/UI work for `/admin/pages` and `/admin/pages/home`
+4. Cypress flow that edits page meta and verifies the public home page reflects the change
+
+Validation note:
+- after each red/green slice, run `npm run typecheck`, `npm run format`, `npm run lint`, `npm run test`, and `env -u ELECTRON_RUN_AS_NODE npm run test:e2e:run`
+
+Tracer bullet 1 complete
+
+What changed:
+- `CmsCatalog.projectPublic(...)` now derives the `Public Projection` from a provided `Page Snapshot` instead of re-reading by `Page Key`
+- `_index` now resolves the `home` `Page Snapshot` first, then projects it for both page meta and rendering
+- catalog and renderer tests were updated to prove projection follows the passed snapshot and still clones block data
+
+Why this matters:
+- it preserves the approved seam for `#363`: `Page Definition -> Page Snapshot -> Public Projection`
+- later persistence work can resolve a truthful `Default-backed Page` or `Persisted Page` once, then feed the same `Page Snapshot` into public projection without route-local branching
+
+Validation result for tracer bullet 1:
+- `npm run typecheck` ✅
+- `npm run format` ✅
+- `npm run lint` ✅
+- `npm run test -- --run` ✅
+- `env -u ELECTRON_RUN_AS_NODE npm run test:e2e:run` ✅

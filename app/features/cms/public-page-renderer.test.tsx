@@ -55,7 +55,9 @@ test("PublicPageRenderer renders projected blocks in page order", () => {
     blocks: [heroBlockDefinition, textSectionBlockDefinition],
     pages: [pageDefinition],
   });
-  const projection = catalog.projectPublic("home", { pathname: "/" });
+  const projection = catalog.projectPublic(catalog.readPageSnapshot("home"), {
+    pathname: "/",
+  });
 
   const html = renderToStaticMarkup(
     <PublicPageRenderer catalog={catalog} projection={projection} />,
@@ -69,7 +71,10 @@ test("PublicPageRenderer renders projected blocks in page order", () => {
 });
 
 test("PublicPageRenderer renders the real home page through the site catalog", () => {
-  const projection = siteCmsCatalog.projectPublic("home", { pathname: "/" });
+  const projection = siteCmsCatalog.projectPublic(
+    siteCmsCatalog.readPageSnapshot("home"),
+    { pathname: "/" },
+  );
 
   const html = renderToStaticMarkup(
     <MemoryRouter>

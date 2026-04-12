@@ -60,7 +60,7 @@ export type CmsCatalog = {
   getBlockDefinition(blockType: BlockType): BlockDefinition;
   readPageSnapshot(pageKey: PageKey): PageSnapshot;
   projectPublic(
-    pageKey: PageKey,
+    snapshot: PageSnapshot,
     context: PublicProjectionContext,
   ): PublicProjection;
 };
@@ -126,8 +126,7 @@ export function createCmsCatalog({
       );
     },
     readPageSnapshot,
-    projectPublic(pageKey, context) {
-      const snapshot = readPageSnapshot(pageKey);
+    projectPublic(snapshot, context) {
       const meta: MetaTag[] = [
         { title: snapshot.title },
         { name: "description", content: snapshot.description },
@@ -135,8 +134,8 @@ export function createCmsCatalog({
 
       const pageDefinition = requireFromMap(
         pageDefinitions,
-        pageKey,
-        `Unknown Page Key: ${pageKey}`,
+        snapshot.pageKey,
+        `Unknown Page Key: ${snapshot.pageKey}`,
       );
 
       if (context.domainUrl) {
@@ -164,7 +163,7 @@ export function createCmsCatalog({
       return {
         pageKey: snapshot.pageKey,
         meta,
-        blocks: snapshot.blocks,
+        blocks: cloneBlocks(snapshot.blocks),
       };
     },
   };
