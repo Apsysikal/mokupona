@@ -41,6 +41,12 @@ type CommandInput =
       };
     }
   | {
+      action: "delete-page";
+      payload: {
+        pageKey: string;
+      };
+    }
+  | {
       action: "create-board-member";
       payload: {
         name: string;
@@ -239,6 +245,16 @@ async function deleteImage(
   return outputJson({ deleted: true, id: payload.payload.id });
 }
 
+async function deletePage(
+  payload: Extract<CommandInput, { action: "delete-page" }>,
+) {
+  await prisma.page.deleteMany({
+    where: { pageKey: payload.payload.pageKey },
+  });
+
+  return outputJson({ deleted: true, pageKey: payload.payload.pageKey });
+}
+
 async function createBoardMember(
   payload: Extract<CommandInput, { action: "create-board-member" }>,
 ) {
@@ -348,6 +364,7 @@ function parseCommand(): CommandInput {
     case "get-dinner":
     case "delete-dinner":
     case "delete-image":
+    case "delete-page":
     case "create-board-member":
     case "get-board-member":
     case "get-board-member-by-name":
@@ -374,6 +391,8 @@ async function main() {
       return deleteDinner(command);
     case "delete-image":
       return deleteImage(command);
+    case "delete-page":
+      return deletePage(command);
     case "create-board-member":
       return createBoardMember(command);
     case "get-board-member":

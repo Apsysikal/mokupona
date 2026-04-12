@@ -81,3 +81,33 @@ Validation result for service seam slice:
 - `npm run lint` ✅
 - `npm run test -- --run` ✅
 - `env -u ELECTRON_RUN_AS_NODE npm run test:e2e:run` ✅
+
+Pages persistence and admin flow slice complete
+
+What changed:
+- added Prisma-backed CMS persistence with `Page` and `PageBlock` records plus migration `20260412151606_add_cms_pages`
+- added `createPrismaCmsPageStore(...)` and wired `siteCmsPageService` to the real store
+- switched the public home route to `siteCmsPageService.readPage("home")` and project the `Public Projection` from the returned `Page Snapshot`
+- added admin routes for `/admin/pages` and `/admin/pages/home`
+- added the Cypress tracer bullet `cypress/e2e/admin-pages.cy.ts` covering first-write `Materialization`, `Revision` bumping, and public home/meta reflection
+
+Important debugging note:
+- the failing save path was not a missing POST; the browser was posting successfully, but the default-backed `Revision` hidden field was submitted as an empty value and `parseWithZod(...)` normalized that to `undefined`
+- that made the action reject the first save as invalid input, so the page stayed `Default-backed`
+- the fix was:
+  - treat `revision` as optional in `PageMetaSchema`
+  - interpret missing/empty `Revision` as `null` `baseRevision`
+  - submit the editor through a normal `Form` + `type="submit"` button
+  - update the Cypress test to drive the real `Save Page` interaction
+
+Current issue status:
+- issue `#363` acceptance is implemented locally
+- admin users can discover editable pages, open `home`, see `Default-backed Page` vs `Persisted Page` status, save page meta, and get `Revision` bumps
+- the public home route and metadata now reflect persisted page title/description
+
+Validation result for the completed slice:
+- `npm run typecheck` ✅
+- `npm run format` ✅
+- `npm run lint` ✅
+- `npm run test` ✅
+- `env -u ELECTRON_RUN_AS_NODE npm run test:e2e:run` ✅

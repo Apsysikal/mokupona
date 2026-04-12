@@ -30,6 +30,7 @@ type UploadDbAction =
   | "get-dinner"
   | "delete-dinner"
   | "delete-image"
+  | "delete-page"
   | "create-board-member"
   | "get-board-member"
   | "get-board-member-by-name"
