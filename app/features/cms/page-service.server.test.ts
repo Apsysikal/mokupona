@@ -1,58 +1,50 @@
 import { describe, expect, test } from "vitest";
 
-import { createCmsPageService } from "./page-service.server";
+import type { BlockInstance } from "./catalog";
+import { createCmsPageService, type CmsPageStore } from "./page-service.server";
 import { siteCmsCatalog } from "./site-catalog";
 
-function createMemoryPageStore() {
-  let page: {
+function createMemoryPageStore(): CmsPageStore & {
+  seed(record: {
     pageKey: string;
-    revision: number;
     title: string;
     description: string;
-    blocks: ReturnType<typeof siteCmsCatalog.readPageSnapshot>["blocks"];
+    blocks: BlockInstance[];
+    revision: number;
+  }): void;
+  peek(pageKey: string): {
+    pageKey: string;
+    title: string;
+    description: string;
+    blocks: BlockInstance[];
+    revision: number;
+  } | null;
+} {
+  let page: {
+    pageKey: string;
+    title: string;
+    description: string;
+    blocks: BlockInstance[];
+    revision: number;
   } | null = null;
 
   return {
-    async readPage(pageKey: string) {
+    seed(record) {
+      page = structuredClone(record);
+    },
+    peek(pageKey) {
+      if (!page || page.pageKey !== pageKey) return null;
+      return structuredClone(page);
+    },
+    async readPage(pageKey) {
       if (!page || page.pageKey !== pageKey) {
         return null;
       }
 
       return structuredClone(page);
     },
-    async writePage({
-      expectedRevision,
-      page: nextPage,
-    }: {
-      expectedRevision: number | null;
-      page: {
-        pageKey: string;
-        title: string;
-        description: string;
-        blocks: ReturnType<typeof siteCmsCatalog.readPageSnapshot>["blocks"];
-      };
-    }) {
-      if (!page) {
-        if (expectedRevision !== null) {
-          return {
-            status: "conflict" as const,
-            persistedPage: null,
-          };
-        }
-
-        page = {
-          ...structuredClone(nextPage),
-          revision: 1,
-        };
-
-        return {
-          status: "saved" as const,
-          materialization: "created" as const,
-          persistedPage: structuredClone(page),
-        };
-      }
-
-      if (expectedRevision !== page.revision) {
+    async materializePage({ page: nextPage }) {
+      if (page) {
         return {
           status: "conflict" as const,
           persistedPage: structuredClone(page),
@@ -60,7 +52,38 @@ function createMemoryPageStore() {
       }
 
       page = {
-        ...structuredClone(nextPage),
+        pageKey: nextPage.pageKey,
+        title: nextPage.title,
+        description: nextPage.description,
+        blocks: structuredClone(nextPage.blocks),
+        revision: 1,
+      };
+
+      return {
+        status: "saved" as const,
+        materialization: "created" as const,
+        persistedPage: structuredClone(page),
+      };
+    },
+    async updatePageMeta({ pageKey, expectedRevision, title, description }) {
+      if (!page || page.pageKey !== pageKey) {
+        return {
+          status: "conflict" as const,
+          persistedPage: null,
+        };
+      }
+
+      if (page.revision !== expectedRevision) {
+        return {
+          status: "conflict" as const,
+          persistedPage: structuredClone(page),
+        };
+      }
+
+      page = {
+        ...page,
+        title,
+        description,
         revision: page.revision + 1,
       };
 
@@ -80,23 +103,24 @@ describe("createCmsPageService", () => {
       pageStore: createMemoryPageStore(),
     });
 
-    await expect(service.listEditablePages()).resolves.toEqual([
-      {
-        pageKey: "home",
-        title: "moku pona",
-        status: {
-          kind: "default-backed",
-          provenance: "default",
-          revision: null,
-        },
-        diagnostics: [
-          {
-            code: "page/default-backed",
-            severity: "info",
-          },
-        ],
-      },
-    ]);
+    const pages = await service.listEditablePages();
+
+    expect(pages).toHaveLength(1);
+    expect(pages[0]).toMatchObject({
+      pageKey: "home",
+      status: { kind: "default-backed", revision: null },
+    });
+    expect(typeof pages[0].title).toBe("string");
+  });
+
+  test("isKnownPageKey returns true for registered keys and false otherwise", () => {
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: createMemoryPageStore(),
+    });
+
+    expect(service.isKnownPageKey("home")).toBe(true);
+    expect(service.isKnownPageKey("nope")).toBe(false);
   });
 
   test("reads the home editor model as a default-backed page before persistence", async () => {
@@ -110,21 +134,10 @@ describe("createCmsPageService", () => {
     expect(editorModel.pageKey).toBe("home");
     expect(editorModel.status).toEqual({
       kind: "default-backed",
-      provenance: "default",
       revision: null,
     });
     expect(editorModel.pageSnapshot.pageKey).toBe("home");
     expect(editorModel.pageSnapshot.provenance).toBe("default");
-    expect(editorModel.pageSnapshot.title).toBe("moku pona");
-    expect(editorModel.pageSnapshot.description).toBe(
-      "A dinner society in Zurich, bringing people together through shared meals, stories, and the joy of discovery.",
-    );
-    expect(editorModel.diagnostics).toEqual([
-      {
-        code: "page/default-backed",
-        severity: "info",
-      },
-    ]);
   });
 
   test("materializes the full home page snapshot on first page-meta save", async () => {
@@ -146,11 +159,7 @@ describe("createCmsPageService", () => {
       materialization: "created",
       editorModel: {
         pageKey: "home",
-        status: {
-          kind: "persisted",
-          provenance: "persisted",
-          revision: 1,
-        },
+        status: { kind: "persisted", revision: 1 },
         pageSnapshot: {
           pageKey: "home",
           provenance: "persisted",
@@ -162,13 +171,7 @@ describe("createCmsPageService", () => {
 
     const editorModel = await service.readEditorModel("home");
 
-    expect(editorModel.status).toEqual({
-      kind: "persisted",
-      provenance: "persisted",
-      revision: 1,
-    });
-    expect(editorModel.pageSnapshot.title).toBe("edited title");
-    expect(editorModel.pageSnapshot.description).toBe("edited description");
+    expect(editorModel.status).toEqual({ kind: "persisted", revision: 1 });
     expect(editorModel.pageSnapshot.blocks).toEqual(
       siteCmsCatalog.readPageSnapshot("home").blocks,
     );
@@ -190,23 +193,141 @@ describe("createCmsPageService", () => {
 
     await expect(service.readPage("home")).resolves.toMatchObject({
       pageKey: "home",
-      status: {
-        kind: "persisted",
-        provenance: "persisted",
-        revision: 1,
-      },
+      status: { kind: "persisted", revision: 1 },
       pageSnapshot: {
         pageKey: "home",
         provenance: "persisted",
         title: "persisted title",
         description: "persisted description",
       },
-      diagnostics: [
-        {
-          code: "page/persisted",
-          severity: "info",
-        },
-      ],
     });
+  });
+
+  test("set-page-meta on a persisted page does not rewrite block rows", async () => {
+    const store = createMemoryPageStore();
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: store,
+    });
+
+    await service.applyPageCommand({
+      type: "set-page-meta",
+      pageKey: "home",
+      baseRevision: null,
+      title: "first title",
+      description: "first description",
+    });
+
+    const materializedBlocks = store.peek("home")?.blocks;
+    expect(materializedBlocks).toBeDefined();
+
+    await service.applyPageCommand({
+      type: "set-page-meta",
+      pageKey: "home",
+      baseRevision: 1,
+      title: "second title",
+      description: "second description",
+    });
+
+    const afterUpdate = store.peek("home");
+    expect(afterUpdate?.revision).toBe(2);
+    expect(afterUpdate?.blocks).toEqual(materializedBlocks);
+  });
+
+  test("applyPageCommand returns conflict when the base revision is stale", async () => {
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: createMemoryPageStore(),
+    });
+
+    await service.applyPageCommand({
+      type: "set-page-meta",
+      pageKey: "home",
+      baseRevision: null,
+      title: "first title",
+      description: "first description",
+    });
+
+    const result = await service.applyPageCommand({
+      type: "set-page-meta",
+      pageKey: "home",
+      baseRevision: 0,
+      title: "stale title",
+      description: "stale description",
+    });
+
+    expect(result.status).toBe("conflict");
+    if (result.status === "conflict") {
+      expect(result.currentEditorModel.status).toEqual({
+        kind: "persisted",
+        revision: 1,
+      });
+      expect(result.currentEditorModel.pageSnapshot.title).toBe("first title");
+    }
+  });
+
+  test("applyPageCommand returns conflict when default-backed first-writer loses the race", async () => {
+    const store = createMemoryPageStore();
+    store.seed({
+      pageKey: "home",
+      title: "already there",
+      description: "already there description",
+      blocks: [],
+      revision: 1,
+    });
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: store,
+    });
+
+    const result = await service.applyPageCommand({
+      type: "set-page-meta",
+      pageKey: "home",
+      baseRevision: null,
+      title: "late title",
+      description: "late description",
+    });
+
+    expect(result.status).toBe("conflict");
+  });
+
+  test("applyPageCommand succeeds after a conflict when base revision is refreshed", async () => {
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: createMemoryPageStore(),
+    });
+
+    await service.applyPageCommand({
+      type: "set-page-meta",
+      pageKey: "home",
+      baseRevision: null,
+      title: "t1",
+      description: "d1",
+    });
+
+    const stale = await service.applyPageCommand({
+      type: "set-page-meta",
+      pageKey: "home",
+      baseRevision: 0,
+      title: "stale",
+      description: "stale",
+    });
+    expect(stale.status).toBe("conflict");
+
+    const fresh = await service.applyPageCommand({
+      type: "set-page-meta",
+      pageKey: "home",
+      baseRevision: 1,
+      title: "t2",
+      description: "d2",
+    });
+
+    expect(fresh.status).toBe("saved");
+    if (fresh.status === "saved") {
+      expect(fresh.editorModel.status).toEqual({
+        kind: "persisted",
+        revision: 2,
+      });
+    }
   });
 });

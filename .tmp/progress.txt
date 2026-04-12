@@ -92,13 +92,11 @@ What changed:
 - added the Cypress tracer bullet `cypress/e2e/admin-pages.cy.ts` covering first-write `Materialization`, `Revision` bumping, and public home/meta reflection
 
 Important debugging note:
-- the failing save path was not a missing POST; the browser was posting successfully, but the default-backed `Revision` hidden field was submitted as an empty value and `parseWithZod(...)` normalized that to `undefined`
-- that made the action reject the first save as invalid input, so the page stayed `Default-backed`
-- the fix was:
-  - treat `revision` as optional in `PageMetaSchema`
-  - interpret missing/empty `Revision` as `null` `baseRevision`
-  - submit the editor through a normal `Form` + `type="submit"` button
-  - update the Cypress test to drive the real `Save Page` interaction
+- the failing save path was not a missing POST; the browser was posting successfully, but the default-backed `Revision` hidden field was submitted as an empty string, and the `PageMetaSchema` required a non-empty `revision`, so `parseWithZod(...)` rejected the submission before it reached `applyPageCommand`
+- that made the action reply with a validation error and the page stayed `Default-backed`
+- the correct fix was just to make `revision` optional in `PageMetaSchema` and treat a missing value as a `null` `baseRevision`
+- dropping the `@conform-to/react` `useForm` wiring and moving to a raw `Form` + `type="submit"` button was not necessary to fix the bug — the route should have stayed on the conform pattern used by every other admin edit route, and this drift has since been reverted
+- the Cypress test was updated to drive the real `Save Page` interaction end to end
 
 Current issue status:
 - issue `#363` acceptance is implemented locally

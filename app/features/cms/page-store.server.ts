@@ -20,74 +20,39 @@ export function createPrismaCmsPageStore({
     async readPage(pageKey) {
       return readPersistedPage(prisma, pageKey);
     },
-    async writePage({ expectedRevision, page }) {
+    async materializePage({ page }) {
       try {
         return await prisma.$transaction(async (tx) => {
           const existingPage = await tx.page.findUnique({
             where: { pageKey: page.pageKey },
-            select: { id: true, revision: true },
+            select: { id: true },
           });
 
-          if (!existingPage) {
-            if (expectedRevision !== null) {
-              return {
-                status: "conflict" as const,
-                persistedPage: null,
-              };
-            }
-
-            const createdPage = await tx.page.create({
-              data: {
-                pageKey: page.pageKey,
-                title: page.title,
-                description: page.description,
-                revision: 1,
-              },
-            });
-
-            if (page.blocks.length > 0) {
-              await tx.pageBlock.createMany({
-                data: serializeBlocks(createdPage.id, page.blocks),
-              });
-            }
-
-            return {
-              status: "saved" as const,
-              materialization: "created" as const,
-              persistedPage: await requirePersistedPage(tx, page.pageKey),
-            };
-          }
-
-          if (expectedRevision !== existingPage.revision) {
+          if (existingPage) {
             return {
               status: "conflict" as const,
               persistedPage: await requirePersistedPage(tx, page.pageKey),
             };
           }
 
-          await tx.page.update({
-            where: { id: existingPage.id },
+          const createdPage = await tx.page.create({
             data: {
+              pageKey: page.pageKey,
               title: page.title,
               description: page.description,
-              revision: {
-                increment: 1,
-              },
+              revision: 1,
             },
-          });
-          await tx.pageBlock.deleteMany({
-            where: { pageId: existingPage.id },
           });
 
           if (page.blocks.length > 0) {
             await tx.pageBlock.createMany({
-              data: serializeBlocks(existingPage.id, page.blocks),
+              data: serializeBlocks(createdPage.id, page.blocks),
             });
           }
 
           return {
             status: "saved" as const,
-            materialization: "updated" as const,
+            materialization: "created" as const,
             persistedPage: await requirePersistedPage(tx, page.pageKey),
           };
         });
@@ -104,6 +69,43 @@ export function createPrismaCmsPageStore({
 
         throw error;
       }
+    },
+    async updatePageMeta({ pageKey, expectedRevision, title, description }) {
+      return prisma.$transaction(async (tx) => {
+        const existingPage = await tx.page.findUnique({
+          where: { pageKey },
+          select: { id: true, revision: true },
+        });
+
+        if (!existingPage) {
+          return {
+            status: "conflict" as const,
+            persistedPage: null,
+          };
+        }
+
+        if (existingPage.revision !== expectedRevision) {
+          return {
+            status: "conflict" as const,
+            persistedPage: await requirePersistedPage(tx, pageKey),
+          };
+        }
+
+        await tx.page.update({
+          where: { id: existingPage.id },
+          data: {
+            title,
+            description,
+            revision: { increment: 1 },
+          },
+        });
+
+        return {
+          status: "saved" as const,
+          materialization: "updated" as const,
+          persistedPage: await requirePersistedPage(tx, pageKey),
+        };
+      });
     },
   };
 }

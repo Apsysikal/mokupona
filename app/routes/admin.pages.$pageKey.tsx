@@ -1,5 +1,11 @@
-import { parseWithZod } from "@conform-to/zod/v4";
-import { Form, redirect, useLoaderData } from "react-router";
+import {
+  getFormProps,
+  getInputProps,
+  getTextareaProps,
+  useForm,
+} from "@conform-to/react";
+import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
+import { Form, redirect, useActionData, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
@@ -7,14 +13,20 @@ import type { Route } from "./+types/admin.pages.$pageKey";
 
 import { Field, TextareaField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
-import { siteCmsCatalog } from "~/features/cms/site-catalog";
+import type { PageCommand } from "~/features/cms/page-service.server";
+import { formatPageStatus } from "~/features/cms/page-status";
 import { siteCmsPageService } from "~/features/cms/site-page-service.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
 const PageMetaSchema = z.object({
-  title: z.string().trim().min(1, "Title is required"),
-  description: z.string().trim().min(1, "Description is required"),
-  revision: z.string().regex(/^\d*$/, "Invalid revision").optional(),
+  title: z.string({ error: "Title is required" }).trim(),
+  description: z.string({ error: "Description is required" }).trim(),
+  revision: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => (v === undefined || v === "" ? null : Number(v)))
+    .pipe(z.number().int().nonnegative().nullable()),
 });
 
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -32,29 +44,35 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   const pageKey = requireKnownPageKey(params.pageKey);
   const formData = await request.formData();
-  const submission = parseWithZod(formData, {
-    schema: PageMetaSchema,
-  });
+  const submission = parseWithZod(formData, { schema: PageMetaSchema });
 
   if (submission.status !== "success" || !submission.value) {
-    return submission.reply();
+    return { submission: submission.reply() };
   }
 
-  const baseRevision = submission.value.revision
-    ? Number(submission.value.revision)
-    : null;
-
-  const result = await siteCmsPageService.applyPageCommand({
+  const baseRevision = submission.value.revision;
+  const setPageMetaCommand: PageCommand = {
     type: "set-page-meta",
     pageKey,
     baseRevision,
     title: submission.value.title,
     description: submission.value.description,
-  });
+  };
 
-  return redirect(
-    `/admin/pages/${pageKey}?revision=${result.editorModel.status.revision}`,
-  );
+  const result = await siteCmsPageService.applyPageCommand(setPageMetaCommand);
+
+  if (result.status === "conflict") {
+    return {
+      submission: submission.reply({
+        formErrors: [
+          "This page was changed by someone else. The editor has been refreshed with the current values — please review and save again.",
+        ],
+      }),
+      conflictEditorModel: result.currentEditorModel,
+    };
+  }
+
+  return redirect(`/admin/pages/${pageKey}`);
 }
 
 export function meta({ data, params }: Route.MetaArgs) {
@@ -69,44 +87,74 @@ export default function AdminPageEditorRoute() {
   const { editorModel } = useLoaderData<typeof loader>();
 
   return (
+    <PageEditorForm
+      key={`${editorModel.pageKey}-${editorModel.status.revision ?? "default"}`}
+      editorModel={editorModel}
+    />
+  );
+}
+
+function PageEditorForm({
+  editorModel,
+}: {
+  editorModel: Awaited<ReturnType<typeof loader>>["editorModel"];
+}) {
+  const actionData = useActionData<typeof action>();
+
+  const displayEditorModel = actionData?.conflictEditorModel ?? editorModel;
+
+  const lastResult = actionData?.submission ?? null;
+
+  const [form, fields] = useForm({
+    id: `page-editor-${editorModel.pageKey}-${editorModel.status.revision ?? "default"}`,
+    lastResult,
+    shouldValidate: "onBlur",
+    constraint: getZodConstraint(PageMetaSchema),
+    defaultValue: {
+      title: editorModel.pageSnapshot.title,
+      description: editorModel.pageSnapshot.description,
+      revision:
+        editorModel.status.revision === null
+          ? ""
+          : String(editorModel.status.revision),
+    },
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema: PageMetaSchema });
+    },
+  });
+
+  return (
     <main className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-4xl">Edit {editorModel.pageKey}</h1>
-        <p>{formatPageStatus(editorModel.status)}</p>
+        <h1 className="text-4xl">Edit {displayEditorModel.pageKey}</h1>
+        <p>{formatPageStatus(displayEditorModel.status)}</p>
       </div>
 
       <Form
-        method="post"
-        action={`/admin/pages/${editorModel.pageKey}`}
+        method="POST"
         className="flex flex-col gap-6"
+        {...getFormProps(form)}
       >
-        <input
-          type="hidden"
-          name="revision"
-          value={
-            editorModel.status.revision === null
-              ? ""
-              : String(editorModel.status.revision)
-          }
-        />
+        <input {...getInputProps(fields.revision, { type: "hidden" })} />
+
+        {form.errors?.length ? (
+          <p className="text-destructive text-sm">{form.errors.join(" ")}</p>
+        ) : null}
 
         <Field
           labelProps={{ children: "Title" }}
-          inputProps={{
-            type: "text",
-            name: "title",
-            defaultValue: editorModel.pageSnapshot.title,
-          }}
+          inputProps={{ ...getInputProps(fields.title, { type: "text" }) }}
+          errors={fields.title.errors}
           className="flex flex-col gap-2"
         />
 
         <TextareaField
           labelProps={{ children: "Description" }}
           textareaProps={{
-            name: "description",
-            defaultValue: editorModel.pageSnapshot.description,
-            rows: 8,
+            ...getTextareaProps(fields.description),
+            rows: 2,
           }}
+          errors={fields.description.errors}
           className="flex flex-col gap-2"
         />
 
@@ -119,20 +167,9 @@ export default function AdminPageEditorRoute() {
 function requireKnownPageKey(pageKey: string | undefined) {
   invariant(typeof pageKey === "string", "Parameter pageKey is missing");
 
-  if (!siteCmsCatalog.listPageKeys().includes(pageKey)) {
+  if (!siteCmsPageService.isKnownPageKey(pageKey)) {
     throw new Response("Not found", { status: 404 });
   }
 
   return pageKey;
-}
-
-function formatPageStatus(status: {
-  kind: "default-backed" | "persisted";
-  revision: number | null;
-}) {
-  if (status.kind === "default-backed") {
-    return "Default-backed Page";
-  }
-
-  return `Persisted Page - Revision ${status.revision}`;
 }

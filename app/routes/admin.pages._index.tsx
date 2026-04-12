@@ -3,6 +3,7 @@ import { Link, useLoaderData } from "react-router";
 import type { Route } from "./+types/admin.pages._index";
 
 import { Button } from "~/components/ui/button";
+import { formatPageStatus } from "~/features/cms/page-status";
 import { siteCmsPageService } from "~/features/cms/site-page-service.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
@@ -53,15 +54,4 @@ export default function AdminPagesIndexRoute() {
       )}
     </main>
   );
-}
-
-function formatPageStatus(status: {
-  kind: "default-backed" | "persisted";
-  revision: number | null;
-}) {
-  if (status.kind === "default-backed") {
-    return "Default-backed Page";
-  }
-
-  return `Persisted Page - Revision ${status.revision}`;
 }
