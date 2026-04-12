@@ -78,6 +78,12 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      - name: Setup database
+        run: |
+          npx prisma migrate reset --force
+          npx prisma generate
+          npx prisma db seed
+
       - name: Run vitest
         run: npm run test -- --coverage
 
