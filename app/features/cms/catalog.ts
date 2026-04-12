@@ -5,7 +5,7 @@ import type { BlockBaseType, BlockType, BlockVersion } from "./blocks/types";
 
 export type PageKey = string;
 export type DefinitionKey = string;
-export type Provenance = "default";
+export type Provenance = "default" | "persisted";
 
 export type BlockInstance = BlockBaseType<BlockType, BlockVersion, unknown>;
 
@@ -57,6 +57,7 @@ export type PageDefinition = {
 };
 
 export type CmsCatalog = {
+  listPageKeys(): readonly PageKey[];
   getBlockDefinition(blockType: BlockType): BlockDefinition;
   readPageSnapshot(pageKey: PageKey): PageSnapshot;
   projectPublic(
@@ -118,6 +119,9 @@ export function createCmsCatalog({
   };
 
   return {
+    listPageKeys() {
+      return [...pageDefinitions.keys()];
+    },
     getBlockDefinition(blockType) {
       return requireFromMap(
         blockDefinitions,

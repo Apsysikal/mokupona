@@ -48,3 +48,36 @@ Validation result for tracer bullet 1:
 - `npm run lint` ✅
 - `npm run test -- --run` ✅
 - `env -u ELECTRON_RUN_AS_NODE npm run test:e2e:run` ✅
+
+Service seam slice complete
+
+What changed:
+- added `app/features/cms/page-service.server.ts` as the new CMS read/write seam for issue `#363`
+- service now supports:
+  - `listEditablePages()` for the future admin Pages section
+  - `readPage()` for the public read path
+  - `readEditorModel()` for the admin editor route
+  - `applyPageCommand()` with the first `set-page-meta` command
+- widened `Page Snapshot.provenance` to allow both `default` and `persisted`
+
+Current implementation status:
+- the service is backed by an abstract `CmsPageStore` so the TDD loop can pin behavior before wiring Prisma
+- current tests cover:
+  - listing `home` as a `Default-backed Page`
+  - reading the `home` `Editor Model` before persistence
+  - first-write `Materialization` of the full `Page Snapshot`
+  - persisted reads after materialization
+- optimistic update behavior exists in the store contract, but the real Prisma-backed store and route/UI integration are still pending
+
+Next slice:
+1. add Prisma `Page` / `PageBlock` persistence and a real `CmsPageStore`
+2. switch the public home route to `CmsPageService.readPage(...)`
+3. add `/admin/pages` and `/admin/pages/home`
+4. add the Cypress admin edit flow for page title/description
+
+Validation result for service seam slice:
+- `npm run typecheck` ✅
+- `npm run format` ✅
+- `npm run lint` ✅
+- `npm run test -- --run` ✅
+- `env -u ELECTRON_RUN_AS_NODE npm run test:e2e:run` ✅
