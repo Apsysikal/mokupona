@@ -113,7 +113,7 @@ export function createCmsCatalog({
       provenance: "default",
       title: pageDefinition.defaults.title,
       description: pageDefinition.defaults.description,
-      blocks: pageDefinition.defaults.blocks,
+      blocks: cloneBlocks(pageDefinition.defaults.blocks),
     };
   };
 
@@ -250,4 +250,8 @@ function requireFromMap<TKey, TValue>(
   }
 
   return value;
+}
+
+function cloneBlocks(blocks: readonly BlockInstance[]): BlockInstance[] {
+  return structuredClone([...blocks]);
 }
