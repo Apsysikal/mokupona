@@ -1,18 +1,22 @@
 import type React from "react";
 import type { ZodType } from "zod/v4";
 
-import type { BlockBaseType, BlockType, BlockVersion } from "./blocks/types";
+import type {
+  BlockBaseType,
+  BlockType,
+  BlockVersion,
+  DefinitionKey,
+} from "./blocks/types";
 
 export type PageKey = string;
-export type DefinitionKey = string;
-export type Provenance = "default";
+export type Provenance = "default" | "persisted";
 
 export type BlockInstance = BlockBaseType<BlockType, BlockVersion, unknown>;
 
 export type MetaTag =
   | { title: string }
-  | { name: string; content: string | URL }
-  | { property: string; content: string | URL };
+  | { name: string; content: string }
+  | { property: string; content: string };
 
 export type PageRule = {
   allowedBlockTypes: readonly BlockType[];
@@ -57,10 +61,11 @@ export type PageDefinition = {
 };
 
 export type CmsCatalog = {
+  listPageKeys(): readonly PageKey[];
   getBlockDefinition(blockType: BlockType): BlockDefinition;
   readPageSnapshot(pageKey: PageKey): PageSnapshot;
   projectPublic(
-    pageKey: PageKey,
+    snapshot: PageSnapshot,
     context: PublicProjectionContext,
   ): PublicProjection;
 };
@@ -118,6 +123,9 @@ export function createCmsCatalog({
   };
 
   return {
+    listPageKeys() {
+      return [...pageDefinitions.keys()];
+    },
     getBlockDefinition(blockType) {
       return requireFromMap(
         blockDefinitions,
@@ -126,8 +134,7 @@ export function createCmsCatalog({
       );
     },
     readPageSnapshot,
-    projectPublic(pageKey, context) {
-      const snapshot = readPageSnapshot(pageKey);
+    projectPublic(snapshot, context) {
       const meta: MetaTag[] = [
         { title: snapshot.title },
         { name: "description", content: snapshot.description },
@@ -135,8 +142,8 @@ export function createCmsCatalog({
 
       const pageDefinition = requireFromMap(
         pageDefinitions,
-        pageKey,
-        `Unknown Page Key: ${pageKey}`,
+        snapshot.pageKey,
+        `Unknown Page Key: ${snapshot.pageKey}`,
       );
 
       if (context.domainUrl) {
@@ -151,20 +158,20 @@ export function createCmsCatalog({
             content: new URL(
               pageDefinition.defaults.shareImageSrc,
               context.domainUrl,
-            ),
+            ).toString(),
           });
         }
 
         meta.push({
           property: "og:url",
-          content: new URL(context.pathname, context.domainUrl),
+          content: new URL(context.pathname, context.domainUrl).toString(),
         });
       }
 
       return {
         pageKey: snapshot.pageKey,
         meta,
-        blocks: snapshot.blocks,
+        blocks: cloneBlocks(snapshot.blocks),
       };
     },
   };
@@ -253,5 +260,5 @@ function requireFromMap<TKey, TValue>(
 }
 
 function cloneBlocks(blocks: readonly BlockInstance[]): BlockInstance[] {
-  return structuredClone([...blocks]);
+  return structuredClone(blocks) as BlockInstance[];
 }

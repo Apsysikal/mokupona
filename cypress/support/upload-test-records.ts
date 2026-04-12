@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
+import { siteCmsPageService } from "~/features/cms/site-page-service.server";
 import { prisma } from "~/db.server";
 import { getUserByEmail } from "~/models/user.server";
 
@@ -38,6 +39,26 @@ type CommandInput =
       action: "delete-image";
       payload: {
         id: string;
+      };
+    }
+  | {
+      action: "delete-page";
+      payload: {
+        pageKey: string;
+      };
+    }
+  | {
+      action: "seed-invalid-page";
+      payload: {
+        pageKey: "home";
+      };
+    }
+  | {
+      action: "save-page-meta";
+      payload: {
+        pageKey: "home";
+        title: string;
+        description: string;
       };
     }
   | {
@@ -239,6 +260,77 @@ async function deleteImage(
   return outputJson({ deleted: true, id: payload.payload.id });
 }
 
+async function deletePage(
+  payload: Extract<CommandInput, { action: "delete-page" }>,
+) {
+  await prisma.page.deleteMany({
+    where: { pageKey: payload.payload.pageKey },
+  });
+
+  return outputJson({ deleted: true, pageKey: payload.payload.pageKey });
+}
+
+async function seedInvalidPage(
+  payload: Extract<CommandInput, { action: "seed-invalid-page" }>,
+) {
+  await prisma.page.deleteMany({
+    where: { pageKey: payload.payload.pageKey },
+  });
+
+  const page = await prisma.page.create({
+    data: {
+      pageKey: payload.payload.pageKey,
+      title: "broken persisted title",
+      description: "broken persisted description",
+      revision: 1,
+      blocks: {
+        create: {
+          type: "hero",
+          version: 1,
+          position: 0,
+          data: JSON.stringify({}),
+        },
+      },
+    },
+    include: {
+      blocks: {
+        orderBy: { position: "asc" },
+      },
+    },
+  });
+
+  return outputJson({
+    pageKey: page.pageKey,
+    revision: page.revision,
+    blockCount: page.blocks.length,
+  });
+}
+
+async function savePageMeta(
+  payload: Extract<CommandInput, { action: "save-page-meta" }>,
+) {
+  const result = await siteCmsPageService.applyPageCommand({
+    type: "set-page-meta",
+    pageKey: payload.payload.pageKey,
+    baseRevision: null,
+    title: payload.payload.title,
+    description: payload.payload.description,
+  });
+
+  if (result.status !== "saved") {
+    throw new Error(
+      `Could not materialize page ${payload.payload.pageKey} for Cypress setup`,
+    );
+  }
+
+  return outputJson({
+    pageKey: result.editorModel.pageKey,
+    revision: result.editorModel.status.revision,
+    title: result.editorModel.pageSnapshot.title,
+    description: result.editorModel.pageSnapshot.description,
+  });
+}
+
 async function createBoardMember(
   payload: Extract<CommandInput, { action: "create-board-member" }>,
 ) {
@@ -348,6 +440,9 @@ function parseCommand(): CommandInput {
     case "get-dinner":
     case "delete-dinner":
     case "delete-image":
+    case "delete-page":
+    case "seed-invalid-page":
+    case "save-page-meta":
     case "create-board-member":
     case "get-board-member":
     case "get-board-member-by-name":
@@ -374,6 +469,12 @@ async function main() {
       return deleteDinner(command);
     case "delete-image":
       return deleteImage(command);
+    case "delete-page":
+      return deletePage(command);
+    case "seed-invalid-page":
+      return seedInvalidPage(command);
+    case "save-page-meta":
+      return savePageMeta(command);
     case "create-board-member":
       return createBoardMember(command);
     case "get-board-member":

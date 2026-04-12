@@ -68,6 +68,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v6
 
+      - name: Copy test env vars
+        run: cp .env.example .env
+
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
@@ -77,6 +80,12 @@ jobs:
 
       - name: Install deps
         run: npm ci
+
+      - name: Setup database
+        run: |
+          npx prisma migrate reset --force
+          npx prisma generate
+          npx prisma db seed
 
       - name: Run vitest
         run: npm run test -- --coverage

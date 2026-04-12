@@ -94,7 +94,7 @@ describe("createCmsCatalog", () => {
       "text-section",
     ]);
 
-    const projection = catalog.projectPublic("home", {
+    const projection = catalog.projectPublic(snapshot, {
       domainUrl,
       pathname: "/",
     });
@@ -113,11 +113,11 @@ describe("createCmsCatalog", () => {
       { property: "og:type", content: "website" },
       {
         property: "og:image",
-        content: new URL("/landing-page-default.jpg", domainUrl),
+        content: new URL("/landing-page-default.jpg", domainUrl).toString(),
       },
       {
         property: "og:url",
-        content: new URL("/", domainUrl),
+        content: new URL("/", domainUrl).toString(),
       },
     ]);
   });
@@ -133,11 +133,17 @@ describe("createCmsCatalog", () => {
       "first block",
     );
 
-    const projection = catalog.projectPublic("home", { pathname: "/" });
+    const projectionSnapshot = catalog.readPageSnapshot("home");
+    const projection = catalog.projectPublic(projectionSnapshot, {
+      pathname: "/",
+    });
     (projection.blocks[1] as TextSectionStubBlock).data.label =
       "mutated projection";
 
-    const nextProjection = catalog.projectPublic("home", { pathname: "/" });
+    const nextProjection = catalog.projectPublic(
+      catalog.readPageSnapshot("home"),
+      { pathname: "/" },
+    );
     expect((nextProjection.blocks[1] as TextSectionStubBlock).data.label).toBe(
       "second block",
     );
@@ -145,8 +151,9 @@ describe("createCmsCatalog", () => {
 
   test("supports a string domainUrl in the public projection context", () => {
     const catalog = createStubCatalog();
+    const snapshot = catalog.readPageSnapshot("home");
 
-    const projection = catalog.projectPublic("home", {
+    const projection = catalog.projectPublic(snapshot, {
       domainUrl: "https://mokupona.test",
       pathname: "/",
     });
@@ -158,19 +165,20 @@ describe("createCmsCatalog", () => {
       { property: "og:type", content: "website" },
       {
         property: "og:image",
-        content: new URL("/share.jpg", "https://mokupona.test"),
+        content: new URL("/share.jpg", "https://mokupona.test").toString(),
       },
       {
         property: "og:url",
-        content: new URL("/", "https://mokupona.test"),
+        content: new URL("/", "https://mokupona.test").toString(),
       },
     ]);
   });
 
   test("omits og tags when domainUrl is missing", () => {
     const catalog = createStubCatalog();
+    const snapshot = catalog.readPageSnapshot("home");
 
-    const projection = catalog.projectPublic("home", { pathname: "/" });
+    const projection = catalog.projectPublic(snapshot, { pathname: "/" });
 
     expect(projection.meta).toEqual([
       { title: "test title" },
@@ -193,8 +201,9 @@ describe("createCmsCatalog", () => {
         }),
       ],
     });
+    const snapshot = catalog.readPageSnapshot("home");
 
-    const projection = catalog.projectPublic("home", {
+    const projection = catalog.projectPublic(snapshot, {
       domainUrl: "https://mokupona.test",
       pathname: "/",
     });
@@ -206,7 +215,37 @@ describe("createCmsCatalog", () => {
       { property: "og:type", content: "website" },
       {
         property: "og:url",
-        content: new URL("/", "https://mokupona.test"),
+        content: new URL("/", "https://mokupona.test").toString(),
+      },
+    ]);
+  });
+
+  test("derives the public projection from the provided page snapshot", () => {
+    const catalog = createStubCatalog();
+    const snapshot = catalog.readPageSnapshot("home");
+
+    snapshot.title = "edited title";
+    snapshot.description = "edited description";
+    (snapshot.blocks[0] as HeroStubBlock).data.label = "edited first block";
+
+    const projection = catalog.projectPublic(snapshot, {
+      domainUrl: "https://mokupona.test",
+      pathname: "/",
+    });
+
+    expect(projection.blocks).toEqual(snapshot.blocks);
+    expect(projection.meta).toEqual([
+      { title: "edited title" },
+      { name: "description", content: "edited description" },
+      { property: "og:title", content: "edited title" },
+      { property: "og:type", content: "website" },
+      {
+        property: "og:image",
+        content: new URL("/share.jpg", "https://mokupona.test").toString(),
+      },
+      {
+        property: "og:url",
+        content: new URL("/", "https://mokupona.test").toString(),
       },
     ]);
   });
@@ -405,11 +444,5 @@ describe("createCmsCatalog", () => {
     expect(() => createStubCatalog().readPageSnapshot("missing")).toThrow(
       "Unknown Page Key: missing",
     );
-  });
-
-  test("fails fast when projecting an unknown public page", () => {
-    expect(() =>
-      createStubCatalog().projectPublic("missing", { pathname: "/" }),
-    ).toThrow("Unknown Page Key: missing");
   });
 });

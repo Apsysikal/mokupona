@@ -1,18 +1,19 @@
 import { Fragment } from "react";
 
 import type { CmsCatalog, PublicProjection } from "./catalog";
+import { siteCmsCatalog } from "./site-catalog";
 
 type PublicPageRendererProps = {
-  catalog: CmsCatalog;
   projection: PublicProjection;
+  catalog?: CmsCatalog;
 };
 
 export function PublicPageRenderer({
-  catalog,
   projection,
+  catalog = siteCmsCatalog,
 }: PublicPageRendererProps) {
   return (
-    <main>
+    <>
       {projection.blocks.map((block, index) => (
         <Fragment
           key={
@@ -23,6 +24,6 @@ export function PublicPageRenderer({
           {catalog.getBlockDefinition(block.type).render(block)}
         </Fragment>
       ))}
-    </main>
+    </>
   );
 }

@@ -1,24 +1,35 @@
-import type { MetaFunction } from "react-router";
+import { useLoaderData } from "react-router";
+
+import type { Route } from "./+types/_index";
 
 import { PublicPageRenderer } from "~/features/cms/public-page-renderer";
-import { siteCmsCatalog } from "~/features/cms/site-catalog";
-import type { RootLoaderData } from "~/root";
+import { siteCmsPageService } from "~/features/cms/site-page-service.server";
+import { getDomainUrl } from "~/utils/misc";
 
-export const meta: MetaFunction<null, { root: RootLoaderData }> = ({
-  matches,
-  location,
-}) => {
-  const domainUrl = matches.find(({ id }) => id === "root")?.data.domainUrl;
-  return siteCmsCatalog.projectPublic("home", {
-    domainUrl,
-    pathname: location.pathname,
-  }).meta;
-};
+export async function loader({ request }: Route.LoaderArgs) {
+  const url = new URL(request.url);
+  const projection = await siteCmsPageService.readPublicProjection("home", {
+    domainUrl: getDomainUrl(request),
+    pathname: url.pathname,
+  });
+
+  return { projection };
+}
+
+export function meta({ data }: Route.MetaArgs) {
+  if (!data) {
+    return [];
+  }
+
+  return data.projection.meta;
+}
 
 export default function Index() {
-  const projection = siteCmsCatalog.projectPublic("home", { pathname: "/" });
+  const { projection } = useLoaderData<typeof loader>();
 
   return (
-    <PublicPageRenderer catalog={siteCmsCatalog} projection={projection} />
+    <main>
+      <PublicPageRenderer projection={projection} />
+    </main>
   );
 }
