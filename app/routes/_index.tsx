@@ -27,5 +27,9 @@ export function meta({ data }: Route.MetaArgs) {
 export default function Index() {
   const { projection } = useLoaderData<typeof loader>();
 
-  return <PublicPageRenderer projection={projection} />;
+  return (
+    <main>
+      <PublicPageRenderer projection={projection} />
+    </main>
+  );
 }

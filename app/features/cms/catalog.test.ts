@@ -113,11 +113,11 @@ describe("createCmsCatalog", () => {
       { property: "og:type", content: "website" },
       {
         property: "og:image",
-        content: new URL("/landing-page-default.jpg", domainUrl),
+        content: new URL("/landing-page-default.jpg", domainUrl).toString(),
       },
       {
         property: "og:url",
-        content: new URL("/", domainUrl),
+        content: new URL("/", domainUrl).toString(),
       },
     ]);
   });
@@ -165,11 +165,11 @@ describe("createCmsCatalog", () => {
       { property: "og:type", content: "website" },
       {
         property: "og:image",
-        content: new URL("/share.jpg", "https://mokupona.test"),
+        content: new URL("/share.jpg", "https://mokupona.test").toString(),
       },
       {
         property: "og:url",
-        content: new URL("/", "https://mokupona.test"),
+        content: new URL("/", "https://mokupona.test").toString(),
       },
     ]);
   });
@@ -215,7 +215,7 @@ describe("createCmsCatalog", () => {
       { property: "og:type", content: "website" },
       {
         property: "og:url",
-        content: new URL("/", "https://mokupona.test"),
+        content: new URL("/", "https://mokupona.test").toString(),
       },
     ]);
   });
@@ -241,11 +241,11 @@ describe("createCmsCatalog", () => {
       { property: "og:type", content: "website" },
       {
         property: "og:image",
-        content: new URL("/share.jpg", "https://mokupona.test"),
+        content: new URL("/share.jpg", "https://mokupona.test").toString(),
       },
       {
         property: "og:url",
-        content: new URL("/", "https://mokupona.test"),
+        content: new URL("/", "https://mokupona.test").toString(),
       },
     ]);
   });

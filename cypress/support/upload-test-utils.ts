@@ -31,6 +31,8 @@ type UploadDbAction =
   | "delete-dinner"
   | "delete-image"
   | "delete-page"
+  | "seed-invalid-page"
+  | "save-page-meta"
   | "create-board-member"
   | "get-board-member"
   | "get-board-member-by-name"

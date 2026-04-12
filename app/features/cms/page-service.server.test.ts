@@ -203,6 +203,45 @@ describe("createCmsPageService", () => {
     });
   });
 
+  test("falls back to defaults with diagnostics when persisted block data is invalid", async () => {
+    const store = createMemoryPageStore();
+    store.seed({
+      pageKey: "home",
+      title: "broken persisted title",
+      description: "broken persisted description",
+      blocks: [
+        {
+          type: "hero",
+          version: 1,
+          data: {},
+        } as unknown as BlockInstance,
+      ],
+      revision: 1,
+    });
+
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: store,
+    });
+
+    const resolved = await service.readPage("home");
+
+    expect(resolved.status).toEqual({
+      kind: "default-backed",
+      revision: null,
+    });
+    expect(resolved.pageSnapshot).toEqual(
+      siteCmsCatalog.readPageSnapshot("home"),
+    );
+    expect(resolved.diagnostics).toEqual([
+      {
+        code: "block/invalid-data",
+        message:
+          'Persisted block "hero" on page "home" has invalid data. Showing defaults instead.',
+      },
+    ]);
+  });
+
   test("set-page-meta on a persisted page does not rewrite block rows", async () => {
     const store = createMemoryPageStore();
     const service = createCmsPageService({

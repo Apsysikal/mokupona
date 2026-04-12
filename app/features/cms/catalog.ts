@@ -1,18 +1,22 @@
 import type React from "react";
 import type { ZodType } from "zod/v4";
 
-import type { BlockBaseType, BlockType, BlockVersion } from "./blocks/types";
+import type {
+  BlockBaseType,
+  BlockType,
+  BlockVersion,
+  DefinitionKey,
+} from "./blocks/types";
 
 export type PageKey = string;
-export type DefinitionKey = string;
 export type Provenance = "default" | "persisted";
 
 export type BlockInstance = BlockBaseType<BlockType, BlockVersion, unknown>;
 
 export type MetaTag =
   | { title: string }
-  | { name: string; content: string | URL }
-  | { property: string; content: string | URL };
+  | { name: string; content: string }
+  | { property: string; content: string };
 
 export type PageRule = {
   allowedBlockTypes: readonly BlockType[];
@@ -154,13 +158,13 @@ export function createCmsCatalog({
             content: new URL(
               pageDefinition.defaults.shareImageSrc,
               context.domainUrl,
-            ),
+            ).toString(),
           });
         }
 
         meta.push({
           property: "og:url",
-          content: new URL(context.pathname, context.domainUrl),
+          content: new URL(context.pathname, context.domainUrl).toString(),
         });
       }
 
@@ -256,5 +260,5 @@ function requireFromMap<TKey, TValue>(
 }
 
 function cloneBlocks(blocks: readonly BlockInstance[]): BlockInstance[] {
-  return structuredClone([...blocks]);
+  return structuredClone(blocks) as BlockInstance[];
 }

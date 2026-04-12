@@ -141,6 +141,5 @@ model PageBlock {
 
   page Page @relation(fields: [pageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@index([pageId, position])
   @@unique([pageId, position])
 }

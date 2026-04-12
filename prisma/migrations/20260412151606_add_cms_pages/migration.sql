@@ -25,7 +25,4 @@ CREATE TABLE "PageBlock" (
 CREATE UNIQUE INDEX "Page_pageKey_key" ON "Page"("pageKey");
 
 -- CreateIndex
-CREATE INDEX "PageBlock_pageId_position_idx" ON "PageBlock"("pageId", "position");
-
--- CreateIndex
 CREATE UNIQUE INDEX "PageBlock_pageId_position_key" ON "PageBlock"("pageId", "position");

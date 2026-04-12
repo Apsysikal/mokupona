@@ -2,6 +2,7 @@ import {
   getFormProps,
   getInputProps,
   getTextareaProps,
+  type SubmissionResult,
   useForm,
 } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
@@ -19,8 +20,14 @@ import { siteCmsPageService } from "~/features/cms/site-page-service.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
 const PageMetaSchema = z.object({
-  title: z.string({ error: "Title is required" }).trim(),
-  description: z.string({ error: "Description is required" }).trim(),
+  title: z
+    .string({ error: "Title is required" })
+    .trim()
+    .min(1, "Title is required"),
+  description: z
+    .string({ error: "Description is required" })
+    .trim()
+    .min(1, "Description is required"),
   revision: z
     .string()
     .trim()
@@ -28,6 +35,20 @@ const PageMetaSchema = z.object({
     .transform((v) => (v === undefined || v === "" ? null : Number(v)))
     .pipe(z.number().int().nonnegative().nullable()),
 });
+
+type PageEditorLoaderData = Awaited<ReturnType<typeof loader>>;
+type PageEditorActionData = Awaited<ReturnType<typeof action>>;
+type ConflictActionData = Extract<PageEditorActionData, { status: "conflict" }>;
+type PageMetaFormShape = {
+  title: string;
+  description: string;
+  revision: string;
+};
+type PageMetaFormValue = {
+  title: string;
+  description: string;
+  revision: number | null;
+};
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
@@ -47,7 +68,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   const submission = parseWithZod(formData, { schema: PageMetaSchema });
 
   if (submission.status !== "success" || !submission.value) {
-    return { submission: submission.reply() };
+    return submission.reply();
   }
 
   const baseRevision = submission.value.revision;
@@ -63,12 +84,10 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   if (result.status === "conflict") {
     return {
-      submission: submission.reply({
-        formErrors: [
-          "This page was changed by someone else. The editor has been refreshed with the current values — please review and save again.",
-        ],
-      }),
-      conflictEditorModel: result.currentEditorModel,
+      status: "conflict" as const,
+      conflictMessage:
+        "This page was changed by someone else. The editor has been refreshed with the current values - please review and save again.",
+      editorModel: result.currentEditorModel,
     };
   }
 
@@ -85,28 +104,43 @@ export function meta({ data, params }: Route.MetaArgs) {
 
 export default function AdminPageEditorRoute() {
   const { editorModel } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
+  const conflictAction =
+    actionData &&
+    typeof actionData === "object" &&
+    "status" in actionData &&
+    actionData.status === "conflict"
+      ? actionData
+      : null;
+  const displayEditorModel = conflictAction?.editorModel ?? editorModel;
+  const lastResult = conflictAction
+    ? null
+    : ((actionData as SubmissionResult<string[]> | undefined) ?? null);
+  const conflictMessage = conflictAction?.conflictMessage ?? null;
 
   return (
     <PageEditorForm
-      key={`${editorModel.pageKey}-${editorModel.status.revision ?? "default"}`}
-      editorModel={editorModel}
+      key={`${displayEditorModel.pageKey}-${displayEditorModel.status.revision ?? "default"}`}
+      editorModel={displayEditorModel}
+      lastResult={lastResult}
+      conflictMessage={conflictMessage}
     />
   );
 }
 
 function PageEditorForm({
   editorModel,
+  lastResult,
+  conflictMessage,
 }: {
-  editorModel: Awaited<ReturnType<typeof loader>>["editorModel"];
+  editorModel: PageEditorLoaderData["editorModel"];
+  lastResult: SubmissionResult<string[]> | null;
+  conflictMessage: string | null;
 }) {
-  const actionData = useActionData<typeof action>();
+  const formVersionKey = `${editorModel.pageKey}-${editorModel.status.revision ?? "default"}`;
 
-  const displayEditorModel = actionData?.conflictEditorModel ?? editorModel;
-
-  const lastResult = actionData?.submission ?? null;
-
-  const [form, fields] = useForm({
-    id: `page-editor-${editorModel.pageKey}-${editorModel.status.revision ?? "default"}`,
+  const [form, fields] = useForm<PageMetaFormShape, PageMetaFormValue>({
+    id: `page-editor-${formVersionKey}`,
     lastResult,
     shouldValidate: "onBlur",
     constraint: getZodConstraint(PageMetaSchema),
@@ -126,22 +160,36 @@ function PageEditorForm({
   return (
     <main className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-4xl">Edit {displayEditorModel.pageKey}</h1>
-        <p>{formatPageStatus(displayEditorModel.status)}</p>
+        <h1 className="text-4xl">Edit {editorModel.pageKey}</h1>
+        <p>{formatPageStatus(editorModel.status)}</p>
+        {editorModel.diagnostics.map((diagnostic) => (
+          <p
+            key={`${diagnostic.code}-${diagnostic.message}`}
+            className="text-destructive text-sm"
+          >
+            {diagnostic.message}
+          </p>
+        ))}
       </div>
 
       <Form
+        key={formVersionKey}
         method="POST"
         className="flex flex-col gap-6"
         {...getFormProps(form)}
       >
         <input {...getInputProps(fields.revision, { type: "hidden" })} />
 
+        {conflictMessage ? (
+          <p className="text-destructive text-sm">{conflictMessage}</p>
+        ) : null}
+
         {form.errors?.length ? (
           <p className="text-destructive text-sm">{form.errors.join(" ")}</p>
         ) : null}
 
         <Field
+          key={`${formVersionKey}-title`}
           labelProps={{ children: "Title" }}
           inputProps={{ ...getInputProps(fields.title, { type: "text" }) }}
           errors={fields.title.errors}
@@ -149,6 +197,7 @@ function PageEditorForm({
         />
 
         <TextareaField
+          key={`${formVersionKey}-description`}
           labelProps={{ children: "Description" }}
           textareaProps={{
             ...getTextareaProps(fields.description),

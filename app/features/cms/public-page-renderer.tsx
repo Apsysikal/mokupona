@@ -13,7 +13,7 @@ export function PublicPageRenderer({
   catalog = siteCmsCatalog,
 }: PublicPageRendererProps) {
   return (
-    <main>
+    <>
       {projection.blocks.map((block, index) => (
         <Fragment
           key={
@@ -24,6 +24,6 @@ export function PublicPageRenderer({
           {catalog.getBlockDefinition(block.type).render(block)}
         </Fragment>
       ))}
-    </main>
+    </>
   );
 }

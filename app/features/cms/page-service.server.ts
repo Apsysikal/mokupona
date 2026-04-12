@@ -11,7 +11,13 @@ import type { PageStatus, Revision } from "./page-status";
 export { formatPageStatus } from "./page-status";
 export type { PageStatus, Revision } from "./page-status";
 
-export type Diagnostic = never;
+export type Diagnostic = {
+  code:
+    | "block/invalid-data"
+    | "block/unsupported-type"
+    | "block/unsupported-version";
+  message: string;
+};
 
 export type EditorModel = {
   pageKey: PageKey;
@@ -31,6 +37,7 @@ export type EditablePageSummary = {
   pageKey: PageKey;
   title: string;
   status: PageStatus;
+  diagnostics: readonly Diagnostic[];
 };
 
 export type PersistedPageRecord = {
@@ -104,16 +111,64 @@ export function createCmsPageService({
   catalog: CmsCatalog;
   pageStore: CmsPageStore;
 }): CmsPageService {
+  const defaultBackedPage = (
+    pageKey: PageKey,
+    diagnostics: readonly Diagnostic[] = [],
+  ): ResolvedPage => ({
+    pageKey,
+    status: { kind: "default-backed", revision: null },
+    pageSnapshot: catalog.readPageSnapshot(pageKey),
+    diagnostics,
+  });
+
+  const validatePersistedPage = (
+    persistedPage: PersistedPageRecord,
+  ): readonly Diagnostic[] => {
+    const diagnostics: Diagnostic[] = [];
+
+    for (const block of persistedPage.blocks) {
+      let definition;
+
+      try {
+        definition = catalog.getBlockDefinition(block.type);
+      } catch {
+        diagnostics.push({
+          code: "block/unsupported-type",
+          message: `Persisted block "${block.type}" on page "${persistedPage.pageKey}" is no longer supported. Showing defaults instead.`,
+        });
+        continue;
+      }
+
+      if (block.version !== definition.version) {
+        diagnostics.push({
+          code: "block/unsupported-version",
+          message: `Persisted block "${block.type}" on page "${persistedPage.pageKey}" has unsupported version ${block.version}. Showing defaults instead.`,
+        });
+        continue;
+      }
+
+      const result = definition.schema.safeParse(block.data);
+      if (!result.success) {
+        diagnostics.push({
+          code: "block/invalid-data",
+          message: `Persisted block "${block.type}" on page "${persistedPage.pageKey}" has invalid data. Showing defaults instead.`,
+        });
+      }
+    }
+
+    return diagnostics;
+  };
+
   const readResolvedPage = async (pageKey: PageKey): Promise<ResolvedPage> => {
     const persistedPage = await pageStore.readPage(pageKey);
 
     if (!persistedPage) {
-      return {
-        pageKey,
-        status: { kind: "default-backed", revision: null },
-        pageSnapshot: catalog.readPageSnapshot(pageKey),
-        diagnostics: [],
-      };
+      return defaultBackedPage(pageKey);
+    }
+
+    const diagnostics = validatePersistedPage(persistedPage);
+    if (diagnostics.length > 0) {
+      return defaultBackedPage(pageKey, diagnostics);
     }
 
     return {
@@ -155,6 +210,7 @@ export function createCmsPageService({
             pageKey,
             title: resolved.pageSnapshot.title,
             status: resolved.status,
+            diagnostics: resolved.diagnostics,
           };
         }),
       );

@@ -92,9 +92,9 @@ What changed:
 - added the Cypress tracer bullet `cypress/e2e/admin-pages.cy.ts` covering first-write `Materialization`, `Revision` bumping, and public home/meta reflection
 
 Important debugging note:
-- the failing save path was not a missing POST; the browser was posting successfully, but the default-backed `Revision` hidden field was submitted as an empty string, and the `PageMetaSchema` required a non-empty `revision`, so `parseWithZod(...)` rejected the submission before it reached `applyPageCommand`
+- the failing save path was not a missing POST; the browser was posting successfully, but the default-backed `Revision` hidden field was submitted as an empty string, and the schema at the time did not accept that default-backed value, so `parseWithZod(...)` rejected the submission before it reached `applyPageCommand`
 - that made the action reply with a validation error and the page stayed `Default-backed`
-- the correct fix was just to make `revision` optional in `PageMetaSchema` and treat a missing value as a `null` `baseRevision`
+- the correct fix was to treat the empty hidden `revision` value as "no persisted revision yet" and map it to a `null` `baseRevision`
 - dropping the `@conform-to/react` `useForm` wiring and moving to a raw `Form` + `type="submit"` button was not necessary to fix the bug — the route should have stayed on the conform pattern used by every other admin edit route, and this drift has since been reverted
 - the Cypress test was updated to drive the real `Save Page` interaction end to end
 
@@ -108,4 +108,26 @@ Validation result for the completed slice:
 - `npm run format` ✅
 - `npm run lint` ✅
 - `npm run test` ✅
+- `env -u ELECTRON_RUN_AS_NODE npm run test:e2e:run` ✅
+
+---
+
+Review closeout complete
+
+What changed:
+- restored the admin page editor to the repo-standard conform flow, including surfaced title/description validation errors and a non-500 stale-write conflict path that re-renders the current `Editor Model`
+- split page-meta writes so they update only `Page` columns and preserve persisted `PageBlock.id` values for unchanged blocks, with a Prisma regression test to pin that contract
+- made persisted CMS reads defensive: unsupported block types, unsupported versions, and schema-invalid block data now produce typed diagnostics and fall back to the default-backed snapshot instead of reaching renderers as unchecked content
+- applied the low-risk cleanup items from the review: shared page status formatting, route/layout cleanup, centralized `DefinitionKey`, stricter meta-tag typing, removal of the redundant `cloneBlocks` spread, and removal of the redundant Prisma page-block index
+- squashed the undelivered CMS migrations back down to a single migration by folding the redundant index removal into `prisma/migrations/20260412151606_add_cms_pages/migration.sql`
+
+Notes:
+- the earlier progress note about the page editor bug now reflects the actual cause: the failing path was the empty hidden `revision` value, not a missing POST
+- broken/unsupported block round-tripping in the admin editor is still future-slice work; this review closeout only hardens safe read-time recovery and diagnostics
+
+Validation result for the review closeout:
+- `npm run format` ✅
+- `npm run lint` ✅
+- `npm run typecheck` ✅
+- `npm run test -- --run` ✅
 - `env -u ELECTRON_RUN_AS_NODE npm run test:e2e:run` ✅
