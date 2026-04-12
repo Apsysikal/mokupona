@@ -1,0 +1,13 @@
+Handoff note
+
+I introduced the first registry-backed CMS tracer bullet for issue `#362`. The public home route no longer hard-codes block composition; it now reads the `home` Page Definition through `app/features/cms/catalog.ts`, resolves block renderers from the centralized block definitions, and renders through `PublicPageRenderer`. The key new modules are `catalog.ts`, `site-catalog.ts`, `pages/home.ts`, and the block-definition exports in `app/features/cms/blocks/*/index.ts`.
+
+I did this to establish the generic CMS read/render path from PRD `#361` while keeping the page fully default-backed. The important decision is that the route consumes a `Public Projection`, while the catalog owns validation, `Page Snapshot` creation, metadata/share derivation, and fail-fast registry checks. That keeps the route thin and gives later persistence/admin work a stable seam without needing to refactor the public path again.
+
+Follow-up closeout work for `#362` removed leftover home-route prototype code, detached default-backed block data returned from the catalog, and expanded tests around fail-fast validation, projection edge cases, and real-definition renderer dispatch.
+
+Specialties and workflow notes: use the terms from `UBIQUITOUS_LANGUAGE.md` consistently, because the distinction between `Page Definition`, `Page Snapshot`, and `Public Projection` matters in both code and tests. `RootLoaderData.domainUrl` is a `string`, so the catalog accepts `string | URL` context for projection. In this environment, `npm run test:e2e:run` only works reliably when invoked as `env -u ELECTRON_RUN_AS_NODE npm run test:e2e:run`; do not "fix" that by changing `package.json`, because the repo command itself should stay unchanged. Also, `npm run format` touches `.agents/*` and `UBIQUITOUS_LANGUAGE.md`, so if you need a clean issue commit, stage only the intended files or make formatting-only follow-up commits.
+
+Relevant commits:
+- `b351ebf` Add registry-backed home page renderer
+- `98552f9` Format glossary and skill docs
