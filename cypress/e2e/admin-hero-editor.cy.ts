@@ -52,9 +52,15 @@ describe("admin cms hero block editor", () => {
     cy.findByRole("button", { name: /save page/i }).click();
 
     cy.findByLabelText(/^headline$/i)
-      .clear()
-      .type("Edited headline with invalid CTA");
-    cy.findByLabelText(/^cta label$/i).clear();
+      .should("be.visible")
+      .clear();
+    cy.findByLabelText(/^headline$/i).type("Edited headline with invalid CTA", {
+      delay: 0,
+    });
+
+    cy.findByLabelText(/^cta label$/i)
+      .should("be.visible")
+      .clear();
 
     cy.findByRole("button", { name: /save block/i }).click();
 
