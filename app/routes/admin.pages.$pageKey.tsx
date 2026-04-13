@@ -171,15 +171,61 @@ export async function action({ request, params }: Route.ActionArgs) {
       return redirect(`/admin/pages/${pageKey}`);
     }
 
-    // Block commands — all share blockRef + baseRevision
-    const blockRef = parseBlockRef(formData.get("blockRef"));
     const baseRevision = parseBaseRevision(formData.get("baseRevision"));
+    const commandBuilder = createPageCommandBuilder(pageKey, baseRevision);
+
+    if (intent === "add-block") {
+      const rawBlockType = formData.get("blockType");
+      const rawBlockVersion = formData.get("blockVersion");
+
+      if (
+        typeof rawBlockType !== "string" ||
+        typeof rawBlockVersion !== "string"
+      ) {
+        throw new Response("Missing blockType or blockVersion", {
+          status: 400,
+        });
+      }
+
+      const addBlockVersion = Number(rawBlockVersion);
+      let initialData: unknown;
+
+      if (rawBlockType === "text-section" && addBlockVersion === 1) {
+        initialData = {
+          headline: "",
+          body: "",
+          variant: "plain",
+        } satisfies TextSectionBlockType["data"];
+      } else {
+        throw new Response("Unsupported block type for add", { status: 400 });
+      }
+
+      const addCommand = commandBuilder.addBlock(
+        rawBlockType as BlockType,
+        addBlockVersion,
+        initialData,
+      );
+
+      const addResult = await siteCmsPageService.applyPageCommand(addCommand);
+
+      if (addResult.status === "conflict") {
+        return {
+          status: "conflict" as const,
+          conflictMessage:
+            "Block could not be added — the page may have changed.",
+          editorModel: addResult.currentEditorModel,
+        };
+      }
+
+      return redirect(`/admin/pages/${pageKey}`);
+    }
+
+    // Remaining block commands (set-block-data, move, delete) all require blockRef
+    const blockRef = parseBlockRef(formData.get("blockRef"));
 
     if (!blockRef) {
       throw new Response("Missing or invalid blockRef", { status: 400 });
     }
-
-    const commandBuilder = createPageCommandBuilder(pageKey, baseRevision);
 
     if (intent === "set-block-data") {
       const blockType = formData.get("blockType");
@@ -436,52 +482,6 @@ export async function action({ request, params }: Route.ActionArgs) {
         previousBlocks: currentEditorModel.pageSnapshot.blocks,
         nextBlocks: result.editorModel.pageSnapshot.blocks,
       });
-
-      return redirect(`/admin/pages/${pageKey}`);
-    }
-
-    if (intent === "add-block") {
-      const rawBlockType = formData.get("blockType");
-      const rawBlockVersion = formData.get("blockVersion");
-
-      if (
-        typeof rawBlockType !== "string" ||
-        typeof rawBlockVersion !== "string"
-      ) {
-        throw new Response("Missing blockType or blockVersion", {
-          status: 400,
-        });
-      }
-
-      const addBlockVersion = Number(rawBlockVersion);
-      let initialData: unknown;
-
-      if (rawBlockType === "text-section" && addBlockVersion === 1) {
-        initialData = {
-          headline: "",
-          body: "",
-          variant: "plain",
-        } satisfies TextSectionBlockType["data"];
-      } else {
-        throw new Response("Unsupported block type for add", { status: 400 });
-      }
-
-      const addCommand = commandBuilder.addBlock(
-        rawBlockType as BlockType,
-        addBlockVersion,
-        initialData,
-      );
-
-      const addResult = await siteCmsPageService.applyPageCommand(addCommand);
-
-      if (addResult.status === "conflict") {
-        return {
-          status: "conflict" as const,
-          conflictMessage:
-            "Block could not be added — the page may have changed.",
-          editorModel: addResult.currentEditorModel,
-        };
-      }
 
       return redirect(`/admin/pages/${pageKey}`);
     }
