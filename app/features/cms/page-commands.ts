@@ -52,12 +52,22 @@ export type DeleteBlockCommand = {
   ref: MutableBlockRef;
 };
 
+export type AddBlockCommand = {
+  type: "add-block";
+  pageKey: PageKey;
+  baseRevision: Revision | null;
+  blockType: BlockType;
+  blockVersion: number;
+  data: unknown;
+};
+
 export type PageCommand =
   | SetPageMetaCommand
   | SetBlockDataCommand
   | MoveBlockUpCommand
   | MoveBlockDownCommand
-  | DeleteBlockCommand;
+  | DeleteBlockCommand
+  | AddBlockCommand;
 
 export type PageCommandBuilder = {
   setBlockData(
@@ -69,6 +79,11 @@ export type PageCommandBuilder = {
   moveBlockUp(ref: MutableBlockRef): MoveBlockUpCommand;
   moveBlockDown(ref: MutableBlockRef): MoveBlockDownCommand;
   deleteBlock(ref: MutableBlockRef): DeleteBlockCommand;
+  addBlock(
+    blockType: BlockType,
+    blockVersion: number,
+    data: unknown,
+  ): AddBlockCommand;
 };
 
 export function createPageCommandBuilder(
@@ -95,6 +110,16 @@ export function createPageCommandBuilder(
     },
     deleteBlock(ref) {
       return { type: "delete-block", pageKey, baseRevision, ref };
+    },
+    addBlock(blockType, blockVersion, data) {
+      return {
+        type: "add-block",
+        pageKey,
+        baseRevision,
+        blockType,
+        blockVersion,
+        data,
+      };
     },
   };
 }

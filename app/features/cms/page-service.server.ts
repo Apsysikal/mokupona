@@ -8,6 +8,7 @@ import type {
   PublicProjectionContext,
 } from "./catalog";
 import type {
+  AddBlockCommand,
   DeleteBlockCommand,
   MoveBlockDownCommand,
   MoveBlockUpCommand,
@@ -24,6 +25,7 @@ export type { PageStatus, Revision } from "./page-status";
 // of page-service.server continue to work without changes.
 export { createPageCommandBuilder } from "./page-commands";
 export type {
+  AddBlockCommand,
   DeleteBlockCommand,
   MoveBlockDownCommand,
   MoveBlockUpCommand,
@@ -246,7 +248,8 @@ export function createCmsPageService({
       | SetBlockDataCommand
       | MoveBlockUpCommand
       | MoveBlockDownCommand
-      | DeleteBlockCommand,
+      | DeleteBlockCommand
+      | AddBlockCommand,
     mutate: (blocks: BlockInstance[]) => BlockInstance[] | null,
   ): Promise<ApplyPageCommandResult> => {
     const currentPage = await readResolvedPage(command.pageKey);
@@ -433,6 +436,48 @@ export function createCmsPageService({
     });
   };
 
+  const applyAddBlock = (
+    command: AddBlockCommand,
+  ): Promise<ApplyPageCommandResult> => {
+    let definition;
+    try {
+      definition = catalog.getBlockDefinition(command.blockType);
+    } catch {
+      return readResolvedPage(command.pageKey).then((currentPage) => ({
+        status: "conflict" as const,
+        currentEditorModel: currentPage,
+        diagnostics: [],
+      }));
+    }
+
+    const pageRule = catalog.getPageRule(command.pageKey);
+    if (!pageRule.allowedBlockTypes.includes(command.blockType)) {
+      return readResolvedPage(command.pageKey).then((currentPage) => ({
+        status: "conflict" as const,
+        currentEditorModel: currentPage,
+        diagnostics: [],
+      }));
+    }
+
+    const parseResult = definition.schema.safeParse(command.data);
+    if (!parseResult.success) {
+      return readResolvedPage(command.pageKey).then((currentPage) => ({
+        status: "conflict" as const,
+        currentEditorModel: currentPage,
+        diagnostics: [],
+      }));
+    }
+
+    const validatedData = parseResult.data;
+    const newBlock: BlockInstance = {
+      type: command.blockType,
+      version: command.blockVersion,
+      data: validatedData,
+    };
+
+    return applyBlockMutation(command, (blocks) => [...blocks, newBlock]);
+  };
+
   const applySetPageMeta = async (
     command: SetPageMetaCommand,
   ): Promise<ApplyPageCommandResult> => {
@@ -551,6 +596,8 @@ export function createCmsPageService({
           return applyMoveBlockDown(command);
         case "delete-block":
           return applyDeleteBlock(command);
+        case "add-block":
+          return applyAddBlock(command);
       }
     },
   };
