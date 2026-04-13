@@ -1,11 +1,40 @@
 import { z } from "zod/v4";
 
 import type { LinkTargetRegistry } from "../../link-targets";
-import { ActionSchema, ImageSchema } from "../models";
+import { ActionSchema } from "../models";
 import type { BlockBaseType, BlockType, BlockVersion } from "../types";
 
 const BLOCK_TYPE: BlockType = "hero";
 const BLOCK_VERSION: BlockVersion = 1;
+
+const HeroAssetImageSchema = z.object({
+  kind: z.literal("asset"),
+  src: z.string(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+});
+
+const HeroUploadedImageSchema = z
+  .object({
+    kind: z.literal("uploaded"),
+    imageId: z.string().trim().min(1),
+    fallbackAssetSrc: z.string().trim().min(1),
+    decorative: z.boolean(),
+    alt: z
+      .string()
+      .trim()
+      .optional()
+      .transform((value) => (value ? value : undefined)),
+  })
+  .superRefine((image, ctx) => {
+    if (!image.decorative && !image.alt) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["alt"],
+        message: "Alt text is required when image is descriptive",
+      });
+    }
+  });
 
 function optionalCopyFieldSchema() {
   return z
@@ -49,7 +78,10 @@ export function createHeroBlockDataSchema(
     actions: z
       .array(createHeroActionSchema(linkTargetRegistry))
       .min(1, "At least one CTA is required"),
-    image: ImageSchema,
+    image: z.discriminatedUnion("kind", [
+      HeroAssetImageSchema,
+      HeroUploadedImageSchema,
+    ]),
   });
 }
 

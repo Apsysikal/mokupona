@@ -2,8 +2,8 @@ import { ChevronRightIcon, PersonIcon } from "@radix-ui/react-icons";
 import { Link, Outlet, useLoaderData } from "react-router";
 
 import type { Route } from "./+types/admin.board-members";
-import { OptimizedImage } from "./file.$fileId";
 
+import { OptimizedImage } from "~/components/optimized-image";
 import { prisma } from "~/db.server";
 import { requireUserWithRole } from "~/utils/session.server";
 

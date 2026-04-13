@@ -14,6 +14,7 @@ const heroBlock: HeroBlockType = {
       "A dinner society in Zurich, bringing people together through shared meals, stories, and the joy of discovery.",
     actions: [{ href: "/dinners", label: "join a dinner" }],
     image: {
+      kind: "asset",
       src: "/hero-image.jpg",
     },
   },

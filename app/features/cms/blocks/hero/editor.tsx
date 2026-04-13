@@ -55,6 +55,7 @@ export function HeroBlockEditor({ ctx }: HeroBlockEditorProps) {
     <div className="flex flex-col gap-4 rounded-md border p-4">
       <form
         method="post"
+        encType="multipart/form-data"
         className="flex flex-col gap-4"
         {...getFormProps(form)}
       >
@@ -81,8 +82,73 @@ export function HeroBlockEditor({ ctx }: HeroBlockEditorProps) {
         ) : null}
 
         <p className="text-muted-foreground text-sm">
-          Image: <span>{data.image.src}</span> (read-only)
+          {data.image.kind === "asset" ? (
+            <>
+              Image: <span>{data.image.src}</span> (default asset, read-only)
+            </>
+          ) : (
+            <>
+              Image: <span>{`/file/${data.image.imageId}`}</span> (CMS upload)
+            </>
+          )}
         </p>
+
+        <SelectField
+          labelProps={{ children: "Image action" }}
+          selectProps={{
+            ...getSelectProps(fields.imageAction),
+            children: (
+              <>
+                <option value="keep">Keep current image</option>
+                <option value="replace">Replace with uploaded image</option>
+                {data.image.kind === "uploaded" ? (
+                  <option value="remove">Use default asset image</option>
+                ) : null}
+              </>
+            ),
+            className:
+              "focus-visible:border-0 flex h-9 w-full appearance-none rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground file:placeholder:text-foreground focus-visible:outline-hidden focus-visible:inset-ring-2 focus-visible:inset-ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+          }}
+          errors={fields.imageAction.errors}
+          className="flex flex-col gap-2"
+        />
+
+        <Field
+          labelProps={{ children: "Upload image file" }}
+          inputProps={{
+            name: "imageFile",
+            id: `${formId}-imageFile`,
+            type: "file",
+            accept: "image/*",
+          }}
+          errors={undefined}
+          className="flex flex-col gap-2"
+        />
+
+        <SelectField
+          labelProps={{ children: "Image accessibility" }}
+          selectProps={{
+            ...getSelectProps(fields.imageAccessibility),
+            children: (
+              <>
+                <option value="">Choose accessibility</option>
+                <option value="decorative">Decorative image</option>
+                <option value="descriptive">Descriptive image</option>
+              </>
+            ),
+            className:
+              "focus-visible:border-0 flex h-9 w-full appearance-none rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground file:placeholder:text-foreground focus-visible:outline-hidden focus-visible:inset-ring-2 focus-visible:inset-ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+          }}
+          errors={fields.imageAccessibility.errors}
+          className="flex flex-col gap-2"
+        />
+
+        <Field
+          labelProps={{ children: "Image alt text" }}
+          inputProps={{ ...getInputProps(fields.imageAlt, { type: "text" }) }}
+          errors={fields.imageAlt.errors}
+          className="flex flex-col gap-2"
+        />
 
         <Field
           labelProps={{ children: "Eyebrow" }}

@@ -5,7 +5,9 @@ import { generateSrcSet } from "../utils";
 
 import type { HeroBlockType } from "./model";
 
+import { OptimizedImage } from "~/components/optimized-image";
 import { Button } from "~/components/ui/button";
+import { getImageUrl } from "~/utils/misc";
 
 type HeroBlockViewProps = React.ComponentPropsWithoutRef<"section"> & {
   blockData: HeroBlockType;
@@ -14,7 +16,10 @@ type HeroBlockViewProps = React.ComponentPropsWithoutRef<"section"> & {
 export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
   const { data } = blockData;
   const { eyebrow, headline, description, actions = [], image } = data;
-  const { src, alt, width, height } = image;
+  const src = image.kind === "asset" ? image.src : getImageUrl(image.imageId);
+  const alt = image.kind === "asset" ? "" : image.decorative ? "" : image.alt;
+  const width = image.kind === "asset" ? image.width : undefined;
+  const height = image.kind === "asset" ? image.height : undefined;
   const srcSet = generateSrcSet(src, [432, 648, 864, 1080]);
 
   return (
@@ -69,17 +74,28 @@ export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
 
         <div className="mx-auto flex not-lg:mt-10">
           <div className="max-w-3xl flex-none not-md:pl-4 md:max-w-3xl lg:max-w-4xl 2xl:max-w-none">
-            <picture>
-              <img
-                srcSet={srcSet}
-                src={src}
-                className="w-304 rounded-md object-center"
-                fetchPriority="high"
-                width={width}
-                height={height}
+            {image.kind === "asset" ? (
+              <picture>
+                <img
+                  srcSet={srcSet}
+                  src={src}
+                  className="w-304 rounded-md object-center"
+                  fetchPriority="high"
+                  width={width}
+                  height={height}
+                  alt={alt}
+                />
+              </picture>
+            ) : (
+              <OptimizedImage
+                imageId={image.imageId}
                 alt={alt}
+                width={640}
+                height={480}
+                sizes="(min-width: 1024px) 640px, (min-width: 768px) 50vw, 100vw"
+                className="w-304 rounded-md object-center"
               />
-            </picture>
+            )}
           </div>
         </div>
       </div>

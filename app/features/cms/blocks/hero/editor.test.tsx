@@ -18,7 +18,7 @@ function makeCtx(
     headline: "test headline",
     description: "test description",
     actions: [{ label: "Join", href: "/join" }],
-    image: { src: "/hero.jpg" },
+    image: { kind: "asset", src: "/hero.jpg" },
   };
 
   return {
@@ -71,6 +71,15 @@ describe("HeroBlockEditor", () => {
     // The image src should be visible but not in an <input type="text"> that could alter it
     expect(html).toContain("/hero.jpg");
     expect(html).not.toContain(`<input type="text" value="/hero.jpg"`);
+  });
+
+  test("renders image lifecycle and accessibility fields", () => {
+    const html = render(<HeroBlockEditor ctx={makeCtx()} />);
+
+    expect(html).toContain("Image action");
+    expect(html).toContain('name="imageFile"');
+    expect(html).toContain("Image accessibility");
+    expect(html).toContain("Choose accessibility");
   });
 
   test("shows move-up button when canMoveUp is true", () => {

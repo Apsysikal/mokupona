@@ -548,7 +548,9 @@ describe("createCmsPageService — block commands", () => {
     const defaultHeroData = defaultSnapshot.blocks[0].data as {
       headline: string;
       actions: { href: string; label: string }[];
-      image: { src: string };
+      image:
+        | { kind: "asset"; src: string }
+        | { kind: "uploaded"; imageId: string };
     };
 
     const result = await service.applyPageCommand({

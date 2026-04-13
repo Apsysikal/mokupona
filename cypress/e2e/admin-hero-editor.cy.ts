@@ -1,4 +1,24 @@
-import { runUploadDbCommand } from "../support/upload-test-utils";
+import {
+  FILE_TOO_LARGE_ERROR,
+  runUploadDbCommand,
+  uploadFileInput,
+  VALID_UPLOAD_FIXTURE_PATH,
+  ZOD_LIMIT_BYTES,
+} from "../support/upload-test-utils";
+
+function materializeHomePage() {
+  cy.visitAndCheck("/admin/pages/home");
+  cy.findByRole("button", { name: /save page/i }).click();
+  cy.findByText(/persisted page/i).should("be.visible");
+}
+
+function setHeroImageReplacement(file: string | Cypress.FileReferenceObject) {
+  cy.findByLabelText(/^image action$/i).select("replace");
+  cy.findByLabelText(/^upload image file$/i).selectFile(file, {
+    force: true,
+  });
+  cy.findByLabelText(/^image accessibility$/i).select("decorative");
+}
 
 describe("admin cms hero block editor", () => {
   beforeEach(() => {
@@ -125,5 +145,89 @@ describe("admin cms hero block editor", () => {
     // Move-up and delete buttons should not exist for the fixed hero block
     cy.findByRole("button", { name: /move up/i }).should("not.exist");
     cy.findByRole("button", { name: /delete block/i }).should("not.exist");
+  });
+
+  it("serves a non-broken homepage hero image after uploading a CMS image", () => {
+    materializeHomePage();
+    setHeroImageReplacement(VALID_UPLOAD_FIXTURE_PATH);
+
+    cy.findByRole("button", { name: /save block/i }).click();
+    cy.findByText(/persisted page/i).should("be.visible");
+
+    cy.visitAndCheck("/");
+    cy.get("section img")
+      .first()
+      .should("have.attr", "src")
+      .and("match", /^\/file\//)
+      .then((src) => {
+        cy.request(String(src)).its("status").should("eq", 200);
+      });
+
+    cy.get("section img")
+      .first()
+      .should(($img) => {
+        const image = $img[0] as HTMLImageElement | undefined;
+        expect(image?.naturalWidth ?? 0).to.be.greaterThan(0);
+      });
+  });
+
+  it("shows a validation error when the uploaded hero image is larger than 3MB", () => {
+    materializeHomePage();
+    setHeroImageReplacement(
+      uploadFileInput(ZOD_LIMIT_BYTES + 1, { fileName: "zod-too-large.jpg" }),
+    );
+
+    cy.findByRole("button", { name: /save block/i }).click();
+    cy.findByText(FILE_TOO_LARGE_ERROR).should("be.visible");
+  });
+
+  it("requires an explicit accessibility choice before replacing the hero image", () => {
+    materializeHomePage();
+
+    cy.findByLabelText(/^image action$/i).select("replace");
+    cy.findByLabelText(/^upload image file$/i).selectFile(
+      VALID_UPLOAD_FIXTURE_PATH,
+      {
+        force: true,
+      },
+    );
+
+    cy.findByRole("button", { name: /save block/i }).click();
+    cy.findByText(/image accessibility choice is required/i).should(
+      "be.visible",
+    );
+  });
+
+  it("updates uploaded hero accessibility metadata without requiring a second upload", () => {
+    materializeHomePage();
+    cy.findByLabelText(/^image action$/i).select("replace");
+    cy.findByLabelText(/^upload image file$/i).selectFile(
+      VALID_UPLOAD_FIXTURE_PATH,
+      {
+        force: true,
+      },
+    );
+    cy.findByLabelText(/^image accessibility$/i).select("descriptive");
+    cy.findByLabelText(/^image alt text$/i)
+      .clear()
+      .type("Original hero alt text");
+
+    cy.findByRole("button", { name: /save block/i }).click();
+    cy.findByText(/persisted page/i).should("be.visible");
+
+    cy.visitAndCheck("/admin/pages/home");
+    cy.findByLabelText(/^image action$/i).should("have.value", "keep");
+    cy.findByLabelText(/^image accessibility$/i).select("descriptive");
+    cy.findByLabelText(/^image alt text$/i)
+      .clear()
+      .type("Updated hero alt text");
+
+    cy.findByRole("button", { name: /save block/i }).click();
+    cy.findByText(/persisted page/i).should("be.visible");
+
+    cy.visitAndCheck("/");
+    cy.get("section img")
+      .first()
+      .should("have.attr", "alt", "Updated hero alt text");
   });
 });
