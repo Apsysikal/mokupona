@@ -6,6 +6,7 @@ import { generateSrcSet } from "../utils";
 import type { HeroBlockType } from "./model";
 
 import { Button } from "~/components/ui/button";
+import { getImageUrl } from "~/utils/misc";
 
 type HeroBlockViewProps = React.ComponentPropsWithoutRef<"section"> & {
   blockData: HeroBlockType;
@@ -14,7 +15,10 @@ type HeroBlockViewProps = React.ComponentPropsWithoutRef<"section"> & {
 export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
   const { data } = blockData;
   const { eyebrow, headline, description, actions = [], image } = data;
-  const { src, alt, width, height } = image;
+  const src = image.kind === "asset" ? image.src : getImageUrl(image.imageId);
+  const alt = image.kind === "asset" ? "" : image.decorative ? "" : image.alt;
+  const width = image.kind === "asset" ? image.width : undefined;
+  const height = image.kind === "asset" ? image.height : undefined;
   const srcSet = generateSrcSet(src, [432, 648, 864, 1080]);
 
   return (
