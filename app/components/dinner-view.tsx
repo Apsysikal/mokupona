@@ -8,6 +8,7 @@ import clsx from "clsx";
 import type { ReactNode } from "react";
 
 import { AutoLink } from "./auto-link";
+import { OptimizedImage } from "./optimized-image";
 import {
   Accordion,
   AccordionContent,
@@ -17,7 +18,6 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 import type { loader } from "~/routes/admin.dinners.$dinnerId";
-import { OptimizedImage } from "~/routes/file.$fileId";
 import { dateFormatBuilder } from "~/utils/misc";
 
 export interface DinnerViewProps {

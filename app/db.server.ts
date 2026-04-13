@@ -6,7 +6,6 @@ import { PrismaClient } from "#prisma/generated/client";
 
 import { singleton } from "./utils/singleton.server";
 
-
 const adapter = new PrismaBetterSqlite3({
   url: process.env.DATABASE_URL,
 });

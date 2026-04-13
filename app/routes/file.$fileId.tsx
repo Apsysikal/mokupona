@@ -1,77 +1,27 @@
-import type { ComponentProps } from "react";
 import sharp, { type FitEnum } from "sharp";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
-import type { Route } from "./+types/file.$fileId";
-
 import { prisma } from "~/db.server";
-import { logger } from "~/logger.server";
 import {
   fileStorage as cache,
   getStorageKey as getCacheKey,
 } from "~/utils/file-chache-storage.server";
-import { getImageUrl } from "~/utils/misc";
 
 const SearchParamsSchema = z.object({
-  width: z.coerce.number().min(0).optional(),
-  height: z.coerce.number().min(0).optional(),
+  width: z.coerce.number().int().positive().optional(),
+  height: z.coerce.number().int().positive().optional(),
   fit: z.enum(["cover", "contain", "fill"]).optional().default("cover"),
 });
 
-type SearchParams = z.infer<typeof SearchParamsSchema>;
+type FileRouteLoaderArgs = {
+  request: Request;
+  params: {
+    fileId?: string;
+  };
+};
 
-type ImageInputProps = {
-  imageId: string;
-  width: number;
-  height: number;
-} & Partial<Pick<SearchParams, "fit">>;
-
-type ImageProps = Omit<ComponentProps<"img">, "width" | "height" | "src"> &
-  ImageInputProps;
-
-export function OptimizedImage({
-  imageId,
-  width,
-  height,
-  fit = "cover",
-  ...props
-}: ImageProps) {
-  const breakPoints = [432, 648, 864, 1080];
-  const imageUrl = getImageUrl(imageId);
-  const aspect = width / height;
-
-  const searchParams = new URLSearchParams({
-    w: `${width}`,
-    h: `${height}`,
-    fit,
-  });
-
-  const srcSetUrls = breakPoints.map((w) => {
-    const h = w / aspect;
-    const searchParams = new URLSearchParams({
-      w: `${w}`,
-      h: `${h}`,
-      fit,
-    });
-
-    return `${imageUrl + "?" + searchParams.toString()} ${w}w`;
-  });
-
-  return (
-    <picture>
-      <img
-        srcSet={srcSetUrls.join(", ")}
-        src={imageUrl + "?" + searchParams.toString()}
-        width={width}
-        height={height}
-        {...props}
-      />
-    </picture>
-  );
-}
-
-export async function loader({ request, params }: Route.LoaderArgs) {
+export async function loader({ request, params }: FileRouteLoaderArgs) {
   const url = new URL(request.url);
   const searchParams = url.searchParams;
   const { fileId } = params;
@@ -81,8 +31,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     height: searchParams.get("h"),
     fit: searchParams.get("fit"),
   });
-
-  logger.info(JSON.stringify(options));
 
   if (!options.success) {
     // Params were malformed
@@ -96,28 +44,19 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const { width, height, fit } = options.data;
   const cacheKey = getCacheKey(`${fileId}-${width}-${height}-${fit}`);
 
-  logger.info(`Checking cache with: ${cacheKey}`);
-
   if (await cache.has(cacheKey)) {
     const fileStream = await cache.get(cacheKey);
     if (!fileStream) {
-      // Key exists but no file.
-      // Continue as if no cache exists
-      logger.info(`Cache miss with: ${cacheKey}`);
+      // Key exists but no file. Continue as if no cache exists.
     } else {
-      // Cache hit successful
-      logger.info(`Cache hit with: ${cacheKey}`);
       return new Response(fileStream.stream(), {
         headers: {
           "Content-Type": "image/webp",
           "Content-Disposition": `inline; filename="${params.fileId}"`,
           "Cache-Control": "public, max-age=31536000, immutable",
-          "Transfer-Encoding": "chunked",
         },
       });
     }
-  } else {
-    logger.info(`Cache miss with: ${cacheKey}`);
   }
 
   const file = await prisma.image.findUnique({ where: { id: fileId } });
@@ -126,24 +65,26 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const optimizedImage = await sharp(file.blob)
     .webp()
     .resize({
-      ...(width && { width: Number(width) }),
-      ...(height && { height: Number(height) }),
+      ...(width ? { width } : {}),
+      ...(height ? { height } : {}),
       fit: isAllowedFit(fit) ? fit : "cover",
     })
     .toBuffer();
 
-  const test = new Uint8Array(optimizedImage);
-  const testFile = new File([test], fileId);
+  const optimizedImageBytes = new Uint8Array(optimizedImage);
+  const optimizedImageFile = new File([optimizedImageBytes], fileId);
 
   // @ts-ignore
-  return new Response((await cache.put(cacheKey, testFile)).stream(), {
-    headers: {
-      "Content-Type": "image/webp",
-      "Content-Disposition": `inline; filename="${params.fileId}"`,
-      "Cache-Control": "public, max-age=31536000, immutable",
-      "Transfer-Encoding": "chunked",
+  return new Response(
+    (await cache.put(cacheKey, optimizedImageFile)).stream(),
+    {
+      headers: {
+        "Content-Type": "image/webp",
+        "Content-Disposition": `inline; filename="${params.fileId}"`,
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
     },
-  });
+  );
 }
 
 function isAllowedFit(s: string | null): s is FitEnum[keyof FitEnum] {

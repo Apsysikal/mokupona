@@ -1,0 +1,133 @@
+Handoff note
+
+I introduced the first registry-backed CMS tracer bullet for issue `#362`. The public home route no longer hard-codes block composition; it now reads the `home` Page Definition through `app/features/cms/catalog.ts`, resolves block renderers from the centralized block definitions, and renders through `PublicPageRenderer`. The key new modules are `catalog.ts`, `site-catalog.ts`, `pages/home.ts`, and the block-definition exports in `app/features/cms/blocks/*/index.ts`.
+
+I did this to establish the generic CMS read/render path from PRD `#361` while keeping the page fully default-backed. The important decision is that the route consumes a `Public Projection`, while the catalog owns validation, `Page Snapshot` creation, metadata/share derivation, and fail-fast registry checks. That keeps the route thin and gives later persistence/admin work a stable seam without needing to refactor the public path again.
+
+Follow-up closeout work for `#362` removed leftover home-route prototype code, detached default-backed block data returned from the catalog, and expanded tests around fail-fast validation, projection edge cases, and real-definition renderer dispatch.
+
+Specialties and workflow notes: use the terms from `UBIQUITOUS_LANGUAGE.md` consistently, because the distinction between `Page Definition`, `Page Snapshot`, and `Public Projection` matters in both code and tests. `RootLoaderData.domainUrl` is a `string`, so the catalog accepts `string | URL` context for projection. In this environment, `npm run test:e2e:run` only works reliably when invoked as `env -u ELECTRON_RUN_AS_NODE npm run test:e2e:run`; do not "fix" that by changing `package.json`, because the repo command itself should stay unchanged. Also, `npm run format` touches `.agents/*` and `UBIQUITOUS_LANGUAGE.md`, so if you need a clean issue commit, stage only the intended files or make formatting-only follow-up commits.
+
+Relevant commits:
+- `b351ebf` Add registry-backed home page renderer
+- `98552f9` Format glossary and skill docs
+
+---
+
+Issue `#363` kickoff note
+
+Approved direction for this slice:
+- keep a narrow CMS page service rather than pushing persistence into routes or bloating `catalog.ts`
+- preserve the `Page Definition -> Page Snapshot -> Public Projection` seam
+- change `projectPublic(...)` so it derives a `Public Projection` from an already-resolved `Page Snapshot`
+- keep writes behind a typed `Page Command` entry point so later block commands can extend the same mutation seam
+
+Planned TDD order:
+1. tracer bullet in catalog tests for `Public Projection` from `Page Snapshot`
+2. service tests for `Default-backed Page` reads and first-write `Materialization`
+3. route/UI work for `/admin/pages` and `/admin/pages/home`
+4. Cypress flow that edits page meta and verifies the public home page reflects the change
+
+Validation note:
+- after each red/green slice, run `npm run typecheck`, `npm run format`, `npm run lint`, `npm run test`, and `env -u ELECTRON_RUN_AS_NODE npm run test:e2e:run`
+
+Tracer bullet 1 complete
+
+What changed:
+- `CmsCatalog.projectPublic(...)` now derives the `Public Projection` from a provided `Page Snapshot` instead of re-reading by `Page Key`
+- `_index` now resolves the `home` `Page Snapshot` first, then projects it for both page meta and rendering
+- catalog and renderer tests were updated to prove projection follows the passed snapshot and still clones block data
+
+Why this matters:
+- it preserves the approved seam for `#363`: `Page Definition -> Page Snapshot -> Public Projection`
+- later persistence work can resolve a truthful `Default-backed Page` or `Persisted Page` once, then feed the same `Page Snapshot` into public projection without route-local branching
+
+Validation result for tracer bullet 1:
+- `npm run typecheck` ✅
+- `npm run format` ✅
+- `npm run lint` ✅
+- `npm run test -- --run` ✅
+- `env -u ELECTRON_RUN_AS_NODE npm run test:e2e:run` ✅
+
+Service seam slice complete
+
+What changed:
+- added `app/features/cms/page-service.server.ts` as the new CMS read/write seam for issue `#363`
+- service now supports:
+  - `listEditablePages()` for the future admin Pages section
+  - `readPage()` for the public read path
+  - `readEditorModel()` for the admin editor route
+  - `applyPageCommand()` with the first `set-page-meta` command
+- widened `Page Snapshot.provenance` to allow both `default` and `persisted`
+
+Current implementation status:
+- the service is backed by an abstract `CmsPageStore` so the TDD loop can pin behavior before wiring Prisma
+- current tests cover:
+  - listing `home` as a `Default-backed Page`
+  - reading the `home` `Editor Model` before persistence
+  - first-write `Materialization` of the full `Page Snapshot`
+  - persisted reads after materialization
+- optimistic update behavior exists in the store contract, but the real Prisma-backed store and route/UI integration are still pending
+
+Next slice:
+1. add Prisma `Page` / `PageBlock` persistence and a real `CmsPageStore`
+2. switch the public home route to `CmsPageService.readPage(...)`
+3. add `/admin/pages` and `/admin/pages/home`
+4. add the Cypress admin edit flow for page title/description
+
+Validation result for service seam slice:
+- `npm run typecheck` ✅
+- `npm run format` ✅
+- `npm run lint` ✅
+- `npm run test -- --run` ✅
+- `env -u ELECTRON_RUN_AS_NODE npm run test:e2e:run` ✅
+
+Pages persistence and admin flow slice complete
+
+What changed:
+- added Prisma-backed CMS persistence with `Page` and `PageBlock` records plus migration `20260412151606_add_cms_pages`
+- added `createPrismaCmsPageStore(...)` and wired `siteCmsPageService` to the real store
+- switched the public home route to `siteCmsPageService.readPage("home")` and project the `Public Projection` from the returned `Page Snapshot`
+- added admin routes for `/admin/pages` and `/admin/pages/home`
+- added the Cypress tracer bullet `cypress/e2e/admin-pages.cy.ts` covering first-write `Materialization`, `Revision` bumping, and public home/meta reflection
+
+Important debugging note:
+- the failing save path was not a missing POST; the browser was posting successfully, but the default-backed `Revision` hidden field was submitted as an empty string, and the schema at the time did not accept that default-backed value, so `parseWithZod(...)` rejected the submission before it reached `applyPageCommand`
+- that made the action reply with a validation error and the page stayed `Default-backed`
+- the correct fix was to treat the empty hidden `revision` value as "no persisted revision yet" and map it to a `null` `baseRevision`
+- dropping the `@conform-to/react` `useForm` wiring and moving to a raw `Form` + `type="submit"` button was not necessary to fix the bug — the route should have stayed on the conform pattern used by every other admin edit route, and this drift has since been reverted
+- the Cypress test was updated to drive the real `Save Page` interaction end to end
+
+Current issue status:
+- issue `#363` acceptance is implemented locally
+- admin users can discover editable pages, open `home`, see `Default-backed Page` vs `Persisted Page` status, save page meta, and get `Revision` bumps
+- the public home route and metadata now reflect persisted page title/description
+
+Validation result for the completed slice:
+- `npm run typecheck` ✅
+- `npm run format` ✅
+- `npm run lint` ✅
+- `npm run test` ✅
+- `env -u ELECTRON_RUN_AS_NODE npm run test:e2e:run` ✅
+
+---
+
+Review closeout complete
+
+What changed:
+- restored the admin page editor to the repo-standard conform flow, including surfaced title/description validation errors and a non-500 stale-write conflict path that re-renders the current `Editor Model`
+- split page-meta writes so they update only `Page` columns and preserve persisted `PageBlock.id` values for unchanged blocks, with a Prisma regression test to pin that contract
+- made persisted CMS reads defensive: unsupported block types, unsupported versions, and schema-invalid block data now produce typed diagnostics and fall back to the default-backed snapshot instead of reaching renderers as unchecked content
+- applied the low-risk cleanup items from the review: shared page status formatting, route/layout cleanup, centralized `DefinitionKey`, stricter meta-tag typing, removal of the redundant `cloneBlocks` spread, and removal of the redundant Prisma page-block index
+- squashed the undelivered CMS migrations back down to a single migration by folding the redundant index removal into `prisma/migrations/20260412151606_add_cms_pages/migration.sql`
+
+Notes:
+- the earlier progress note about the page editor bug now reflects the actual cause: the failing path was the empty hidden `revision` value, not a missing POST
+- broken/unsupported block round-tripping in the admin editor is still future-slice work; this review closeout only hardens safe read-time recovery and diagnostics
+
+Validation result for the review closeout:
+- `npm run format` ✅
+- `npm run lint` ✅
+- `npm run typecheck` ✅
+- `npm run test -- --run` ✅
+- `env -u ELECTRON_RUN_AS_NODE npm run test:e2e:run` ✅

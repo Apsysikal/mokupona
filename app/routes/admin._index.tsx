@@ -22,6 +22,9 @@ export default function DinnersPage() {
   return (
     <div className="flex flex-col gap-1">
       <Button asChild>
+        <Link to="pages">Manage Pages</Link>
+      </Button>
+      <Button asChild>
         <Link to="dinners">Manage Dinners</Link>
       </Button>
       <Button asChild>
