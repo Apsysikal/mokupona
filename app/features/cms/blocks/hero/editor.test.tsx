@@ -79,6 +79,7 @@ describe("HeroBlockEditor", () => {
     expect(html).toContain("Image action");
     expect(html).toContain('name="imageFile"');
     expect(html).toContain("Image accessibility");
+    expect(html).toContain("Choose accessibility");
   });
 
   test("shows move-up button when canMoveUp is true", () => {

@@ -41,6 +41,17 @@ export function collectUploadedHeroImageIdsFromBlocks(
   return imageIds;
 }
 
+export function getRemovedUploadedHeroImageIds(
+  previousBlocks: readonly BlockInstance[],
+  nextBlocks: readonly BlockInstance[],
+): string[] {
+  const nextImageIds = collectUploadedHeroImageIdsFromBlocks(nextBlocks);
+
+  return [...collectUploadedHeroImageIdsFromBlocks(previousBlocks)].filter(
+    (imageId) => !nextImageIds.has(imageId),
+  );
+}
+
 export async function deleteCmsImagesIfUnreferenced({
   imageIds,
   prisma,

@@ -12,7 +12,7 @@ export type HeroBlockEditorFormShape = {
   description: string;
   actions: [{ label: string; href: string }];
   imageAction: "keep" | "replace" | "remove";
-  imageAccessibility: "decorative" | "descriptive";
+  imageAccessibility: "" | "decorative" | "descriptive";
   imageAlt: string;
 };
 
@@ -52,7 +52,10 @@ export function createHeroBlockEditorFormSchema(
         }),
       ]),
       imageAction: z.enum(["keep", "replace", "remove"]).default("keep"),
-      imageAccessibility: z.enum(["decorative", "descriptive"]).optional(),
+      imageAccessibility: z.preprocess(
+        (value) => (value === "" ? undefined : value),
+        z.enum(["decorative", "descriptive"]).optional(),
+      ),
       imageAlt: z
         .string()
         .trim()
@@ -95,7 +98,7 @@ export function getHeroBlockEditorDefaultValue(
       ? data.image.decorative
         ? "decorative"
         : "descriptive"
-      : "decorative";
+      : "";
   const imageAlt =
     data.image.kind === "uploaded" && imageAccessibility === "descriptive"
       ? (data.image.alt ?? "")
@@ -145,7 +148,18 @@ export function applyHeroBlockEditorValue(
             kind: "asset" as const,
             src: currentImage.fallbackAssetSrc,
           }
-        : currentImage;
+        : value.imageAction === "keep" &&
+            currentImage.kind === "uploaded" &&
+            value.imageAccessibility
+          ? {
+              ...currentImage,
+              decorative: value.imageAccessibility !== "descriptive",
+              alt:
+                value.imageAccessibility === "descriptive"
+                  ? value.imageAlt
+                  : undefined,
+            }
+          : currentImage;
 
   return {
     ...currentData,

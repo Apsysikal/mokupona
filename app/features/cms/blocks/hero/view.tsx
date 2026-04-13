@@ -92,6 +92,7 @@ export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
                 alt={alt}
                 width={640}
                 height={480}
+                sizes="(min-width: 1024px) 640px, (min-width: 768px) 50vw, 100vw"
                 className="w-304 rounded-md object-center"
               />
             )}

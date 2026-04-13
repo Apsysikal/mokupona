@@ -131,6 +131,7 @@ export function HeroBlockEditor({ ctx }: HeroBlockEditorProps) {
             ...getSelectProps(fields.imageAccessibility),
             children: (
               <>
+                <option value="">Choose accessibility</option>
                 <option value="decorative">Decorative image</option>
                 <option value="descriptive">Descriptive image</option>
               </>

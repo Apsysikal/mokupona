@@ -30,7 +30,10 @@ import type {
   BlockEditorContext,
   BlockInstance,
 } from "~/features/cms/catalog";
-import { deleteCmsImagesIfUnreferenced } from "~/features/cms/cms-image-lifecycle.server";
+import {
+  deleteCmsImagesIfUnreferenced,
+  getRemovedUploadedHeroImageIds,
+} from "~/features/cms/cms-image-lifecycle.server";
 import {
   createPageCommandBuilder,
   type MutableBlockRef,
@@ -302,9 +305,9 @@ export async function action({ request, params }: Route.ActionArgs) {
       }
 
       if (previousImageId && previousImageId !== nextImageId) {
-        await deleteCmsImagesIfUnreferenced({
-          imageIds: [previousImageId],
-          prisma,
+        await cleanupRemovedHeroImages({
+          previousBlocks: currentBlocks,
+          nextBlocks: result.editorModel.pageSnapshot.blocks,
         });
       }
 
@@ -345,6 +348,8 @@ export async function action({ request, params }: Route.ActionArgs) {
         });
       }
 
+      const currentEditorModel =
+        await siteCmsPageService.readEditorModel(pageKey);
       const mutableRef: MutableBlockRef = blockRef;
       const command = commandBuilder.deleteBlock(mutableRef);
       const result = await siteCmsPageService.applyPageCommand(command);
@@ -357,6 +362,11 @@ export async function action({ request, params }: Route.ActionArgs) {
           editorModel: result.currentEditorModel,
         };
       }
+
+      await cleanupRemovedHeroImages({
+        previousBlocks: currentEditorModel.pageSnapshot.blocks,
+        nextBlocks: result.editorModel.pageSnapshot.blocks,
+      });
 
       return redirect(`/admin/pages/${pageKey}`);
     }
@@ -378,6 +388,28 @@ async function persistHeroUploadedImage(
   }
 
   return upload.persistImage(fileEntry);
+}
+
+async function cleanupRemovedHeroImages({
+  previousBlocks,
+  nextBlocks,
+}: {
+  previousBlocks: readonly BlockInstance[];
+  nextBlocks: readonly BlockInstance[];
+}) {
+  const removedImageIds = getRemovedUploadedHeroImageIds(
+    previousBlocks,
+    nextBlocks,
+  );
+
+  if (removedImageIds.length === 0) {
+    return;
+  }
+
+  await deleteCmsImagesIfUnreferenced({
+    imageIds: removedImageIds,
+    prisma,
+  });
 }
 
 function getUploadedHeroImageId(blockData: unknown): string | null {

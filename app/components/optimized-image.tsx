@@ -17,6 +17,8 @@ type OptimizedImageProps = Omit<
 > &
   ImageInputProps;
 
+const RESPONSIVE_BREAKPOINTS = [432, 648, 864, 1080];
+
 export function OptimizedImage({
   imageId,
   width,
@@ -24,9 +26,11 @@ export function OptimizedImage({
   fit = "cover",
   ...props
 }: OptimizedImageProps) {
-  const breakPoints = [432, 648, 864, 1080];
   const imageUrl = getImageUrl(imageId);
   const aspect = width / height;
+  const responsiveWidths = [...new Set([...RESPONSIVE_BREAKPOINTS, width])]
+    .filter((candidateWidth) => candidateWidth <= width)
+    .sort((left, right) => left - right);
 
   const searchParams = new URLSearchParams({
     w: `${width}`,
@@ -34,7 +38,7 @@ export function OptimizedImage({
     fit,
   });
 
-  const srcSetUrls = breakPoints.map((w) => {
+  const srcSetUrls = responsiveWidths.map((w) => {
     const h = w / aspect;
     const searchParams = new URLSearchParams({
       w: `${w}`,

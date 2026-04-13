@@ -45,6 +45,15 @@ describe("hero editor schema image behavior", () => {
     ).toBe(true);
   });
 
+  test("asset-backed heroes do not preselect replacement accessibility", () => {
+    const defaults = getHeroBlockEditorDefaultValue(
+      makeHeroData({ kind: "asset", src: "/hero-image.jpg" }),
+      linkTargetRegistry,
+    );
+
+    expect(defaults.imageAccessibility).toBe("");
+  });
+
   test("builds an uploaded decorative image when replacing with upload", () => {
     const next = applyHeroBlockEditorValue(
       makeHeroData({ kind: "asset", src: "/hero-image.jpg" }),
@@ -91,6 +100,35 @@ describe("hero editor schema image behavior", () => {
     expect(next.image).toEqual({
       kind: "asset",
       src: "/hero-image.jpg",
+    });
+  });
+
+  test("updates uploaded image accessibility metadata without re-uploading", () => {
+    const next = applyHeroBlockEditorValue(
+      makeHeroData({
+        kind: "uploaded",
+        imageId: "img_123",
+        fallbackAssetSrc: "/hero-image.jpg",
+        decorative: false,
+        alt: "A plated dinner",
+      }),
+      {
+        eyebrow: "eyebrow",
+        headline: "headline",
+        description: "description",
+        actions: [{ label: "Join", href: "/dinners" }],
+        imageAction: "keep",
+        imageAccessibility: "decorative",
+        imageAlt: "",
+      },
+    );
+
+    expect(next.image).toEqual({
+      kind: "uploaded",
+      imageId: "img_123",
+      fallbackAssetSrc: "/hero-image.jpg",
+      decorative: true,
+      alt: undefined,
     });
   });
 
