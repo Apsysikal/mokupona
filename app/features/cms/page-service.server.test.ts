@@ -817,4 +817,43 @@ describe("createCmsPageService — add-block command", () => {
 
     expect(result.status).toBe("conflict");
   });
+
+  test("add-block appends a new image block at the end of the page", async () => {
+    const { service, store, revision } = await setupPersisted();
+    const initialCount = store.peek("home")!.blocks.length;
+
+    const result = await service.applyPageCommand({
+      type: "add-block",
+      pageKey: "home",
+      baseRevision: revision,
+      blockType: "image",
+      blockVersion: 1,
+      data: {
+        image: {
+          kind: "asset",
+          src: "/accent-image.png",
+          alt: "",
+        },
+        variant: "default",
+      },
+    });
+
+    expect(result.status).toBe("saved");
+    if (result.status !== "saved") return;
+
+    const blocks = result.editorModel.pageSnapshot.blocks;
+    expect(blocks).toHaveLength(initialCount + 1);
+
+    const newBlock = blocks[blocks.length - 1];
+    expect(newBlock.type).toBe("image");
+    expect(newBlock.pageBlockId).toBeDefined();
+    expect(newBlock.data).toEqual({
+      image: {
+        kind: "asset",
+        src: "/accent-image.png",
+        alt: "",
+      },
+      variant: "default",
+    });
+  });
 });

@@ -131,6 +131,29 @@ describe("cms image lifecycle", () => {
     ]);
   });
 
+  test("finds uploaded image-block images removed when the block disappears", () => {
+    const previousBlocks: BlockInstance[] = [
+      {
+        pageBlockId: "image-1",
+        type: "image",
+        version: 1,
+        data: {
+          image: {
+            kind: "uploaded",
+            imageId: "img_old",
+            fallbackAssetSrc: "/accent-image.png",
+            decorative: true,
+          },
+          variant: "default",
+        },
+      },
+    ];
+
+    expect(getRemovedUploadedHeroImageIds(previousBlocks, [])).toEqual([
+      "img_old",
+    ]);
+  });
+
   test("does not delete candidate image when still referenced by a page block", async () => {
     const prisma = {
       pageBlock: {

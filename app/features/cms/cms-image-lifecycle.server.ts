@@ -21,7 +21,7 @@ export function collectUploadedHeroImageIdsFromBlocks(
   const imageIds = new Set<string>();
 
   for (const block of blocks) {
-    if (block.type !== "hero") continue;
+    if (block.type !== "hero" && block.type !== "image") continue;
 
     const data = block.data as {
       image?: {
