@@ -8,6 +8,7 @@ import type {
   PublicProjectionContext,
 } from "./catalog";
 import type {
+  AddBlockCommand,
   DeleteBlockCommand,
   MoveBlockDownCommand,
   MoveBlockUpCommand,
@@ -24,6 +25,7 @@ export type { PageStatus, Revision } from "./page-status";
 // of page-service.server continue to work without changes.
 export { createPageCommandBuilder } from "./page-commands";
 export type {
+  AddBlockCommand,
   DeleteBlockCommand,
   MoveBlockDownCommand,
   MoveBlockUpCommand,
@@ -246,7 +248,8 @@ export function createCmsPageService({
       | SetBlockDataCommand
       | MoveBlockUpCommand
       | MoveBlockDownCommand
-      | DeleteBlockCommand,
+      | DeleteBlockCommand
+      | AddBlockCommand,
     mutate: (blocks: BlockInstance[]) => BlockInstance[] | null,
   ): Promise<ApplyPageCommandResult> => {
     const currentPage = await readResolvedPage(command.pageKey);
@@ -379,18 +382,34 @@ export function createCmsPageService({
   const getRequiredLeadingCount = (pageKey: PageKey): number =>
     catalog.getPageRule(pageKey).requiredLeadingBlockTypes?.length ?? 0;
 
+  const canMutateBlockAtIndex = (
+    index: number,
+    requiredLeadingCount: number,
+  ): boolean => index >= requiredLeadingCount;
+
+  const canMoveBlockUp = (
+    index: number,
+    requiredLeadingCount: number,
+  ): boolean =>
+    index > 0 && canMutateBlockAtIndex(index - 1, requiredLeadingCount);
+
+  const canMoveBlockDown = (
+    index: number,
+    blockCount: number,
+    requiredLeadingCount: number,
+  ): boolean =>
+    index >= 0 &&
+    index < blockCount - 1 &&
+    canMutateBlockAtIndex(index, requiredLeadingCount);
+
   const applyMoveBlockUp = (
     command: MoveBlockUpCommand,
   ): Promise<ApplyPageCommandResult> => {
     return applyBlockMutation(command, (blocks) => {
       const index = resolveBlockIndex(blocks, command.ref);
-      if (index <= 0) return null; // already first or not found
-
-      const newIndex = index - 1;
       const requiredLeadingCount = getRequiredLeadingCount(command.pageKey);
-
-      // The block at newIndex is in the protected leading zone — cannot be displaced
-      if (newIndex < requiredLeadingCount) return null;
+      if (!canMoveBlockUp(index, requiredLeadingCount)) return null;
+      const newIndex = index - 1;
 
       const updated = [...blocks];
       [updated[newIndex], updated[index]] = [updated[index], updated[newIndex]];
@@ -403,10 +422,10 @@ export function createCmsPageService({
   ): Promise<ApplyPageCommandResult> => {
     return applyBlockMutation(command, (blocks) => {
       const index = resolveBlockIndex(blocks, command.ref);
-      if (index === -1 || index >= blocks.length - 1) return null;
-
       const requiredLeadingCount = getRequiredLeadingCount(command.pageKey);
-      if (index < requiredLeadingCount) return null; // required leading block cannot move down
+      if (!canMoveBlockDown(index, blocks.length, requiredLeadingCount)) {
+        return null;
+      }
 
       const updated = [...blocks];
       [updated[index], updated[index + 1]] = [
@@ -422,15 +441,55 @@ export function createCmsPageService({
   ): Promise<ApplyPageCommandResult> => {
     return applyBlockMutation(command, (blocks) => {
       const index = resolveBlockIndex(blocks, command.ref);
-      if (index === -1) return null;
-
       const requiredLeadingCount = getRequiredLeadingCount(command.pageKey);
-      if (index < requiredLeadingCount) return null; // fixed slot — cannot delete
+      if (!canMutateBlockAtIndex(index, requiredLeadingCount)) return null;
 
       const updated = [...blocks];
       updated.splice(index, 1);
       return updated;
     });
+  };
+
+  const applyAddBlock = (
+    command: AddBlockCommand,
+  ): Promise<ApplyPageCommandResult> => {
+    let definition;
+    try {
+      definition = catalog.getBlockDefinition(command.blockType);
+    } catch {
+      return readResolvedPage(command.pageKey).then((currentPage) => ({
+        status: "conflict" as const,
+        currentEditorModel: currentPage,
+        diagnostics: [],
+      }));
+    }
+
+    const pageRule = catalog.getPageRule(command.pageKey);
+    if (!pageRule.allowedBlockTypes.includes(command.blockType)) {
+      return readResolvedPage(command.pageKey).then((currentPage) => ({
+        status: "conflict" as const,
+        currentEditorModel: currentPage,
+        diagnostics: [],
+      }));
+    }
+
+    const parseResult = definition.schema.safeParse(command.data);
+    if (!parseResult.success) {
+      return readResolvedPage(command.pageKey).then((currentPage) => ({
+        status: "conflict" as const,
+        currentEditorModel: currentPage,
+        diagnostics: [],
+      }));
+    }
+
+    const validatedData = parseResult.data;
+    const newBlock: BlockInstance = {
+      type: command.blockType,
+      version: command.blockVersion,
+      data: validatedData,
+    };
+
+    return applyBlockMutation(command, (blocks) => [...blocks, newBlock]);
   };
 
   const applySetPageMeta = async (
@@ -551,6 +610,8 @@ export function createCmsPageService({
           return applyMoveBlockDown(command);
         case "delete-block":
           return applyDeleteBlock(command);
+        case "add-block":
+          return applyAddBlock(command);
       }
     },
   };

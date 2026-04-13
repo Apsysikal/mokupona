@@ -6,6 +6,20 @@ import {
   ZOD_LIMIT_BYTES,
 } from "../support/upload-test-utils";
 
+function heroForm() {
+  return cy.get('form[id^="hero-block-editor-"]').first();
+}
+
+function heroCard() {
+  return heroForm().parent();
+}
+
+function saveHeroBlock() {
+  heroForm().within(() => {
+    cy.findByRole("button", { name: /save block/i }).click();
+  });
+}
+
 function materializeHomePage() {
   cy.visitAndCheck("/admin/pages/home");
   cy.findByRole("button", { name: /save page/i }).click();
@@ -13,11 +27,13 @@ function materializeHomePage() {
 }
 
 function setHeroImageReplacement(file: string | Cypress.FileReferenceObject) {
-  cy.findByLabelText(/^image action$/i).select("replace");
-  cy.findByLabelText(/^upload image file$/i).selectFile(file, {
-    force: true,
+  heroForm().within(() => {
+    cy.findByLabelText(/^image action$/i).select("replace");
+    cy.findByLabelText(/^upload image file$/i).selectFile(file, {
+      force: true,
+    });
+    cy.findByLabelText(/^image accessibility$/i).select("decorative");
   });
-  cy.findByLabelText(/^image accessibility$/i).select("decorative");
 }
 
 describe("admin cms hero block editor", () => {
@@ -37,26 +53,28 @@ describe("admin cms hero block editor", () => {
     cy.findByRole("button", { name: /save page/i }).click();
     cy.findByText(/persisted page/i).should("be.visible");
 
-    cy.findByLabelText(/^headline$/i).should("be.visible");
-
-    cy.findByLabelText(/^headline$/i)
-      .clear()
-      .type("New hero headline from CMS");
-    cy.findByLabelText(/^cta label$/i)
-      .clear()
-      .type("Browse dinners");
-    cy.findByLabelText(/^cta destination$/i).select("Dinners");
-
-    cy.findByRole("button", { name: /save block/i }).click();
+    heroForm().within(() => {
+      cy.findByLabelText(/^headline$/i).should("be.visible");
+      cy.findByLabelText(/^headline$/i)
+        .clear()
+        .type("New hero headline from CMS");
+      cy.findByLabelText(/^cta label$/i)
+        .clear()
+        .type("Browse dinners");
+      cy.findByLabelText(/^cta destination$/i).select("Dinners");
+      cy.findByRole("button", { name: /save block/i }).click();
+    });
     cy.findByText(/persisted page/i).should("be.visible");
 
     cy.visitAndCheck("/admin/pages/home");
-    cy.findByLabelText(/^headline$/i).should(
-      "have.value",
-      "New hero headline from CMS",
-    );
-    cy.findByLabelText(/^cta label$/i).should("have.value", "Browse dinners");
-    cy.findByLabelText(/^cta destination$/i).should("have.value", "/dinners");
+    heroForm().within(() => {
+      cy.findByLabelText(/^headline$/i).should(
+        "have.value",
+        "New hero headline from CMS",
+      );
+      cy.findByLabelText(/^cta label$/i).should("have.value", "Browse dinners");
+      cy.findByLabelText(/^cta destination$/i).should("have.value", "/dinners");
+    });
 
     cy.visitAndCheck("/");
     cy.contains("New hero headline from CMS").should("be.visible");
@@ -72,23 +90,30 @@ describe("admin cms hero block editor", () => {
     cy.findByRole("button", { name: /save page/i }).click();
     cy.findByText(/persisted page/i).should("be.visible");
 
-    cy.findByLabelText(/^headline$/i).should("be.visible");
-    cy.findByLabelText(/^headline$/i).clear();
-    cy.findByLabelText(/^headline$/i).type("Edited headline with invalid CTA", {
-      delay: 0,
+    heroForm().within(() => {
+      cy.findByLabelText(/^headline$/i).should("be.visible");
+      cy.findByLabelText(/^headline$/i).clear();
+      cy.findByLabelText(/^headline$/i).type(
+        "Edited headline with invalid CTA",
+        {
+          delay: 0,
+        },
+      );
+
+      cy.findByLabelText(/^cta label$/i).should("be.visible");
+      cy.findByLabelText(/^cta label$/i).clear();
+
+      cy.findByRole("button", { name: /save block/i }).click();
     });
 
-    cy.findByLabelText(/^cta label$/i).should("be.visible");
-    cy.findByLabelText(/^cta label$/i).clear();
-
-    cy.findByRole("button", { name: /save block/i }).click();
-
     cy.findByText(/cta label is required/i).should("be.visible");
-    cy.findByLabelText(/^headline$/i).should(
-      "have.value",
-      "Edited headline with invalid CTA",
-    );
-    cy.findByLabelText(/^cta label$/i).should("have.value", "");
+    heroForm().within(() => {
+      cy.findByLabelText(/^headline$/i).should(
+        "have.value",
+        "Edited headline with invalid CTA",
+      );
+      cy.findByLabelText(/^cta label$/i).should("have.value", "");
+    });
     cy.findByText(/revision 1/i).should("be.visible");
   });
 
@@ -143,15 +168,17 @@ describe("admin cms hero block editor", () => {
     cy.get('input[value="/hero-image.jpg"]').should("not.exist");
 
     // Move-up and delete buttons should not exist for the fixed hero block
-    cy.findByRole("button", { name: /move up/i }).should("not.exist");
-    cy.findByRole("button", { name: /delete block/i }).should("not.exist");
+    heroCard().within(() => {
+      cy.findByRole("button", { name: /move up/i }).should("not.exist");
+      cy.findByRole("button", { name: /delete block/i }).should("not.exist");
+    });
   });
 
   it("serves a non-broken homepage hero image after uploading a CMS image", () => {
     materializeHomePage();
     setHeroImageReplacement(VALID_UPLOAD_FIXTURE_PATH);
 
-    cy.findByRole("button", { name: /save block/i }).click();
+    saveHeroBlock();
     cy.findByText(/persisted page/i).should("be.visible");
 
     cy.visitAndCheck("/");
@@ -177,22 +204,24 @@ describe("admin cms hero block editor", () => {
       uploadFileInput(ZOD_LIMIT_BYTES + 1, { fileName: "zod-too-large.jpg" }),
     );
 
-    cy.findByRole("button", { name: /save block/i }).click();
+    saveHeroBlock();
     cy.findByText(FILE_TOO_LARGE_ERROR).should("be.visible");
   });
 
   it("requires an explicit accessibility choice before replacing the hero image", () => {
     materializeHomePage();
 
-    cy.findByLabelText(/^image action$/i).select("replace");
-    cy.findByLabelText(/^upload image file$/i).selectFile(
-      VALID_UPLOAD_FIXTURE_PATH,
-      {
-        force: true,
-      },
-    );
+    heroForm().within(() => {
+      cy.findByLabelText(/^image action$/i).select("replace");
+      cy.findByLabelText(/^upload image file$/i).selectFile(
+        VALID_UPLOAD_FIXTURE_PATH,
+        {
+          force: true,
+        },
+      );
 
-    cy.findByRole("button", { name: /save block/i }).click();
+      cy.findByRole("button", { name: /save block/i }).click();
+    });
     cy.findByText(/image accessibility choice is required/i).should(
       "be.visible",
     );
@@ -200,29 +229,33 @@ describe("admin cms hero block editor", () => {
 
   it("updates uploaded hero accessibility metadata without requiring a second upload", () => {
     materializeHomePage();
-    cy.findByLabelText(/^image action$/i).select("replace");
-    cy.findByLabelText(/^upload image file$/i).selectFile(
-      VALID_UPLOAD_FIXTURE_PATH,
-      {
-        force: true,
-      },
-    );
-    cy.findByLabelText(/^image accessibility$/i).select("descriptive");
-    cy.findByLabelText(/^image alt text$/i)
-      .clear()
-      .type("Original hero alt text");
+    heroForm().within(() => {
+      cy.findByLabelText(/^image action$/i).select("replace");
+      cy.findByLabelText(/^upload image file$/i).selectFile(
+        VALID_UPLOAD_FIXTURE_PATH,
+        {
+          force: true,
+        },
+      );
+      cy.findByLabelText(/^image accessibility$/i).select("descriptive");
+      cy.findByLabelText(/^image alt text$/i)
+        .clear()
+        .type("Original hero alt text");
 
-    cy.findByRole("button", { name: /save block/i }).click();
+      cy.findByRole("button", { name: /save block/i }).click();
+    });
     cy.findByText(/persisted page/i).should("be.visible");
 
     cy.visitAndCheck("/admin/pages/home");
-    cy.findByLabelText(/^image action$/i).should("have.value", "keep");
-    cy.findByLabelText(/^image accessibility$/i).select("descriptive");
-    cy.findByLabelText(/^image alt text$/i)
-      .clear()
-      .type("Updated hero alt text");
+    heroForm().within(() => {
+      cy.findByLabelText(/^image action$/i).should("have.value", "keep");
+      cy.findByLabelText(/^image accessibility$/i).select("descriptive");
+      cy.findByLabelText(/^image alt text$/i)
+        .clear()
+        .type("Updated hero alt text");
 
-    cy.findByRole("button", { name: /save block/i }).click();
+      cy.findByRole("button", { name: /save block/i }).click();
+    });
     cy.findByText(/persisted page/i).should("be.visible");
 
     cy.visitAndCheck("/");

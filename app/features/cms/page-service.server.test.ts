@@ -635,6 +635,22 @@ describe("createCmsPageService — block commands", () => {
     expect(movedBlock.pageBlockId).toBe(secondToLast.pageBlockId);
   });
 
+  test("move-block-down is rejected for a block in the required leading zone", async () => {
+    const { service, store, revision } = await setupPersisted();
+
+    const heroBlock = store.peek("home")!.blocks[0];
+    const ref = refByPageBlockId(heroBlock.pageBlockId!, 0);
+
+    const result = await service.applyPageCommand({
+      type: "move-block-down",
+      pageKey: "home",
+      baseRevision: revision,
+      ref,
+    });
+
+    expect(result.status).toBe("conflict");
+  });
+
   test("delete-block removes a non-required block from the page", async () => {
     const { service, store, revision } = await setupPersisted();
 
@@ -679,5 +695,126 @@ describe("createCmsPageService — block commands", () => {
     });
 
     expect(result.status).not.toBe("saved");
+  });
+});
+
+describe("createCmsPageService — add-block command", () => {
+  async function setupPersisted() {
+    const store = createMemoryPageStore();
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: store,
+    });
+
+    const result = await service.applyPageCommand({
+      type: "set-page-meta",
+      pageKey: "home",
+      baseRevision: null,
+      title: "home title",
+      description: "home desc",
+    });
+
+    if (result.status !== "saved") throw new Error("setup: expected saved");
+
+    return { service, store, revision: result.editorModel.status.revision! };
+  }
+
+  test("add-block appends a new text-section block at the end of the page", async () => {
+    const { service, store, revision } = await setupPersisted();
+    const initialCount = store.peek("home")!.blocks.length;
+
+    const result = await service.applyPageCommand({
+      type: "add-block",
+      pageKey: "home",
+      baseRevision: revision,
+      blockType: "text-section",
+      blockVersion: 1,
+      data: {
+        headline: "New section",
+        body: "New body text",
+        variant: "plain",
+      },
+    });
+
+    expect(result.status).toBe("saved");
+    if (result.status !== "saved") return;
+
+    const blocks = result.editorModel.pageSnapshot.blocks;
+    expect(blocks).toHaveLength(initialCount + 1);
+
+    const newBlock = blocks[blocks.length - 1];
+    expect(newBlock.type).toBe("text-section");
+    expect((newBlock.data as { headline: string }).headline).toBe(
+      "New section",
+    );
+    expect(newBlock.pageBlockId).toBeDefined();
+  });
+
+  test("add-block materializes a default-backed page on first add", async () => {
+    const store = createMemoryPageStore();
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: store,
+    });
+
+    const result = await service.applyPageCommand({
+      type: "add-block",
+      pageKey: "home",
+      baseRevision: null,
+      blockType: "text-section",
+      blockVersion: 1,
+      data: { headline: "First section", body: "Body text", variant: "plain" },
+    });
+
+    expect(result.status).toBe("saved");
+    if (result.status !== "saved") return;
+    expect(result.materialization).toBe("created");
+    expect(result.editorModel.pageSnapshot.provenance).toBe("persisted");
+  });
+
+  test("add-block returns conflict when block type is not in allowedBlockTypes", async () => {
+    const { service, revision } = await setupPersisted();
+
+    // "unknown-type" is not registered and not allowed
+    const result = await service.applyPageCommand({
+      type: "add-block",
+      pageKey: "home",
+      baseRevision: revision,
+      blockType: "unknown-type" as never,
+      blockVersion: 1,
+      data: {},
+    });
+
+    expect(result.status).toBe("conflict");
+  });
+
+  test("add-block returns conflict when block data fails schema validation", async () => {
+    const { service, revision } = await setupPersisted();
+
+    const result = await service.applyPageCommand({
+      type: "add-block",
+      pageKey: "home",
+      baseRevision: revision,
+      blockType: "text-section",
+      blockVersion: 1,
+      data: { headline: 123, body: "Body", variant: "plain" }, // headline must be string
+    });
+
+    expect(result.status).toBe("conflict");
+  });
+
+  test("add-block returns conflict on stale revision", async () => {
+    const { service } = await setupPersisted();
+
+    const result = await service.applyPageCommand({
+      type: "add-block",
+      pageKey: "home",
+      baseRevision: 999,
+      blockType: "text-section",
+      blockVersion: 1,
+      data: { headline: "Section", body: "Body", variant: "plain" },
+    });
+
+    expect(result.status).toBe("conflict");
   });
 });
