@@ -1,11 +1,13 @@
 import { createElement } from "react";
 
 import { defineBlockDefinition } from "../../catalog";
-export * from "./model";
-export * from "./view";
 
+import { TextSectionBlockEditor } from "./editor";
 import { TextSectionBlockDataSchema, type TextSectionBlockType } from "./model";
 import { TextSectionBlockView } from "./view";
+
+export * from "./model";
+export * from "./view";
 
 export const textSectionBlockDefinition =
   defineBlockDefinition<TextSectionBlockType>({
@@ -14,5 +16,8 @@ export const textSectionBlockDefinition =
     schema: TextSectionBlockDataSchema,
     render(block) {
       return createElement(TextSectionBlockView, { blockData: block });
+    },
+    editor(ctx) {
+      return createElement(TextSectionBlockEditor, { ctx });
     },
   });
