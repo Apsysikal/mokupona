@@ -105,12 +105,17 @@ export function createPrismaCmsPageStore({
           where: { pageId: existingPage.id },
           select: { id: true },
         });
+        const positionShift = existingBlocks.length;
         const existingIds = new Set(existingBlocks.map((b) => b.id));
         const incomingIds = new Set(
           blocks
             .map((b) => b.pageBlockId)
             .filter((id): id is string => id !== undefined),
         );
+        const retainedIds = [...existingIds].filter((id) =>
+          incomingIds.has(id),
+        );
+        const retainedIdSet = new Set(retainedIds);
 
         // Delete blocks that are no longer present
         const toDelete = [...existingIds].filter((id) => !incomingIds.has(id));
@@ -118,10 +123,23 @@ export function createPrismaCmsPageStore({
           await tx.pageBlock.deleteMany({ where: { id: { in: toDelete } } });
         }
 
+        // Move retained rows out of the target position range first so swaps
+        // cannot violate the (pageId, position) uniqueness constraint.
+        if (retainedIds.length > 0) {
+          await tx.pageBlock.updateMany({
+            where: { id: { in: retainedIds } },
+            data: {
+              position: {
+                increment: positionShift,
+              },
+            },
+          });
+        }
+
         // Upsert each block in the new order
         for (let position = 0; position < blocks.length; position++) {
           const block = blocks[position];
-          if (block.pageBlockId && existingIds.has(block.pageBlockId)) {
+          if (block.pageBlockId && retainedIdSet.has(block.pageBlockId)) {
             await tx.pageBlock.update({
               where: { id: block.pageBlockId },
               data: {

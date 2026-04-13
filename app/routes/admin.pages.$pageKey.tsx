@@ -17,6 +17,7 @@ import { Button } from "~/components/ui/button";
 import { prisma } from "~/db.server";
 import type { BlockRef } from "~/features/cms/blocks/block-ref";
 import {
+  parseBlockRef,
   refByDefinitionKey,
   refByPageBlockId,
 } from "~/features/cms/blocks/block-ref";
@@ -84,22 +85,9 @@ function requireKnownPageKey(pageKey: string | undefined) {
   return pageKey;
 }
 
-function parseBlockRef(raw: FormDataEntryValue | null): BlockRef | null {
+function parseBlockRefInput(raw: FormDataEntryValue | null): BlockRef | null {
   if (typeof raw !== "string") return null;
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    if (
-      parsed &&
-      typeof parsed === "object" &&
-      "kind" in parsed &&
-      typeof (parsed as { kind: unknown }).kind === "string"
-    ) {
-      return parsed as BlockRef;
-    }
-    return null;
-  } catch {
-    return null;
-  }
+  return parseBlockRef(raw);
 }
 
 function parseBaseRevision(raw: FormDataEntryValue | null): number | null {
@@ -221,7 +209,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     }
 
     // Remaining block commands (set-block-data, move, delete) all require blockRef
-    const blockRef = parseBlockRef(formData.get("blockRef"));
+    const blockRef = parseBlockRefInput(formData.get("blockRef"));
 
     if (!blockRef) {
       throw new Response("Missing or invalid blockRef", { status: 400 });

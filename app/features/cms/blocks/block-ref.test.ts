@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  isBlockRef,
+  parseBlockRef,
   refByDefinitionKey,
   refByPageBlockId,
   type BlockRef,
@@ -47,5 +49,29 @@ describe("BlockRef", () => {
     const idRef: PageBlockIdRef = refByPageBlockId("abc", 1);
 
     expect(defRef.kind).not.toBe(idRef.kind);
+  });
+
+  test("isBlockRef validates shape for each supported kind", () => {
+    expect(
+      isBlockRef({ kind: "definition-key", definitionKey: "hero-main" }),
+    ).toBe(true);
+    expect(
+      isBlockRef({ kind: "page-block-id", pageBlockId: "pb_1", position: 1 }),
+    ).toBe(true);
+    expect(
+      isBlockRef({ kind: "page-block-id", pageBlockId: "pb_1", position: -1 }),
+    ).toBe(false);
+  });
+
+  test("parseBlockRef parses valid JSON and rejects invalid payloads", () => {
+    expect(
+      parseBlockRef(
+        JSON.stringify({ kind: "definition-key", definitionKey: "hero-main" }),
+      ),
+    ).toEqual({ kind: "definition-key", definitionKey: "hero-main" });
+    expect(parseBlockRef("{bad-json")).toBeNull();
+    expect(
+      parseBlockRef(JSON.stringify({ kind: "page-block-id", pageBlockId: 1 })),
+    ).toBeNull();
   });
 });

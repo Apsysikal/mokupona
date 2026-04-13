@@ -635,6 +635,22 @@ describe("createCmsPageService — block commands", () => {
     expect(movedBlock.pageBlockId).toBe(secondToLast.pageBlockId);
   });
 
+  test("move-block-down is rejected for a block in the required leading zone", async () => {
+    const { service, store, revision } = await setupPersisted();
+
+    const heroBlock = store.peek("home")!.blocks[0];
+    const ref = refByPageBlockId(heroBlock.pageBlockId!, 0);
+
+    const result = await service.applyPageCommand({
+      type: "move-block-down",
+      pageKey: "home",
+      baseRevision: revision,
+      ref,
+    });
+
+    expect(result.status).toBe("conflict");
+  });
+
   test("delete-block removes a non-required block from the page", async () => {
     const { service, store, revision } = await setupPersisted();
 
