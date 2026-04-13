@@ -118,6 +118,14 @@ export function createPrismaCmsPageStore({
           await tx.pageBlock.deleteMany({ where: { id: { in: toDelete } } });
         }
 
+        // Shift all remaining blocks to a temporary out-of-range position so
+        // that the per-statement unique constraint on (pageId, position) is
+        // never violated when we swap or reorder positions below.
+        await tx.pageBlock.updateMany({
+          where: { pageId: existingPage.id },
+          data: { position: { increment: blocks.length } },
+        });
+
         // Upsert each block in the new order
         for (let position = 0; position < blocks.length; position++) {
           const block = blocks[position];

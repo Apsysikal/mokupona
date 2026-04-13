@@ -37,26 +37,28 @@ describe("admin cms hero block editor", () => {
     cy.findByRole("button", { name: /save page/i }).click();
     cy.findByText(/persisted page/i).should("be.visible");
 
-    cy.findByLabelText(/^headline$/i).should("be.visible");
-
-    cy.findByLabelText(/^headline$/i)
-      .clear()
-      .type("New hero headline from CMS");
-    cy.findByLabelText(/^cta label$/i)
-      .clear()
-      .type("Browse dinners");
-    cy.findByLabelText(/^cta destination$/i).select("Dinners");
-
-    cy.findByRole("button", { name: /save block/i }).click();
+    // Scope to the hero block's form to avoid ambiguity with text-section
+    // "Headline" labels that also appear on the same page.
+    cy.get('form[id^="hero-block-editor-"]').within(() => {
+      cy.findByLabelText(/^headline$/i).should("be.visible");
+      cy.findByLabelText(/^headline$/i)
+        .clear()
+        .type("New hero headline from CMS");
+      cy.findByLabelText(/^cta label$/i).clear().type("Browse dinners");
+      cy.findByLabelText(/^cta destination$/i).select("Dinners");
+      cy.findByRole("button", { name: /save block/i }).click();
+    });
     cy.findByText(/persisted page/i).should("be.visible");
 
     cy.visitAndCheck("/admin/pages/home");
-    cy.findByLabelText(/^headline$/i).should(
-      "have.value",
-      "New hero headline from CMS",
-    );
-    cy.findByLabelText(/^cta label$/i).should("have.value", "Browse dinners");
-    cy.findByLabelText(/^cta destination$/i).should("have.value", "/dinners");
+    cy.get('form[id^="hero-block-editor-"]').within(() => {
+      cy.findByLabelText(/^headline$/i).should(
+        "have.value",
+        "New hero headline from CMS",
+      );
+      cy.findByLabelText(/^cta label$/i).should("have.value", "Browse dinners");
+      cy.findByLabelText(/^cta destination$/i).should("have.value", "/dinners");
+    });
 
     cy.visitAndCheck("/");
     cy.contains("New hero headline from CMS").should("be.visible");
@@ -72,23 +74,30 @@ describe("admin cms hero block editor", () => {
     cy.findByRole("button", { name: /save page/i }).click();
     cy.findByText(/persisted page/i).should("be.visible");
 
-    cy.findByLabelText(/^headline$/i).should("be.visible");
-    cy.findByLabelText(/^headline$/i).clear();
-    cy.findByLabelText(/^headline$/i).type("Edited headline with invalid CTA", {
-      delay: 0,
+    cy.get('form[id^="hero-block-editor-"]').within(() => {
+      cy.findByLabelText(/^headline$/i).should("be.visible");
+      cy.findByLabelText(/^headline$/i).clear();
+      cy.findByLabelText(/^headline$/i).type(
+        "Edited headline with invalid CTA",
+        {
+          delay: 0,
+        },
+      );
+
+      cy.findByLabelText(/^cta label$/i).should("be.visible");
+      cy.findByLabelText(/^cta label$/i).clear();
+
+      cy.findByRole("button", { name: /save block/i }).click();
     });
 
-    cy.findByLabelText(/^cta label$/i).should("be.visible");
-    cy.findByLabelText(/^cta label$/i).clear();
-
-    cy.findByRole("button", { name: /save block/i }).click();
-
-    cy.findByText(/cta label is required/i).should("be.visible");
-    cy.findByLabelText(/^headline$/i).should(
-      "have.value",
-      "Edited headline with invalid CTA",
-    );
-    cy.findByLabelText(/^cta label$/i).should("have.value", "");
+    cy.get('form[id^="hero-block-editor-"]').within(() => {
+      cy.findByText(/cta label is required/i).should("be.visible");
+      cy.findByLabelText(/^headline$/i).should(
+        "have.value",
+        "Edited headline with invalid CTA",
+      );
+      cy.findByLabelText(/^cta label$/i).should("have.value", "");
+    });
     cy.findByText(/revision 1/i).should("be.visible");
   });
 
@@ -151,7 +160,7 @@ describe("admin cms hero block editor", () => {
     materializeHomePage();
     setHeroImageReplacement(VALID_UPLOAD_FIXTURE_PATH);
 
-    cy.findByRole("button", { name: /save block/i }).click();
+    cy.findAllByRole("button", { name: /save block/i }).first().click();
     cy.findByText(/persisted page/i).should("be.visible");
 
     cy.visitAndCheck("/");
@@ -177,7 +186,7 @@ describe("admin cms hero block editor", () => {
       uploadFileInput(ZOD_LIMIT_BYTES + 1, { fileName: "zod-too-large.jpg" }),
     );
 
-    cy.findByRole("button", { name: /save block/i }).click();
+    cy.findAllByRole("button", { name: /save block/i }).first().click();
     cy.findByText(FILE_TOO_LARGE_ERROR).should("be.visible");
   });
 
@@ -192,7 +201,7 @@ describe("admin cms hero block editor", () => {
       },
     );
 
-    cy.findByRole("button", { name: /save block/i }).click();
+    cy.findAllByRole("button", { name: /save block/i }).first().click();
     cy.findByText(/image accessibility choice is required/i).should(
       "be.visible",
     );
@@ -212,7 +221,7 @@ describe("admin cms hero block editor", () => {
       .clear()
       .type("Original hero alt text");
 
-    cy.findByRole("button", { name: /save block/i }).click();
+    cy.findAllByRole("button", { name: /save block/i }).first().click();
     cy.findByText(/persisted page/i).should("be.visible");
 
     cy.visitAndCheck("/admin/pages/home");
@@ -222,7 +231,7 @@ describe("admin cms hero block editor", () => {
       .clear()
       .type("Updated hero alt text");
 
-    cy.findByRole("button", { name: /save block/i }).click();
+    cy.findAllByRole("button", { name: /save block/i }).first().click();
     cy.findByText(/persisted page/i).should("be.visible");
 
     cy.visitAndCheck("/");

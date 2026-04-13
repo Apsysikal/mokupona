@@ -17,16 +17,12 @@ describe("admin cms text-section block editor", () => {
     cy.findByRole("button", { name: /save page/i }).click();
     cy.findByText(/persisted page/i).should("be.visible");
 
-    // The first text-section editor after the hero should have our vision headline
-    cy.findAllByLabelText(/^headline$/i)
-      .filter('[name="headline"]')
-      .first()
-      .should("be.visible");
+    // The hero block also has a "Headline" label at index 0; text-sections
+    // start at index 1.  Use eq(1) to target the first text-section.
+    cy.findAllByLabelText(/^headline$/i).eq(1).should("be.visible");
 
-    // Find the first text-section's save block button and its surrounding form
-    // Edit headline and body of the first text-section
     cy.findAllByLabelText(/^headline$/i)
-      .first()
+      .eq(1)
       .clear()
       .type("Updated section headline");
 
@@ -35,16 +31,15 @@ describe("admin cms text-section block editor", () => {
       .clear()
       .type("Updated section body text.");
 
-    cy.findAllByRole("button", { name: /save block/i })
-      .first()
-      .click();
+    // Hero's "Save block" is at index 0; first text-section's is at index 1.
+    cy.findAllByRole("button", { name: /save block/i }).eq(1).click();
 
     cy.findByText(/persisted page/i).should("be.visible");
 
     // Verify the saved value is reflected back
     cy.visitAndCheck("/admin/pages/home");
     cy.findAllByLabelText(/^headline$/i)
-      .first()
+      .eq(1)
       .should("have.value", "Updated section headline");
 
     // Public page reflects the change
@@ -58,22 +53,20 @@ describe("admin cms text-section block editor", () => {
     cy.findByRole("button", { name: /save page/i }).click();
     cy.findByText(/persisted page/i).should("be.visible");
 
+    // Index 0 is the hero's headline; index 1 is the first text-section's.
     cy.findAllByLabelText(/^headline$/i)
-      .first()
+      .eq(1)
       .clear()
       .type("Valid headline but empty body");
 
-    cy.findAllByLabelText(/^body$/i)
-      .first()
-      .clear();
+    cy.findAllByLabelText(/^body$/i).first().clear();
 
-    cy.findAllByRole("button", { name: /save block/i })
-      .first()
-      .click();
+    // Index 0 is the hero's "Save block"; index 1 is the first text-section's.
+    cy.findAllByRole("button", { name: /save block/i }).eq(1).click();
 
     cy.findByText(/body is required/i).should("be.visible");
     cy.findAllByLabelText(/^headline$/i)
-      .first()
+      .eq(1)
       .should("have.value", "Valid headline but empty body");
   });
 
@@ -123,27 +116,31 @@ describe("admin cms text-section block editor", () => {
     cy.findByRole("button", { name: /save page/i }).click();
     cy.findByText(/persisted page/i).should("be.visible");
 
-    // Read the order of headlines before moving
+    // Read the order of headlines before moving.
+    // Index 0 is the hero's headline; text-section headlines start at index 1.
     cy.findAllByLabelText(/^headline$/i)
       .then(($inputs) =>
         $inputs.map((_, el) => (el as HTMLInputElement).value).get(),
       )
       .then((headlinesBefore) => {
-        // The first text-section headline
-        const firstHeadline = headlinesBefore[0];
+        // The default home page has: hero, vision, (image – no editor),
+        // difference, about.  In the rendered editors, the "difference"
+        // block appears at headline slot 2 and "about" at slot 3.
+        //
+        // The first "Move up" button (eq(0)) belongs to "difference" and
+        // would only swap it past the image block (no visible order change).
+        // The second "Move up" button (eq(1)) belongs to "about" and swaps
+        // it past "difference", making the visible order change at slot 2.
+        const headlineAtSlot2Before = headlinesBefore[2];
 
-        // Move-up is disabled for the first text-section (index 1 can't go before index 0 hero)
-        // So we need the second text-section to move up - that should have a "Move up" button
-        cy.findAllByRole("button", { name: /move up/i })
-          .first()
-          .click();
+        cy.findAllByRole("button", { name: /move up/i }).eq(1).click();
 
         cy.findByText(/persisted page/i).should("be.visible");
 
         cy.findAllByLabelText(/^headline$/i)
-          .first()
+          .eq(2)
           .invoke("val")
-          .should("not.eq", firstHeadline);
+          .should("not.eq", headlineAtSlot2Before);
       });
   });
 
