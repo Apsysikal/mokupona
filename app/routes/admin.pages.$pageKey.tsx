@@ -14,6 +14,7 @@ import type { Route } from "./+types/admin.pages.$pageKey";
 
 import { Field, TextareaField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
+import { prisma } from "~/db.server";
 import type { BlockRef } from "~/features/cms/blocks/block-ref";
 import {
   refByDefinitionKey,
@@ -29,6 +30,7 @@ import type {
   BlockEditorContext,
 } from "~/features/cms/catalog";
 import type { BlockInstance } from "~/features/cms/catalog";
+import { deleteCmsImagesIfUnreferenced } from "~/features/cms/cms-image-lifecycle.server";
 import {
   createPageCommandBuilder,
   type MutableBlockRef,
@@ -200,6 +202,19 @@ export async function action({ request, params }: Route.ActionArgs) {
       };
     }
 
+    const uploadedImageId =
+      heroSubmission.value.imageAction === "replace"
+        ? await persistHeroUploadedImage(formData.get("imageFile"))
+        : undefined;
+    if (heroSubmission.value.imageAction === "replace" && !uploadedImageId) {
+      return {
+        status: "block-conflict" as const,
+        blockRef: serializedBlockRef,
+        conflictMessage: "Please choose an image file before replacing.",
+        editorModel: currentEditorModel,
+      };
+    }
+
     const command = commandBuilder.setBlockData(
       blockRef,
       blockType as BlockType,
@@ -207,18 +222,39 @@ export async function action({ request, params }: Route.ActionArgs) {
       applyHeroBlockEditorValue(
         currentBlock.data as Parameters<typeof applyHeroBlockEditorValue>[0],
         heroSubmission.value,
+        { uploadedImageId },
       ),
     );
+    const nextData = command.data as Parameters<typeof getUploadedHeroImageId>[0];
+    const previousImageId = getUploadedHeroImageId(currentBlock.data);
+    const nextImageId = getUploadedHeroImageId(nextData);
 
     const result = await siteCmsPageService.applyPageCommand(command);
 
     if (result.status === "conflict") {
+      if (
+        heroSubmission.value.imageAction === "replace" &&
+        nextImageId &&
+        nextImageId !== previousImageId
+      ) {
+        await deleteCmsImagesIfUnreferenced({
+          imageIds: [nextImageId],
+          prisma,
+        });
+      }
       return {
         status: "block-conflict" as const,
         blockRef: serializedBlockRef,
         conflictMessage: "Block could not be saved — please refresh and retry.",
         editorModel: result.currentEditorModel,
       };
+    }
+
+    if (previousImageId && previousImageId !== nextImageId) {
+      await deleteCmsImagesIfUnreferenced({
+        imageIds: [previousImageId],
+        prisma,
+      });
     }
 
     return redirect(`/admin/pages/${pageKey}`);
@@ -275,6 +311,37 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 
   throw new Response(`Unknown intent: ${String(intent)}`, { status: 400 });
+}
+
+async function persistHeroUploadedImage(
+  fileEntry: FormDataEntryValue | null,
+): Promise<string | undefined> {
+  if (!(fileEntry instanceof File) || fileEntry.size <= 0) {
+    return undefined;
+  }
+
+  const image = await prisma.image.create({
+    data: {
+      contentType: fileEntry.type || "application/octet-stream",
+      blob: Buffer.from(await fileEntry.arrayBuffer()),
+    },
+  });
+  return image.id;
+}
+
+function getUploadedHeroImageId(blockData: unknown): string | null {
+  const data = blockData as {
+    image?: {
+      kind?: string;
+      imageId?: string;
+    };
+  };
+
+  if (data.image?.kind !== "uploaded" || !data.image.imageId) {
+    return null;
+  }
+
+  return data.image.imageId;
 }
 
 function resolveBlock(
