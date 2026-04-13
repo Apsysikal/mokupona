@@ -70,9 +70,15 @@ describe("admin cms hero block editor", () => {
   it("shows block validation errors without dropping the entered hero form state", () => {
     cy.visitAndCheck("/admin/pages/home");
     cy.findByRole("button", { name: /save page/i }).click();
+    cy.findByText(/persisted page/i).should("be.visible");
 
+    cy.findByLabelText(/^headline$/i).should("be.visible");
     cy.findByLabelText(/^headline$/i).clear();
-    cy.findByLabelText(/^headline$/i).type("Edited headline with invalid CTA");
+    cy.findByLabelText(/^headline$/i).type("Edited headline with invalid CTA", {
+      delay: 0,
+    });
+
+    cy.findByLabelText(/^cta label$/i).should("be.visible");
     cy.findByLabelText(/^cta label$/i).clear();
 
     cy.findByRole("button", { name: /save block/i }).click();
