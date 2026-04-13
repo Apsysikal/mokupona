@@ -5,6 +5,7 @@ import { generateSrcSet } from "../utils";
 
 import type { HeroBlockType } from "./model";
 
+import { OptimizedImage } from "~/components/optimized-image";
 import { Button } from "~/components/ui/button";
 import { getImageUrl } from "~/utils/misc";
 
@@ -73,17 +74,27 @@ export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
 
         <div className="mx-auto flex not-lg:mt-10">
           <div className="max-w-3xl flex-none not-md:pl-4 md:max-w-3xl lg:max-w-4xl 2xl:max-w-none">
-            <picture>
-              <img
-                srcSet={srcSet}
-                src={src}
-                className="w-304 rounded-md object-center"
-                fetchPriority="high"
-                width={width}
-                height={height}
+            {image.kind === "asset" ? (
+              <picture>
+                <img
+                  srcSet={srcSet}
+                  src={src}
+                  className="w-304 rounded-md object-center"
+                  fetchPriority="high"
+                  width={width}
+                  height={height}
+                  alt={alt}
+                />
+              </picture>
+            ) : (
+              <OptimizedImage
+                imageId={image.imageId}
                 alt={alt}
+                width={640}
+                height={480}
+                className="w-304 rounded-md object-center"
               />
-            </picture>
+            )}
           </div>
         </div>
       </div>

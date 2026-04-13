@@ -90,15 +90,15 @@ export function getHeroBlockEditorDefaultValue(
   linkTargetRegistry: LinkTargetRegistry,
 ): HeroBlockEditorFormShape {
   const action = data.actions[0];
-  const isUploadedImage = data.image.kind === "uploaded";
-  const imageAccessibility = isUploadedImage
-    ? data.image.decorative
-      ? "decorative"
-      : "descriptive"
-    : "decorative";
+  const imageAccessibility =
+    data.image.kind === "uploaded"
+      ? data.image.decorative
+        ? "decorative"
+        : "descriptive"
+      : "decorative";
   const imageAlt =
-    isUploadedImage && imageAccessibility === "descriptive"
-      ? data.image.alt ?? ""
+    data.image.kind === "uploaded" && imageAccessibility === "descriptive"
+      ? (data.image.alt ?? "")
       : "";
 
   return {
@@ -135,9 +135,10 @@ export function applyHeroBlockEditorValue(
               ? currentImage.src
               : currentImage.fallbackAssetSrc,
           decorative: value.imageAccessibility !== "descriptive",
-          ...(value.imageAccessibility === "descriptive" && value.imageAlt
-            ? { alt: value.imageAlt }
-            : {}),
+          alt:
+            value.imageAccessibility === "descriptive"
+              ? value.imageAlt
+              : undefined,
         }
       : value.imageAction === "remove" && currentImage.kind === "uploaded"
         ? {

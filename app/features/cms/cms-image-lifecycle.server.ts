@@ -8,7 +8,9 @@ type CmsImageLifecyclePrisma = {
     count(args: { where: { imageId: string } }): Promise<number>;
   };
   image: {
-    count(args: { where: { id: string; boardMemberId: { not: null } } }): Promise<number>;
+    count(args: {
+      where: { id: string; boardMemberId: { not: null } };
+    }): Promise<number>;
     delete(args: { where: { id: string } }): Promise<unknown>;
   };
 };
@@ -28,7 +30,10 @@ export function collectUploadedHeroImageIdsFromBlocks(
       };
     };
 
-    if (data.image?.kind === "uploaded" && typeof data.image.imageId === "string") {
+    if (
+      data.image?.kind === "uploaded" &&
+      typeof data.image.imageId === "string"
+    ) {
       imageIds.add(data.image.imageId);
     }
   }
@@ -46,19 +51,24 @@ export async function deleteCmsImagesIfUnreferenced({
   const uniqueIds = [...new Set(imageIds.filter((id) => id.length > 0))];
 
   for (const imageId of uniqueIds) {
-    const [pageReferences, eventReferences, boardMemberReferences] = await Promise.all([
-      prisma.pageBlock.count({
-        where: { data: { contains: `"imageId":"${imageId}"` } },
-      }),
-      prisma.event.count({
-        where: { imageId },
-      }),
-      prisma.image.count({
-        where: { id: imageId, boardMemberId: { not: null } },
-      }),
-    ]);
+    const [pageReferences, eventReferences, boardMemberReferences] =
+      await Promise.all([
+        prisma.pageBlock.count({
+          where: { data: { contains: `"imageId":"${imageId}"` } },
+        }),
+        prisma.event.count({
+          where: { imageId },
+        }),
+        prisma.image.count({
+          where: { id: imageId, boardMemberId: { not: null } },
+        }),
+      ]);
 
-    if (pageReferences > 0 || eventReferences > 0 || boardMemberReferences > 0) {
+    if (
+      pageReferences > 0 ||
+      eventReferences > 0 ||
+      boardMemberReferences > 0
+    ) {
       continue;
     }
 

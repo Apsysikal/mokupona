@@ -28,8 +28,8 @@ import type { BlockType } from "~/features/cms/blocks/types";
 import type {
   BlockEditorCapabilities,
   BlockEditorContext,
+  BlockInstance,
 } from "~/features/cms/catalog";
-import type { BlockInstance } from "~/features/cms/catalog";
 import { deleteCmsImagesIfUnreferenced } from "~/features/cms/cms-image-lifecycle.server";
 import {
   createPageCommandBuilder,
@@ -40,6 +40,7 @@ import { formatPageStatus } from "~/features/cms/page-status";
 import { siteCmsCatalog } from "~/features/cms/site-catalog";
 import { siteLinkTargetRegistry } from "~/features/cms/site-link-targets";
 import { siteCmsPageService } from "~/features/cms/site-page-service.server";
+import { parseImageFormData } from "~/utils/image-upload.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
@@ -60,6 +61,8 @@ const PageMetaSchema = z.object({
     .transform((v) => (v === undefined || v === "" ? null : Number(v)))
     .pipe(z.number().int().nonnegative().nullable()),
 });
+
+const MAX_IMAGE_SIZE_BYTES = 1024 * 1024 * 3;
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -116,217 +119,265 @@ export async function action({ request, params }: Route.ActionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   const pageKey = requireKnownPageKey(params.pageKey);
-  const formData = await request.formData();
+  const uploadResult = await parseImageFormData(request, "imageFile");
+
+  if (!uploadResult.success) {
+    return {
+      status: "conflict" as const,
+      conflictMessage: uploadResult.uploadError,
+      editorModel: await siteCmsPageService.readEditorModel(pageKey),
+    };
+  }
+
+  const formData = uploadResult.formData;
   const intent = formData.get("intent");
 
-  // Default (no intent field) → set-page-meta via Conform
-  if (!intent || intent === "set-page-meta") {
-    const submission = parseWithZod(formData, { schema: PageMetaSchema });
+  try {
+    // Default (no intent field) → set-page-meta via Conform
+    if (!intent || intent === "set-page-meta") {
+      const submission = parseWithZod(formData, { schema: PageMetaSchema });
 
-    if (submission.status !== "success" || !submission.value) {
-      return submission.reply();
-    }
+      if (submission.status !== "success" || !submission.value) {
+        return submission.reply();
+      }
 
-    const command: PageCommand = {
-      type: "set-page-meta",
-      pageKey,
-      baseRevision: submission.value.revision,
-      title: submission.value.title,
-      description: submission.value.description,
-    };
-
-    const result = await siteCmsPageService.applyPageCommand(command);
-
-    if (result.status === "conflict") {
-      return {
-        status: "conflict" as const,
-        conflictMessage:
-          "This page was changed by someone else. The editor has been refreshed with the current values - please review and save again.",
-        editorModel: result.currentEditorModel,
+      const command: PageCommand = {
+        type: "set-page-meta",
+        pageKey,
+        baseRevision: submission.value.revision,
+        title: submission.value.title,
+        description: submission.value.description,
       };
+
+      const result = await siteCmsPageService.applyPageCommand(command);
+
+      if (result.status === "conflict") {
+        return {
+          status: "conflict" as const,
+          conflictMessage:
+            "This page was changed by someone else. The editor has been refreshed with the current values - please review and save again.",
+          editorModel: result.currentEditorModel,
+        };
+      }
+
+      return redirect(`/admin/pages/${pageKey}`);
     }
 
-    return redirect(`/admin/pages/${pageKey}`);
-  }
+    // Block commands — all share blockRef + baseRevision
+    const blockRef = parseBlockRef(formData.get("blockRef"));
+    const baseRevision = parseBaseRevision(formData.get("baseRevision"));
 
-  // Block commands — all share blockRef + baseRevision
-  const blockRef = parseBlockRef(formData.get("blockRef"));
-  const baseRevision = parseBaseRevision(formData.get("baseRevision"));
-
-  if (!blockRef) {
-    throw new Response("Missing or invalid blockRef", { status: 400 });
-  }
-
-  const commandBuilder = createPageCommandBuilder(pageKey, baseRevision);
-
-  if (intent === "set-block-data") {
-    const blockType = formData.get("blockType");
-    const blockVersionRaw = formData.get("blockVersion");
-
-    if (typeof blockType !== "string" || typeof blockVersionRaw !== "string") {
-      throw new Response("Missing blockType or blockVersion", { status: 400 });
+    if (!blockRef) {
+      throw new Response("Missing or invalid blockRef", { status: 400 });
     }
 
-    const blockVersion = Number(blockVersionRaw);
-    const serializedBlockRef = JSON.stringify(blockRef);
+    const commandBuilder = createPageCommandBuilder(pageKey, baseRevision);
 
-    if (blockType !== "hero" || blockVersion !== 1) {
-      throw new Response("Unsupported block editor payload", { status: 400 });
-    }
+    if (intent === "set-block-data") {
+      const blockType = formData.get("blockType");
+      const blockVersionRaw = formData.get("blockVersion");
 
-    const heroSchema = createHeroBlockEditorFormSchema(siteLinkTargetRegistry);
-    const heroSubmission = parseWithZod(formData, {
-      schema: heroSchema,
-    });
+      if (
+        typeof blockType !== "string" ||
+        typeof blockVersionRaw !== "string"
+      ) {
+        throw new Response("Missing blockType or blockVersion", {
+          status: 400,
+        });
+      }
 
-    if (heroSubmission.status !== "success" || !heroSubmission.value) {
-      return {
-        status: "block-validation-error" as const,
-        blockRef: serializedBlockRef,
-        editorModel: await siteCmsPageService.readEditorModel(pageKey),
-        lastResult: heroSubmission.reply(),
-      };
-    }
+      const blockVersion = Number(blockVersionRaw);
+      const serializedBlockRef = JSON.stringify(blockRef);
 
-    const currentEditorModel =
-      await siteCmsPageService.readEditorModel(pageKey);
-    const currentBlocks = currentEditorModel.pageSnapshot.blocks;
-    const currentBlock = resolveBlock(currentBlocks, blockRef);
-    if (!currentBlock || currentBlock.type !== "hero") {
-      return {
-        status: "block-conflict" as const,
-        blockRef: serializedBlockRef,
-        conflictMessage:
-          "Block could not be saved — the editor has been refreshed with the current block.",
-        editorModel: currentEditorModel,
-      };
-    }
+      if (blockType !== "hero" || blockVersion !== 1) {
+        throw new Response("Unsupported block editor payload", { status: 400 });
+      }
 
-    const uploadedImageId =
-      heroSubmission.value.imageAction === "replace"
-        ? await persistHeroUploadedImage(formData.get("imageFile"))
-        : undefined;
-    if (heroSubmission.value.imageAction === "replace" && !uploadedImageId) {
-      return {
-        status: "block-conflict" as const,
-        blockRef: serializedBlockRef,
-        conflictMessage: "Please choose an image file before replacing.",
-        editorModel: currentEditorModel,
-      };
-    }
+      const heroSchema = createHeroBlockEditorFormSchema(
+        siteLinkTargetRegistry,
+      );
+      const heroSubmission = parseWithZod(formData, {
+        schema: heroSchema,
+      });
 
-    const command = commandBuilder.setBlockData(
-      blockRef,
-      blockType as BlockType,
-      blockVersion,
-      applyHeroBlockEditorValue(
-        currentBlock.data as Parameters<typeof applyHeroBlockEditorValue>[0],
-        heroSubmission.value,
-        { uploadedImageId },
-      ),
-    );
-    const nextData = command.data as Parameters<typeof getUploadedHeroImageId>[0];
-    const previousImageId = getUploadedHeroImageId(currentBlock.data);
-    const nextImageId = getUploadedHeroImageId(nextData);
+      if (heroSubmission.status !== "success" || !heroSubmission.value) {
+        return {
+          status: "block-validation-error" as const,
+          blockRef: serializedBlockRef,
+          editorModel: await siteCmsPageService.readEditorModel(pageKey),
+          lastResult: heroSubmission.reply(),
+        };
+      }
 
-    const result = await siteCmsPageService.applyPageCommand(command);
+      const currentEditorModel =
+        await siteCmsPageService.readEditorModel(pageKey);
+      const currentBlocks = currentEditorModel.pageSnapshot.blocks;
+      const currentBlock = resolveBlock(currentBlocks, blockRef);
+      if (!currentBlock || currentBlock.type !== "hero") {
+        return {
+          status: "block-conflict" as const,
+          blockRef: serializedBlockRef,
+          conflictMessage:
+            "Block could not be saved — the editor has been refreshed with the current block.",
+          editorModel: currentEditorModel,
+        };
+      }
 
-    if (result.status === "conflict") {
+      const imageFileEntry = formData.get("imageFile");
       if (
         heroSubmission.value.imageAction === "replace" &&
-        nextImageId &&
-        nextImageId !== previousImageId
+        (!(imageFileEntry instanceof File) || imageFileEntry.size <= 0)
       ) {
+        return {
+          status: "block-conflict" as const,
+          blockRef: serializedBlockRef,
+          conflictMessage: "Please choose an image file before replacing.",
+          editorModel: currentEditorModel,
+        };
+      }
+
+      if (
+        imageFileEntry instanceof File &&
+        imageFileEntry.size > MAX_IMAGE_SIZE_BYTES
+      ) {
+        return {
+          status: "block-conflict" as const,
+          blockRef: serializedBlockRef,
+          conflictMessage: "File cannot be greater than 3MB",
+          editorModel: currentEditorModel,
+        };
+      }
+
+      const uploadedImageId =
+        heroSubmission.value.imageAction === "replace"
+          ? await persistHeroUploadedImage(imageFileEntry, {
+              persistImage: uploadResult.persistImage,
+            })
+          : undefined;
+      if (heroSubmission.value.imageAction === "replace" && !uploadedImageId) {
+        return {
+          status: "block-conflict" as const,
+          blockRef: serializedBlockRef,
+          conflictMessage: "Please choose an image file before replacing.",
+          editorModel: currentEditorModel,
+        };
+      }
+
+      const command = commandBuilder.setBlockData(
+        blockRef,
+        blockType as BlockType,
+        blockVersion,
+        applyHeroBlockEditorValue(
+          currentBlock.data as Parameters<typeof applyHeroBlockEditorValue>[0],
+          heroSubmission.value,
+          { uploadedImageId },
+        ),
+      );
+      const nextData = command.data as Parameters<
+        typeof getUploadedHeroImageId
+      >[0];
+      const previousImageId = getUploadedHeroImageId(currentBlock.data);
+      const nextImageId = getUploadedHeroImageId(nextData);
+
+      const result = await siteCmsPageService.applyPageCommand(command);
+
+      if (result.status === "conflict") {
+        if (
+          heroSubmission.value.imageAction === "replace" &&
+          nextImageId &&
+          nextImageId !== previousImageId
+        ) {
+          await deleteCmsImagesIfUnreferenced({
+            imageIds: [nextImageId],
+            prisma,
+          });
+        }
+        return {
+          status: "block-conflict" as const,
+          blockRef: serializedBlockRef,
+          conflictMessage:
+            "Block could not be saved — please refresh and retry.",
+          editorModel: result.currentEditorModel,
+        };
+      }
+
+      if (previousImageId && previousImageId !== nextImageId) {
         await deleteCmsImagesIfUnreferenced({
-          imageIds: [nextImageId],
+          imageIds: [previousImageId],
           prisma,
         });
       }
-      return {
-        status: "block-conflict" as const,
-        blockRef: serializedBlockRef,
-        conflictMessage: "Block could not be saved — please refresh and retry.",
-        editorModel: result.currentEditorModel,
-      };
+
+      return redirect(`/admin/pages/${pageKey}`);
     }
 
-    if (previousImageId && previousImageId !== nextImageId) {
-      await deleteCmsImagesIfUnreferenced({
-        imageIds: [previousImageId],
-        prisma,
-      });
+    if (intent === "move-block-up" || intent === "move-block-down") {
+      if (blockRef.kind !== "page-block-id") {
+        throw new Response("move commands require a page-block-id ref", {
+          status: 400,
+        });
+      }
+
+      const mutableRef: MutableBlockRef = blockRef;
+      const command =
+        intent === "move-block-up"
+          ? commandBuilder.moveBlockUp(mutableRef)
+          : commandBuilder.moveBlockDown(mutableRef);
+
+      const result = await siteCmsPageService.applyPageCommand(command);
+
+      if (result.status === "conflict") {
+        return {
+          status: "conflict" as const,
+          conflictMessage:
+            "Move could not be applied — the page may have changed.",
+          editorModel: result.currentEditorModel,
+        };
+      }
+
+      return redirect(`/admin/pages/${pageKey}`);
     }
 
-    return redirect(`/admin/pages/${pageKey}`);
+    if (intent === "delete-block") {
+      if (blockRef.kind !== "page-block-id") {
+        throw new Response("delete command requires a page-block-id ref", {
+          status: 400,
+        });
+      }
+
+      const mutableRef: MutableBlockRef = blockRef;
+      const command = commandBuilder.deleteBlock(mutableRef);
+      const result = await siteCmsPageService.applyPageCommand(command);
+
+      if (result.status === "conflict") {
+        return {
+          status: "conflict" as const,
+          conflictMessage:
+            "Delete could not be applied — the block may be in a fixed slot.",
+          editorModel: result.currentEditorModel,
+        };
+      }
+
+      return redirect(`/admin/pages/${pageKey}`);
+    }
+
+    throw new Response(`Unknown intent: ${String(intent)}`, { status: 400 });
+  } finally {
+    await uploadResult.discardImage();
   }
-
-  if (intent === "move-block-up" || intent === "move-block-down") {
-    if (blockRef.kind !== "page-block-id") {
-      throw new Response("move commands require a page-block-id ref", {
-        status: 400,
-      });
-    }
-
-    const mutableRef: MutableBlockRef = blockRef;
-    const command =
-      intent === "move-block-up"
-        ? commandBuilder.moveBlockUp(mutableRef)
-        : commandBuilder.moveBlockDown(mutableRef);
-
-    const result = await siteCmsPageService.applyPageCommand(command);
-
-    if (result.status === "conflict") {
-      return {
-        status: "conflict" as const,
-        conflictMessage:
-          "Move could not be applied — the page may have changed.",
-        editorModel: result.currentEditorModel,
-      };
-    }
-
-    return redirect(`/admin/pages/${pageKey}`);
-  }
-
-  if (intent === "delete-block") {
-    if (blockRef.kind !== "page-block-id") {
-      throw new Response("delete command requires a page-block-id ref", {
-        status: 400,
-      });
-    }
-
-    const mutableRef: MutableBlockRef = blockRef;
-    const command = commandBuilder.deleteBlock(mutableRef);
-    const result = await siteCmsPageService.applyPageCommand(command);
-
-    if (result.status === "conflict") {
-      return {
-        status: "conflict" as const,
-        conflictMessage:
-          "Delete could not be applied — the block may be in a fixed slot.",
-        editorModel: result.currentEditorModel,
-      };
-    }
-
-    return redirect(`/admin/pages/${pageKey}`);
-  }
-
-  throw new Response(`Unknown intent: ${String(intent)}`, { status: 400 });
 }
 
 async function persistHeroUploadedImage(
   fileEntry: FormDataEntryValue | null,
+  upload: {
+    persistImage(file: File): Promise<string>;
+  },
 ): Promise<string | undefined> {
   if (!(fileEntry instanceof File) || fileEntry.size <= 0) {
     return undefined;
   }
 
-  const image = await prisma.image.create({
-    data: {
-      contentType: fileEntry.type || "application/octet-stream",
-      blob: Buffer.from(await fileEntry.arrayBuffer()),
-    },
-  });
-  return image.id;
+  return upload.persistImage(fileEntry);
 }
 
 function getUploadedHeroImageId(blockData: unknown): string | null {

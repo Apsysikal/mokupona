@@ -1,9 +1,6 @@
-import type { ComponentProps } from "react";
 import sharp, { type FitEnum } from "sharp";
 import invariant from "tiny-invariant";
 import { z } from "zod";
-
-import type { Route } from "./+types/file.$fileId";
 
 import { prisma } from "~/db.server";
 import { logger } from "~/logger.server";
@@ -11,7 +8,6 @@ import {
   fileStorage as cache,
   getStorageKey as getCacheKey,
 } from "~/utils/file-chache-storage.server";
-import { getImageUrl } from "~/utils/misc";
 
 const SearchParamsSchema = z.object({
   width: z.coerce.number().min(0).optional(),
@@ -21,57 +17,14 @@ const SearchParamsSchema = z.object({
 
 type SearchParams = z.infer<typeof SearchParamsSchema>;
 
-type ImageInputProps = {
-  imageId: string;
-  width: number;
-  height: number;
-} & Partial<Pick<SearchParams, "fit">>;
+type FileRouteLoaderArgs = {
+  request: Request;
+  params: {
+    fileId?: string;
+  };
+};
 
-type ImageProps = Omit<ComponentProps<"img">, "width" | "height" | "src"> &
-  ImageInputProps;
-
-export function OptimizedImage({
-  imageId,
-  width,
-  height,
-  fit = "cover",
-  ...props
-}: ImageProps) {
-  const breakPoints = [432, 648, 864, 1080];
-  const imageUrl = getImageUrl(imageId);
-  const aspect = width / height;
-
-  const searchParams = new URLSearchParams({
-    w: `${width}`,
-    h: `${height}`,
-    fit,
-  });
-
-  const srcSetUrls = breakPoints.map((w) => {
-    const h = w / aspect;
-    const searchParams = new URLSearchParams({
-      w: `${w}`,
-      h: `${h}`,
-      fit,
-    });
-
-    return `${imageUrl + "?" + searchParams.toString()} ${w}w`;
-  });
-
-  return (
-    <picture>
-      <img
-        srcSet={srcSetUrls.join(", ")}
-        src={imageUrl + "?" + searchParams.toString()}
-        width={width}
-        height={height}
-        {...props}
-      />
-    </picture>
-  );
-}
-
-export async function loader({ request, params }: Route.LoaderArgs) {
+export async function loader({ request, params }: FileRouteLoaderArgs) {
   const url = new URL(request.url);
   const searchParams = url.searchParams;
   const { fileId } = params;

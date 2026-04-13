@@ -40,9 +40,9 @@ describe("hero editor schema image behavior", () => {
 
     expect(parsed.success).toBe(false);
     if (parsed.success) return;
-    expect(parsed.error.issues.some((issue) => issue.path[0] === "imageAlt")).toBe(
-      true,
-    );
+    expect(
+      parsed.error.issues.some((issue) => issue.path[0] === "imageAlt"),
+    ).toBe(true);
   });
 
   test("builds an uploaded decorative image when replacing with upload", () => {
