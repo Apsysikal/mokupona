@@ -1,3 +1,4 @@
+import type { BlockRef } from "./blocks/block-ref";
 import type {
   BlockInstance,
   CmsCatalog,
@@ -6,10 +7,32 @@ import type {
   PublicProjection,
   PublicProjectionContext,
 } from "./catalog";
+import type {
+  DeleteBlockCommand,
+  MoveBlockDownCommand,
+  MoveBlockUpCommand,
+  MutableBlockRef,
+  PageCommand,
+  SetBlockDataCommand,
+  SetPageMetaCommand,
+} from "./page-commands";
 import type { PageStatus, Revision } from "./page-status";
 
 export { formatPageStatus } from "./page-status";
 export type { PageStatus, Revision } from "./page-status";
+// Re-export command types from the client-safe module so existing importers
+// of page-service.server continue to work without changes.
+export { createPageCommandBuilder } from "./page-commands";
+export type {
+  DeleteBlockCommand,
+  MoveBlockDownCommand,
+  MoveBlockUpCommand,
+  MutableBlockRef,
+  PageCommand,
+  PageCommandBuilder,
+  SetBlockDataCommand,
+  SetPageMetaCommand,
+} from "./page-commands";
 
 export type Diagnostic = {
   code:
@@ -70,14 +93,14 @@ export type CmsPageStore = {
     title: string;
     description: string;
   }): Promise<WriteSuccess | WriteConflict>;
-};
-
-export type PageCommand = {
-  type: "set-page-meta";
-  pageKey: PageKey;
-  baseRevision: Revision | null;
-  title: string;
-  description: string;
+  /** Write the full page snapshot (meta + blocks) atomically with a revision bump. */
+  updatePage(input: {
+    pageKey: PageKey;
+    expectedRevision: Revision;
+    title: string;
+    description: string;
+    blocks: readonly BlockInstance[];
+  }): Promise<WriteSuccess | WriteConflict>;
 };
 
 export type ApplyPageCommandResult =
@@ -201,6 +224,294 @@ export function createCmsPageService({
     diagnostics: [],
   });
 
+  /** Resolve a BlockRef to an index in the blocks array. Returns -1 if not found. */
+  const resolveBlockIndex = (
+    blocks: readonly BlockInstance[],
+    ref: BlockRef,
+  ): number => {
+    switch (ref.kind) {
+      case "definition-key":
+        return blocks.findIndex((b) => b.definitionKey === ref.definitionKey);
+      case "page-block-id":
+        return blocks.findIndex((b) => b.pageBlockId === ref.pageBlockId);
+    }
+  };
+
+  /**
+   * Apply a block mutation to a persisted snapshot, persist it, and return the result.
+   * Handles materialization if the page is still default-backed.
+   */
+  const applyBlockMutation = async (
+    command:
+      | SetBlockDataCommand
+      | MoveBlockUpCommand
+      | MoveBlockDownCommand
+      | DeleteBlockCommand,
+    mutate: (blocks: BlockInstance[]) => BlockInstance[] | null,
+  ): Promise<ApplyPageCommandResult> => {
+    const currentPage = await readResolvedPage(command.pageKey);
+
+    // Check concurrency
+    if (currentPage.status.kind === "default-backed") {
+      if (command.baseRevision !== null) {
+        return {
+          status: "conflict",
+          currentEditorModel: currentPage,
+          diagnostics: [],
+        };
+      }
+    } else {
+      if (
+        command.baseRevision === null ||
+        command.baseRevision !== currentPage.status.revision
+      ) {
+        return {
+          status: "conflict",
+          currentEditorModel: currentPage,
+          diagnostics: [],
+        };
+      }
+    }
+
+    const blocks = [...currentPage.pageSnapshot.blocks];
+    const mutatedBlocks = mutate(blocks);
+
+    // null signals a rule violation — return a conflict
+    if (mutatedBlocks === null) {
+      return {
+        status: "conflict",
+        currentEditorModel: currentPage,
+        diagnostics: [],
+      };
+    }
+
+    if (currentPage.status.kind === "default-backed") {
+      const writeResult = await pageStore.materializePage({
+        page: {
+          pageKey: command.pageKey,
+          title: currentPage.pageSnapshot.title,
+          description: currentPage.pageSnapshot.description,
+          blocks: mutatedBlocks,
+        },
+      });
+
+      if (writeResult.status === "conflict") {
+        const refreshed = await readResolvedPage(command.pageKey);
+        return {
+          status: "conflict",
+          currentEditorModel: refreshed,
+          diagnostics: [],
+        };
+      }
+
+      return {
+        status: "saved",
+        materialization: writeResult.materialization,
+        editorModel: resolvedPageFromPersisted(
+          command.pageKey,
+          writeResult.persistedPage,
+        ),
+      };
+    }
+
+    const writeResult = await pageStore.updatePage({
+      pageKey: command.pageKey,
+      expectedRevision: currentPage.status.revision,
+      title: currentPage.pageSnapshot.title,
+      description: currentPage.pageSnapshot.description,
+      blocks: mutatedBlocks,
+    });
+
+    if (writeResult.status === "conflict") {
+      const refreshed = await readResolvedPage(command.pageKey);
+      return {
+        status: "conflict",
+        currentEditorModel: refreshed,
+        diagnostics: [],
+      };
+    }
+
+    return {
+      status: "saved",
+      materialization: writeResult.materialization,
+      editorModel: resolvedPageFromPersisted(
+        command.pageKey,
+        writeResult.persistedPage,
+      ),
+    };
+  };
+
+  const applySetBlockData = async (
+    command: SetBlockDataCommand,
+  ): Promise<ApplyPageCommandResult> => {
+    let definition;
+    try {
+      definition = catalog.getBlockDefinition(command.blockType);
+    } catch {
+      return {
+        status: "conflict",
+        currentEditorModel: await readResolvedPage(command.pageKey),
+        diagnostics: [],
+      };
+    }
+
+    const parseResult = definition.schema.safeParse(command.data);
+    if (!parseResult.success) {
+      return {
+        status: "conflict",
+        currentEditorModel: await readResolvedPage(command.pageKey),
+        diagnostics: [],
+      };
+    }
+
+    const validatedData = parseResult.data;
+
+    return applyBlockMutation(command, (blocks) => {
+      const index = resolveBlockIndex(blocks, command.ref);
+      if (index === -1) return null;
+
+      const updated = [...blocks];
+      updated[index] = { ...updated[index], data: validatedData };
+      return updated;
+    });
+  };
+
+  const getRequiredLeadingCount = (pageKey: PageKey): number =>
+    catalog.getPageRule(pageKey).requiredLeadingBlockTypes?.length ?? 0;
+
+  const applyMoveBlockUp = (
+    command: MoveBlockUpCommand,
+  ): Promise<ApplyPageCommandResult> => {
+    return applyBlockMutation(command, (blocks) => {
+      const index = resolveBlockIndex(blocks, command.ref);
+      if (index <= 0) return null; // already first or not found
+
+      const newIndex = index - 1;
+      const requiredLeadingCount = getRequiredLeadingCount(command.pageKey);
+
+      // The block at newIndex is in the protected leading zone — cannot be displaced
+      if (newIndex < requiredLeadingCount) return null;
+
+      const updated = [...blocks];
+      [updated[newIndex], updated[index]] = [updated[index], updated[newIndex]];
+      return updated;
+    });
+  };
+
+  const applyMoveBlockDown = (
+    command: MoveBlockDownCommand,
+  ): Promise<ApplyPageCommandResult> => {
+    return applyBlockMutation(command, (blocks) => {
+      const index = resolveBlockIndex(blocks, command.ref);
+      if (index === -1 || index >= blocks.length - 1) return null;
+
+      const requiredLeadingCount = getRequiredLeadingCount(command.pageKey);
+      if (index < requiredLeadingCount) return null; // required leading block cannot move down
+
+      const updated = [...blocks];
+      [updated[index], updated[index + 1]] = [
+        updated[index + 1],
+        updated[index],
+      ];
+      return updated;
+    });
+  };
+
+  const applyDeleteBlock = (
+    command: DeleteBlockCommand,
+  ): Promise<ApplyPageCommandResult> => {
+    return applyBlockMutation(command, (blocks) => {
+      const index = resolveBlockIndex(blocks, command.ref);
+      if (index === -1) return null;
+
+      const requiredLeadingCount = getRequiredLeadingCount(command.pageKey);
+      if (index < requiredLeadingCount) return null; // fixed slot — cannot delete
+
+      const updated = [...blocks];
+      updated.splice(index, 1);
+      return updated;
+    });
+  };
+
+  const applySetPageMeta = async (
+    command: SetPageMetaCommand,
+  ): Promise<ApplyPageCommandResult> => {
+    const currentPage = await readResolvedPage(command.pageKey);
+
+    if (currentPage.status.kind === "default-backed") {
+      if (command.baseRevision !== null) {
+        return {
+          status: "conflict",
+          currentEditorModel: currentPage,
+          diagnostics: [],
+        };
+      }
+
+      const writeResult = await pageStore.materializePage({
+        page: {
+          pageKey: command.pageKey,
+          title: command.title,
+          description: command.description,
+          blocks: currentPage.pageSnapshot.blocks,
+        },
+      });
+
+      if (writeResult.status === "conflict") {
+        const refreshed = await readResolvedPage(command.pageKey);
+        return {
+          status: "conflict",
+          currentEditorModel: refreshed,
+          diagnostics: [],
+        };
+      }
+
+      return {
+        status: "saved",
+        materialization: writeResult.materialization,
+        editorModel: resolvedPageFromPersisted(
+          command.pageKey,
+          writeResult.persistedPage,
+        ),
+      };
+    }
+
+    if (
+      command.baseRevision === null ||
+      command.baseRevision !== currentPage.status.revision
+    ) {
+      return {
+        status: "conflict",
+        currentEditorModel: currentPage,
+        diagnostics: [],
+      };
+    }
+
+    const writeResult = await pageStore.updatePageMeta({
+      pageKey: command.pageKey,
+      expectedRevision: command.baseRevision,
+      title: command.title,
+      description: command.description,
+    });
+
+    if (writeResult.status === "conflict") {
+      const refreshed = await readResolvedPage(command.pageKey);
+      return {
+        status: "conflict",
+        currentEditorModel: refreshed,
+        diagnostics: [],
+      };
+    }
+
+    return {
+      status: "saved",
+      materialization: writeResult.materialization,
+      editorModel: resolvedPageFromPersisted(
+        command.pageKey,
+        writeResult.persistedPage,
+      ),
+    };
+  };
+
   return {
     async listEditablePages() {
       return Promise.all(
@@ -229,80 +540,18 @@ export function createCmsPageService({
       return readResolvedPage(pageKey);
     },
     async applyPageCommand(command) {
-      const currentPage = await readResolvedPage(command.pageKey);
-
-      if (currentPage.status.kind === "default-backed") {
-        if (command.baseRevision !== null) {
-          return {
-            status: "conflict",
-            currentEditorModel: currentPage,
-            diagnostics: [],
-          };
-        }
-
-        const writeResult = await pageStore.materializePage({
-          page: {
-            pageKey: command.pageKey,
-            title: command.title,
-            description: command.description,
-            blocks: currentPage.pageSnapshot.blocks,
-          },
-        });
-
-        if (writeResult.status === "conflict") {
-          const refreshed = await readResolvedPage(command.pageKey);
-          return {
-            status: "conflict",
-            currentEditorModel: refreshed,
-            diagnostics: [],
-          };
-        }
-
-        return {
-          status: "saved",
-          materialization: writeResult.materialization,
-          editorModel: resolvedPageFromPersisted(
-            command.pageKey,
-            writeResult.persistedPage,
-          ),
-        };
+      switch (command.type) {
+        case "set-page-meta":
+          return applySetPageMeta(command);
+        case "set-block-data":
+          return applySetBlockData(command);
+        case "move-block-up":
+          return applyMoveBlockUp(command);
+        case "move-block-down":
+          return applyMoveBlockDown(command);
+        case "delete-block":
+          return applyDeleteBlock(command);
       }
-
-      if (
-        command.baseRevision === null ||
-        command.baseRevision !== currentPage.status.revision
-      ) {
-        return {
-          status: "conflict",
-          currentEditorModel: currentPage,
-          diagnostics: [],
-        };
-      }
-
-      const writeResult = await pageStore.updatePageMeta({
-        pageKey: command.pageKey,
-        expectedRevision: command.baseRevision,
-        title: command.title,
-        description: command.description,
-      });
-
-      if (writeResult.status === "conflict") {
-        const refreshed = await readResolvedPage(command.pageKey);
-        return {
-          status: "conflict",
-          currentEditorModel: refreshed,
-          diagnostics: [],
-        };
-      }
-
-      return {
-        status: "saved",
-        materialization: writeResult.materialization,
-        editorModel: resolvedPageFromPersisted(
-          command.pageKey,
-          writeResult.persistedPage,
-        ),
-      };
     },
   };
 }
