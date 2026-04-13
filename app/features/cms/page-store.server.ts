@@ -70,6 +70,89 @@ export function createPrismaCmsPageStore({
         throw error;
       }
     },
+    async updatePage({
+      pageKey,
+      expectedRevision,
+      title,
+      description,
+      blocks,
+    }) {
+      return prisma.$transaction(async (tx) => {
+        const existingPage = await tx.page.findUnique({
+          where: { pageKey },
+          select: { id: true, revision: true },
+        });
+
+        if (!existingPage) {
+          return { status: "conflict" as const, persistedPage: null };
+        }
+
+        if (existingPage.revision !== expectedRevision) {
+          return {
+            status: "conflict" as const,
+            persistedPage: await requirePersistedPage(tx, pageKey),
+          };
+        }
+
+        await tx.page.update({
+          where: { id: existingPage.id },
+          data: { title, description, revision: { increment: 1 } },
+        });
+
+        // Upsert blocks: preserve existing row IDs where pageBlockId matches,
+        // delete removed blocks, insert new ones.
+        const existingBlocks = await tx.pageBlock.findMany({
+          where: { pageId: existingPage.id },
+          select: { id: true },
+        });
+        const existingIds = new Set(existingBlocks.map((b) => b.id));
+        const incomingIds = new Set(
+          blocks
+            .map((b) => b.pageBlockId)
+            .filter((id): id is string => id !== undefined),
+        );
+
+        // Delete blocks that are no longer present
+        const toDelete = [...existingIds].filter((id) => !incomingIds.has(id));
+        if (toDelete.length > 0) {
+          await tx.pageBlock.deleteMany({ where: { id: { in: toDelete } } });
+        }
+
+        // Upsert each block in the new order
+        for (let position = 0; position < blocks.length; position++) {
+          const block = blocks[position];
+          if (block.pageBlockId && existingIds.has(block.pageBlockId)) {
+            await tx.pageBlock.update({
+              where: { id: block.pageBlockId },
+              data: {
+                definitionKey: block.definitionKey ?? null,
+                type: block.type,
+                version: block.version,
+                position,
+                data: JSON.stringify(block.data),
+              },
+            });
+          } else {
+            await tx.pageBlock.create({
+              data: {
+                pageId: existingPage.id,
+                definitionKey: block.definitionKey ?? null,
+                type: block.type,
+                version: block.version,
+                position,
+                data: JSON.stringify(block.data),
+              },
+            });
+          }
+        }
+
+        return {
+          status: "saved" as const,
+          materialization: "updated" as const,
+          persistedPage: await requirePersistedPage(tx, pageKey),
+        };
+      });
+    },
     async updatePageMeta({ pageKey, expectedRevision, title, description }) {
       return prisma.$transaction(async (tx) => {
         const existingPage = await tx.page.findUnique({
@@ -160,6 +243,7 @@ function serializeBlocks(pageId: string, blocks: readonly BlockInstance[]) {
 }
 
 function deserializeBlock(block: {
+  id: string;
   definitionKey: string | null;
   type: string;
   version: number;
@@ -167,6 +251,7 @@ function deserializeBlock(block: {
 }): BlockInstance {
   return {
     ...(block.definitionKey ? { definitionKey: block.definitionKey } : {}),
+    pageBlockId: block.id,
     type: block.type as BlockInstance["type"],
     version: block.version as BlockInstance["version"],
     data: JSON.parse(block.data),

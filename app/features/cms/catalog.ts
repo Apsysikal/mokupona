@@ -1,12 +1,16 @@
+import type { SubmissionResult } from "@conform-to/react";
 import type React from "react";
 import type { ZodType } from "zod/v4";
 
+import type { BlockRef } from "./blocks/block-ref";
 import type {
   BlockBaseType,
   BlockType,
   BlockVersion,
   DefinitionKey,
 } from "./blocks/types";
+import type { LinkTargetRegistry } from "./link-targets";
+import type { PageCommandBuilder } from "./page-commands";
 
 export type PageKey = string;
 export type Provenance = "default" | "persisted";
@@ -42,11 +46,32 @@ export type PublicProjectionContext = {
   pathname: string;
 };
 
+export type BlockEditorCapabilities = {
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  canDelete: boolean;
+};
+
+export type BlockEditorFormState = {
+  readonly lastResult: SubmissionResult<string[]> | null;
+  readonly errorMessage: string | null;
+};
+
+export type BlockEditorContext<TData = unknown> = {
+  readonly data: TData;
+  readonly blockRef: BlockRef;
+  readonly commandBuilder: PageCommandBuilder;
+  readonly linkTargetRegistry: LinkTargetRegistry;
+  readonly capabilities: BlockEditorCapabilities;
+  readonly formState?: BlockEditorFormState;
+};
+
 export type BlockDefinition<TBlock extends BlockInstance = BlockInstance> = {
   type: TBlock["type"];
   version: TBlock["version"];
   schema: ZodType<TBlock["data"]>;
   render(block: TBlock): React.ReactNode;
+  editor?(ctx: BlockEditorContext<TBlock["data"]>): React.ReactNode;
 };
 
 export type PageDefinition = {
@@ -63,6 +88,7 @@ export type PageDefinition = {
 export type CmsCatalog = {
   listPageKeys(): readonly PageKey[];
   getBlockDefinition(blockType: BlockType): BlockDefinition;
+  getPageRule(pageKey: PageKey): PageRule;
   readPageSnapshot(pageKey: PageKey): PageSnapshot;
   projectPublic(
     snapshot: PageSnapshot,
@@ -132,6 +158,13 @@ export function createCmsCatalog({
         blockType,
         `Unknown Block Type: ${blockType}`,
       );
+    },
+    getPageRule(pageKey) {
+      return requireFromMap(
+        pageDefinitions,
+        pageKey,
+        `Unknown Page Key: ${pageKey}`,
+      ).rules;
     },
     readPageSnapshot,
     projectPublic(snapshot, context) {
