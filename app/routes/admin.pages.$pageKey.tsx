@@ -26,6 +26,11 @@ import {
   createHeroBlockEditorFormSchema,
 } from "~/features/cms/blocks/hero/editor-schema";
 import {
+  applyImageBlockEditorValue,
+  createImageBlockEditorFormSchema,
+} from "~/features/cms/blocks/image/editor-schema";
+import type { ImageBlockType } from "~/features/cms/blocks/image/model";
+import {
   applyTextSectionBlockEditorValue,
   createTextSectionBlockEditorFormSchema,
 } from "~/features/cms/blocks/text-section/editor-schema";
@@ -184,6 +189,15 @@ export async function action({ request, params }: Route.ActionArgs) {
           body: "",
           variant: "plain",
         } satisfies TextSectionBlockType["data"];
+      } else if (rawBlockType === "image" && addBlockVersion === 1) {
+        initialData = {
+          image: {
+            kind: "asset",
+            src: "/accent-image.png",
+            alt: "",
+          },
+          variant: "default",
+        } satisfies ImageBlockType["data"];
       } else {
         throw new Response("Unsupported block type for add", { status: 400 });
       }
@@ -318,10 +332,10 @@ export async function action({ request, params }: Route.ActionArgs) {
           ),
         );
         const nextData = heroCommand.data as Parameters<
-          typeof getUploadedHeroImageId
+          typeof getUploadedCmsImageId
         >[0];
-        const previousImageId = getUploadedHeroImageId(currentBlock.data);
-        const nextImageId = getUploadedHeroImageId(nextData);
+        const previousImageId = getUploadedCmsImageId(currentBlock.data);
+        const nextImageId = getUploadedCmsImageId(nextData);
 
         const heroResult =
           await siteCmsPageService.applyPageCommand(heroCommand);
@@ -347,7 +361,7 @@ export async function action({ request, params }: Route.ActionArgs) {
         }
 
         if (previousImageId && previousImageId !== nextImageId) {
-          await cleanupRemovedHeroImages({
+          await cleanupRemovedCmsImages({
             previousBlocks: currentBlocks,
             nextBlocks: heroResult.editorModel.pageSnapshot.blocks,
           });
@@ -414,6 +428,125 @@ export async function action({ request, params }: Route.ActionArgs) {
         return redirect(`/admin/pages/${pageKey}`);
       }
 
+      if (blockType === "image" && blockVersion === 1) {
+        const imageSchema = createImageBlockEditorFormSchema();
+        const imageSubmission = parseWithZod(formData, {
+          schema: imageSchema,
+        });
+
+        if (imageSubmission.status !== "success" || !imageSubmission.value) {
+          return {
+            status: "block-validation-error" as const,
+            blockRef: serializedBlockRef,
+            editorModel: await siteCmsPageService.readEditorModel(pageKey),
+            lastResult: imageSubmission.reply(),
+          };
+        }
+
+        const currentEditorModel =
+          await siteCmsPageService.readEditorModel(pageKey);
+        const currentBlocks = currentEditorModel.pageSnapshot.blocks;
+        const currentBlock = resolveBlock(currentBlocks, blockRef);
+        if (!currentBlock || currentBlock.type !== "image") {
+          return {
+            status: "block-conflict" as const,
+            blockRef: serializedBlockRef,
+            conflictMessage:
+              "Block could not be saved — the editor has been refreshed with the current block.",
+            editorModel: currentEditorModel,
+          };
+        }
+
+        const imageFileEntry = formData.get("imageFile");
+        if (
+          imageSubmission.value.imageAction === "replace" &&
+          (!(imageFileEntry instanceof File) || imageFileEntry.size <= 0)
+        ) {
+          return {
+            status: "block-conflict" as const,
+            blockRef: serializedBlockRef,
+            conflictMessage: "Please choose an image file before replacing.",
+            editorModel: currentEditorModel,
+          };
+        }
+
+        if (
+          imageFileEntry instanceof File &&
+          imageFileEntry.size > MAX_IMAGE_SIZE_BYTES
+        ) {
+          return {
+            status: "block-conflict" as const,
+            blockRef: serializedBlockRef,
+            conflictMessage: "File cannot be greater than 3MB",
+            editorModel: currentEditorModel,
+          };
+        }
+
+        const uploadedImageId =
+          imageSubmission.value.imageAction === "replace"
+            ? await persistHeroUploadedImage(imageFileEntry, {
+                persistImage: uploadResult.persistImage,
+              })
+            : undefined;
+        if (
+          imageSubmission.value.imageAction === "replace" &&
+          !uploadedImageId
+        ) {
+          return {
+            status: "block-conflict" as const,
+            blockRef: serializedBlockRef,
+            conflictMessage: "Please choose an image file before replacing.",
+            editorModel: currentEditorModel,
+          };
+        }
+
+        const imageCommand = commandBuilder.setBlockData(
+          blockRef,
+          "image",
+          1,
+          applyImageBlockEditorValue(
+            currentBlock.data as ImageBlockType["data"],
+            imageSubmission.value,
+            { uploadedImageId },
+          ),
+        );
+        const nextData = imageCommand.data as ImageBlockType["data"];
+        const previousImageId = getUploadedCmsImageId(currentBlock.data);
+        const nextImageId = getUploadedCmsImageId(nextData);
+
+        const imageResult =
+          await siteCmsPageService.applyPageCommand(imageCommand);
+
+        if (imageResult.status === "conflict") {
+          if (
+            imageSubmission.value.imageAction === "replace" &&
+            nextImageId &&
+            nextImageId !== previousImageId
+          ) {
+            await deleteCmsImagesIfUnreferenced({
+              imageIds: [nextImageId],
+              prisma,
+            });
+          }
+          return {
+            status: "block-conflict" as const,
+            blockRef: serializedBlockRef,
+            conflictMessage:
+              "Block could not be saved — please refresh and retry.",
+            editorModel: imageResult.currentEditorModel,
+          };
+        }
+
+        if (previousImageId && previousImageId !== nextImageId) {
+          await cleanupRemovedCmsImages({
+            previousBlocks: currentBlocks,
+            nextBlocks: imageResult.editorModel.pageSnapshot.blocks,
+          });
+        }
+
+        return redirect(`/admin/pages/${pageKey}`);
+      }
+
       throw new Response("Unsupported block editor payload", { status: 400 });
     }
 
@@ -466,7 +599,7 @@ export async function action({ request, params }: Route.ActionArgs) {
         };
       }
 
-      await cleanupRemovedHeroImages({
+      await cleanupRemovedCmsImages({
         previousBlocks: currentEditorModel.pageSnapshot.blocks,
         nextBlocks: result.editorModel.pageSnapshot.blocks,
       });
@@ -493,7 +626,7 @@ async function persistHeroUploadedImage(
   return upload.persistImage(fileEntry);
 }
 
-async function cleanupRemovedHeroImages({
+async function cleanupRemovedCmsImages({
   previousBlocks,
   nextBlocks,
 }: {
@@ -515,7 +648,7 @@ async function cleanupRemovedHeroImages({
   });
 }
 
-function getUploadedHeroImageId(blockData: unknown): string | null {
+function getUploadedCmsImageId(blockData: unknown): string | null {
   const data = blockData as {
     image?: {
       kind?: string;
@@ -678,7 +811,8 @@ export default function AdminPageEditorRoute() {
             capabilities,
             formState:
               (definition.type === "hero" ||
-                definition.type === "text-section") &&
+                definition.type === "text-section" ||
+                definition.type === "image") &&
               (blockValidationAction?.blockRef === serializedBlockRef ||
                 blockConflictAction?.blockRef === serializedBlockRef)
                 ? {
@@ -699,7 +833,7 @@ export default function AdminPageEditorRoute() {
           .filter(
             (t) => !(pageRule.requiredLeadingBlockTypes ?? []).includes(t),
           )
-          .filter((t) => t === "text-section")
+          .filter((t) => t === "text-section" || t === "image")
           .map((blockType) => (
             <form key={blockType} method="post">
               <input type="hidden" name="intent" value="add-block" />
@@ -711,7 +845,9 @@ export default function AdminPageEditorRoute() {
                 value={revision === null ? "" : String(revision)}
               />
               <Button type="submit" variant="outline">
-                + Add text section
+                {blockType === "image"
+                  ? "+ Add image block"
+                  : "+ Add text section"}
               </Button>
             </form>
           ))}

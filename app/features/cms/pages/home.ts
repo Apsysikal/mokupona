@@ -35,6 +35,7 @@ const imageBlock: ImageBlockType = {
   version: 1,
   data: {
     image: {
+      kind: "asset",
       src: "/accent-image.png",
       alt: "",
     },
