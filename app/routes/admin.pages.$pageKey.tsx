@@ -765,14 +765,16 @@ export default function AdminPageEditorRoute() {
   const requiredLeadingCount = pageRule.requiredLeadingBlockTypes?.length ?? 0;
   const blocks = displayEditorModel.pageSnapshot.blocks;
   const defaultSnapshot = siteCmsCatalog.readPageSnapshot(displayEditorModel.pageKey);
-  const defaultBlockDataByType = defaultSnapshot.blocks.reduce<
-    Map<BlockType, unknown[]>
-  >((acc, defaultBlock) => {
-    const existing = acc.get(defaultBlock.type) ?? [];
-    existing.push(defaultBlock.data);
-    acc.set(defaultBlock.type, existing);
-    return acc;
-  }, new Map());
+  const defaultBlockDataByType = new Map<BlockType, unknown[]>();
+  for (const defaultBlock of defaultSnapshot.blocks) {
+    const candidates = defaultBlockDataByType.get(defaultBlock.type);
+    if (candidates) {
+      candidates.push(defaultBlock.data);
+      continue;
+    }
+
+    defaultBlockDataByType.set(defaultBlock.type, [defaultBlock.data]);
+  }
   const pageBanners = derivePageBanners({
     status: displayEditorModel.status,
     diagnostics: displayEditorModel.diagnostics,
@@ -868,14 +870,30 @@ export default function AdminPageEditorRoute() {
             if (parsedCurrent.success) {
               editorData = parsedCurrent.data;
             } else {
+              let recovered = false;
               const fallbackDataCandidates = defaultBlockDataByType.get(
                 block.type,
               );
-              const recoveredData = fallbackDataCandidates?.find((candidate) =>
-                definition.schema.safeParse(candidate).success,
-              );
-              if (recoveredData !== undefined) {
-                editorData = definition.schema.parse(recoveredData);
+              for (const candidate of fallbackDataCandidates ?? []) {
+                const parsedCandidate = definition.schema.safeParse(candidate);
+                if (parsedCandidate.success) {
+                  editorData = parsedCandidate.data;
+                  recovered = true;
+                  break;
+                }
+              }
+
+              if (!recovered) {
+                return (
+                  <BrokenBlockCard
+                    key={block.pageBlockId ?? `${block.type}-${index}`}
+                    block={block}
+                    blockRef={serializedBlockRef}
+                    baseRevision={revision}
+                    capabilities={capabilities}
+                    diagnostic={blockDiagnostic}
+                  />
+                );
               }
             }
           }
