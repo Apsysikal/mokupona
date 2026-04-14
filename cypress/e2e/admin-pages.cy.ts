@@ -74,9 +74,20 @@ describe("admin cms pages", () => {
     cy.findByText(/recovered to defaults/i).should("be.visible");
     cy.findByText(/revision 1/i).should("be.visible");
     cy.findByLabelText(/^title$/i).should("have.value", "broken persisted title");
+    cy.findByText(/recovered editor defaults from invalid persisted data/i).should(
+      "be.visible",
+    );
+    cy.findByLabelText(/^headline$/i)
+      .should("have.value", "moku pona")
+      .clear()
+      .type("Recovered hero headline");
+    cy.findByRole("button", { name: /^save block$/i }).click();
+    cy.findByText(/revision 2/i).should("be.visible");
 
     cy.visitAndCheck("/");
-    cy.title().should("eq", "moku pona");
+    cy.findByRole("heading", { name: "Recovered hero headline" }).should(
+      "be.visible",
+    );
   });
 
   it("refreshes the editor with current values after a stale save conflict", () => {

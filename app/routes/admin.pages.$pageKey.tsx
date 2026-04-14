@@ -51,6 +51,7 @@ import {
   getRemovedUploadedHeroImageIds,
 } from "~/features/cms/cms-image-lifecycle.server";
 import {
+  cmsDiagnosticCodes,
   getCmsDiagnosticIdentity,
   isRecoverableBlockDiagnosticCode,
 } from "~/features/cms/diagnostics";
@@ -763,6 +764,15 @@ export default function AdminPageEditorRoute() {
   const pageRule = siteCmsCatalog.getPageRule(displayEditorModel.pageKey);
   const requiredLeadingCount = pageRule.requiredLeadingBlockTypes?.length ?? 0;
   const blocks = displayEditorModel.pageSnapshot.blocks;
+  const defaultSnapshot = siteCmsCatalog.readPageSnapshot(displayEditorModel.pageKey);
+  const defaultBlockDataByType = defaultSnapshot.blocks.reduce<
+    Map<BlockType, unknown[]>
+  >((acc, defaultBlock) => {
+    const existing = acc.get(defaultBlock.type) ?? [];
+    existing.push(defaultBlock.data);
+    acc.set(defaultBlock.type, existing);
+    return acc;
+  }, new Map());
   const pageBanners = derivePageBanners({
     status: displayEditorModel.status,
     diagnostics: displayEditorModel.diagnostics,
@@ -820,6 +830,8 @@ export default function AdminPageEditorRoute() {
             definition = null;
           }
           const hasRenderableEditor = Boolean(definition?.editor);
+          const isBrokenDataDiagnostic =
+            blockDiagnostic?.code === cmsDiagnosticCodes.blockBrokenData;
 
           const blockRef: BlockRef = block.pageBlockId
             ? refByPageBlockId(block.pageBlockId, index)
@@ -833,7 +845,11 @@ export default function AdminPageEditorRoute() {
             canDelete: index >= requiredLeadingCount,
           };
 
-          if (!hasRenderableEditor || blockDiagnostic || !definition?.editor) {
+          if (
+            !hasRenderableEditor ||
+            !definition?.editor ||
+            (blockDiagnostic && !isBrokenDataDiagnostic)
+          ) {
             return (
               <BrokenBlockCard
                 key={block.pageBlockId ?? `${block.type}-${index}`}
@@ -846,9 +862,26 @@ export default function AdminPageEditorRoute() {
             );
           }
           const renderEditor = definition.editor;
+          let editorData = block.data;
+          if (isBrokenDataDiagnostic) {
+            const parsedCurrent = definition.schema.safeParse(block.data);
+            if (parsedCurrent.success) {
+              editorData = parsedCurrent.data;
+            } else {
+              const fallbackDataCandidates = defaultBlockDataByType.get(
+                block.type,
+              );
+              const recoveredData = fallbackDataCandidates?.find((candidate) =>
+                definition.schema.safeParse(candidate).success,
+              );
+              if (recoveredData !== undefined) {
+                editorData = definition.schema.parse(recoveredData);
+              }
+            }
+          }
 
           const ctx: BlockEditorContext = {
-            data: block.data,
+            data: editorData,
             blockRef,
             commandBuilder,
             linkTargetRegistry,
@@ -868,6 +901,16 @@ export default function AdminPageEditorRoute() {
 
           return (
             <div key={block.pageBlockId ?? `${block.type}-${index}`}>
+              {isBrokenDataDiagnostic ? (
+                <details className="border-destructive/40 rounded-md border border-dashed p-3 text-sm">
+                  <summary className="text-destructive cursor-pointer font-medium">
+                    Recovered editor defaults from invalid persisted data
+                  </summary>
+                  <pre className="bg-muted mt-2 overflow-x-auto rounded p-2 text-xs">
+                    {JSON.stringify(block.data, null, 2)}
+                  </pre>
+                </details>
+              ) : null}
               {renderEditor(ctx)}
             </div>
           );
