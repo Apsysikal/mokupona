@@ -15,6 +15,7 @@ import type { Route } from "./+types/admin.pages.$pageKey";
 import { Field, TextareaField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { prisma } from "~/db.server";
+import { derivePageBanners } from "~/features/cms/admin-page-banners";
 import type { BlockRef } from "~/features/cms/blocks/block-ref";
 import {
   parseBlockRef,
@@ -44,10 +45,15 @@ import type {
   BlockEditorContext,
   BlockInstance,
 } from "~/features/cms/catalog";
+import { UnknownBlockTypeError } from "~/features/cms/catalog";
 import {
   deleteCmsImagesIfUnreferenced,
   getRemovedUploadedHeroImageIds,
 } from "~/features/cms/cms-image-lifecycle.server";
+import {
+  getCmsDiagnosticIdentity,
+  isRecoverableBlockDiagnosticCode,
+} from "~/features/cms/diagnostics";
 import {
   createPageCommandBuilder,
   type MutableBlockRef,
@@ -757,15 +763,27 @@ export default function AdminPageEditorRoute() {
   const pageRule = siteCmsCatalog.getPageRule(displayEditorModel.pageKey);
   const requiredLeadingCount = pageRule.requiredLeadingBlockTypes?.length ?? 0;
   const blocks = displayEditorModel.pageSnapshot.blocks;
+  const pageBanners = derivePageBanners({
+    status: displayEditorModel.status,
+    diagnostics: displayEditorModel.diagnostics,
+  });
 
   return (
     <main className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <h1 className="text-4xl">Edit {displayEditorModel.pageKey}</h1>
         <p>{formatPageStatus(displayEditorModel.status)}</p>
+        {pageBanners.map((banner) => (
+          <p
+            key={banner}
+            className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+          >
+            {banner}
+          </p>
+        ))}
         {displayEditorModel.diagnostics.map((diagnostic, diagnosticIndex) => (
           <p
-            key={`${diagnostic.code}-${diagnostic.message}-${diagnosticIndex}`}
+            key={`${getCmsDiagnosticIdentity(diagnostic)}-${diagnosticIndex}`}
             className="text-destructive text-sm"
           >
             {diagnostic.message}
@@ -789,14 +807,16 @@ export default function AdminPageEditorRoute() {
           const blockDiagnostic = displayEditorModel.diagnostics.find(
             (diagnostic) =>
               diagnostic.blockIndex === index &&
-              (diagnostic.code === "block/broken-data" ||
-                diagnostic.code === "block/unsupported-type" ||
-                diagnostic.code === "block/unsupported-version"),
+              isRecoverableBlockDiagnosticCode(diagnostic.code),
           );
           let definition = null;
           try {
             definition = siteCmsCatalog.getBlockDefinition(block.type);
-          } catch {
+          } catch (error) {
+            if (!(error instanceof UnknownBlockTypeError)) {
+              throw error;
+            }
+
             definition = null;
           }
           const hasRenderableEditor = Boolean(definition?.editor);

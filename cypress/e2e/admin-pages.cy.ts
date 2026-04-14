@@ -71,9 +71,9 @@ describe("admin cms pages", () => {
     cy.findByText(/invalid data/i).should("be.visible");
 
     cy.visitAndCheck("/admin/pages/home");
-    cy.findByText(/showing defaults instead/i).should("be.visible");
-    cy.findByText(/default-backed page/i).should("be.visible");
-    cy.findByLabelText(/^title$/i).should("have.value", "moku pona");
+    cy.findByText(/recovered to defaults/i).should("be.visible");
+    cy.findByText(/revision 1/i).should("be.visible");
+    cy.findByLabelText(/^title$/i).should("have.value", "broken persisted title");
 
     cy.visitAndCheck("/");
     cy.title().should("eq", "moku pona");

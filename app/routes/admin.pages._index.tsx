@@ -3,6 +3,7 @@ import { Link, useLoaderData } from "react-router";
 import type { Route } from "./+types/admin.pages._index";
 
 import { Button } from "~/components/ui/button";
+import { getCmsDiagnosticIdentity } from "~/features/cms/diagnostics";
 import { formatPageStatus } from "~/features/cms/page-status";
 import { siteCmsPageService } from "~/features/cms/site-page-service.server";
 import { requireUserWithRole } from "~/utils/session.server";
@@ -40,7 +41,7 @@ export default function AdminPagesIndexRoute() {
                 <p className="text-sm">{formatPageStatus(page.status)}</p>
                 {page.diagnostics.map((diagnostic) => (
                   <p
-                    key={`${diagnostic.code}-${diagnostic.message}`}
+                    key={getCmsDiagnosticIdentity(diagnostic)}
                     className="text-destructive text-sm"
                   >
                     {diagnostic.message}

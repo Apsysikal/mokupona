@@ -6,7 +6,9 @@ import {
   defineBlockDefinition,
   definePageDefinition,
   type BlockInstance,
+  type CmsCatalog,
 } from "./catalog";
+import { cmsDiagnosticCodes } from "./diagnostics";
 import { createCmsPageService, type CmsPageStore } from "./page-service.server";
 import { siteCmsCatalog } from "./site-catalog";
 
@@ -162,6 +164,44 @@ describe("createCmsPageService", () => {
     expect(typeof pages[0].title).toBe("string");
   });
 
+  test("lists editable pages with typed diagnostics for recoverable persisted content", async () => {
+    const store = createMemoryPageStore();
+    store.seed({
+      pageKey: "home",
+      title: "persisted title",
+      description: "persisted description",
+      blocks: [
+        {
+          type: "hero",
+          version: 1,
+          data: {},
+        } as unknown as BlockInstance,
+      ],
+      revision: 1,
+    });
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: store,
+    });
+
+    const pages = await service.listEditablePages();
+
+    expect(pages).toHaveLength(1);
+    expect(pages[0].status).toEqual({ kind: "persisted", revision: 1 });
+    expect(pages[0].diagnostics).toContainEqual({
+      code: cmsDiagnosticCodes.blockBrokenData,
+      message:
+        'Persisted block "hero" on page "home" has invalid data. Keep it editable in admin and omit it from public.',
+      blockType: "hero",
+      blockIndex: 0,
+    });
+    expect(pages[0].diagnostics).toContainEqual({
+      code: cmsDiagnosticCodes.pagePublicFallbackDefaults,
+      message:
+        "Persisted page structure is invalid for public rendering. Falling back to default page content.",
+    });
+  });
+
   test("isKnownPageKey returns true for registered keys and false otherwise", () => {
     const service = createCmsPageService({
       catalog: siteCmsCatalog,
@@ -187,6 +227,92 @@ describe("createCmsPageService", () => {
     });
     expect(editorModel.pageSnapshot.pageKey).toBe("home");
     expect(editorModel.pageSnapshot.provenance).toBe("default");
+  });
+
+  test("rethrows unexpected block definition lookup errors while normalizing persisted blocks", async () => {
+    const pageStore = createMemoryPageStore();
+    pageStore.seed({
+      pageKey: "home",
+      title: "persisted title",
+      description: "persisted description",
+      blocks: [
+        {
+          pageBlockId: "persisted-hero",
+          definitionKey: "hero-main",
+          type: "hero",
+          version: 1,
+          data: {
+            headline: "Persisted hero",
+            body: "Persisted body",
+            cta: {
+              text: "RSVP",
+              href: "/about",
+              kind: "internal",
+              linkTargetKey: "about",
+            },
+            image: {
+              kind: "asset",
+              src: "/default-home-hero.jpg",
+              alt: "Default hero image",
+              decorative: false,
+            },
+          },
+        },
+      ],
+      revision: 1,
+    });
+    const explodingCatalog: CmsCatalog = {
+      ...siteCmsCatalog,
+      getBlockDefinition() {
+        throw new Error("boom");
+      },
+    };
+    const service = createCmsPageService({
+      catalog: explodingCatalog,
+      pageStore,
+    });
+
+    await expect(service.readEditorModel("home")).rejects.toThrow("boom");
+  });
+
+  test("rethrows unexpected block definition lookup errors while validating set-block-data commands", async () => {
+    const explodingCatalog: CmsCatalog = {
+      ...siteCmsCatalog,
+      getBlockDefinition() {
+        throw new Error("boom");
+      },
+    };
+    const service = createCmsPageService({
+      catalog: explodingCatalog,
+      pageStore: createMemoryPageStore(),
+    });
+
+    await expect(
+      service.applyPageCommand({
+        type: "set-block-data",
+        pageKey: "home",
+        baseRevision: null,
+        ref: refByDefinitionKey("hero-main"),
+        blockType: "hero",
+        blockVersion: 1,
+        data: {
+          headline: "Updated headline",
+          body: "Updated body",
+          cta: {
+            text: "RSVP",
+            href: "/about",
+            kind: "internal",
+            linkTargetKey: "about",
+          },
+          image: {
+            kind: "asset",
+            src: "/default-home-hero.jpg",
+            alt: "Default hero image",
+            decorative: false,
+          },
+        },
+      }),
+    ).rejects.toThrow("boom");
   });
 
   test("materializes the full home page snapshot on first page-meta save", async () => {
@@ -288,11 +414,16 @@ describe("createCmsPageService", () => {
     expect(resolved.pageSnapshot.blocks).toHaveLength(1);
     expect(resolved.diagnostics).toEqual([
       {
-        code: "block/broken-data",
+        code: cmsDiagnosticCodes.blockBrokenData,
         message:
           'Persisted block "hero" on page "home" has invalid data. Keep it editable in admin and omit it from public.',
         blockType: "hero",
         blockIndex: 0,
+      },
+      {
+        code: cmsDiagnosticCodes.pagePublicFallbackDefaults,
+        message:
+          "Persisted page structure is invalid for public rendering. Falling back to default page content.",
       },
     ]);
   });
@@ -340,9 +471,119 @@ describe("createCmsPageService", () => {
     expect(projection.blocks[1].type).toBe("text-section");
     expect(
       projection.diagnostics.some(
-        (diagnostic) => diagnostic.code === "page/public-omitted-broken-blocks",
+        (diagnostic) =>
+          diagnostic.code === cmsDiagnosticCodes.pagePublicOmittedBrokenBlocks,
       ),
     ).toBe(true);
+  });
+
+  test("preserves diagnostics emitted by catalog public projection", async () => {
+    const catalogProjectionDiagnostic = {
+      code: cmsDiagnosticCodes.pageMigrated,
+      message: "catalog projection diagnostic",
+    } as const;
+    const catalogWithProjectionDiagnostic: CmsCatalog = {
+      ...siteCmsCatalog,
+      projectPublic(snapshot, context) {
+        const projection = siteCmsCatalog.projectPublic(snapshot, context);
+        return {
+          ...projection,
+          diagnostics: [
+            ...projection.diagnostics,
+            { ...catalogProjectionDiagnostic },
+          ],
+        };
+      },
+    };
+
+    const defaultBackedService = createCmsPageService({
+      catalog: catalogWithProjectionDiagnostic,
+      pageStore: createMemoryPageStore(),
+    });
+    const defaultProjection = await defaultBackedService.readPublicProjection(
+      "home",
+      {
+        pathname: "/",
+      },
+    );
+    expect(defaultProjection.diagnostics).toContainEqual(
+      catalogProjectionDiagnostic,
+    );
+
+    const persistedStore = createMemoryPageStore();
+    const defaultSnapshot = siteCmsCatalog.readPageSnapshot("home");
+    persistedStore.seed({
+      pageKey: "home",
+      title: "persisted title",
+      description: "persisted description",
+      blocks: defaultSnapshot.blocks,
+      revision: 1,
+    });
+    const persistedService = createCmsPageService({
+      catalog: catalogWithProjectionDiagnostic,
+      pageStore: persistedStore,
+    });
+    const persistedProjection = await persistedService.readPublicProjection(
+      "home",
+      {
+        pathname: "/",
+      },
+    );
+    expect(persistedProjection.diagnostics).toContainEqual(
+      catalogProjectionDiagnostic,
+    );
+  });
+
+  test("deduplicates page omission diagnostics when catalog projection already emits them", async () => {
+    const store = createMemoryPageStore();
+    store.seed({
+      pageKey: "home",
+      title: "persisted title",
+      description: "persisted description",
+      blocks: [
+        {
+          type: "hero",
+          version: 1,
+          data: siteCmsCatalog.readPageSnapshot("home").blocks[0].data,
+        },
+        {
+          type: "text-section",
+          version: 1,
+          data: {},
+        } as unknown as BlockInstance,
+      ],
+      revision: 1,
+    });
+    const catalogWithOmissionDiagnostic: CmsCatalog = {
+      ...siteCmsCatalog,
+      projectPublic(snapshot, context) {
+        const projection = siteCmsCatalog.projectPublic(snapshot, context);
+        return {
+          ...projection,
+          diagnostics: [
+            ...projection.diagnostics,
+            {
+              code: cmsDiagnosticCodes.pagePublicOmittedBrokenBlocks,
+              message:
+                "Some persisted blocks were omitted from public rendering because they are unsupported or broken.",
+            },
+          ],
+        };
+      },
+    };
+    const service = createCmsPageService({
+      catalog: catalogWithOmissionDiagnostic,
+      pageStore: store,
+    });
+
+    const projection = await service.readPublicProjection("home", {
+      pathname: "/",
+    });
+    expect(
+      projection.diagnostics.filter(
+        ({ code }) => code === cmsDiagnosticCodes.pagePublicOmittedBrokenBlocks,
+      ),
+    ).toHaveLength(1);
   });
 
   test("public projection falls back to defaults when required leading blocks are invalid", async () => {
@@ -374,7 +615,278 @@ describe("createCmsPageService", () => {
     );
     expect(
       projection.diagnostics.some(
-        (diagnostic) => diagnostic.code === "page/public-fallback-defaults",
+        (diagnostic) =>
+          diagnostic.code === cmsDiagnosticCodes.pagePublicFallbackDefaults,
+      ),
+    ).toBe(true);
+  });
+
+  test("keeps invalid persisted block order recoverable in admin while public falls back to defaults", async () => {
+    const store = createMemoryPageStore();
+    const defaultBlocks = siteCmsCatalog.readPageSnapshot("home").blocks;
+    store.seed({
+      pageKey: "home",
+      title: "misordered persisted title",
+      description: "misordered persisted description",
+      blocks: [
+        {
+          definitionKey: "text-first",
+          type: "text-section",
+          version: 1,
+          data: {
+            headline: "First but invalid for page rule",
+            body: "This block should follow hero",
+            variant: "plain",
+          },
+        },
+        {
+          ...defaultBlocks[0],
+          definitionKey: "hero-second",
+        },
+      ],
+      revision: 1,
+    });
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: store,
+    });
+
+    const editorModel = await service.readEditorModel("home");
+    expect(editorModel.pageSnapshot.blocks).toMatchObject([
+      { definitionKey: "text-first", type: "text-section" },
+      { definitionKey: "hero-second", type: "hero" },
+    ]);
+    expect(editorModel.diagnostics).toContainEqual({
+      code: cmsDiagnosticCodes.pagePublicFallbackDefaults,
+      message:
+        "Persisted page structure is invalid for public rendering. Falling back to default page content.",
+    });
+
+    const projection = await service.readPublicProjection("home", {
+      pathname: "/",
+    });
+    expect(projection.blocks).toEqual(defaultBlocks);
+    expect(
+      projection.diagnostics.filter(
+        (diagnostic) =>
+          diagnostic.code === cmsDiagnosticCodes.pagePublicFallbackDefaults,
+      ),
+    ).toHaveLength(1);
+  });
+
+  test("keeps unsupported block types recoverable in admin and omits them from public", async () => {
+    const store = createMemoryPageStore();
+    store.seed({
+      pageKey: "home",
+      title: "persisted title",
+      description: "persisted description",
+      blocks: [
+        {
+          type: "hero",
+          version: 1,
+          data: siteCmsCatalog.readPageSnapshot("home").blocks[0].data,
+        },
+        {
+          type: "legacy-cta",
+          version: 1,
+          data: { label: "Legacy CTA" },
+        } as unknown as BlockInstance,
+      ],
+      revision: 1,
+    });
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: store,
+    });
+
+    const editorModel = await service.readEditorModel("home");
+    expect(editorModel.pageSnapshot.blocks).toHaveLength(2);
+    expect(editorModel.pageSnapshot.blocks[1]).toMatchObject({
+      type: "legacy-cta",
+      version: 1,
+      data: { label: "Legacy CTA" },
+    });
+    expect(editorModel.diagnostics).toContainEqual({
+      code: cmsDiagnosticCodes.blockUnsupportedType,
+      message:
+        'Persisted block "legacy-cta" on page "home" is no longer supported. Keep it editable in admin and omit it from public.',
+      blockType: "legacy-cta",
+      blockIndex: 1,
+    });
+
+    const projection = await service.readPublicProjection("home", {
+      pathname: "/",
+    });
+    expect(projection.blocks).toHaveLength(1);
+    expect(projection.blocks[0].type).toBe("hero");
+    expect(
+      projection.diagnostics.some(
+        (diagnostic) =>
+          diagnostic.code === cmsDiagnosticCodes.blockUnsupportedType,
+      ),
+    ).toBe(true);
+    expect(
+      projection.diagnostics.some(
+        (diagnostic) =>
+          diagnostic.code === cmsDiagnosticCodes.pagePublicOmittedBrokenBlocks,
+      ),
+    ).toBe(true);
+  });
+
+  test("keeps disallowed block types recoverable in admin and omits them from public", async () => {
+    const pageDefaults = siteCmsCatalog.readPageSnapshot("home");
+    const constrainedCatalog = createCmsCatalog({
+      blocks: [
+        siteCmsCatalog.getBlockDefinition("hero"),
+        siteCmsCatalog.getBlockDefinition("text-section"),
+      ],
+      pages: [
+        definePageDefinition({
+          pageKey: "home",
+          defaults: {
+            title: "fallback title",
+            description: "fallback description",
+            blocks: [
+              {
+                definitionKey: "hero-main",
+                type: "hero",
+                version: 1,
+                data: pageDefaults.blocks[0].data,
+              },
+            ],
+          },
+          rules: {
+            allowedBlockTypes: ["hero"],
+            requiredLeadingBlockTypes: ["hero"],
+          },
+        }),
+      ],
+    });
+    const store = createMemoryPageStore();
+    store.seed({
+      pageKey: "home",
+      title: "persisted title",
+      description: "persisted description",
+      blocks: [
+        {
+          type: "hero",
+          version: 1,
+          data: pageDefaults.blocks[0].data,
+        },
+        {
+          type: "text-section",
+          version: 1,
+          data: {
+            headline: "legacy section",
+            body: "legacy body",
+            variant: "plain",
+          },
+        },
+      ],
+      revision: 1,
+    });
+    const service = createCmsPageService({
+      catalog: constrainedCatalog,
+      pageStore: store,
+    });
+
+    const editorModel = await service.readEditorModel("home");
+    expect(editorModel.pageSnapshot.blocks).toHaveLength(2);
+    expect(editorModel.pageSnapshot.blocks[1]).toMatchObject({
+      type: "text-section",
+      version: 1,
+      data: {
+        headline: "legacy section",
+        body: "legacy body",
+        variant: "plain",
+      },
+    });
+    expect(editorModel.diagnostics).toContainEqual({
+      code: cmsDiagnosticCodes.blockDisallowedType,
+      message:
+        'Persisted block "text-section" on page "home" is no longer allowed on this page. Keep it editable in admin and omit it from public.',
+      blockType: "text-section",
+      blockIndex: 1,
+    });
+
+    const projection = await service.readPublicProjection("home", {
+      pathname: "/",
+    });
+    expect(projection.blocks).toHaveLength(1);
+    expect(projection.blocks[0].type).toBe("hero");
+    expect(
+      projection.diagnostics.some(
+        (diagnostic) =>
+          diagnostic.code === cmsDiagnosticCodes.blockDisallowedType,
+      ),
+    ).toBe(true);
+    expect(
+      projection.diagnostics.some(
+        (diagnostic) =>
+          diagnostic.code === cmsDiagnosticCodes.pagePublicOmittedBrokenBlocks,
+      ),
+    ).toBe(true);
+  });
+
+  test("flags unsupported block versions, keeps them recoverable in admin, and omits them from public", async () => {
+    const store = createMemoryPageStore();
+    store.seed({
+      pageKey: "home",
+      title: "persisted title",
+      description: "persisted description",
+      blocks: [
+        {
+          type: "hero",
+          version: 1,
+          data: siteCmsCatalog.readPageSnapshot("home").blocks[0].data,
+        },
+        {
+          type: "text-section",
+          version: 999,
+          data: {
+            headline: "legacy",
+            body: "legacy body",
+            variant: "plain",
+          },
+        },
+      ],
+      revision: 1,
+    });
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: store,
+    });
+
+    const editorModel = await service.readEditorModel("home");
+    expect(editorModel.pageSnapshot.blocks[1]).toMatchObject({
+      type: "text-section",
+      version: 999,
+    });
+    expect(editorModel.diagnostics).toContainEqual({
+      code: cmsDiagnosticCodes.blockUnsupportedVersion,
+      message:
+        'Persisted block "text-section" on page "home" has unsupported version 999. Keep it editable in admin and omit it from public.',
+      blockType: "text-section",
+      blockIndex: 1,
+      fromVersion: 999,
+      toVersion: 1,
+    });
+
+    const projection = await service.readPublicProjection("home", {
+      pathname: "/",
+    });
+    expect(projection.blocks).toHaveLength(1);
+    expect(projection.blocks[0].type).toBe("hero");
+    expect(
+      projection.diagnostics.some(
+        (diagnostic) =>
+          diagnostic.code === cmsDiagnosticCodes.blockUnsupportedVersion,
+      ),
+    ).toBe(true);
+    expect(
+      projection.diagnostics.some(
+        (diagnostic) =>
+          diagnostic.code === cmsDiagnosticCodes.pagePublicOmittedBrokenBlocks,
       ),
     ).toBe(true);
   });
@@ -453,7 +965,7 @@ describe("createCmsPageService", () => {
     const resolved = await service.readPage("home");
     expect(resolved.pageSnapshot.blocks[0].version).toBe(2);
     expect(resolved.diagnostics).toContainEqual({
-      code: "block/migrated",
+      code: cmsDiagnosticCodes.blockMigrated,
       message:
         'Persisted block "text-section" on page "home" was migrated from version 1 to 2.',
       blockType: "text-section",
@@ -461,6 +973,809 @@ describe("createCmsPageService", () => {
       fromVersion: 1,
       toVersion: 2,
     });
+  });
+
+  test("keeps a block recoverable when runtime migration output is invalid", async () => {
+    const migratableCatalog = createCmsCatalog({
+      blocks: [
+        defineBlockDefinition({
+          type: "text-section",
+          version: 2,
+          schema: siteCmsCatalog.getBlockDefinition("text-section").schema,
+          migrate({ fromVersion }) {
+            if (fromVersion !== 1) return null;
+            return {
+              version: 2,
+              data: {
+                headline: 42,
+              },
+            } as unknown as {
+              version: 2;
+              data: {
+                headline: string;
+                body: string;
+                variant: "plain" | "highlight";
+              };
+            };
+          },
+          render: () => null,
+        }),
+      ],
+      pages: [
+        definePageDefinition({
+          pageKey: "home",
+          defaults: {
+            title: "fallback title",
+            description: "fallback description",
+            blocks: [
+              {
+                definitionKey: "main-section",
+                type: "text-section",
+                version: 2,
+                data: {
+                  headline: "default",
+                  body: "default",
+                  variant: "plain",
+                },
+              },
+            ],
+          },
+          rules: {
+            allowedBlockTypes: ["text-section"],
+            requiredLeadingBlockTypes: ["text-section"],
+          },
+        }),
+      ],
+    });
+
+    const store = createMemoryPageStore();
+    const legacyBlock = {
+      definitionKey: "main-section",
+      type: "text-section",
+      version: 1,
+      data: {
+        headline: "legacy",
+        body: "legacy body",
+      },
+    } as unknown as BlockInstance;
+    store.seed({
+      pageKey: "home",
+      title: "persisted title",
+      description: "persisted description",
+      blocks: [legacyBlock],
+      revision: 1,
+    });
+
+    const service = createCmsPageService({
+      catalog: migratableCatalog,
+      pageStore: store,
+    });
+
+    const editorModel = await service.readEditorModel("home");
+    expect(editorModel.pageSnapshot.blocks[0]).toMatchObject(legacyBlock);
+    expect(
+      editorModel.diagnostics.some(
+        (diagnostic) => diagnostic.code === cmsDiagnosticCodes.blockMigrated,
+      ),
+    ).toBe(false);
+    expect(editorModel.diagnostics).toContainEqual({
+      code: cmsDiagnosticCodes.blockBrokenData,
+      message:
+        'Persisted block "text-section" on page "home" has invalid data. Keep it editable in admin and omit it from public.',
+      blockType: "text-section",
+      blockIndex: 0,
+    });
+
+    const projection = await service.readPublicProjection("home", {
+      pathname: "/",
+    });
+    expect(projection.blocks).toHaveLength(1);
+    expect(projection.blocks[0]).toMatchObject(
+      migratableCatalog.readPageSnapshot("home").blocks[0],
+    );
+    expect(
+      projection.diagnostics.some(
+        (diagnostic) =>
+          diagnostic.code === cmsDiagnosticCodes.pagePublicFallbackDefaults,
+      ),
+    ).toBe(true);
+
+    const result = await service.applyPageCommand({
+      type: "set-page-meta",
+      pageKey: "home",
+      baseRevision: 1,
+      title: "updated title",
+      description: "updated description",
+    });
+    expect(result.status).toBe("saved");
+    expect(store.peek("home")?.blocks[0]).toMatchObject(legacyBlock);
+  });
+
+  test("migrates a persisted page snapshot at read time and reports page migration diagnostics", async () => {
+    const migratableCatalog = createCmsCatalog({
+      blocks: [siteCmsCatalog.getBlockDefinition("text-section")],
+      pages: [
+        definePageDefinition({
+          pageKey: "home",
+          defaults: {
+            title: "fallback title",
+            description: "fallback description",
+            blocks: [
+              {
+                definitionKey: "main-section",
+                type: "text-section",
+                version: 1,
+                data: {
+                  headline: "default",
+                  body: "default",
+                  variant: "plain",
+                },
+              },
+            ],
+          },
+          rules: {
+            allowedBlockTypes: ["text-section"],
+            requiredLeadingBlockTypes: ["text-section"],
+          },
+          migrate({ snapshot }) {
+            if (!snapshot.title.startsWith("legacy: ")) {
+              return null;
+            }
+
+            return {
+              ...snapshot,
+              title: snapshot.title.replace("legacy: ", ""),
+              description: `${snapshot.description} (migrated)`,
+            };
+          },
+        }),
+      ],
+    });
+
+    const store = createMemoryPageStore();
+    store.seed({
+      pageKey: "home",
+      title: "legacy: persisted title",
+      description: "persisted description",
+      blocks: [
+        {
+          definitionKey: "main-section",
+          type: "text-section",
+          version: 1,
+          data: {
+            headline: "legacy",
+            body: "legacy body",
+            variant: "plain",
+          },
+        },
+      ],
+      revision: 1,
+    });
+
+    const service = createCmsPageService({
+      catalog: migratableCatalog,
+      pageStore: store,
+    });
+
+    const resolved = await service.readPage("home");
+    expect(resolved.pageSnapshot.title).toBe("persisted title");
+    expect(resolved.pageSnapshot.description).toBe(
+      "persisted description (migrated)",
+    );
+    expect(resolved.diagnostics).toContainEqual({
+      code: cmsDiagnosticCodes.pageMigrated,
+      message: 'Persisted page "home" was migrated at read time.',
+    });
+  });
+
+  test("exposes migration diagnostics through both admin and public read projections", async () => {
+    const migratableCatalog = createCmsCatalog({
+      blocks: [
+        defineBlockDefinition({
+          type: "text-section",
+          version: 2,
+          schema: siteCmsCatalog.getBlockDefinition("text-section").schema,
+          migrate({ fromVersion, data }) {
+            if (fromVersion !== 1) return null;
+            const legacy = data as { headline?: string; body?: string };
+            return {
+              version: 2,
+              data: {
+                headline: legacy.headline ?? "",
+                body: legacy.body ?? "",
+                variant: "plain",
+              },
+            };
+          },
+          render: () => null,
+        }),
+      ],
+      pages: [
+        definePageDefinition({
+          pageKey: "home",
+          defaults: {
+            title: "fallback title",
+            description: "fallback description",
+            blocks: [
+              {
+                type: "text-section",
+                version: 2,
+                data: {
+                  headline: "default",
+                  body: "default",
+                  variant: "plain",
+                },
+              },
+            ],
+          },
+          rules: {
+            allowedBlockTypes: ["text-section"],
+            requiredLeadingBlockTypes: ["text-section"],
+          },
+          migrate({ snapshot }) {
+            if (!snapshot.title.startsWith("legacy: ")) {
+              return null;
+            }
+
+            return {
+              ...snapshot,
+              title: snapshot.title.replace("legacy: ", ""),
+            };
+          },
+        }),
+      ],
+    });
+    const store = createMemoryPageStore();
+    store.seed({
+      pageKey: "home",
+      title: "legacy: persisted title",
+      description: "persisted description",
+      blocks: [
+        {
+          type: "text-section",
+          version: 1,
+          data: {
+            headline: "legacy",
+            body: "legacy body",
+          },
+        },
+      ],
+      revision: 1,
+    });
+    const service = createCmsPageService({
+      catalog: migratableCatalog,
+      pageStore: store,
+    });
+
+    const editorModel = await service.readEditorModel("home");
+    expect(
+      editorModel.diagnostics.some(
+        ({ code }) => code === cmsDiagnosticCodes.pageMigrated,
+      ),
+    ).toBe(true);
+    expect(
+      editorModel.diagnostics.some(
+        ({ code }) => code === cmsDiagnosticCodes.blockMigrated,
+      ),
+    ).toBe(true);
+
+    const projection = await service.readPublicProjection("home", {
+      pathname: "/",
+    });
+    expect(
+      projection.diagnostics.some(
+        ({ code }) => code === cmsDiagnosticCodes.pageMigrated,
+      ),
+    ).toBe(true);
+    expect(
+      projection.diagnostics.some(
+        ({ code }) => code === cmsDiagnosticCodes.blockMigrated,
+      ),
+    ).toBe(true);
+  });
+
+  test("set-page-meta persists runtime migrations while preserving unsupported blocks", async () => {
+    const migratableCatalog = createCmsCatalog({
+      blocks: [
+        defineBlockDefinition({
+          type: "text-section",
+          version: 2,
+          schema: siteCmsCatalog.getBlockDefinition("text-section").schema,
+          migrate({ fromVersion, data }) {
+            if (fromVersion !== 1) return null;
+            const legacy = data as { headline?: string; body?: string };
+            return {
+              version: 2,
+              data: {
+                headline: legacy.headline ?? "",
+                body: legacy.body ?? "",
+                variant: "plain",
+              },
+            };
+          },
+          render: () => null,
+        }),
+      ],
+      pages: [
+        definePageDefinition({
+          pageKey: "home",
+          defaults: {
+            title: "fallback title",
+            description: "fallback description",
+            blocks: [
+              {
+                type: "text-section",
+                version: 2,
+                data: {
+                  headline: "default",
+                  body: "default",
+                  variant: "plain",
+                },
+              },
+            ],
+          },
+          rules: {
+            allowedBlockTypes: ["text-section"],
+            requiredLeadingBlockTypes: ["text-section"],
+          },
+        }),
+      ],
+    });
+
+    const unsupportedBlock = {
+      type: "legacy-cta",
+      version: 9,
+      data: { label: "Legacy", href: "/legacy" },
+    } as unknown as BlockInstance;
+    const store = createMemoryPageStore();
+    store.seed({
+      pageKey: "home",
+      title: "persisted title",
+      description: "persisted description",
+      blocks: [
+        {
+          type: "text-section",
+          version: 1,
+          data: {
+            headline: "legacy",
+            body: "legacy body",
+          },
+        },
+        unsupportedBlock,
+      ],
+      revision: 1,
+    });
+
+    const service = createCmsPageService({
+      catalog: migratableCatalog,
+      pageStore: store,
+    });
+
+    const result = await service.applyPageCommand({
+      type: "set-page-meta",
+      pageKey: "home",
+      baseRevision: 1,
+      title: "updated title",
+      description: "updated description",
+    });
+
+    expect(result.status).toBe("saved");
+    const persisted = store.peek("home");
+    expect(persisted?.blocks[0]).toMatchObject({
+      type: "text-section",
+      version: 2,
+      data: {
+        headline: "legacy",
+        body: "legacy body",
+        variant: "plain",
+      },
+    });
+    expect(persisted?.blocks[1]).toMatchObject(unsupportedBlock);
+  });
+
+  test("set-block-data persists runtime page migrations as part of the normalized snapshot", async () => {
+    const migratableCatalog = createCmsCatalog({
+      blocks: [siteCmsCatalog.getBlockDefinition("text-section")],
+      pages: [
+        definePageDefinition({
+          pageKey: "home",
+          defaults: {
+            title: "fallback title",
+            description: "fallback description",
+            blocks: [
+              {
+                definitionKey: "main-section",
+                type: "text-section",
+                version: 1,
+                data: {
+                  headline: "default",
+                  body: "default",
+                  variant: "plain",
+                },
+              },
+            ],
+          },
+          rules: {
+            allowedBlockTypes: ["text-section"],
+            requiredLeadingBlockTypes: ["text-section"],
+          },
+          migrate({ snapshot }) {
+            if (!snapshot.title.startsWith("legacy: ")) {
+              return null;
+            }
+
+            return {
+              ...snapshot,
+              title: snapshot.title.replace("legacy: ", ""),
+            };
+          },
+        }),
+      ],
+    });
+
+    const store = createMemoryPageStore();
+    store.seed({
+      pageKey: "home",
+      title: "legacy: persisted title",
+      description: "persisted description",
+      blocks: [
+        {
+          definitionKey: "main-section",
+          type: "text-section",
+          version: 1,
+          data: {
+            headline: "legacy",
+            body: "legacy body",
+            variant: "plain",
+          },
+        },
+      ],
+      revision: 1,
+    });
+
+    const service = createCmsPageService({
+      catalog: migratableCatalog,
+      pageStore: store,
+    });
+
+    const result = await service.applyPageCommand({
+      type: "set-block-data",
+      pageKey: "home",
+      baseRevision: 1,
+      ref: refByDefinitionKey("main-section"),
+      blockType: "text-section",
+      blockVersion: 1,
+      data: {
+        headline: "updated",
+        body: "updated body",
+        variant: "plain",
+      },
+    });
+
+    expect(result.status).toBe("saved");
+    const persisted = store.peek("home");
+    expect(persisted?.title).toBe("persisted title");
+    expect(persisted?.blocks[0]).toMatchObject({
+      definitionKey: "main-section",
+      type: "text-section",
+      version: 1,
+      data: {
+        headline: "updated",
+        body: "updated body",
+        variant: "plain",
+      },
+    });
+  });
+
+  test("set-page-meta persists runtime-migrated blocks as the normalized snapshot", async () => {
+    const migratableCatalog = createCmsCatalog({
+      blocks: [
+        defineBlockDefinition({
+          type: "text-section",
+          version: 2,
+          schema: siteCmsCatalog.getBlockDefinition("text-section").schema,
+          migrate({ fromVersion, data }) {
+            if (fromVersion !== 1) return null;
+            const legacy = data as { headline?: string; body?: string };
+            return {
+              version: 2,
+              data: {
+                headline: legacy.headline ?? "",
+                body: legacy.body ?? "",
+                variant: "plain",
+              },
+            };
+          },
+          render: () => null,
+        }),
+      ],
+      pages: [
+        definePageDefinition({
+          pageKey: "home",
+          defaults: {
+            title: "fallback title",
+            description: "fallback description",
+            blocks: [
+              {
+                type: "text-section",
+                version: 2,
+                data: {
+                  headline: "default",
+                  body: "default",
+                  variant: "plain",
+                },
+              },
+            ],
+          },
+          rules: {
+            allowedBlockTypes: ["text-section"],
+            requiredLeadingBlockTypes: ["text-section"],
+          },
+        }),
+      ],
+    });
+
+    const store = createMemoryPageStore();
+    store.seed({
+      pageKey: "home",
+      title: "persisted title",
+      description: "persisted description",
+      blocks: [
+        {
+          type: "text-section",
+          version: 1,
+          data: {
+            headline: "legacy",
+            body: "legacy body",
+          },
+        },
+      ],
+      revision: 1,
+    });
+
+    const service = createCmsPageService({
+      catalog: migratableCatalog,
+      pageStore: store,
+    });
+
+    const result = await service.applyPageCommand({
+      type: "set-page-meta",
+      pageKey: "home",
+      baseRevision: 1,
+      title: "updated title",
+      description: "updated description",
+    });
+
+    expect(result.status).toBe("saved");
+    expect(store.peek("home")?.blocks[0]).toMatchObject({
+      type: "text-section",
+      version: 2,
+      data: {
+        headline: "legacy",
+        body: "legacy body",
+        variant: "plain",
+      },
+    });
+  });
+
+  test("set-block-data persists runtime migrations while preserving unsupported blocks", async () => {
+    const migratableCatalog = createCmsCatalog({
+      blocks: [
+        defineBlockDefinition({
+          type: "text-section",
+          version: 2,
+          schema: siteCmsCatalog.getBlockDefinition("text-section").schema,
+          migrate({ fromVersion, data }) {
+            if (fromVersion !== 1) return null;
+            const legacy = data as { headline?: string; body?: string };
+            return {
+              version: 2,
+              data: {
+                headline: legacy.headline ?? "",
+                body: legacy.body ?? "",
+                variant: "plain",
+              },
+            };
+          },
+          render: () => null,
+        }),
+      ],
+      pages: [
+        definePageDefinition({
+          pageKey: "home",
+          defaults: {
+            title: "fallback title",
+            description: "fallback description",
+            blocks: [
+              {
+                definitionKey: "main-text",
+                type: "text-section",
+                version: 2,
+                data: {
+                  headline: "default",
+                  body: "default",
+                  variant: "plain",
+                },
+              },
+            ],
+          },
+          rules: {
+            allowedBlockTypes: ["text-section"],
+            requiredLeadingBlockTypes: ["text-section"],
+          },
+        }),
+      ],
+    });
+
+    const unsupportedBlock = {
+      type: "legacy-cta",
+      version: 9,
+      data: { label: "Legacy", href: "/legacy" },
+    } as unknown as BlockInstance;
+    const store = createMemoryPageStore();
+    store.seed({
+      pageKey: "home",
+      title: "persisted title",
+      description: "persisted description",
+      blocks: [
+        {
+          definitionKey: "main-text",
+          type: "text-section",
+          version: 1,
+          data: {
+            headline: "legacy",
+            body: "legacy body",
+          },
+        },
+        unsupportedBlock,
+      ],
+      revision: 1,
+    });
+
+    const service = createCmsPageService({
+      catalog: migratableCatalog,
+      pageStore: store,
+    });
+
+    const result = await service.applyPageCommand({
+      type: "set-block-data",
+      pageKey: "home",
+      baseRevision: 1,
+      ref: refByDefinitionKey("main-text"),
+      blockType: "text-section",
+      blockVersion: 2,
+      data: {
+        headline: "edited",
+        body: "edited body",
+        variant: "plain",
+      },
+    });
+
+    expect(result.status).toBe("saved");
+    const persisted = store.peek("home");
+    expect(persisted?.blocks[0]).toMatchObject({
+      definitionKey: "main-text",
+      type: "text-section",
+      version: 2,
+      data: {
+        headline: "edited",
+        body: "edited body",
+        variant: "plain",
+      },
+    });
+    expect(persisted?.blocks[1]).toMatchObject(unsupportedBlock);
+  });
+
+  test("set-block-data round-trips unrelated broken blocks unchanged", async () => {
+    const store = createMemoryPageStore();
+    const defaultBlocks = siteCmsCatalog.readPageSnapshot("home").blocks;
+    const brokenBlock = {
+      definitionKey: "broken-content",
+      type: "text-section",
+      version: 1,
+      data: {
+        headline: 42,
+      },
+    } as unknown as BlockInstance;
+    store.seed({
+      pageKey: "home",
+      title: "persisted title",
+      description: "persisted description",
+      blocks: [
+        {
+          ...defaultBlocks[0],
+          definitionKey: "hero-main",
+        },
+        brokenBlock,
+        {
+          definitionKey: "editable-text",
+          type: "text-section",
+          version: 1,
+          data: {
+            headline: "editable",
+            body: "editable body",
+            variant: "plain",
+          },
+        },
+      ],
+      revision: 1,
+    });
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: store,
+    });
+
+    const result = await service.applyPageCommand({
+      type: "set-block-data",
+      pageKey: "home",
+      baseRevision: 1,
+      ref: refByDefinitionKey("editable-text"),
+      blockType: "text-section",
+      blockVersion: 1,
+      data: {
+        headline: "updated",
+        body: "updated body",
+        variant: "plain",
+      },
+    });
+
+    expect(result.status).toBe("saved");
+    const persisted = store.peek("home");
+    expect(persisted?.blocks[1]).toMatchObject(brokenBlock);
+    expect(persisted?.blocks[2]).toMatchObject({
+      definitionKey: "editable-text",
+      type: "text-section",
+      version: 1,
+      data: {
+        headline: "updated",
+        body: "updated body",
+        variant: "plain",
+      },
+    });
+  });
+
+  test("set-page-meta round-trips unrelated broken blocks unchanged", async () => {
+    const store = createMemoryPageStore();
+    const defaultBlocks = siteCmsCatalog.readPageSnapshot("home").blocks;
+    const brokenBlock = {
+      definitionKey: "broken-content",
+      type: "text-section",
+      version: 1,
+      data: {
+        headline: 42,
+      },
+    } as unknown as BlockInstance;
+    store.seed({
+      pageKey: "home",
+      title: "persisted title",
+      description: "persisted description",
+      blocks: [
+        {
+          ...defaultBlocks[0],
+          definitionKey: "hero-main",
+        },
+        brokenBlock,
+      ],
+      revision: 1,
+    });
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: store,
+    });
+
+    const result = await service.applyPageCommand({
+      type: "set-page-meta",
+      pageKey: "home",
+      baseRevision: 1,
+      title: "updated title",
+      description: "updated description",
+    });
+
+    expect(result.status).toBe("saved");
+    const persisted = store.peek("home");
+    expect(persisted?.title).toBe("updated title");
+    expect(persisted?.description).toBe("updated description");
+    expect(persisted?.blocks[1]).toMatchObject(brokenBlock);
   });
 
   test("set-page-meta on a persisted page does not rewrite block rows", async () => {
@@ -704,6 +2019,31 @@ describe("createCmsPageService — block commands", () => {
         }
       ).actions[0].href,
     ).toBe("/dinners");
+    expect(store.peek("home")?.revision).toBe(revision);
+  });
+
+  test("set-block-data returns conflict when command block type does not match the targeted block", async () => {
+    const { service, store, revision } = await setupPersisted();
+
+    const heroBlock = store.peek("home")!.blocks[0];
+    const ref = refByPageBlockId(heroBlock.pageBlockId!, 0);
+
+    const result = await service.applyPageCommand({
+      type: "set-block-data",
+      pageKey: "home",
+      baseRevision: revision,
+      ref,
+      blockType: "text-section",
+      blockVersion: 1,
+      data: {
+        headline: "Wrong target",
+        body: "Wrong block type payload",
+        variant: "plain",
+      },
+    });
+
+    expect(result.status).toBe("conflict");
+    expect(store.peek("home")?.blocks[0]).toEqual(heroBlock);
     expect(store.peek("home")?.revision).toBe(revision);
   });
 
@@ -973,6 +2313,28 @@ describe("createCmsPageService — add-block command", () => {
     });
 
     expect(result.status).toBe("conflict");
+  });
+
+  test("add-block returns conflict when command blockVersion does not match the registered version", async () => {
+    const { service, store, revision } = await setupPersisted();
+    const initialCount = store.peek("home")!.blocks.length;
+
+    const result = await service.applyPageCommand({
+      type: "add-block",
+      pageKey: "home",
+      baseRevision: revision,
+      blockType: "text-section",
+      blockVersion: 999,
+      data: {
+        headline: "Version mismatch",
+        body: "Should fail",
+        variant: "plain",
+      },
+    });
+
+    expect(result.status).toBe("conflict");
+    expect(store.peek("home")?.blocks).toHaveLength(initialCount);
+    expect(store.peek("home")?.revision).toBe(revision);
   });
 
   test("add-block returns conflict on stale revision", async () => {

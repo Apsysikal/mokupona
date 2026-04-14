@@ -9,6 +9,7 @@ import type {
   BlockVersion,
   DefinitionKey,
 } from "./blocks/types";
+import type { CmsDiagnostic } from "./diagnostics";
 import type { LinkTargetRegistry } from "./link-targets";
 import type { PageCommandBuilder } from "./page-commands";
 
@@ -39,7 +40,7 @@ export type PublicProjection = {
   pageKey: PageKey;
   meta: MetaTag[];
   blocks: BlockInstance[];
-  diagnostics: readonly { code: string; message: string }[];
+  diagnostics: readonly CmsDiagnostic[];
 };
 
 export type PublicProjectionContext = {
@@ -88,6 +89,7 @@ export type PageDefinition = {
     blocks: BlockInstance[];
   };
   rules: PageRule;
+  migrate?(input: { snapshot: PageSnapshot }): PageSnapshot | null;
 };
 
 export type CmsCatalog = {
@@ -95,11 +97,25 @@ export type CmsCatalog = {
   getBlockDefinition(blockType: BlockType): BlockDefinition;
   getPageRule(pageKey: PageKey): PageRule;
   readPageSnapshot(pageKey: PageKey): PageSnapshot;
+  migratePageSnapshot(input: { snapshot: PageSnapshot }): {
+    snapshot: PageSnapshot;
+    migrated: boolean;
+  };
   projectPublic(
     snapshot: PageSnapshot,
     context: PublicProjectionContext,
   ): PublicProjection;
 };
+
+export class UnknownBlockTypeError extends Error {
+  readonly blockType: BlockType;
+
+  constructor(blockType: BlockType) {
+    super(`Unknown Block Type: ${blockType}`);
+    this.name = "UnknownBlockTypeError";
+    this.blockType = blockType;
+  }
+}
 
 type CmsCatalogInput = {
   blocks: readonly BlockDefinition[];
@@ -158,11 +174,12 @@ export function createCmsCatalog({
       return [...pageDefinitions.keys()];
     },
     getBlockDefinition(blockType) {
-      return requireFromMap(
-        blockDefinitions,
-        blockType,
-        `Unknown Block Type: ${blockType}`,
-      );
+      const definition = blockDefinitions.get(blockType);
+      if (!definition) {
+        throw new UnknownBlockTypeError(blockType);
+      }
+
+      return definition;
     },
     getPageRule(pageKey) {
       return requireFromMap(
@@ -172,6 +189,54 @@ export function createCmsCatalog({
       ).rules;
     },
     readPageSnapshot,
+    migratePageSnapshot({ snapshot }) {
+      const pageDefinition = requireFromMap(
+        pageDefinitions,
+        snapshot.pageKey,
+        `Unknown Page Key: ${snapshot.pageKey}`,
+      );
+      const migratedSnapshot = pageDefinition.migrate?.({
+        snapshot: {
+          pageKey: snapshot.pageKey,
+          provenance: snapshot.provenance,
+          title: snapshot.title,
+          description: snapshot.description,
+          blocks: cloneBlocks(snapshot.blocks),
+        },
+      });
+      if (!migratedSnapshot) {
+        return {
+          snapshot: {
+            pageKey: snapshot.pageKey,
+            provenance: snapshot.provenance,
+            title: snapshot.title,
+            description: snapshot.description,
+            blocks: cloneBlocks(snapshot.blocks),
+          },
+          migrated: false,
+        };
+      }
+
+      if (migratedSnapshot.pageKey !== snapshot.pageKey) {
+        throw new Error(
+          `Page migration for "${snapshot.pageKey}" returned a snapshot with mismatched page key "${migratedSnapshot.pageKey}"`,
+        );
+      }
+
+      if (migratedSnapshot.provenance !== snapshot.provenance) {
+        throw new Error(
+          `Page migration for "${snapshot.pageKey}" returned a snapshot with mismatched provenance "${migratedSnapshot.provenance}"`,
+        );
+      }
+
+      return {
+        snapshot: {
+          ...migratedSnapshot,
+          blocks: cloneBlocks(migratedSnapshot.blocks),
+        },
+        migrated: true,
+      };
+    },
     projectPublic(snapshot, context) {
       const meta: MetaTag[] = [
         { title: snapshot.title },
