@@ -1,7 +1,12 @@
 import { describe, expect, test } from "vitest";
 
 import { refByDefinitionKey, refByPageBlockId } from "./blocks/block-ref";
-import type { BlockInstance } from "./catalog";
+import {
+  createCmsCatalog,
+  defineBlockDefinition,
+  definePageDefinition,
+  type BlockInstance,
+} from "./catalog";
 import { createCmsPageService, type CmsPageStore } from "./page-service.server";
 import { siteCmsCatalog } from "./site-catalog";
 
@@ -252,7 +257,7 @@ describe("createCmsPageService", () => {
     });
   });
 
-  test("falls back to defaults with diagnostics when persisted block data is invalid", async () => {
+  test("keeps persisted pages editable in admin with diagnostics when block data is invalid", async () => {
     const store = createMemoryPageStore();
     store.seed({
       pageKey: "home",
@@ -276,19 +281,186 @@ describe("createCmsPageService", () => {
     const resolved = await service.readPage("home");
 
     expect(resolved.status).toEqual({
-      kind: "default-backed",
-      revision: null,
+      kind: "persisted",
+      revision: 1,
     });
-    expect(resolved.pageSnapshot).toEqual(
-      siteCmsCatalog.readPageSnapshot("home"),
-    );
+    expect(resolved.pageSnapshot.title).toBe("broken persisted title");
+    expect(resolved.pageSnapshot.blocks).toHaveLength(1);
     expect(resolved.diagnostics).toEqual([
       {
-        code: "block/invalid-data",
+        code: "block/broken-data",
         message:
-          'Persisted block "hero" on page "home" has invalid data. Showing defaults instead.',
+          'Persisted block "hero" on page "home" has invalid data. Keep it editable in admin and omit it from public.',
+        blockType: "hero",
+        blockIndex: 0,
       },
     ]);
+  });
+
+  test("public projection omits broken blocks and reports recovery diagnostics", async () => {
+    const store = createMemoryPageStore();
+    store.seed({
+      pageKey: "home",
+      title: "broken persisted title",
+      description: "broken persisted description",
+      blocks: [
+        {
+          type: "hero",
+          version: 1,
+          data: siteCmsCatalog.readPageSnapshot("home").blocks[0].data,
+        },
+        {
+          type: "text-section",
+          version: 1,
+          data: {},
+        } as unknown as BlockInstance,
+        {
+          type: "text-section",
+          version: 1,
+          data: {
+            headline: "Valid block",
+            body: "Still visible",
+            variant: "plain",
+          },
+        },
+      ],
+      revision: 1,
+    });
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: store,
+    });
+
+    const projection = await service.readPublicProjection("home", {
+      pathname: "/",
+    });
+
+    expect(projection.blocks).toHaveLength(2);
+    expect(projection.blocks[0].type).toBe("hero");
+    expect(projection.blocks[1].type).toBe("text-section");
+    expect(
+      projection.diagnostics.some(
+        (diagnostic) => diagnostic.code === "page/public-omitted-broken-blocks",
+      ),
+    ).toBe(true);
+  });
+
+  test("public projection falls back to defaults when required leading blocks are invalid", async () => {
+    const store = createMemoryPageStore();
+    store.seed({
+      pageKey: "home",
+      title: "broken persisted title",
+      description: "broken persisted description",
+      blocks: [
+        {
+          type: "hero",
+          version: 1,
+          data: {},
+        } as unknown as BlockInstance,
+      ],
+      revision: 1,
+    });
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: store,
+    });
+
+    const projection = await service.readPublicProjection("home", {
+      pathname: "/",
+    });
+
+    expect(projection.blocks).toEqual(
+      siteCmsCatalog.readPageSnapshot("home").blocks,
+    );
+    expect(
+      projection.diagnostics.some(
+        (diagnostic) => diagnostic.code === "page/public-fallback-defaults",
+      ),
+    ).toBe(true);
+  });
+
+  test("migrates a persisted block at read time and reports migration diagnostics", async () => {
+    const migratableCatalog = createCmsCatalog({
+      blocks: [
+        defineBlockDefinition({
+          type: "text-section",
+          version: 2,
+          schema: siteCmsCatalog.getBlockDefinition("text-section").schema,
+          migrate({ fromVersion, data }) {
+            if (fromVersion !== 1) return null;
+            const legacy = data as { headline?: string; body?: string };
+            return {
+              version: 2,
+              data: {
+                headline: legacy.headline ?? "",
+                body: legacy.body ?? "",
+                variant: "plain",
+              },
+            };
+          },
+          render: () => null,
+        }),
+      ],
+      pages: [
+        definePageDefinition({
+          pageKey: "home",
+          defaults: {
+            title: "fallback title",
+            description: "fallback description",
+            blocks: [
+              {
+                type: "text-section",
+                version: 2,
+                data: {
+                  headline: "default",
+                  body: "default",
+                  variant: "plain",
+                },
+              },
+            ],
+          },
+          rules: {
+            allowedBlockTypes: ["text-section"],
+            requiredLeadingBlockTypes: ["text-section"],
+          },
+        }),
+      ],
+    });
+
+    const store = createMemoryPageStore();
+    store.seed({
+      pageKey: "home",
+      title: "persisted title",
+      description: "persisted description",
+      blocks: [
+        {
+          type: "text-section",
+          version: 1,
+          data: {
+            headline: "legacy",
+            body: "legacy body",
+          },
+        },
+      ],
+      revision: 1,
+    });
+
+    const service = createCmsPageService({
+      catalog: migratableCatalog,
+      pageStore: store,
+    });
+
+    const resolved = await service.readPage("home");
+    expect(resolved.pageSnapshot.blocks[0].version).toBe(2);
+    expect(resolved.diagnostics).toContainEqual({
+      code: "block/migrated",
+      message:
+        'Persisted block "text-section" on page "home" was migrated from version 1 to 2.',
+      blockType: "text-section",
+      blockIndex: 0,
+      fromVersion: 1,
+      toVersion: 2,
+    });
   });
 
   test("set-page-meta on a persisted page does not rewrite block rows", async () => {
@@ -831,7 +1003,7 @@ describe("createCmsPageService — add-block command", () => {
       data: {
         image: {
           kind: "asset",
-          src: "/accent-image.png",
+          src: "/accent-image.jpg",
           alt: "",
         },
         variant: "default",
@@ -850,7 +1022,7 @@ describe("createCmsPageService — add-block command", () => {
     expect(newBlock.data).toEqual({
       image: {
         kind: "asset",
-        src: "/accent-image.png",
+        src: "/accent-image.jpg",
         alt: "",
       },
       variant: "default",

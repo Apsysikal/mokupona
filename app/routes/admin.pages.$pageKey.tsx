@@ -29,7 +29,10 @@ import {
   applyImageBlockEditorValue,
   createImageBlockEditorFormSchema,
 } from "~/features/cms/blocks/image/editor-schema";
-import type { ImageBlockType } from "~/features/cms/blocks/image/model";
+import {
+  createDefaultImageBlockData,
+  type ImageBlockType,
+} from "~/features/cms/blocks/image/model";
 import {
   applyTextSectionBlockEditorValue,
   createTextSectionBlockEditorFormSchema,
@@ -50,6 +53,7 @@ import {
   type MutableBlockRef,
 } from "~/features/cms/page-commands";
 import type { PageCommand } from "~/features/cms/page-service.server";
+import type { Diagnostic } from "~/features/cms/page-service.server";
 import { formatPageStatus } from "~/features/cms/page-status";
 import { siteCmsCatalog } from "~/features/cms/site-catalog";
 import { siteLinkTargetRegistry } from "~/features/cms/site-link-targets";
@@ -191,12 +195,7 @@ export async function action({ request, params }: Route.ActionArgs) {
         } satisfies TextSectionBlockType["data"];
       } else if (rawBlockType === "image" && addBlockVersion === 1) {
         initialData = {
-          image: {
-            kind: "asset",
-            src: "/accent-image.png",
-            alt: "",
-          },
-          variant: "default",
+          ...createDefaultImageBlockData(),
         } satisfies ImageBlockType["data"];
       } else {
         throw new Response("Unsupported block type for add", { status: 400 });
@@ -764,9 +763,9 @@ export default function AdminPageEditorRoute() {
       <div className="flex flex-col gap-2">
         <h1 className="text-4xl">Edit {displayEditorModel.pageKey}</h1>
         <p>{formatPageStatus(displayEditorModel.status)}</p>
-        {displayEditorModel.diagnostics.map((diagnostic) => (
+        {displayEditorModel.diagnostics.map((diagnostic, diagnosticIndex) => (
           <p
-            key={`${diagnostic.code}-${diagnostic.message}`}
+            key={`${diagnostic.code}-${diagnostic.message}-${diagnosticIndex}`}
             className="text-destructive text-sm"
           >
             {diagnostic.message}
@@ -787,9 +786,20 @@ export default function AdminPageEditorRoute() {
       <section className="flex flex-col gap-4">
         <h2 className="text-2xl">Blocks</h2>
         {blocks.map((block, index) => {
-          const definition = siteCmsCatalog.getBlockDefinition(block.type);
-
-          if (!definition.editor) return null;
+          const blockDiagnostic = displayEditorModel.diagnostics.find(
+            (diagnostic) =>
+              diagnostic.blockIndex === index &&
+              (diagnostic.code === "block/broken-data" ||
+                diagnostic.code === "block/unsupported-type" ||
+                diagnostic.code === "block/unsupported-version"),
+          );
+          let definition = null;
+          try {
+            definition = siteCmsCatalog.getBlockDefinition(block.type);
+          } catch {
+            definition = null;
+          }
+          const hasRenderableEditor = Boolean(definition?.editor);
 
           const blockRef: BlockRef = block.pageBlockId
             ? refByPageBlockId(block.pageBlockId, index)
@@ -802,6 +812,20 @@ export default function AdminPageEditorRoute() {
               index >= requiredLeadingCount && index < blocks.length - 1,
             canDelete: index >= requiredLeadingCount,
           };
+
+          if (!hasRenderableEditor || blockDiagnostic || !definition?.editor) {
+            return (
+              <BrokenBlockCard
+                key={block.pageBlockId ?? `${block.type}-${index}`}
+                block={block}
+                blockRef={serializedBlockRef}
+                baseRevision={revision}
+                capabilities={capabilities}
+                diagnostic={blockDiagnostic}
+              />
+            );
+          }
+          const renderEditor = definition.editor;
 
           const ctx: BlockEditorContext = {
             data: block.data,
@@ -824,7 +848,7 @@ export default function AdminPageEditorRoute() {
 
           return (
             <div key={block.pageBlockId ?? `${block.type}-${index}`}>
-              {definition.editor(ctx)}
+              {renderEditor(ctx)}
             </div>
           );
         })}
@@ -919,5 +943,87 @@ function PageMetaForm({
 
       <Button type="submit">Save Page</Button>
     </Form>
+  );
+}
+
+function BrokenBlockCard({
+  block,
+  blockRef,
+  baseRevision,
+  capabilities,
+  diagnostic,
+}: {
+  block: BlockInstance;
+  blockRef: string;
+  baseRevision: number | null;
+  capabilities: BlockEditorCapabilities;
+  diagnostic?: Diagnostic;
+}) {
+  const baseRevisionValue = baseRevision === null ? "" : String(baseRevision);
+  return (
+    <div className="border-destructive/40 flex flex-col gap-4 rounded-md border p-4">
+      <div className="flex flex-col gap-1">
+        <p className="font-medium">
+          Unsupported/Broken block: {block.type} (v{block.version})
+        </p>
+        {diagnostic ? (
+          <p className="text-destructive text-sm">{diagnostic.message}</p>
+        ) : null}
+        <pre className="bg-muted overflow-x-auto rounded p-2 text-xs">
+          {JSON.stringify(block.data, null, 2)}
+        </pre>
+      </div>
+
+      <div className="flex gap-2">
+        {capabilities.canMoveUp ? (
+          <form method="post">
+            <input type="hidden" name="intent" value="move-block-up" />
+            <input type="hidden" name="blockRef" value={blockRef} />
+            <input
+              type="hidden"
+              name="baseRevision"
+              value={baseRevisionValue}
+            />
+            <Button type="submit" variant="outline">
+              Move up
+            </Button>
+          </form>
+        ) : null}
+
+        {capabilities.canMoveDown ? (
+          <form method="post">
+            <input type="hidden" name="intent" value="move-block-down" />
+            <input type="hidden" name="blockRef" value={blockRef} />
+            <input
+              type="hidden"
+              name="baseRevision"
+              value={baseRevisionValue}
+            />
+            <Button type="submit" variant="outline">
+              Move down
+            </Button>
+          </form>
+        ) : null}
+
+        {capabilities.canDelete ? (
+          <form method="post">
+            <input type="hidden" name="intent" value="delete-block" />
+            <input type="hidden" name="blockRef" value={blockRef} />
+            <input
+              type="hidden"
+              name="baseRevision"
+              value={baseRevisionValue}
+            />
+            <Button
+              type="submit"
+              variant="outline"
+              className="text-destructive"
+            >
+              Delete block
+            </Button>
+          </form>
+        ) : null}
+      </div>
+    </div>
   );
 }

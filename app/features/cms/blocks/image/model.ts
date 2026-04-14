@@ -4,6 +4,7 @@ import type { BlockBaseType, BlockType } from "../types";
 
 const BLOCK_TYPE: BlockType = "image";
 const BLOCK_VERSION = 1;
+export const DEFAULT_IMAGE_BLOCK_ASSET_SRC = "/accent-image.jpg";
 
 const ImageAssetSchema = z.object({
   kind: z.literal("asset"),
@@ -45,3 +46,14 @@ export type ImageBlockType = BlockBaseType<
   typeof BLOCK_VERSION,
   z.infer<typeof ImageBlockDataSchema>
 >;
+
+export function createDefaultImageBlockData(): ImageBlockType["data"] {
+  return {
+    image: {
+      kind: "asset",
+      src: DEFAULT_IMAGE_BLOCK_ASSET_SRC,
+      alt: "",
+    },
+    variant: "default",
+  };
+}

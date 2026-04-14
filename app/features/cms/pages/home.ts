@@ -1,5 +1,8 @@
 import type { HeroBlockType } from "../blocks/hero";
-import type { ImageBlockType } from "../blocks/image";
+import {
+  createDefaultImageBlockData,
+  type ImageBlockType,
+} from "../blocks/image";
 import type { TextSectionBlockType } from "../blocks/text-section";
 import { definePageDefinition } from "../catalog";
 
@@ -34,11 +37,7 @@ const imageBlock: ImageBlockType = {
   type: "image",
   version: 1,
   data: {
-    image: {
-      kind: "asset",
-      src: "/accent-image.png",
-      alt: "",
-    },
+    ...createDefaultImageBlockData(),
     variant: "full-width",
   },
 };

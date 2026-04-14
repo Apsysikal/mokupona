@@ -39,6 +39,7 @@ export type PublicProjection = {
   pageKey: PageKey;
   meta: MetaTag[];
   blocks: BlockInstance[];
+  diagnostics: readonly { code: string; message: string }[];
 };
 
 export type PublicProjectionContext = {
@@ -70,6 +71,10 @@ export type BlockDefinition<TBlock extends BlockInstance = BlockInstance> = {
   type: TBlock["type"];
   version: TBlock["version"];
   schema: ZodType<TBlock["data"]>;
+  migrate?(input: {
+    fromVersion: number;
+    data: unknown;
+  }): { version: TBlock["version"]; data: TBlock["data"] } | null;
   render(block: TBlock): React.ReactNode;
   editor?(ctx: BlockEditorContext<TBlock["data"]>): React.ReactNode;
 };
@@ -205,6 +210,7 @@ export function createCmsCatalog({
         pageKey: snapshot.pageKey,
         meta,
         blocks: cloneBlocks(snapshot.blocks),
+        diagnostics: [],
       };
     },
   };

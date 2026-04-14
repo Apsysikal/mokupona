@@ -163,8 +163,15 @@ fly ssh console -C database-cli --app <fly-app-name>
 - E2E CI/headless: `npm run test:e2e:ci`
 - E2E local headless: `npm run test:e2e:run`
 
-For full local verification, run:
+For a fully explicit local validation flow (matching CI assumptions), run:
 
 ```sh
-npm run validate
+DATABASE_URL="file:./prisma/data.db" SESSION_SECRET="replace-with-a-random-secret" npm run setup
+DATABASE_URL="file:./prisma/data.db" SESSION_SECRET="replace-with-a-random-secret" npm run format -- --check
+DATABASE_URL="file:./prisma/data.db" SESSION_SECRET="replace-with-a-random-secret" npm run lint
+DATABASE_URL="file:./prisma/data.db" SESSION_SECRET="replace-with-a-random-secret" npm run typecheck
+DATABASE_URL="file:./prisma/data.db" SESSION_SECRET="replace-with-a-random-secret" npm run test -- --run
+DATABASE_URL="file:./prisma/data.db" SESSION_SECRET="replace-with-a-random-secret" npm run test:e2e:run
 ```
+
+> Note: Cypress on Linux requires `Xvfb` for `npm run test:e2e:run` unless your environment already provides the required display dependencies.

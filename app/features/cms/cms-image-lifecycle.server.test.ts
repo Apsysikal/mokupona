@@ -141,7 +141,7 @@ describe("cms image lifecycle", () => {
           image: {
             kind: "uploaded",
             imageId: "img_old",
-            fallbackAssetSrc: "/accent-image.png",
+            fallbackAssetSrc: "/accent-image.jpg",
             decorative: true,
           },
           variant: "default",
