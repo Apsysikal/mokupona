@@ -14,6 +14,7 @@ import {
   createBlockMigratedDiagnostic,
   createBlockUnsupportedTypeDiagnostic,
   createBlockUnsupportedVersionDiagnostic,
+  createMutationStaleWriteDiagnostic,
   createPageMigratedDiagnostic,
   createPagePublicFallbackDefaultsDiagnostic,
   createPagePublicOmittedBrokenBlocksDiagnostic,
@@ -30,6 +31,7 @@ import type {
   MoveBlockUpCommand,
   MutableBlockRef,
   PageCommand,
+  ResetPageCommand,
   SetBlockDataCommand,
   SetPageMetaCommand,
 } from "./page-commands";
@@ -48,6 +50,7 @@ export type {
   MutableBlockRef,
   PageCommand,
   PageCommandBuilder,
+  ResetPageCommand,
   SetBlockDataCommand,
   SetPageMetaCommand,
 } from "./page-commands";
@@ -114,12 +117,14 @@ export type CmsPageStore = {
     description: string;
     blocks: readonly BlockInstance[];
   }): Promise<WriteSuccess | WriteConflict>;
+  /** Delete the persisted page record, returning the page to default-backed behavior. */
+  deletePage(pageKey: PageKey): Promise<void>;
 };
 
 export type ApplyPageCommandResult =
   | {
       status: "saved";
-      materialization: "created" | "updated";
+      materialization: "created" | "updated" | "reset";
       editorModel: EditorModel;
     }
   | {
@@ -403,7 +408,7 @@ export function createCmsPageService({
         return {
           status: "conflict",
           currentEditorModel: currentPage,
-          diagnostics: [],
+          diagnostics: [createMutationStaleWriteDiagnostic()],
         };
       }
     } else {
@@ -414,7 +419,7 @@ export function createCmsPageService({
         return {
           status: "conflict",
           currentEditorModel: currentPage,
-          diagnostics: [],
+          diagnostics: [createMutationStaleWriteDiagnostic()],
         };
       }
     }
@@ -674,7 +679,7 @@ export function createCmsPageService({
         return {
           status: "conflict",
           currentEditorModel: currentPage,
-          diagnostics: [],
+          diagnostics: [createMutationStaleWriteDiagnostic()],
         };
       }
 
@@ -713,7 +718,7 @@ export function createCmsPageService({
       return {
         status: "conflict",
         currentEditorModel: currentPage,
-        diagnostics: [],
+        diagnostics: [createMutationStaleWriteDiagnostic()],
       };
     }
 
@@ -751,6 +756,46 @@ export function createCmsPageService({
         command.pageKey,
         writeResult.persistedPage,
       ),
+    };
+  };
+
+  const applyResetPage = async (
+    command: ResetPageCommand,
+  ): Promise<ApplyPageCommandResult> => {
+    const currentPage = await readResolvedPage(command.pageKey);
+
+    if (currentPage.status.kind === "default-backed") {
+      if (command.baseRevision !== null) {
+        return {
+          status: "conflict",
+          currentEditorModel: currentPage,
+          diagnostics: [createMutationStaleWriteDiagnostic()],
+        };
+      }
+      return {
+        status: "saved",
+        materialization: "reset",
+        editorModel: currentPage,
+      };
+    }
+
+    if (
+      command.baseRevision === null ||
+      command.baseRevision !== currentPage.status.revision
+    ) {
+      return {
+        status: "conflict",
+        currentEditorModel: currentPage,
+        diagnostics: [createMutationStaleWriteDiagnostic()],
+      };
+    }
+
+    await pageStore.deletePage(command.pageKey);
+
+    return {
+      status: "saved",
+      materialization: "reset",
+      editorModel: defaultBackedPage(command.pageKey),
     };
   };
 
@@ -855,6 +900,8 @@ export function createCmsPageService({
           return applyDeleteBlock(command);
         case "add-block":
           return applyAddBlock(command);
+        case "reset-page":
+          return applyResetPage(command);
       }
     },
   };

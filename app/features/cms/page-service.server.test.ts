@@ -144,6 +144,11 @@ function createMemoryPageStore(): CmsPageStore & {
         persistedPage: structuredClone(page),
       };
     },
+    async deletePage(pageKey) {
+      if (page && page.pageKey === pageKey) {
+        page = null;
+      }
+    },
   };
 }
 
@@ -2389,5 +2394,181 @@ describe("createCmsPageService — add-block command", () => {
       },
       variant: "default",
     });
+  });
+});
+
+describe("createCmsPageService — reset-page command", () => {
+  async function setupPersisted() {
+    const store = createMemoryPageStore();
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: store,
+    });
+
+    const result = await service.applyPageCommand({
+      type: "set-page-meta",
+      pageKey: "home",
+      baseRevision: null,
+      title: "persisted title",
+      description: "persisted description",
+    });
+
+    if (result.status !== "saved") throw new Error("setup: expected saved");
+
+    return { service, store, revision: result.editorModel.status.revision! };
+  }
+
+  test("reset-page on default-backed page with null baseRevision returns saved with materialization reset", async () => {
+    const store = createMemoryPageStore();
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: store,
+    });
+
+    const result = await service.applyPageCommand({
+      type: "reset-page",
+      pageKey: "home",
+      baseRevision: null,
+    });
+
+    expect(result.status).toBe("saved");
+    if (result.status !== "saved") return;
+    expect(result.materialization).toBe("reset");
+    expect(result.editorModel.status.kind).toBe("default-backed");
+    expect(store.peek("home")).toBeNull();
+  });
+
+  test("reset-page on default-backed page with non-null baseRevision returns conflict with mutationStaleWrite diagnostic", async () => {
+    const store = createMemoryPageStore();
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: store,
+    });
+
+    const result = await service.applyPageCommand({
+      type: "reset-page",
+      pageKey: "home",
+      baseRevision: 1,
+    });
+
+    expect(result.status).toBe("conflict");
+    if (result.status !== "conflict") return;
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({ code: cmsDiagnosticCodes.mutationStaleWrite }),
+    );
+  });
+
+  test("reset-page on persisted page with matching revision deletes page and returns saved with materialization reset", async () => {
+    const { service, store, revision } = await setupPersisted();
+
+    const result = await service.applyPageCommand({
+      type: "reset-page",
+      pageKey: "home",
+      baseRevision: revision,
+    });
+
+    expect(result.status).toBe("saved");
+    if (result.status !== "saved") return;
+    expect(result.materialization).toBe("reset");
+    expect(result.editorModel.status.kind).toBe("default-backed");
+    expect(result.editorModel.status.revision).toBeNull();
+    expect(store.peek("home")).toBeNull();
+  });
+
+  test("reset-page on persisted page with stale revision returns conflict with mutationStaleWrite diagnostic", async () => {
+    const { service } = await setupPersisted();
+
+    const result = await service.applyPageCommand({
+      type: "reset-page",
+      pageKey: "home",
+      baseRevision: 999,
+    });
+
+    expect(result.status).toBe("conflict");
+    if (result.status !== "conflict") return;
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({ code: cmsDiagnosticCodes.mutationStaleWrite }),
+    );
+  });
+
+  test("reset-page on persisted page with null baseRevision returns conflict with mutationStaleWrite diagnostic", async () => {
+    const { service } = await setupPersisted();
+
+    const result = await service.applyPageCommand({
+      type: "reset-page",
+      pageKey: "home",
+      baseRevision: null,
+    });
+
+    expect(result.status).toBe("conflict");
+    if (result.status !== "conflict") return;
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({ code: cmsDiagnosticCodes.mutationStaleWrite }),
+    );
+  });
+});
+
+describe("createCmsPageService — mutation stale-write diagnostics", () => {
+  async function setupPersisted() {
+    const store = createMemoryPageStore();
+    const service = createCmsPageService({
+      catalog: siteCmsCatalog,
+      pageStore: store,
+    });
+
+    const result = await service.applyPageCommand({
+      type: "set-page-meta",
+      pageKey: "home",
+      baseRevision: null,
+      title: "title",
+      description: "desc",
+    });
+
+    if (result.status !== "saved") throw new Error("setup: expected saved");
+
+    return { service, store, revision: result.editorModel.status.revision! };
+  }
+
+  test("set-page-meta with stale revision returns conflict with mutationStaleWrite diagnostic", async () => {
+    const { service } = await setupPersisted();
+
+    const result = await service.applyPageCommand({
+      type: "set-page-meta",
+      pageKey: "home",
+      baseRevision: 999,
+      title: "new title",
+      description: "new desc",
+    });
+
+    expect(result.status).toBe("conflict");
+    if (result.status !== "conflict") return;
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({ code: cmsDiagnosticCodes.mutationStaleWrite }),
+    );
+  });
+
+  test("set-block-data with stale revision returns conflict with mutationStaleWrite diagnostic", async () => {
+    const { service, store } = await setupPersisted();
+    const heroBlock = store.peek("home")!.blocks[0];
+
+    const result = await service.applyPageCommand({
+      type: "set-block-data",
+      pageKey: "home",
+      baseRevision: 999,
+      ref: {
+        kind: "page-block-id",
+        pageBlockId: heroBlock.pageBlockId!,
+        position: 0,
+      },
+      blockType: "hero",
+      blockVersion: 1,
+      data: heroBlock.data,
+    });
+
+    expect(result.status).toBe("conflict");
+    if (result.status !== "conflict") return;
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({ code: cmsDiagnosticCodes.mutationStaleWrite }),
+    );
   });
 });
