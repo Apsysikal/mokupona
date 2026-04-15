@@ -250,6 +250,159 @@ describe("createCmsCatalog", () => {
     ]);
   });
 
+  test("applies page migrations to persisted snapshots through the catalog seam", () => {
+    const catalog = createCmsCatalog({
+      blocks: [heroStubDefinition, textSectionStubDefinition],
+      pages: [
+        definePageDefinition({
+          ...stubPageDefinition,
+          migrate({ snapshot }) {
+            if (!snapshot.title.startsWith("legacy: ")) {
+              return null;
+            }
+
+            return {
+              ...snapshot,
+              title: snapshot.title.replace("legacy: ", ""),
+            };
+          },
+        }),
+      ],
+    });
+
+    const migrationResult = catalog.migratePageSnapshot({
+      snapshot: {
+        pageKey: "home",
+        provenance: "persisted",
+        title: "legacy: migrated title",
+        description: "description",
+        blocks: [
+          {
+            type: "hero",
+            version: 1,
+            data: { label: "original" },
+          },
+        ],
+      },
+    });
+
+    expect(migrationResult.migrated).toBe(true);
+    expect(migrationResult.snapshot.title).toBe("migrated title");
+    (migrationResult.snapshot.blocks[0] as HeroStubBlock).data.label =
+      "mutated";
+
+    const rerun = catalog.migratePageSnapshot({
+      snapshot: {
+        pageKey: "home",
+        provenance: "persisted",
+        title: "legacy: migrated title",
+        description: "description",
+        blocks: [
+          {
+            type: "hero",
+            version: 1,
+            data: { label: "original" },
+          },
+        ],
+      },
+    });
+    expect((rerun.snapshot.blocks[0] as HeroStubBlock).data.label).toBe(
+      "original",
+    );
+  });
+
+  test("returns a cloned snapshot when no page migration applies", () => {
+    const catalog = createStubCatalog();
+    const inputSnapshot = {
+      pageKey: "home" as const,
+      provenance: "persisted" as const,
+      title: "current title",
+      description: "current description",
+      blocks: [
+        {
+          type: "hero" as const,
+          version: 1 as const,
+          data: { label: "original" },
+        },
+      ],
+    };
+
+    const migrationResult = catalog.migratePageSnapshot({
+      snapshot: inputSnapshot,
+    });
+
+    expect(migrationResult.migrated).toBe(false);
+    expect(migrationResult.snapshot).not.toBe(inputSnapshot);
+    expect(migrationResult.snapshot.blocks).not.toBe(inputSnapshot.blocks);
+    (migrationResult.snapshot.blocks[0] as HeroStubBlock).data.label =
+      "mutated";
+    expect((inputSnapshot.blocks[0] as HeroStubBlock).data.label).toBe(
+      "original",
+    );
+  });
+
+  test("fails fast when a page migration returns a mismatched page key", () => {
+    const catalog = createCmsCatalog({
+      blocks: [heroStubDefinition, textSectionStubDefinition],
+      pages: [
+        definePageDefinition({
+          ...stubPageDefinition,
+          migrate({ snapshot }) {
+            return {
+              ...snapshot,
+              pageKey: "different-page",
+            };
+          },
+        }),
+      ],
+    });
+
+    expect(() =>
+      catalog.migratePageSnapshot({
+        snapshot: {
+          pageKey: "home",
+          provenance: "persisted",
+          title: "title",
+          description: "description",
+          blocks: [],
+        },
+      }),
+    ).toThrow(
+      'Page migration for "home" returned a snapshot with mismatched page key "different-page"',
+    );
+  });
+
+  test("fails fast when a page migration returns mismatched provenance", () => {
+    const catalog = createCmsCatalog({
+      blocks: [heroStubDefinition, textSectionStubDefinition],
+      pages: [
+        definePageDefinition({
+          ...stubPageDefinition,
+          migrate({ snapshot }) {
+            return {
+              ...snapshot,
+              provenance: "default",
+            };
+          },
+        }),
+      ],
+    });
+
+    expect(() =>
+      catalog.migratePageSnapshot({
+        snapshot: {
+          pageKey: "home",
+          provenance: "persisted",
+          title: "title",
+          description: "description",
+          blocks: [],
+        },
+      }),
+    ).toThrow(
+      'Page migration for "home" returned a snapshot with mismatched provenance "default"',
+    );
+  });
+
   test("fails fast when a page definition references an unknown block type", () => {
     expect(() =>
       createCmsCatalog({

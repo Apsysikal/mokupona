@@ -1,4 +1,5 @@
 import type { BlockRef } from "./blocks/block-ref";
+import { UnknownBlockTypeError } from "./catalog";
 import type {
   BlockInstance,
   CmsCatalog,
@@ -7,6 +8,21 @@ import type {
   PublicProjection,
   PublicProjectionContext,
 } from "./catalog";
+import {
+  createBlockBrokenDataDiagnostic,
+  createBlockDisallowedTypeDiagnostic,
+  createBlockMigratedDiagnostic,
+  createBlockUnsupportedTypeDiagnostic,
+  createBlockUnsupportedVersionDiagnostic,
+  createPageMigratedDiagnostic,
+  createPagePublicFallbackDefaultsDiagnostic,
+  createPagePublicOmittedBrokenBlocksDiagnostic,
+  isRecoverableBlockDiagnosticCode,
+  isRuntimeMigrationDiagnosticCode,
+  mergeCmsDiagnostics,
+  type CmsDiagnostic,
+  type CmsDiagnosticCode,
+} from "./diagnostics";
 import type {
   AddBlockCommand,
   DeleteBlockCommand,
@@ -36,13 +52,8 @@ export type {
   SetPageMetaCommand,
 } from "./page-commands";
 
-export type Diagnostic = {
-  code:
-    | "block/invalid-data"
-    | "block/unsupported-type"
-    | "block/unsupported-version";
-  message: string;
-};
+export type DiagnosticCode = CmsDiagnosticCode;
+export type Diagnostic = CmsDiagnostic;
 
 export type EditorModel = {
   pageKey: PageKey;
@@ -146,42 +157,158 @@ export function createCmsPageService({
     diagnostics,
   });
 
-  const validatePersistedPage = (
-    persistedPage: PersistedPageRecord,
-  ): readonly Diagnostic[] => {
-    const diagnostics: Diagnostic[] = [];
+  const hasValidRequiredLeadingBlocks = (
+    pageKey: PageKey,
+    blocks: readonly BlockInstance[],
+  ) => {
+    const requiredLeading =
+      catalog.getPageRule(pageKey).requiredLeadingBlockTypes;
+    if (!requiredLeading || requiredLeading.length === 0) {
+      return true;
+    }
 
-    for (const block of persistedPage.blocks) {
+    return requiredLeading.every(
+      (requiredType, index) => blocks[index]?.type === requiredType,
+    );
+  };
+
+  const normalizePersistedBlocks = ({
+    pageKey,
+    blocks,
+  }: {
+    pageKey: PageKey;
+    blocks: readonly BlockInstance[];
+  }): {
+    adminBlocks: BlockInstance[];
+    publicBlocks: BlockInstance[];
+    diagnostics: Diagnostic[];
+  } => {
+    const adminBlocks: BlockInstance[] = [];
+    const publicBlocks: BlockInstance[] = [];
+    const diagnostics: Diagnostic[] = [];
+    const allowedBlockTypes = new Set(
+      catalog.getPageRule(pageKey).allowedBlockTypes,
+    );
+    const pushUnsupportedVersionDiagnostic = (input: {
+      blockType: string;
+      blockIndex: number;
+      fromVersion: number;
+      toVersion: number;
+    }) => {
+      diagnostics.push(
+        createBlockUnsupportedVersionDiagnostic({
+          pageKey,
+          ...input,
+        }),
+      );
+    };
+
+    for (const [index, block] of blocks.entries()) {
+      const clonedBlock = structuredClone(block);
       let definition;
 
       try {
-        definition = catalog.getBlockDefinition(block.type);
-      } catch {
-        diagnostics.push({
-          code: "block/unsupported-type",
-          message: `Persisted block "${block.type}" on page "${persistedPage.pageKey}" is no longer supported. Showing defaults instead.`,
-        });
+        definition = catalog.getBlockDefinition(clonedBlock.type);
+      } catch (error) {
+        if (!(error instanceof UnknownBlockTypeError)) {
+          throw error;
+        }
+
+        diagnostics.push(
+          createBlockUnsupportedTypeDiagnostic({
+            pageKey,
+            blockType: clonedBlock.type,
+            blockIndex: index,
+          }),
+        );
+        adminBlocks.push(clonedBlock);
         continue;
       }
 
-      if (block.version !== definition.version) {
-        diagnostics.push({
-          code: "block/unsupported-version",
-          message: `Persisted block "${block.type}" on page "${persistedPage.pageKey}" has unsupported version ${block.version}. Showing defaults instead.`,
-        });
+      if (!allowedBlockTypes.has(clonedBlock.type)) {
+        diagnostics.push(
+          createBlockDisallowedTypeDiagnostic({
+            pageKey,
+            blockType: clonedBlock.type,
+            blockIndex: index,
+          }),
+        );
+        adminBlocks.push(clonedBlock);
         continue;
       }
 
-      const result = definition.schema.safeParse(block.data);
+      let normalizedBlock = clonedBlock;
+      let migratedFromVersion: number | null = null;
+
+      if (normalizedBlock.version !== definition.version) {
+        const migration = definition.migrate?.({
+          fromVersion: normalizedBlock.version,
+          data: normalizedBlock.data,
+        });
+
+        if (!migration) {
+          pushUnsupportedVersionDiagnostic({
+            blockType: normalizedBlock.type,
+            blockIndex: index,
+            fromVersion: normalizedBlock.version,
+            toVersion: definition.version,
+          });
+          adminBlocks.push(normalizedBlock);
+          continue;
+        }
+
+        if (migration.version !== definition.version) {
+          pushUnsupportedVersionDiagnostic({
+            blockType: normalizedBlock.type,
+            blockIndex: index,
+            fromVersion: normalizedBlock.version,
+            toVersion: definition.version,
+          });
+          adminBlocks.push(normalizedBlock);
+          continue;
+        }
+
+        migratedFromVersion = normalizedBlock.version;
+        normalizedBlock = {
+          ...normalizedBlock,
+          version: migration.version,
+          data: migration.data,
+        };
+      }
+
+      const result = definition.schema.safeParse(normalizedBlock.data);
       if (!result.success) {
-        diagnostics.push({
-          code: "block/invalid-data",
-          message: `Persisted block "${block.type}" on page "${persistedPage.pageKey}" has invalid data. Showing defaults instead.`,
-        });
+        diagnostics.push(
+          createBlockBrokenDataDiagnostic({
+            pageKey,
+            blockType: normalizedBlock.type,
+            blockIndex: index,
+          }),
+        );
+        adminBlocks.push(clonedBlock);
+        continue;
       }
+
+      const validatedBlock: BlockInstance = {
+        ...normalizedBlock,
+        data: result.data,
+      };
+      if (migratedFromVersion !== null) {
+        diagnostics.push(
+          createBlockMigratedDiagnostic({
+            pageKey,
+            blockType: validatedBlock.type,
+            blockIndex: index,
+            fromVersion: migratedFromVersion,
+            toVersion: validatedBlock.version,
+          }),
+        );
+      }
+      adminBlocks.push(validatedBlock);
+      publicBlocks.push(validatedBlock);
     }
 
-    return diagnostics;
+    return { adminBlocks, publicBlocks, diagnostics };
   };
 
   const readResolvedPage = async (pageKey: PageKey): Promise<ResolvedPage> => {
@@ -191,9 +318,25 @@ export function createCmsPageService({
       return defaultBackedPage(pageKey);
     }
 
-    const diagnostics = validatePersistedPage(persistedPage);
-    if (diagnostics.length > 0) {
-      return defaultBackedPage(pageKey, diagnostics);
+    const migratedSnapshot = catalog.migratePageSnapshot({
+      snapshot: {
+        pageKey,
+        provenance: "persisted",
+        title: persistedPage.title,
+        description: persistedPage.description,
+        blocks: persistedPage.blocks,
+      },
+    });
+    const normalized = normalizePersistedBlocks({
+      pageKey,
+      blocks: migratedSnapshot.snapshot.blocks,
+    });
+    const diagnostics = [...normalized.diagnostics];
+    if (migratedSnapshot.migrated) {
+      diagnostics.push(createPageMigratedDiagnostic(pageKey));
+    }
+    if (!hasValidRequiredLeadingBlocks(pageKey, normalized.publicBlocks)) {
+      diagnostics.push(createPagePublicFallbackDefaultsDiagnostic());
     }
 
     return {
@@ -202,11 +345,11 @@ export function createCmsPageService({
       pageSnapshot: {
         pageKey,
         provenance: "persisted",
-        title: persistedPage.title,
-        description: persistedPage.description,
-        blocks: structuredClone(persistedPage.blocks),
+        title: migratedSnapshot.snapshot.title,
+        description: migratedSnapshot.snapshot.description,
+        blocks: normalized.adminBlocks,
       },
-      diagnostics: [],
+      diagnostics,
     };
   };
 
@@ -350,7 +493,11 @@ export function createCmsPageService({
     let definition;
     try {
       definition = catalog.getBlockDefinition(command.blockType);
-    } catch {
+    } catch (error) {
+      if (!(error instanceof UnknownBlockTypeError)) {
+        throw error;
+      }
+
       return {
         status: "conflict",
         currentEditorModel: await readResolvedPage(command.pageKey),
@@ -366,15 +513,29 @@ export function createCmsPageService({
         diagnostics: [],
       };
     }
+    if (command.blockVersion !== definition.version) {
+      return {
+        status: "conflict",
+        currentEditorModel: await readResolvedPage(command.pageKey),
+        diagnostics: [],
+      };
+    }
 
     const validatedData = parseResult.data;
 
     return applyBlockMutation(command, (blocks) => {
       const index = resolveBlockIndex(blocks, command.ref);
       if (index === -1) return null;
+      const targetBlock = blocks[index];
+      if (
+        targetBlock.type !== command.blockType ||
+        targetBlock.version !== definition.version
+      ) {
+        return null;
+      }
 
       const updated = [...blocks];
-      updated[index] = { ...updated[index], data: validatedData };
+      updated[index] = { ...targetBlock, data: validatedData };
       return updated;
     });
   };
@@ -456,7 +617,11 @@ export function createCmsPageService({
     let definition;
     try {
       definition = catalog.getBlockDefinition(command.blockType);
-    } catch {
+    } catch (error) {
+      if (!(error instanceof UnknownBlockTypeError)) {
+        throw error;
+      }
+
       return readResolvedPage(command.pageKey).then((currentPage) => ({
         status: "conflict" as const,
         currentEditorModel: currentPage,
@@ -481,11 +646,18 @@ export function createCmsPageService({
         diagnostics: [],
       }));
     }
+    if (command.blockVersion !== definition.version) {
+      return readResolvedPage(command.pageKey).then((currentPage) => ({
+        status: "conflict" as const,
+        currentEditorModel: currentPage,
+        diagnostics: [],
+      }));
+    }
 
     const validatedData = parseResult.data;
     const newBlock: BlockInstance = {
       type: command.blockType,
-      version: command.blockVersion,
+      version: definition.version,
       data: validatedData,
     };
 
@@ -545,12 +717,23 @@ export function createCmsPageService({
       };
     }
 
-    const writeResult = await pageStore.updatePageMeta({
-      pageKey: command.pageKey,
-      expectedRevision: command.baseRevision,
-      title: command.title,
-      description: command.description,
-    });
+    const hasRuntimeMigrations = currentPage.diagnostics.some((diagnostic) =>
+      isRuntimeMigrationDiagnosticCode(diagnostic.code),
+    );
+    const writeResult = hasRuntimeMigrations
+      ? await pageStore.updatePage({
+          pageKey: command.pageKey,
+          expectedRevision: command.baseRevision,
+          title: command.title,
+          description: command.description,
+          blocks: currentPage.pageSnapshot.blocks,
+        })
+      : await pageStore.updatePageMeta({
+          pageKey: command.pageKey,
+          expectedRevision: command.baseRevision,
+          title: command.title,
+          description: command.description,
+        });
 
     if (writeResult.status === "conflict") {
       const refreshed = await readResolvedPage(command.pageKey);
@@ -593,7 +776,67 @@ export function createCmsPageService({
     },
     async readPublicProjection(pageKey, context) {
       const resolved = await readResolvedPage(pageKey);
-      return catalog.projectPublic(resolved.pageSnapshot, context);
+      if (resolved.status.kind === "default-backed") {
+        const projection = catalog.projectPublic(
+          resolved.pageSnapshot,
+          context,
+        );
+        return {
+          ...projection,
+          diagnostics: mergeCmsDiagnostics(
+            projection.diagnostics,
+            resolved.diagnostics,
+          ),
+        };
+      }
+
+      const omitDiagnostics = resolved.diagnostics.filter((diagnostic) =>
+        isRecoverableBlockDiagnosticCode(diagnostic.code),
+      );
+      const omittedBlockIndexes = new Set(
+        omitDiagnostics.flatMap((diagnostic) =>
+          typeof diagnostic.blockIndex === "number"
+            ? [diagnostic.blockIndex]
+            : [],
+        ),
+      );
+      const publicBlocks = resolved.pageSnapshot.blocks.filter((_, index) => {
+        return !omittedBlockIndexes.has(index);
+      });
+
+      if (!hasValidRequiredLeadingBlocks(pageKey, publicBlocks)) {
+        const fallbackSnapshot = catalog.readPageSnapshot(pageKey);
+        const projection = catalog.projectPublic(fallbackSnapshot, context);
+        return {
+          ...projection,
+          diagnostics: mergeCmsDiagnostics(
+            projection.diagnostics,
+            resolved.diagnostics,
+            [createPagePublicFallbackDefaultsDiagnostic()],
+          ),
+        };
+      }
+
+      const projection = catalog.projectPublic(
+        {
+          ...resolved.pageSnapshot,
+          blocks: publicBlocks,
+        },
+        context,
+      );
+      const publicDiagnostics = mergeCmsDiagnostics(
+        projection.diagnostics,
+        resolved.diagnostics,
+      );
+      if (publicBlocks.length !== resolved.pageSnapshot.blocks.length) {
+        return {
+          ...projection,
+          diagnostics: mergeCmsDiagnostics(publicDiagnostics, [
+            createPagePublicOmittedBrokenBlocksDiagnostic(),
+          ]),
+        };
+      }
+      return { ...projection, diagnostics: publicDiagnostics };
     },
     async readEditorModel(pageKey) {
       return readResolvedPage(pageKey);
