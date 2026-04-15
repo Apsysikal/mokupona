@@ -7,6 +7,10 @@ import { createHeroActionSchema, type HeroBlockType } from "./model";
 import type { LinkTargetRegistry } from "~/features/cms/link-targets";
 
 const DEFAULT_HERO_ASSET_SRC = "/hero-image.jpg";
+type MaybeHeroData = Partial<HeroBlockType["data"]> & {
+  image?: unknown;
+  actions?: unknown;
+};
 
 function normalizeHeroImage(image: unknown): HeroBlockType["data"]["image"] {
   if (
@@ -45,7 +49,7 @@ function normalizeHeroImage(image: unknown): HeroBlockType["data"]["image"] {
         kind: "uploaded",
         imageId,
         fallbackAssetSrc,
-        decorative: Boolean((image as { decorative?: unknown }).decorative),
+        decorative: (image as { decorative?: unknown }).decorative === true,
         alt: typeof alt === "string" ? alt : undefined,
       };
     }
@@ -54,6 +58,31 @@ function normalizeHeroImage(image: unknown): HeroBlockType["data"]["image"] {
   return {
     kind: "asset",
     src: DEFAULT_HERO_ASSET_SRC,
+  };
+}
+
+function normalizeFirstHeroAction(actions: unknown): {
+  label?: string;
+  href?: string;
+} {
+  if (!Array.isArray(actions) || actions.length === 0) {
+    return {};
+  }
+
+  const first = actions[0];
+  if (!first || typeof first !== "object") {
+    return {};
+  }
+
+  return {
+    label:
+      typeof (first as { label?: unknown }).label === "string"
+        ? (first as { label: string }).label
+        : undefined,
+    href:
+      typeof (first as { href?: unknown }).href === "string"
+        ? (first as { href: string }).href
+        : undefined,
   };
 }
 
@@ -178,17 +207,9 @@ export function applyHeroBlockEditorValue(
     uploadedImageId?: string;
   },
 ): HeroBlockType["data"] {
-  const currentImage = normalizeHeroImage(
-    (currentData as { image?: unknown }).image,
-  );
-  const currentAction =
-    Array.isArray((currentData as { actions?: unknown }).actions) &&
-    (currentData as { actions: unknown[] }).actions.length > 0
-      ? ((currentData as { actions: unknown[] }).actions[0] as {
-          label?: string;
-          href?: string;
-        })
-      : {};
+  const currentDataRecord = currentData as unknown as MaybeHeroData;
+  const currentImage = normalizeHeroImage(currentDataRecord.image);
+  const currentAction = normalizeFirstHeroAction(currentDataRecord.actions);
   const image =
     value.imageAction === "replace" && options?.uploadedImageId
       ? {
