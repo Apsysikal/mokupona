@@ -132,6 +132,25 @@ describe("hero editor schema image behavior", () => {
     });
   });
 
+  test("recovers malformed persisted hero data when applying editor values", () => {
+    const next = applyHeroBlockEditorValue({} as HeroBlockType["data"], {
+      eyebrow: "eyebrow",
+      headline: "Recovered hero headline",
+      description: "description",
+      actions: [{ label: "Join", href: "/dinners" }],
+      imageAction: "keep",
+      imageAccessibility: undefined,
+      imageAlt: "",
+    });
+
+    expect(next.image).toEqual({
+      kind: "asset",
+      src: "/hero-image.jpg",
+    });
+    expect(next.actions).toEqual([{ label: "Join", href: "/dinners" }]);
+    expect(next.headline).toBe("Recovered hero headline");
+  });
+
   test("default form values expose keep action and uploaded accessibility state", () => {
     const defaults = getHeroBlockEditorDefaultValue(
       makeHeroData({

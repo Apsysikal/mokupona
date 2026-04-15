@@ -6,6 +6,57 @@ import { createHeroActionSchema, type HeroBlockType } from "./model";
 
 import type { LinkTargetRegistry } from "~/features/cms/link-targets";
 
+const DEFAULT_HERO_ASSET_SRC = "/hero-image.jpg";
+
+function normalizeHeroImage(image: unknown): HeroBlockType["data"]["image"] {
+  if (
+    image &&
+    typeof image === "object" &&
+    "kind" in image &&
+    (image as { kind?: unknown }).kind === "asset"
+  ) {
+    const src = (image as { src?: unknown }).src;
+    return {
+      kind: "asset",
+      src:
+        typeof src === "string" && src.length > 0
+          ? src
+          : DEFAULT_HERO_ASSET_SRC,
+    };
+  }
+
+  if (
+    image &&
+    typeof image === "object" &&
+    "kind" in image &&
+    (image as { kind?: unknown }).kind === "uploaded"
+  ) {
+    const imageId = (image as { imageId?: unknown }).imageId;
+    const fallbackAssetSrc = (image as { fallbackAssetSrc?: unknown })
+      .fallbackAssetSrc;
+    if (
+      typeof imageId === "string" &&
+      imageId.length > 0 &&
+      typeof fallbackAssetSrc === "string" &&
+      fallbackAssetSrc.length > 0
+    ) {
+      const alt = (image as { alt?: unknown }).alt;
+      return {
+        kind: "uploaded",
+        imageId,
+        fallbackAssetSrc,
+        decorative: Boolean((image as { decorative?: unknown }).decorative),
+        alt: typeof alt === "string" ? alt : undefined,
+      };
+    }
+  }
+
+  return {
+    kind: "asset",
+    src: DEFAULT_HERO_ASSET_SRC,
+  };
+}
+
 export type HeroBlockEditorFormShape = {
   eyebrow: string;
   headline: string;
@@ -127,7 +178,17 @@ export function applyHeroBlockEditorValue(
     uploadedImageId?: string;
   },
 ): HeroBlockType["data"] {
-  const currentImage = currentData.image;
+  const currentImage = normalizeHeroImage(
+    (currentData as { image?: unknown }).image,
+  );
+  const currentAction =
+    Array.isArray((currentData as { actions?: unknown }).actions) &&
+    (currentData as { actions: unknown[] }).actions.length > 0
+      ? ((currentData as { actions: unknown[] }).actions[0] as {
+          label?: string;
+          href?: string;
+        })
+      : {};
   const image =
     value.imageAction === "replace" && options?.uploadedImageId
       ? {
@@ -168,7 +229,7 @@ export function applyHeroBlockEditorValue(
     description: value.description,
     actions: [
       {
-        ...(currentData.actions[0] ?? {}),
+        ...currentAction,
         label: value.actions[0].label,
         href: value.actions[0].href,
       },
