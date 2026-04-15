@@ -59,8 +59,10 @@ import {
   createPageCommandBuilder,
   type MutableBlockRef,
 } from "~/features/cms/page-commands";
-import type { PageCommand } from "~/features/cms/page-service.server";
-import type { Diagnostic } from "~/features/cms/page-service.server";
+import type {
+  Diagnostic,
+  PageCommand,
+} from "~/features/cms/page-service.server";
 import { formatPageStatus } from "~/features/cms/page-status";
 import { siteCmsCatalog } from "~/features/cms/site-catalog";
 import { siteLinkTargetRegistry } from "~/features/cms/site-link-targets";
@@ -110,6 +112,16 @@ function parseBaseRevision(raw: FormDataEntryValue | null): number | null {
   if (typeof raw !== "string" || raw === "") return null;
   const n = Number(raw);
   return Number.isInteger(n) && n >= 0 ? n : null;
+}
+
+function conflictMessageFromDiagnostics(
+  diagnostics: readonly Diagnostic[],
+  fallback: string,
+): string {
+  const staleWrite = diagnostics.find(
+    (d) => d.code === cmsDiagnosticCodes.mutationStaleWrite,
+  );
+  return staleWrite ? staleWrite.message : fallback;
 }
 
 // ─── Loader ───────────────────────────────────────────────────────────────────
@@ -166,8 +178,10 @@ export async function action({ request, params }: Route.ActionArgs) {
       if (result.status === "conflict") {
         return {
           status: "conflict" as const,
-          conflictMessage:
-            "This page was changed by someone else. The editor has been refreshed with the current values - please review and save again.",
+          conflictMessage: conflictMessageFromDiagnostics(
+            result.diagnostics,
+            "Page could not be saved — please refresh and try again.",
+          ),
           editorModel: result.currentEditorModel,
         };
       }
@@ -219,9 +233,29 @@ export async function action({ request, params }: Route.ActionArgs) {
       if (addResult.status === "conflict") {
         return {
           status: "conflict" as const,
-          conflictMessage:
+          conflictMessage: conflictMessageFromDiagnostics(
+            addResult.diagnostics,
             "Block could not be added — the page may have changed.",
+          ),
           editorModel: addResult.currentEditorModel,
+        };
+      }
+
+      return redirect(`/admin/pages/${pageKey}`);
+    }
+
+    if (intent === "reset-page") {
+      const command = commandBuilder.resetPage();
+      const result = await siteCmsPageService.applyPageCommand(command);
+
+      if (result.status === "conflict") {
+        return {
+          status: "conflict" as const,
+          conflictMessage: conflictMessageFromDiagnostics(
+            result.diagnostics,
+            "Reset could not be applied — the page may have changed.",
+          ),
+          editorModel: result.currentEditorModel,
         };
       }
 
@@ -360,8 +394,10 @@ export async function action({ request, params }: Route.ActionArgs) {
           return {
             status: "block-conflict" as const,
             blockRef: serializedBlockRef,
-            conflictMessage:
+            conflictMessage: conflictMessageFromDiagnostics(
+              heroResult.diagnostics,
               "Block could not be saved — please refresh and retry.",
+            ),
             editorModel: heroResult.currentEditorModel,
           };
         }
@@ -425,8 +461,10 @@ export async function action({ request, params }: Route.ActionArgs) {
           return {
             status: "block-conflict" as const,
             blockRef: serializedBlockRef,
-            conflictMessage:
+            conflictMessage: conflictMessageFromDiagnostics(
+              textSectionResult.diagnostics,
               "Block could not be saved — please refresh and retry.",
+            ),
             editorModel: textSectionResult.currentEditorModel,
           };
         }
@@ -537,8 +575,10 @@ export async function action({ request, params }: Route.ActionArgs) {
           return {
             status: "block-conflict" as const,
             blockRef: serializedBlockRef,
-            conflictMessage:
+            conflictMessage: conflictMessageFromDiagnostics(
+              imageResult.diagnostics,
               "Block could not be saved — please refresh and retry.",
+            ),
             editorModel: imageResult.currentEditorModel,
           };
         }
@@ -574,8 +614,10 @@ export async function action({ request, params }: Route.ActionArgs) {
       if (result.status === "conflict") {
         return {
           status: "conflict" as const,
-          conflictMessage:
+          conflictMessage: conflictMessageFromDiagnostics(
+            result.diagnostics,
             "Move could not be applied — the page may have changed.",
+          ),
           editorModel: result.currentEditorModel,
         };
       }
@@ -599,8 +641,10 @@ export async function action({ request, params }: Route.ActionArgs) {
       if (result.status === "conflict") {
         return {
           status: "conflict" as const,
-          conflictMessage:
+          conflictMessage: conflictMessageFromDiagnostics(
+            result.diagnostics,
             "Delete could not be applied — the block may be in a fixed slot.",
+          ),
           editorModel: result.currentEditorModel,
         };
       }
@@ -764,7 +808,9 @@ export default function AdminPageEditorRoute() {
   const pageRule = siteCmsCatalog.getPageRule(displayEditorModel.pageKey);
   const requiredLeadingCount = pageRule.requiredLeadingBlockTypes?.length ?? 0;
   const blocks = displayEditorModel.pageSnapshot.blocks;
-  const defaultSnapshot = siteCmsCatalog.readPageSnapshot(displayEditorModel.pageKey);
+  const defaultSnapshot = siteCmsCatalog.readPageSnapshot(
+    displayEditorModel.pageKey,
+  );
   const defaultBlockDataByType = new Map<BlockType, unknown[]>();
   for (const defaultBlock of defaultSnapshot.blocks) {
     const candidates = defaultBlockDataByType.get(defaultBlock.type);
@@ -957,6 +1003,10 @@ export default function AdminPageEditorRoute() {
             </form>
           ))}
       </section>
+
+      {displayEditorModel.status.kind === "persisted" ? (
+        <ResetToDefaultsSection revision={revision} />
+      ) : null}
     </main>
   );
 }
@@ -1106,5 +1156,43 @@ function BrokenBlockCard({
         ) : null}
       </div>
     </div>
+  );
+}
+
+function ResetToDefaultsSection({ revision }: { revision: number | null }) {
+  return (
+    <section className="flex flex-col gap-3 border-t pt-6">
+      <h2 className="text-lg font-semibold">Reset to defaults</h2>
+      <p className="text-muted-foreground text-sm">
+        Discard all persisted CMS content for this page. The page will return to
+        code-defined defaults until the next successful save.
+      </p>
+      <details className="rounded-md border border-dashed p-4">
+        <summary className="text-destructive cursor-pointer font-medium">
+          Confirm reset to defaults
+        </summary>
+        <div className="mt-4 flex flex-col gap-3">
+          <p className="text-sm">
+            This action cannot be undone. All customized content will be
+            removed.
+          </p>
+          <form method="post">
+            <input type="hidden" name="intent" value="reset-page" />
+            <input
+              type="hidden"
+              name="baseRevision"
+              value={revision === null ? "" : String(revision)}
+            />
+            <Button
+              type="submit"
+              variant="outline"
+              className="text-destructive"
+            >
+              Reset to defaults
+            </Button>
+          </form>
+        </div>
+      </details>
+    </section>
   );
 }

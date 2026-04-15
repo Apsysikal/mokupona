@@ -73,10 +73,13 @@ describe("admin cms pages", () => {
     cy.visitAndCheck("/admin/pages/home");
     cy.findByText(/recovered to defaults/i).should("be.visible");
     cy.findByText(/revision 1/i).should("be.visible");
-    cy.findByLabelText(/^title$/i).should("have.value", "broken persisted title");
-    cy.findByText(/recovered editor defaults from invalid persisted data/i).should(
-      "be.visible",
+    cy.findByLabelText(/^title$/i).should(
+      "have.value",
+      "broken persisted title",
     );
+    cy.findByText(
+      /recovered editor defaults from invalid persisted data/i,
+    ).should("be.visible");
     cy.get('form[id^="hero-block-editor-"]').within(() => {
       cy.findByLabelText(/^headline$/i)
         .should("have.value", "moku pona")
@@ -110,7 +113,7 @@ describe("admin cms pages", () => {
 
     cy.findByRole("button", { name: /save page/i }).click();
 
-    cy.findByText(/changed by someone else/i).should("be.visible");
+    cy.findByText(/page changed since last load/i).should("be.visible");
     cy.findByText(/revision 1/i).should("be.visible");
     cy.findByLabelText(/^title$/i).should("have.value", "remote current title");
     cy.findByLabelText(/^description$/i).should(
@@ -124,5 +127,59 @@ describe("admin cms pages", () => {
     cy.findByRole("button", { name: /save page/i }).click();
 
     cy.findByText(/revision 2/i).should("be.visible");
+  });
+
+  it("resets a persisted page to defaults and verifies the public page reverts", () => {
+    // First materialize the home page with a custom title
+    runUploadDbCommand("save-page-meta", {
+      pageKey: "home",
+      title: "Custom CMS Title",
+      description: "Custom CMS description",
+    });
+
+    // Verify the custom title is live on the public page
+    cy.visitAndCheck("/");
+    cy.title().should("eq", "Custom CMS Title");
+
+    // Now reset to defaults in admin
+    cy.visitAndCheck("/admin/pages/home");
+    cy.findByText(/persisted page/i).should("be.visible");
+    cy.findByText(/confirm reset to defaults/i).click();
+    cy.findByRole("button", { name: /reset to defaults/i }).click();
+
+    // After reset, page should be default-backed
+    cy.findByText(/default-backed page/i).should("be.visible");
+    cy.findByText(/reset to defaults/i).should("not.exist");
+
+    // Public page should revert to code defaults
+    cy.visitAndCheck("/");
+    cy.title().should("not.eq", "Custom CMS Title");
+  });
+
+  it("editing home through admin updates the public page end-to-end with diagnostic-driven feedback", () => {
+    cy.visitAndCheck("/admin/pages/home");
+    cy.findByText(/default-backed page/i).should("be.visible");
+
+    // Save a unique title to materialize the page
+    const uniqueTitle = `E2E Home Title ${Date.now()}`;
+    cy.findByLabelText(/^title$/i)
+      .clear()
+      .type(uniqueTitle);
+    cy.findByLabelText(/^description$/i)
+      .clear()
+      .type("e2e description");
+    cy.findByRole("button", { name: /save page/i }).click();
+
+    cy.findByText(/persisted page/i).should("be.visible");
+    cy.findByText(/revision 1/i).should("be.visible");
+
+    // Verify the public page reflects the saved content
+    cy.visitAndCheck("/");
+    cy.title().should("eq", uniqueTitle);
+    cy.get('meta[name="description"]').should(
+      "have.attr",
+      "content",
+      "e2e description",
+    );
   });
 });

@@ -7,6 +7,7 @@ export const cmsDiagnosticCodes = {
   pageMigrated: "page/migrated",
   pagePublicOmittedBrokenBlocks: "page/public-omitted-broken-blocks",
   pagePublicFallbackDefaults: "page/public-fallback-defaults",
+  mutationStaleWrite: "mutation/stale-write",
 } as const;
 
 export type CmsDiagnosticCode =
@@ -146,6 +147,14 @@ export function createPageMigratedDiagnostic(pageKey: string): CmsDiagnostic {
   return {
     code: cmsDiagnosticCodes.pageMigrated,
     message: `Persisted page "${pageKey}" was migrated at read time.`,
+  };
+}
+
+export function createMutationStaleWriteDiagnostic(): CmsDiagnostic {
+  return {
+    code: cmsDiagnosticCodes.mutationStaleWrite,
+    message:
+      "Page changed since last load. Refreshed with current values — please review and save again.",
   };
 }
 

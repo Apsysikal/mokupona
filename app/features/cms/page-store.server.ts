@@ -171,6 +171,9 @@ export function createPrismaCmsPageStore({
         };
       });
     },
+    async deletePage(pageKey) {
+      await prisma.page.delete({ where: { pageKey } });
+    },
     async updatePageMeta({ pageKey, expectedRevision, title, description }) {
       return prisma.$transaction(async (tx) => {
         const existingPage = await tx.page.findUnique({

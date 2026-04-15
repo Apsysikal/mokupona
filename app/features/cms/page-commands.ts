@@ -61,13 +61,20 @@ export type AddBlockCommand = {
   data: unknown;
 };
 
+export type ResetPageCommand = {
+  type: "reset-page";
+  pageKey: PageKey;
+  baseRevision: Revision | null;
+};
+
 export type PageCommand =
   | SetPageMetaCommand
   | SetBlockDataCommand
   | MoveBlockUpCommand
   | MoveBlockDownCommand
   | DeleteBlockCommand
-  | AddBlockCommand;
+  | AddBlockCommand
+  | ResetPageCommand;
 
 export type PageCommandBuilder = {
   setBlockData(
@@ -84,6 +91,7 @@ export type PageCommandBuilder = {
     blockVersion: number,
     data: unknown,
   ): AddBlockCommand;
+  resetPage(): ResetPageCommand;
 };
 
 export function createPageCommandBuilder(
@@ -120,6 +128,9 @@ export function createPageCommandBuilder(
         blockVersion,
         data,
       };
+    },
+    resetPage() {
+      return { type: "reset-page", pageKey, baseRevision };
     },
   };
 }
