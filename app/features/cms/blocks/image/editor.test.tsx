@@ -14,7 +14,7 @@ function makeCtx(
   overrides: Partial<BlockEditorContext<ImageBlockType["data"]>> = {},
 ): BlockEditorContext<ImageBlockType["data"]> {
   const data: ImageBlockType["data"] = {
-    image: { kind: "asset", src: "/accent-image.jpg", alt: "" },
+    image: { kind: "asset", src: "/accent-image.png", alt: "" },
     variant: "default",
   };
 
@@ -45,8 +45,8 @@ describe("ImageBlockEditor", () => {
   test("shows read-only image src for asset-backed image blocks", () => {
     const html = render(<ImageBlockEditor ctx={makeCtx()} />);
 
-    expect(html).toContain("/accent-image.jpg");
-    expect(html).not.toContain(`<input type="text" value="/accent-image.jpg"`);
+    expect(html).toContain("/accent-image.png");
+    expect(html).not.toContain(`<input type="text" value="/accent-image.png"`);
   });
 
   test("renders variant options", () => {

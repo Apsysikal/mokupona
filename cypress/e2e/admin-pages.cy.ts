@@ -77,11 +77,13 @@ describe("admin cms pages", () => {
     cy.findByText(/recovered editor defaults from invalid persisted data/i).should(
       "be.visible",
     );
-    cy.findByLabelText(/^headline$/i)
-      .should("have.value", "moku pona")
-      .clear()
-      .type("Recovered hero headline");
-    cy.findByRole("button", { name: /^save block$/i }).click();
+    cy.get('form[id^="hero-block-editor-"]').within(() => {
+      cy.findByLabelText(/^headline$/i)
+        .should("have.value", "moku pona")
+        .clear()
+        .type("Recovered hero headline");
+      cy.findByRole("button", { name: /^save block$/i }).click();
+    });
     cy.findByText(/revision 2/i).should("be.visible");
 
     cy.visitAndCheck("/");

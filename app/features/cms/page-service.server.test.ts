@@ -2365,7 +2365,7 @@ describe("createCmsPageService — add-block command", () => {
       data: {
         image: {
           kind: "asset",
-          src: "/accent-image.jpg",
+          src: "/accent-image.png",
           alt: "",
         },
         variant: "default",
@@ -2384,7 +2384,7 @@ describe("createCmsPageService — add-block command", () => {
     expect(newBlock.data).toEqual({
       image: {
         kind: "asset",
-        src: "/accent-image.jpg",
+        src: "/accent-image.png",
         alt: "",
       },
       variant: "default",

@@ -35,7 +35,7 @@ describe("image editor schema image behavior", () => {
 
   test("asset-backed images do not preselect replacement accessibility", () => {
     const defaults = getImageBlockEditorDefaultValue(
-      makeImageData({ kind: "asset", src: "/accent-image.jpg", alt: "" }),
+      makeImageData({ kind: "asset", src: "/accent-image.png", alt: "" }),
     );
 
     expect(defaults.imageAccessibility).toBe("");
@@ -43,7 +43,7 @@ describe("image editor schema image behavior", () => {
 
   test("builds an uploaded decorative image when replacing with upload", () => {
     const next = applyImageBlockEditorValue(
-      makeImageData({ kind: "asset", src: "/accent-image.jpg", alt: "" }),
+      makeImageData({ kind: "asset", src: "/accent-image.png", alt: "" }),
       {
         variant: "full-width",
         imageAction: "replace",
@@ -58,7 +58,7 @@ describe("image editor schema image behavior", () => {
       image: {
         kind: "uploaded",
         imageId: "img_123",
-        fallbackAssetSrc: "/accent-image.jpg",
+        fallbackAssetSrc: "/accent-image.png",
         decorative: true,
       },
     });
@@ -69,7 +69,7 @@ describe("image editor schema image behavior", () => {
       makeImageData({
         kind: "uploaded",
         imageId: "img_123",
-        fallbackAssetSrc: "/accent-image.jpg",
+        fallbackAssetSrc: "/accent-image.png",
         decorative: false,
         alt: "A plated dinner",
       }),
@@ -83,7 +83,7 @@ describe("image editor schema image behavior", () => {
 
     expect(next.image).toEqual({
       kind: "asset",
-      src: "/accent-image.jpg",
+      src: "/accent-image.png",
       alt: "",
     });
   });
@@ -93,7 +93,7 @@ describe("image editor schema image behavior", () => {
       makeImageData({
         kind: "uploaded",
         imageId: "img_123",
-        fallbackAssetSrc: "/accent-image.jpg",
+        fallbackAssetSrc: "/accent-image.png",
         decorative: false,
         alt: "A plated dinner",
       }),
@@ -108,7 +108,7 @@ describe("image editor schema image behavior", () => {
     expect(next.image).toEqual({
       kind: "uploaded",
       imageId: "img_123",
-      fallbackAssetSrc: "/accent-image.jpg",
+      fallbackAssetSrc: "/accent-image.png",
       decorative: true,
       alt: undefined,
     });
@@ -119,7 +119,7 @@ describe("image editor schema image behavior", () => {
       makeImageData({
         kind: "uploaded",
         imageId: "img_123",
-        fallbackAssetSrc: "/accent-image.jpg",
+        fallbackAssetSrc: "/accent-image.png",
         decorative: false,
         alt: "A plated dinner",
       }),

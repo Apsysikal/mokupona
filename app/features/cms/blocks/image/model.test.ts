@@ -7,7 +7,7 @@ import {
 
 describe("image block defaults", () => {
   test("uses the catalog asset that exists in public assets", () => {
-    expect(DEFAULT_IMAGE_BLOCK_ASSET_SRC).toBe("/accent-image.jpg");
+    expect(DEFAULT_IMAGE_BLOCK_ASSET_SRC).toBe("/accent-image.png");
   });
 
   test("creates default image block data with an asset image", () => {
