@@ -628,6 +628,60 @@ function applyDeleteBlock(
   });
 }
 
+function applyAddBlock(
+  { catalog, pageStore }: { catalog: CmsCatalog; pageStore: CmsPageStore },
+  command: AddBlockCommand,
+): Promise<ApplyPageCommandResult> {
+  let definition;
+  try {
+    definition = catalog.getBlockDefinition(command.blockType);
+  } catch (error) {
+    if (!(error instanceof UnknownBlockTypeError)) {
+      throw error;
+    }
+
+    return readResolvedPage({ catalog, pageStore }, command.pageKey).then((currentPage) => ({
+      status: "conflict" as const,
+      currentEditorModel: currentPage,
+      diagnostics: [],
+    }));
+  }
+
+  const pageRule = catalog.getPageRule(command.pageKey);
+  if (!pageRule.allowedBlockTypes.includes(command.blockType)) {
+    return readResolvedPage({ catalog, pageStore }, command.pageKey).then((currentPage) => ({
+      status: "conflict" as const,
+      currentEditorModel: currentPage,
+      diagnostics: [],
+    }));
+  }
+
+  const parseResult = definition.schema.safeParse(command.data);
+  if (!parseResult.success) {
+    return readResolvedPage({ catalog, pageStore }, command.pageKey).then((currentPage) => ({
+      status: "conflict" as const,
+      currentEditorModel: currentPage,
+      diagnostics: [],
+    }));
+  }
+  if (command.blockVersion !== definition.version) {
+    return readResolvedPage({ catalog, pageStore }, command.pageKey).then((currentPage) => ({
+      status: "conflict" as const,
+      currentEditorModel: currentPage,
+      diagnostics: [],
+    }));
+  }
+
+  const validatedData = parseResult.data;
+  const newBlock: BlockInstance = {
+    type: command.blockType,
+    version: definition.version,
+    data: validatedData,
+  };
+
+  return applyBlockMutation({ catalog, pageStore }, command, (blocks) => [...blocks, newBlock]);
+}
+
 export function createCmsPageService({
   catalog,
   pageStore,
@@ -635,59 +689,6 @@ export function createCmsPageService({
   catalog: CmsCatalog;
   pageStore: CmsPageStore;
 }): CmsPageService {
-  const applyAddBlock = (
-    command: AddBlockCommand,
-  ): Promise<ApplyPageCommandResult> => {
-    let definition;
-    try {
-      definition = catalog.getBlockDefinition(command.blockType);
-    } catch (error) {
-      if (!(error instanceof UnknownBlockTypeError)) {
-        throw error;
-      }
-
-      return readResolvedPage({ catalog, pageStore }, command.pageKey).then((currentPage) => ({
-        status: "conflict" as const,
-        currentEditorModel: currentPage,
-        diagnostics: [],
-      }));
-    }
-
-    const pageRule = catalog.getPageRule(command.pageKey);
-    if (!pageRule.allowedBlockTypes.includes(command.blockType)) {
-      return readResolvedPage({ catalog, pageStore }, command.pageKey).then((currentPage) => ({
-        status: "conflict" as const,
-        currentEditorModel: currentPage,
-        diagnostics: [],
-      }));
-    }
-
-    const parseResult = definition.schema.safeParse(command.data);
-    if (!parseResult.success) {
-      return readResolvedPage({ catalog, pageStore }, command.pageKey).then((currentPage) => ({
-        status: "conflict" as const,
-        currentEditorModel: currentPage,
-        diagnostics: [],
-      }));
-    }
-    if (command.blockVersion !== definition.version) {
-      return readResolvedPage({ catalog, pageStore }, command.pageKey).then((currentPage) => ({
-        status: "conflict" as const,
-        currentEditorModel: currentPage,
-        diagnostics: [],
-      }));
-    }
-
-    const validatedData = parseResult.data;
-    const newBlock: BlockInstance = {
-      type: command.blockType,
-      version: definition.version,
-      data: validatedData,
-    };
-
-    return applyBlockMutation({ catalog, pageStore }, command, (blocks) => [...blocks, newBlock]);
-  };
-
   const applySetPageMeta = async (
     command: SetPageMetaCommand,
   ): Promise<ApplyPageCommandResult> => {
@@ -918,7 +919,7 @@ export function createCmsPageService({
         case "delete-block":
           return applyDeleteBlock({ catalog, pageStore }, command);
         case "add-block":
-          return applyAddBlock(command);
+          return applyAddBlock({ catalog, pageStore }, command);
         case "reset-page":
           return applyResetPage(command);
       }
