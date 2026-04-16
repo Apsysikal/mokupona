@@ -189,6 +189,47 @@ function resolvedPageFromPersisted(
   };
 }
 
+function hasValidRequiredLeadingBlocks(
+  catalog: CmsCatalog,
+  pageKey: PageKey,
+  blocks: readonly BlockInstance[],
+): boolean {
+  const requiredLeading = catalog.getPageRule(pageKey).requiredLeadingBlockTypes;
+  if (!requiredLeading || requiredLeading.length === 0) {
+    return true;
+  }
+  return requiredLeading.every(
+    (requiredType, index) => blocks[index]?.type === requiredType,
+  );
+}
+
+function getRequiredLeadingCount(catalog: CmsCatalog, pageKey: PageKey): number {
+  return catalog.getPageRule(pageKey).requiredLeadingBlockTypes?.length ?? 0;
+}
+
+function canMutateBlockAtIndex(
+  index: number,
+  requiredLeadingCount: number,
+): boolean {
+  return index >= requiredLeadingCount;
+}
+
+function canMoveBlockUp(index: number, requiredLeadingCount: number): boolean {
+  return index > 0 && canMutateBlockAtIndex(index - 1, requiredLeadingCount);
+}
+
+function canMoveBlockDown(
+  index: number,
+  blockCount: number,
+  requiredLeadingCount: number,
+): boolean {
+  return (
+    index >= 0 &&
+    index < blockCount - 1 &&
+    canMutateBlockAtIndex(index, requiredLeadingCount)
+  );
+}
+
 export function createCmsPageService({
   catalog,
   pageStore,
@@ -196,21 +237,6 @@ export function createCmsPageService({
   catalog: CmsCatalog;
   pageStore: CmsPageStore;
 }): CmsPageService {
-  const hasValidRequiredLeadingBlocks = (
-    pageKey: PageKey,
-    blocks: readonly BlockInstance[],
-  ) => {
-    const requiredLeading =
-      catalog.getPageRule(pageKey).requiredLeadingBlockTypes;
-    if (!requiredLeading || requiredLeading.length === 0) {
-      return true;
-    }
-
-    return requiredLeading.every(
-      (requiredType, index) => blocks[index]?.type === requiredType,
-    );
-  };
-
   const normalizePersistedBlocks = ({
     pageKey,
     blocks,
@@ -374,7 +400,7 @@ export function createCmsPageService({
     if (migratedSnapshot.migrated) {
       diagnostics.push(createPageMigratedDiagnostic(pageKey));
     }
-    if (!hasValidRequiredLeadingBlocks(pageKey, normalized.publicBlocks)) {
+    if (!hasValidRequiredLeadingBlocks(catalog, pageKey, normalized.publicBlocks)) {
       diagnostics.push(createPagePublicFallbackDefaultsDiagnostic());
     }
 
@@ -550,35 +576,12 @@ export function createCmsPageService({
     });
   };
 
-  const getRequiredLeadingCount = (pageKey: PageKey): number =>
-    catalog.getPageRule(pageKey).requiredLeadingBlockTypes?.length ?? 0;
-
-  const canMutateBlockAtIndex = (
-    index: number,
-    requiredLeadingCount: number,
-  ): boolean => index >= requiredLeadingCount;
-
-  const canMoveBlockUp = (
-    index: number,
-    requiredLeadingCount: number,
-  ): boolean =>
-    index > 0 && canMutateBlockAtIndex(index - 1, requiredLeadingCount);
-
-  const canMoveBlockDown = (
-    index: number,
-    blockCount: number,
-    requiredLeadingCount: number,
-  ): boolean =>
-    index >= 0 &&
-    index < blockCount - 1 &&
-    canMutateBlockAtIndex(index, requiredLeadingCount);
-
   const applyMoveBlockUp = (
     command: MoveBlockUpCommand,
   ): Promise<ApplyPageCommandResult> => {
     return applyBlockMutation(command, (blocks) => {
       const index = resolveBlockIndex(blocks, command.ref);
-      const requiredLeadingCount = getRequiredLeadingCount(command.pageKey);
+      const requiredLeadingCount = getRequiredLeadingCount(catalog, command.pageKey);
       if (!canMoveBlockUp(index, requiredLeadingCount)) return null;
       const newIndex = index - 1;
 
@@ -593,7 +596,7 @@ export function createCmsPageService({
   ): Promise<ApplyPageCommandResult> => {
     return applyBlockMutation(command, (blocks) => {
       const index = resolveBlockIndex(blocks, command.ref);
-      const requiredLeadingCount = getRequiredLeadingCount(command.pageKey);
+      const requiredLeadingCount = getRequiredLeadingCount(catalog, command.pageKey);
       if (!canMoveBlockDown(index, blocks.length, requiredLeadingCount)) {
         return null;
       }
@@ -612,7 +615,7 @@ export function createCmsPageService({
   ): Promise<ApplyPageCommandResult> => {
     return applyBlockMutation(command, (blocks) => {
       const index = resolveBlockIndex(blocks, command.ref);
-      const requiredLeadingCount = getRequiredLeadingCount(command.pageKey);
+      const requiredLeadingCount = getRequiredLeadingCount(catalog, command.pageKey);
       if (!canMutateBlockAtIndex(index, requiredLeadingCount)) return null;
 
       const updated = [...blocks];
@@ -854,7 +857,7 @@ export function createCmsPageService({
         return !omittedBlockIndexes.has(index);
       });
 
-      if (!hasValidRequiredLeadingBlocks(pageKey, publicBlocks)) {
+      if (!hasValidRequiredLeadingBlocks(catalog, pageKey, publicBlocks)) {
         const fallbackSnapshot = catalog.readPageSnapshot(pageKey);
         const projection = catalog.projectPublic(fallbackSnapshot, context);
         return {
