@@ -821,11 +821,13 @@ export function createCmsPageService({
   catalog: CmsCatalog;
   pageStore: CmsPageStore;
 }): CmsPageService {
+  const deps = { catalog, pageStore };
+
   return {
     async listEditablePages() {
       return Promise.all(
         catalog.listPageKeys().map(async (pageKey) => {
-          const resolved = await readResolvedPage({ catalog, pageStore }, pageKey);
+          const resolved = await readResolvedPage(deps, pageKey);
           return {
             pageKey,
             title: resolved.pageSnapshot.title,
@@ -839,10 +841,10 @@ export function createCmsPageService({
       return catalog.listPageKeys().includes(pageKey);
     },
     async readPage(pageKey) {
-      return readResolvedPage({ catalog, pageStore }, pageKey);
+      return readResolvedPage(deps, pageKey);
     },
     async readPublicProjection(pageKey, context) {
-      const resolved = await readResolvedPage({ catalog, pageStore }, pageKey);
+      const resolved = await readResolvedPage(deps, pageKey);
       if (resolved.status.kind === "default-backed") {
         const projection = catalog.projectPublic(
           resolved.pageSnapshot,
@@ -906,24 +908,24 @@ export function createCmsPageService({
       return { ...projection, diagnostics: publicDiagnostics };
     },
     async readEditorModel(pageKey) {
-      return readResolvedPage({ catalog, pageStore }, pageKey);
+      return readResolvedPage(deps, pageKey);
     },
     async applyPageCommand(command) {
       switch (command.type) {
         case "set-page-meta":
-          return applySetPageMeta({ catalog, pageStore }, command);
+          return applySetPageMeta(deps, command);
         case "set-block-data":
-          return applySetBlockData({ catalog, pageStore }, command);
+          return applySetBlockData(deps, command);
         case "move-block-up":
-          return applyMoveBlockUp({ catalog, pageStore }, command);
+          return applyMoveBlockUp(deps, command);
         case "move-block-down":
-          return applyMoveBlockDown({ catalog, pageStore }, command);
+          return applyMoveBlockDown(deps, command);
         case "delete-block":
-          return applyDeleteBlock({ catalog, pageStore }, command);
+          return applyDeleteBlock(deps, command);
         case "add-block":
-          return applyAddBlock({ catalog, pageStore }, command);
+          return applyAddBlock(deps, command);
         case "reset-page":
-          return applyResetPage({ catalog, pageStore }, command);
+          return applyResetPage(deps, command);
       }
     },
   };
