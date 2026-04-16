@@ -1,18 +1,18 @@
 import { z } from "zod/v4";
 
-import type { BlockType } from "../types";
+import type { BlockBaseType, BlockType, BlockVersion } from "../types";
 
 const BLOCK_TYPE: BlockType = "text-section";
-const BLOCK_VERSION = 1;
+const BLOCK_VERSION: BlockVersion = 1;
 
 export const TextSectionBlockDataSchema = z.object({
   headline: z.string(),
   body: z.string(),
-  variant: z.literal(["plain", "slanted"]),
+  variant: z.enum(["plain", "slanted"]),
 });
 
-export type TextSectionBlockType = {
-  type: typeof BLOCK_TYPE;
-  version: typeof BLOCK_VERSION;
-  data: z.infer<typeof TextSectionBlockDataSchema>;
-};
+export type TextSectionBlockType = BlockBaseType<
+  typeof BLOCK_TYPE,
+  typeof BLOCK_VERSION,
+  z.infer<typeof TextSectionBlockDataSchema>
+>;
