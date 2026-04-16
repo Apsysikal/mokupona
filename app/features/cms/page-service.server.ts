@@ -682,59 +682,14 @@ function applyAddBlock(
   return applyBlockMutation({ catalog, pageStore }, command, (blocks) => [...blocks, newBlock]);
 }
 
-export function createCmsPageService({
-  catalog,
-  pageStore,
-}: {
-  catalog: CmsCatalog;
-  pageStore: CmsPageStore;
-}): CmsPageService {
-  const applySetPageMeta = async (
-    command: SetPageMetaCommand,
-  ): Promise<ApplyPageCommandResult> => {
-    const currentPage = await readResolvedPage({ catalog, pageStore }, command.pageKey);
+async function applySetPageMeta(
+  { catalog, pageStore }: { catalog: CmsCatalog; pageStore: CmsPageStore },
+  command: SetPageMetaCommand,
+): Promise<ApplyPageCommandResult> {
+  const currentPage = await readResolvedPage({ catalog, pageStore }, command.pageKey);
 
-    if (currentPage.status.kind === "default-backed") {
-      if (command.baseRevision !== null) {
-        return {
-          status: "conflict",
-          currentEditorModel: currentPage,
-          diagnostics: [createMutationStaleWriteDiagnostic()],
-        };
-      }
-
-      const writeResult = await pageStore.materializePage({
-        page: {
-          pageKey: command.pageKey,
-          title: command.title,
-          description: command.description,
-          blocks: currentPage.pageSnapshot.blocks,
-        },
-      });
-
-      if (writeResult.status === "conflict") {
-        const refreshed = await readResolvedPage({ catalog, pageStore }, command.pageKey);
-        return {
-          status: "conflict",
-          currentEditorModel: refreshed,
-          diagnostics: [],
-        };
-      }
-
-      return {
-        status: "saved",
-        materialization: writeResult.materialization,
-        editorModel: resolvedPageFromPersisted(
-          command.pageKey,
-          writeResult.persistedPage,
-        ),
-      };
-    }
-
-    if (
-      command.baseRevision === null ||
-      command.baseRevision !== currentPage.status.revision
-    ) {
+  if (currentPage.status.kind === "default-backed") {
+    if (command.baseRevision !== null) {
       return {
         status: "conflict",
         currentEditorModel: currentPage,
@@ -742,23 +697,14 @@ export function createCmsPageService({
       };
     }
 
-    const hasRuntimeMigrations = currentPage.diagnostics.some((diagnostic) =>
-      isRuntimeMigrationDiagnosticCode(diagnostic.code),
-    );
-    const writeResult = hasRuntimeMigrations
-      ? await pageStore.updatePage({
-          pageKey: command.pageKey,
-          expectedRevision: command.baseRevision,
-          title: command.title,
-          description: command.description,
-          blocks: currentPage.pageSnapshot.blocks,
-        })
-      : await pageStore.updatePageMeta({
-          pageKey: command.pageKey,
-          expectedRevision: command.baseRevision,
-          title: command.title,
-          description: command.description,
-        });
+    const writeResult = await pageStore.materializePage({
+      page: {
+        pageKey: command.pageKey,
+        title: command.title,
+        description: command.description,
+        blocks: currentPage.pageSnapshot.blocks,
+      },
+    });
 
     if (writeResult.status === "conflict") {
       const refreshed = await readResolvedPage({ catalog, pageStore }, command.pageKey);
@@ -777,8 +723,63 @@ export function createCmsPageService({
         writeResult.persistedPage,
       ),
     };
-  };
+  }
 
+  if (
+    command.baseRevision === null ||
+    command.baseRevision !== currentPage.status.revision
+  ) {
+    return {
+      status: "conflict",
+      currentEditorModel: currentPage,
+      diagnostics: [createMutationStaleWriteDiagnostic()],
+    };
+  }
+
+  const hasRuntimeMigrations = currentPage.diagnostics.some((diagnostic) =>
+    isRuntimeMigrationDiagnosticCode(diagnostic.code),
+  );
+  const writeResult = hasRuntimeMigrations
+    ? await pageStore.updatePage({
+        pageKey: command.pageKey,
+        expectedRevision: command.baseRevision,
+        title: command.title,
+        description: command.description,
+        blocks: currentPage.pageSnapshot.blocks,
+      })
+    : await pageStore.updatePageMeta({
+        pageKey: command.pageKey,
+        expectedRevision: command.baseRevision,
+        title: command.title,
+        description: command.description,
+      });
+
+  if (writeResult.status === "conflict") {
+    const refreshed = await readResolvedPage({ catalog, pageStore }, command.pageKey);
+    return {
+      status: "conflict",
+      currentEditorModel: refreshed,
+      diagnostics: [],
+    };
+  }
+
+  return {
+    status: "saved",
+    materialization: writeResult.materialization,
+    editorModel: resolvedPageFromPersisted(
+      command.pageKey,
+      writeResult.persistedPage,
+    ),
+  };
+}
+
+export function createCmsPageService({
+  catalog,
+  pageStore,
+}: {
+  catalog: CmsCatalog;
+  pageStore: CmsPageStore;
+}): CmsPageService {
   const applyResetPage = async (
     command: ResetPageCommand,
   ): Promise<ApplyPageCommandResult> => {
@@ -909,7 +910,7 @@ export function createCmsPageService({
     async applyPageCommand(command) {
       switch (command.type) {
         case "set-page-meta":
-          return applySetPageMeta(command);
+          return applySetPageMeta({ catalog, pageStore }, command);
         case "set-block-data":
           return applySetBlockData({ catalog, pageStore }, command);
         case "move-block-up":
