@@ -158,6 +158,19 @@ function defaultBackedPage(
   };
 }
 
+/** Resolve a BlockRef to an index in the blocks array. Returns -1 if not found. */
+function resolveBlockIndex(
+  blocks: readonly BlockInstance[],
+  ref: BlockRef,
+): number {
+  switch (ref.kind) {
+    case "definition-key":
+      return blocks.findIndex((b) => b.definitionKey === ref.definitionKey);
+    case "page-block-id":
+      return blocks.findIndex((b) => b.pageBlockId === ref.pageBlockId);
+  }
+}
+
 function resolvedPageFromPersisted(
   pageKey: PageKey,
   persistedPage: PersistedPageRecord,
@@ -377,19 +390,6 @@ export function createCmsPageService({
       },
       diagnostics,
     };
-  };
-
-  /** Resolve a BlockRef to an index in the blocks array. Returns -1 if not found. */
-  const resolveBlockIndex = (
-    blocks: readonly BlockInstance[],
-    ref: BlockRef,
-  ): number => {
-    switch (ref.kind) {
-      case "definition-key":
-        return blocks.findIndex((b) => b.definitionKey === ref.definitionKey);
-      case "page-block-id":
-        return blocks.findIndex((b) => b.pageBlockId === ref.pageBlockId);
-    }
   };
 
   /**
