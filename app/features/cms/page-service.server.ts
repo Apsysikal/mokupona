@@ -372,6 +372,51 @@ function normalizePersistedBlocks(
     return { adminBlocks, publicBlocks, diagnostics };
 }
 
+async function readResolvedPage(
+  { catalog, pageStore }: { catalog: CmsCatalog; pageStore: CmsPageStore },
+  pageKey: PageKey,
+): Promise<ResolvedPage> {
+  const persistedPage = await pageStore.readPage(pageKey);
+
+  if (!persistedPage) {
+    return defaultBackedPage(catalog, pageKey);
+  }
+
+  const migratedSnapshot = catalog.migratePageSnapshot({
+    snapshot: {
+      pageKey,
+      provenance: "persisted",
+      title: persistedPage.title,
+      description: persistedPage.description,
+      blocks: persistedPage.blocks,
+    },
+  });
+  const normalized = normalizePersistedBlocks(catalog, {
+    pageKey,
+    blocks: migratedSnapshot.snapshot.blocks,
+  });
+  const diagnostics = [...normalized.diagnostics];
+  if (migratedSnapshot.migrated) {
+    diagnostics.push(createPageMigratedDiagnostic(pageKey));
+  }
+  if (!hasValidRequiredLeadingBlocks(catalog, pageKey, normalized.publicBlocks)) {
+    diagnostics.push(createPagePublicFallbackDefaultsDiagnostic());
+  }
+
+  return {
+    pageKey,
+    status: { kind: "persisted", revision: persistedPage.revision },
+    pageSnapshot: {
+      pageKey,
+      provenance: "persisted",
+      title: migratedSnapshot.snapshot.title,
+      description: migratedSnapshot.snapshot.description,
+      blocks: normalized.adminBlocks,
+    },
+    diagnostics,
+  };
+}
+
 export function createCmsPageService({
   catalog,
   pageStore,
@@ -379,48 +424,6 @@ export function createCmsPageService({
   catalog: CmsCatalog;
   pageStore: CmsPageStore;
 }): CmsPageService {
-  const readResolvedPage = async (pageKey: PageKey): Promise<ResolvedPage> => {
-    const persistedPage = await pageStore.readPage(pageKey);
-
-    if (!persistedPage) {
-      return defaultBackedPage(catalog, pageKey);
-    }
-
-    const migratedSnapshot = catalog.migratePageSnapshot({
-      snapshot: {
-        pageKey,
-        provenance: "persisted",
-        title: persistedPage.title,
-        description: persistedPage.description,
-        blocks: persistedPage.blocks,
-      },
-    });
-    const normalized = normalizePersistedBlocks(catalog, {
-      pageKey,
-      blocks: migratedSnapshot.snapshot.blocks,
-    });
-    const diagnostics = [...normalized.diagnostics];
-    if (migratedSnapshot.migrated) {
-      diagnostics.push(createPageMigratedDiagnostic(pageKey));
-    }
-    if (!hasValidRequiredLeadingBlocks(catalog, pageKey, normalized.publicBlocks)) {
-      diagnostics.push(createPagePublicFallbackDefaultsDiagnostic());
-    }
-
-    return {
-      pageKey,
-      status: { kind: "persisted", revision: persistedPage.revision },
-      pageSnapshot: {
-        pageKey,
-        provenance: "persisted",
-        title: migratedSnapshot.snapshot.title,
-        description: migratedSnapshot.snapshot.description,
-        blocks: normalized.adminBlocks,
-      },
-      diagnostics,
-    };
-  };
-
   /**
    * Apply a block mutation to a persisted snapshot, persist it, and return the result.
    * Handles materialization if the page is still default-backed.
@@ -434,7 +437,7 @@ export function createCmsPageService({
       | AddBlockCommand,
     mutate: (blocks: BlockInstance[]) => BlockInstance[] | null,
   ): Promise<ApplyPageCommandResult> => {
-    const currentPage = await readResolvedPage(command.pageKey);
+    const currentPage = await readResolvedPage({ catalog, pageStore }, command.pageKey);
 
     // Check concurrency
     if (currentPage.status.kind === "default-backed") {
@@ -481,7 +484,7 @@ export function createCmsPageService({
       });
 
       if (writeResult.status === "conflict") {
-        const refreshed = await readResolvedPage(command.pageKey);
+        const refreshed = await readResolvedPage({ catalog, pageStore }, command.pageKey);
         return {
           status: "conflict",
           currentEditorModel: refreshed,
@@ -508,7 +511,7 @@ export function createCmsPageService({
     });
 
     if (writeResult.status === "conflict") {
-      const refreshed = await readResolvedPage(command.pageKey);
+      const refreshed = await readResolvedPage({ catalog, pageStore }, command.pageKey);
       return {
         status: "conflict",
         currentEditorModel: refreshed,
@@ -539,7 +542,7 @@ export function createCmsPageService({
 
       return {
         status: "conflict",
-        currentEditorModel: await readResolvedPage(command.pageKey),
+        currentEditorModel: await readResolvedPage({ catalog, pageStore }, command.pageKey),
         diagnostics: [],
       };
     }
@@ -548,14 +551,14 @@ export function createCmsPageService({
     if (!parseResult.success) {
       return {
         status: "conflict",
-        currentEditorModel: await readResolvedPage(command.pageKey),
+        currentEditorModel: await readResolvedPage({ catalog, pageStore }, command.pageKey),
         diagnostics: [],
       };
     }
     if (command.blockVersion !== definition.version) {
       return {
         status: "conflict",
-        currentEditorModel: await readResolvedPage(command.pageKey),
+        currentEditorModel: await readResolvedPage({ catalog, pageStore }, command.pageKey),
         diagnostics: [],
       };
     }
@@ -638,7 +641,7 @@ export function createCmsPageService({
         throw error;
       }
 
-      return readResolvedPage(command.pageKey).then((currentPage) => ({
+      return readResolvedPage({ catalog, pageStore }, command.pageKey).then((currentPage) => ({
         status: "conflict" as const,
         currentEditorModel: currentPage,
         diagnostics: [],
@@ -647,7 +650,7 @@ export function createCmsPageService({
 
     const pageRule = catalog.getPageRule(command.pageKey);
     if (!pageRule.allowedBlockTypes.includes(command.blockType)) {
-      return readResolvedPage(command.pageKey).then((currentPage) => ({
+      return readResolvedPage({ catalog, pageStore }, command.pageKey).then((currentPage) => ({
         status: "conflict" as const,
         currentEditorModel: currentPage,
         diagnostics: [],
@@ -656,14 +659,14 @@ export function createCmsPageService({
 
     const parseResult = definition.schema.safeParse(command.data);
     if (!parseResult.success) {
-      return readResolvedPage(command.pageKey).then((currentPage) => ({
+      return readResolvedPage({ catalog, pageStore }, command.pageKey).then((currentPage) => ({
         status: "conflict" as const,
         currentEditorModel: currentPage,
         diagnostics: [],
       }));
     }
     if (command.blockVersion !== definition.version) {
-      return readResolvedPage(command.pageKey).then((currentPage) => ({
+      return readResolvedPage({ catalog, pageStore }, command.pageKey).then((currentPage) => ({
         status: "conflict" as const,
         currentEditorModel: currentPage,
         diagnostics: [],
@@ -683,7 +686,7 @@ export function createCmsPageService({
   const applySetPageMeta = async (
     command: SetPageMetaCommand,
   ): Promise<ApplyPageCommandResult> => {
-    const currentPage = await readResolvedPage(command.pageKey);
+    const currentPage = await readResolvedPage({ catalog, pageStore }, command.pageKey);
 
     if (currentPage.status.kind === "default-backed") {
       if (command.baseRevision !== null) {
@@ -704,7 +707,7 @@ export function createCmsPageService({
       });
 
       if (writeResult.status === "conflict") {
-        const refreshed = await readResolvedPage(command.pageKey);
+        const refreshed = await readResolvedPage({ catalog, pageStore }, command.pageKey);
         return {
           status: "conflict",
           currentEditorModel: refreshed,
@@ -752,7 +755,7 @@ export function createCmsPageService({
         });
 
     if (writeResult.status === "conflict") {
-      const refreshed = await readResolvedPage(command.pageKey);
+      const refreshed = await readResolvedPage({ catalog, pageStore }, command.pageKey);
       return {
         status: "conflict",
         currentEditorModel: refreshed,
@@ -773,7 +776,7 @@ export function createCmsPageService({
   const applyResetPage = async (
     command: ResetPageCommand,
   ): Promise<ApplyPageCommandResult> => {
-    const currentPage = await readResolvedPage(command.pageKey);
+    const currentPage = await readResolvedPage({ catalog, pageStore }, command.pageKey);
 
     if (currentPage.status.kind === "default-backed") {
       if (command.baseRevision !== null) {
@@ -814,7 +817,7 @@ export function createCmsPageService({
     async listEditablePages() {
       return Promise.all(
         catalog.listPageKeys().map(async (pageKey) => {
-          const resolved = await readResolvedPage(pageKey);
+          const resolved = await readResolvedPage({ catalog, pageStore }, pageKey);
           return {
             pageKey,
             title: resolved.pageSnapshot.title,
@@ -828,10 +831,10 @@ export function createCmsPageService({
       return catalog.listPageKeys().includes(pageKey);
     },
     async readPage(pageKey) {
-      return readResolvedPage(pageKey);
+      return readResolvedPage({ catalog, pageStore }, pageKey);
     },
     async readPublicProjection(pageKey, context) {
-      const resolved = await readResolvedPage(pageKey);
+      const resolved = await readResolvedPage({ catalog, pageStore }, pageKey);
       if (resolved.status.kind === "default-backed") {
         const projection = catalog.projectPublic(
           resolved.pageSnapshot,
@@ -895,7 +898,7 @@ export function createCmsPageService({
       return { ...projection, diagnostics: publicDiagnostics };
     },
     async readEditorModel(pageKey) {
-      return readResolvedPage(pageKey);
+      return readResolvedPage({ catalog, pageStore }, pageKey);
     },
     async applyPageCommand(command) {
       switch (command.type) {
