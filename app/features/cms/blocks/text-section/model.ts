@@ -16,3 +16,5 @@ export type TextSectionBlockType = BlockBaseType<
   typeof BLOCK_VERSION,
   z.infer<typeof TextSectionBlockDataSchema>
 >;
+
+export type TextSectionBlockData = TextSectionBlockType["data"];
