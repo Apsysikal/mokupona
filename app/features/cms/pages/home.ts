@@ -1,20 +1,28 @@
+import type { MetaDescriptor } from "react-router";
+
 import type { HeroBlockType } from "../blocks/hero";
-import {
-  createDefaultImageBlockData,
-  type ImageBlockType,
-} from "../blocks/image";
+import type { ImageBlockType } from "../blocks/image";
+import type { CmsBlock } from "../blocks/registry";
 import type { TextSectionBlockType } from "../blocks/text-section";
 import { definePageDefinition } from "../catalog";
 
-const heroBlock: HeroBlockType = {
+type HomePageMetaInput = {
+  domainUrl?: string;
+  pathname: string;
+};
+
+const DEFAULT_HOME_PAGE_DESCRIPTION =
+  "A dinner society in Zurich, bringing people together through shared meals, stories, and the joy of discovery.";
+const HOME_PAGE_TITLE = "moku pona";
+
+const homeHeroBlock: HeroBlockType = {
   definitionKey: "hero-main",
   type: "hero",
   version: 1,
   data: {
     eyebrow: "our next event is on may 9th",
     headline: "moku pona",
-    description:
-      "A dinner society in Zurich, bringing people together through shared meals, stories, and the joy of discovery.",
+    description: DEFAULT_HOME_PAGE_DESCRIPTION,
     actions: [{ href: "/dinners", label: "join a dinner" }],
     image: {
       kind: "asset",
@@ -23,7 +31,7 @@ const heroBlock: HeroBlockType = {
   },
 };
 
-const visionBlock: TextSectionBlockType = {
+const homeVisionBlock: TextSectionBlockType = {
   type: "text-section",
   version: 1,
   data: {
@@ -33,16 +41,20 @@ const visionBlock: TextSectionBlockType = {
   },
 };
 
-const imageBlock: ImageBlockType = {
+const homeImageBlock: ImageBlockType = {
   type: "image",
   version: 1,
   data: {
-    ...createDefaultImageBlockData(),
+    image: {
+      kind: "asset",
+      src: "/accent-image.png",
+      alt: "",
+    },
     variant: "full-width",
   },
 };
 
-const differenceBlock: TextSectionBlockType = {
+const homeDifferenceBlock: TextSectionBlockType = {
   type: "text-section",
   version: 1,
   data: {
@@ -52,7 +64,7 @@ const differenceBlock: TextSectionBlockType = {
   },
 };
 
-const aboutBlock: TextSectionBlockType = {
+const homeAboutBlock: TextSectionBlockType = {
   type: "text-section",
   version: 1,
   data: {
@@ -62,14 +74,47 @@ const aboutBlock: TextSectionBlockType = {
   },
 };
 
+export const homePageBlocks: readonly CmsBlock[] = [
+  homeHeroBlock,
+  homeVisionBlock,
+  homeImageBlock,
+  homeDifferenceBlock,
+  homeAboutBlock,
+];
+
+export function getHomePageMeta({
+  domainUrl,
+  pathname,
+}: HomePageMetaInput): MetaDescriptor[] {
+  const metaTags: MetaDescriptor[] = [
+    { title: HOME_PAGE_TITLE },
+    {
+      name: "description",
+      content: DEFAULT_HOME_PAGE_DESCRIPTION,
+    },
+  ];
+
+  if (!domainUrl) return metaTags;
+
+  const imageUrl = new URL("/landing-page-default.jpg", domainUrl);
+  const currentUrl = new URL(pathname, domainUrl);
+
+  return [
+    ...metaTags,
+    { property: "og:title", content: HOME_PAGE_TITLE },
+    { property: "og:type", content: "website" },
+    { property: "og:image", content: imageUrl.toString() },
+    { property: "og:url", content: currentUrl.toString() },
+  ];
+}
+
 export const homePageDefinition = definePageDefinition({
   pageKey: "home",
   defaults: {
-    title: "moku pona",
-    description:
-      "A dinner society in Zurich, bringing people together through shared meals, stories, and the joy of discovery.",
+    title: HOME_PAGE_TITLE,
+    description: DEFAULT_HOME_PAGE_DESCRIPTION,
     shareImageSrc: "/landing-page-default.jpg",
-    blocks: [heroBlock, visionBlock, imageBlock, differenceBlock, aboutBlock],
+    blocks: [...homePageBlocks],
   },
   rules: {
     allowedBlockTypes: ["hero", "text-section", "image"],

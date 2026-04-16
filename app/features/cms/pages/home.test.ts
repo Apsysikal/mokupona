@@ -1,32 +1,31 @@
-import { expect, test } from "vitest";
+import { describe, expect, test } from "vitest";
 
-import { heroBlockDefinition } from "../blocks/hero";
-import { imageBlockDefinition } from "../blocks/image";
-import { textSectionBlockDefinition } from "../blocks/text-section";
-import { createCmsCatalog } from "../catalog";
+import { getHomePageMeta, homePageBlocks } from "./home";
 
-import { homePageDefinition } from "./home";
-
-test("home page definition keeps the fixed hero block in the first slot", () => {
-  const catalog = createCmsCatalog({
-    blocks: [
-      heroBlockDefinition,
-      textSectionBlockDefinition,
-      imageBlockDefinition,
-    ],
-    pages: [homePageDefinition],
+describe("home page definition", () => {
+  test("registers all default home page blocks", () => {
+    expect(homePageBlocks.map((block) => block.type)).toEqual([
+      "hero",
+      "text-section",
+      "image",
+      "text-section",
+      "text-section",
+    ]);
   });
-  const snapshot = catalog.readPageSnapshot("home");
 
-  expect(snapshot.blocks[0]).toMatchObject({
-    definitionKey: "hero-main",
-    type: "hero",
+  test("builds OpenGraph metadata when a domain is available", () => {
+    const meta = getHomePageMeta({
+      domainUrl: "https://example.com",
+      pathname: "/",
+    });
+
+    expect(meta).toContainEqual({
+      property: "og:image",
+      content: "https://example.com/landing-page-default.jpg",
+    });
+    expect(meta).toContainEqual({
+      property: "og:url",
+      content: "https://example.com/",
+    });
   });
-  expect(snapshot.blocks.map(({ type }) => type)).toEqual([
-    "hero",
-    "text-section",
-    "image",
-    "text-section",
-    "text-section",
-  ]);
 });

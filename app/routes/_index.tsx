@@ -16,12 +16,12 @@ export async function loader({ request }: Route.LoaderArgs) {
   return { projection };
 }
 
-export function meta({ data }: Route.MetaArgs) {
-  if (!data) {
+export function meta({ loaderData }: Route.MetaArgs) {
+  if (!loaderData) {
     return [];
   }
 
-  return data.projection.meta;
+  return loaderData.projection.meta;
 }
 
 export default function Index() {
