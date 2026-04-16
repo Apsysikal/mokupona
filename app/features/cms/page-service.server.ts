@@ -145,6 +145,37 @@ export type CmsPageService = {
   applyPageCommand(command: PageCommand): Promise<ApplyPageCommandResult>;
 };
 
+function defaultBackedPage(
+  catalog: CmsCatalog,
+  pageKey: PageKey,
+  diagnostics: readonly Diagnostic[] = [],
+): ResolvedPage {
+  return {
+    pageKey,
+    status: { kind: "default-backed", revision: null },
+    pageSnapshot: catalog.readPageSnapshot(pageKey),
+    diagnostics,
+  };
+}
+
+function resolvedPageFromPersisted(
+  pageKey: PageKey,
+  persistedPage: PersistedPageRecord,
+): ResolvedPage {
+  return {
+    pageKey,
+    status: { kind: "persisted", revision: persistedPage.revision },
+    pageSnapshot: {
+      pageKey,
+      provenance: "persisted",
+      title: persistedPage.title,
+      description: persistedPage.description,
+      blocks: structuredClone(persistedPage.blocks),
+    },
+    diagnostics: [],
+  };
+}
+
 export function createCmsPageService({
   catalog,
   pageStore,
@@ -152,16 +183,6 @@ export function createCmsPageService({
   catalog: CmsCatalog;
   pageStore: CmsPageStore;
 }): CmsPageService {
-  const defaultBackedPage = (
-    pageKey: PageKey,
-    diagnostics: readonly Diagnostic[] = [],
-  ): ResolvedPage => ({
-    pageKey,
-    status: { kind: "default-backed", revision: null },
-    pageSnapshot: catalog.readPageSnapshot(pageKey),
-    diagnostics,
-  });
-
   const hasValidRequiredLeadingBlocks = (
     pageKey: PageKey,
     blocks: readonly BlockInstance[],
@@ -320,7 +341,7 @@ export function createCmsPageService({
     const persistedPage = await pageStore.readPage(pageKey);
 
     if (!persistedPage) {
-      return defaultBackedPage(pageKey);
+      return defaultBackedPage(catalog, pageKey);
     }
 
     const migratedSnapshot = catalog.migratePageSnapshot({
@@ -357,22 +378,6 @@ export function createCmsPageService({
       diagnostics,
     };
   };
-
-  const resolvedPageFromPersisted = (
-    pageKey: PageKey,
-    persistedPage: PersistedPageRecord,
-  ): ResolvedPage => ({
-    pageKey,
-    status: { kind: "persisted", revision: persistedPage.revision },
-    pageSnapshot: {
-      pageKey,
-      provenance: "persisted",
-      title: persistedPage.title,
-      description: persistedPage.description,
-      blocks: structuredClone(persistedPage.blocks),
-    },
-    diagnostics: [],
-  });
 
   /** Resolve a BlockRef to an index in the blocks array. Returns -1 if not found. */
   const resolveBlockIndex = (
@@ -795,7 +800,7 @@ export function createCmsPageService({
     return {
       status: "saved",
       materialization: "reset",
-      editorModel: defaultBackedPage(command.pageKey),
+      editorModel: defaultBackedPage(catalog, command.pageKey),
     };
   };
 
