@@ -5,5 +5,9 @@ type CmsPublicPageBlocksProps = {
 };
 
 export function CmsPublicPageBlocks({ blocks }: CmsPublicPageBlocksProps) {
-  return blocks.map((block, index) => renderCmsBlock(block, `${block.type}-${index}`));
+  return (
+    <>
+      {blocks.map((block, index) => renderCmsBlock(block, `${block.type}-${index}`))}
+    </>
+  );
 }
