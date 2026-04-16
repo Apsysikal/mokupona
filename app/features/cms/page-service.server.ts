@@ -773,6 +773,47 @@ async function applySetPageMeta(
   };
 }
 
+async function applyResetPage(
+  { catalog, pageStore }: { catalog: CmsCatalog; pageStore: CmsPageStore },
+  command: ResetPageCommand,
+): Promise<ApplyPageCommandResult> {
+  const currentPage = await readResolvedPage({ catalog, pageStore }, command.pageKey);
+
+  if (currentPage.status.kind === "default-backed") {
+    if (command.baseRevision !== null) {
+      return {
+        status: "conflict",
+        currentEditorModel: currentPage,
+        diagnostics: [createMutationStaleWriteDiagnostic()],
+      };
+    }
+    return {
+      status: "saved",
+      materialization: "reset",
+      editorModel: currentPage,
+    };
+  }
+
+  if (
+    command.baseRevision === null ||
+    command.baseRevision !== currentPage.status.revision
+  ) {
+    return {
+      status: "conflict",
+      currentEditorModel: currentPage,
+      diagnostics: [createMutationStaleWriteDiagnostic()],
+    };
+  }
+
+  await pageStore.deletePage(command.pageKey);
+
+  return {
+    status: "saved",
+    materialization: "reset",
+    editorModel: defaultBackedPage(catalog, command.pageKey),
+  };
+}
+
 export function createCmsPageService({
   catalog,
   pageStore,
@@ -780,46 +821,6 @@ export function createCmsPageService({
   catalog: CmsCatalog;
   pageStore: CmsPageStore;
 }): CmsPageService {
-  const applyResetPage = async (
-    command: ResetPageCommand,
-  ): Promise<ApplyPageCommandResult> => {
-    const currentPage = await readResolvedPage({ catalog, pageStore }, command.pageKey);
-
-    if (currentPage.status.kind === "default-backed") {
-      if (command.baseRevision !== null) {
-        return {
-          status: "conflict",
-          currentEditorModel: currentPage,
-          diagnostics: [createMutationStaleWriteDiagnostic()],
-        };
-      }
-      return {
-        status: "saved",
-        materialization: "reset",
-        editorModel: currentPage,
-      };
-    }
-
-    if (
-      command.baseRevision === null ||
-      command.baseRevision !== currentPage.status.revision
-    ) {
-      return {
-        status: "conflict",
-        currentEditorModel: currentPage,
-        diagnostics: [createMutationStaleWriteDiagnostic()],
-      };
-    }
-
-    await pageStore.deletePage(command.pageKey);
-
-    return {
-      status: "saved",
-      materialization: "reset",
-      editorModel: defaultBackedPage(catalog, command.pageKey),
-    };
-  };
-
   return {
     async listEditablePages() {
       return Promise.all(
@@ -922,7 +923,7 @@ export function createCmsPageService({
         case "add-block":
           return applyAddBlock({ catalog, pageStore }, command);
         case "reset-page":
-          return applyResetPage(command);
+          return applyResetPage({ catalog, pageStore }, command);
       }
     },
   };
