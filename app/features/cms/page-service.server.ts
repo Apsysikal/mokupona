@@ -523,6 +523,60 @@ async function applyBlockMutation(
   };
 }
 
+async function applySetBlockData(
+  { catalog, pageStore }: { catalog: CmsCatalog; pageStore: CmsPageStore },
+  command: SetBlockDataCommand,
+): Promise<ApplyPageCommandResult> {
+  let definition;
+  try {
+    definition = catalog.getBlockDefinition(command.blockType);
+  } catch (error) {
+    if (!(error instanceof UnknownBlockTypeError)) {
+      throw error;
+    }
+
+    return {
+      status: "conflict",
+      currentEditorModel: await readResolvedPage({ catalog, pageStore }, command.pageKey),
+      diagnostics: [],
+    };
+  }
+
+  const parseResult = definition.schema.safeParse(command.data);
+  if (!parseResult.success) {
+    return {
+      status: "conflict",
+      currentEditorModel: await readResolvedPage({ catalog, pageStore }, command.pageKey),
+      diagnostics: [],
+    };
+  }
+  if (command.blockVersion !== definition.version) {
+    return {
+      status: "conflict",
+      currentEditorModel: await readResolvedPage({ catalog, pageStore }, command.pageKey),
+      diagnostics: [],
+    };
+  }
+
+  const validatedData = parseResult.data;
+
+  return applyBlockMutation({ catalog, pageStore }, command, (blocks) => {
+    const index = resolveBlockIndex(blocks, command.ref);
+    if (index === -1) return null;
+    const targetBlock = blocks[index];
+    if (
+      targetBlock.type !== command.blockType ||
+      targetBlock.version !== definition.version
+    ) {
+      return null;
+    }
+
+    const updated = [...blocks];
+    updated[index] = { ...targetBlock, data: validatedData };
+    return updated;
+  });
+}
+
 export function createCmsPageService({
   catalog,
   pageStore,
@@ -530,59 +584,6 @@ export function createCmsPageService({
   catalog: CmsCatalog;
   pageStore: CmsPageStore;
 }): CmsPageService {
-  const applySetBlockData = async (
-    command: SetBlockDataCommand,
-  ): Promise<ApplyPageCommandResult> => {
-    let definition;
-    try {
-      definition = catalog.getBlockDefinition(command.blockType);
-    } catch (error) {
-      if (!(error instanceof UnknownBlockTypeError)) {
-        throw error;
-      }
-
-      return {
-        status: "conflict",
-        currentEditorModel: await readResolvedPage({ catalog, pageStore }, command.pageKey),
-        diagnostics: [],
-      };
-    }
-
-    const parseResult = definition.schema.safeParse(command.data);
-    if (!parseResult.success) {
-      return {
-        status: "conflict",
-        currentEditorModel: await readResolvedPage({ catalog, pageStore }, command.pageKey),
-        diagnostics: [],
-      };
-    }
-    if (command.blockVersion !== definition.version) {
-      return {
-        status: "conflict",
-        currentEditorModel: await readResolvedPage({ catalog, pageStore }, command.pageKey),
-        diagnostics: [],
-      };
-    }
-
-    const validatedData = parseResult.data;
-
-    return applyBlockMutation({ catalog, pageStore }, command, (blocks) => {
-      const index = resolveBlockIndex(blocks, command.ref);
-      if (index === -1) return null;
-      const targetBlock = blocks[index];
-      if (
-        targetBlock.type !== command.blockType ||
-        targetBlock.version !== definition.version
-      ) {
-        return null;
-      }
-
-      const updated = [...blocks];
-      updated[index] = { ...targetBlock, data: validatedData };
-      return updated;
-    });
-  };
-
   const applyMoveBlockUp = (
     command: MoveBlockUpCommand,
   ): Promise<ApplyPageCommandResult> => {
@@ -906,7 +907,7 @@ export function createCmsPageService({
         case "set-page-meta":
           return applySetPageMeta(command);
         case "set-block-data":
-          return applySetBlockData(command);
+          return applySetBlockData({ catalog, pageStore }, command);
         case "move-block-up":
           return applyMoveBlockUp(command);
         case "move-block-down":
