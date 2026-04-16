@@ -230,24 +230,20 @@ function canMoveBlockDown(
   );
 }
 
-export function createCmsPageService({
-  catalog,
-  pageStore,
-}: {
-  catalog: CmsCatalog;
-  pageStore: CmsPageStore;
-}): CmsPageService {
-  const normalizePersistedBlocks = ({
+function normalizePersistedBlocks(
+  catalog: CmsCatalog,
+  {
     pageKey,
     blocks,
   }: {
     pageKey: PageKey;
     blocks: readonly BlockInstance[];
-  }): {
-    adminBlocks: BlockInstance[];
-    publicBlocks: BlockInstance[];
-    diagnostics: Diagnostic[];
-  } => {
+  },
+): {
+  adminBlocks: BlockInstance[];
+  publicBlocks: BlockInstance[];
+  diagnostics: Diagnostic[];
+} {
     const adminBlocks: BlockInstance[] = [];
     const publicBlocks: BlockInstance[] = [];
     const diagnostics: Diagnostic[] = [];
@@ -374,8 +370,15 @@ export function createCmsPageService({
     }
 
     return { adminBlocks, publicBlocks, diagnostics };
-  };
+}
 
+export function createCmsPageService({
+  catalog,
+  pageStore,
+}: {
+  catalog: CmsCatalog;
+  pageStore: CmsPageStore;
+}): CmsPageService {
   const readResolvedPage = async (pageKey: PageKey): Promise<ResolvedPage> => {
     const persistedPage = await pageStore.readPage(pageKey);
 
@@ -392,7 +395,7 @@ export function createCmsPageService({
         blocks: persistedPage.blocks,
       },
     });
-    const normalized = normalizePersistedBlocks({
+    const normalized = normalizePersistedBlocks(catalog, {
       pageKey,
       blocks: migratedSnapshot.snapshot.blocks,
     });
