@@ -47,6 +47,8 @@ export type ImageBlockType = BlockBaseType<
   z.infer<typeof ImageBlockDataSchema>
 >;
 
+export type ImageBlockData = ImageBlockType["data"];
+
 export function createDefaultImageBlockData(): ImageBlockType["data"] {
   return {
     image: {
