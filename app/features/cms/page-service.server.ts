@@ -577,6 +577,42 @@ async function applySetBlockData(
   });
 }
 
+function applyMoveBlockUp(
+  { catalog, pageStore }: { catalog: CmsCatalog; pageStore: CmsPageStore },
+  command: MoveBlockUpCommand,
+): Promise<ApplyPageCommandResult> {
+  return applyBlockMutation({ catalog, pageStore }, command, (blocks) => {
+    const index = resolveBlockIndex(blocks, command.ref);
+    const requiredLeadingCount = getRequiredLeadingCount(catalog, command.pageKey);
+    if (!canMoveBlockUp(index, requiredLeadingCount)) return null;
+    const newIndex = index - 1;
+
+    const updated = [...blocks];
+    [updated[newIndex], updated[index]] = [updated[index], updated[newIndex]];
+    return updated;
+  });
+}
+
+function applyMoveBlockDown(
+  { catalog, pageStore }: { catalog: CmsCatalog; pageStore: CmsPageStore },
+  command: MoveBlockDownCommand,
+): Promise<ApplyPageCommandResult> {
+  return applyBlockMutation({ catalog, pageStore }, command, (blocks) => {
+    const index = resolveBlockIndex(blocks, command.ref);
+    const requiredLeadingCount = getRequiredLeadingCount(catalog, command.pageKey);
+    if (!canMoveBlockDown(index, blocks.length, requiredLeadingCount)) {
+      return null;
+    }
+
+    const updated = [...blocks];
+    [updated[index], updated[index + 1]] = [
+      updated[index + 1],
+      updated[index],
+    ];
+    return updated;
+  });
+}
+
 export function createCmsPageService({
   catalog,
   pageStore,
@@ -584,40 +620,6 @@ export function createCmsPageService({
   catalog: CmsCatalog;
   pageStore: CmsPageStore;
 }): CmsPageService {
-  const applyMoveBlockUp = (
-    command: MoveBlockUpCommand,
-  ): Promise<ApplyPageCommandResult> => {
-    return applyBlockMutation({ catalog, pageStore }, command, (blocks) => {
-      const index = resolveBlockIndex(blocks, command.ref);
-      const requiredLeadingCount = getRequiredLeadingCount(catalog, command.pageKey);
-      if (!canMoveBlockUp(index, requiredLeadingCount)) return null;
-      const newIndex = index - 1;
-
-      const updated = [...blocks];
-      [updated[newIndex], updated[index]] = [updated[index], updated[newIndex]];
-      return updated;
-    });
-  };
-
-  const applyMoveBlockDown = (
-    command: MoveBlockDownCommand,
-  ): Promise<ApplyPageCommandResult> => {
-    return applyBlockMutation({ catalog, pageStore }, command, (blocks) => {
-      const index = resolveBlockIndex(blocks, command.ref);
-      const requiredLeadingCount = getRequiredLeadingCount(catalog, command.pageKey);
-      if (!canMoveBlockDown(index, blocks.length, requiredLeadingCount)) {
-        return null;
-      }
-
-      const updated = [...blocks];
-      [updated[index], updated[index + 1]] = [
-        updated[index + 1],
-        updated[index],
-      ];
-      return updated;
-    });
-  };
-
   const applyDeleteBlock = (
     command: DeleteBlockCommand,
   ): Promise<ApplyPageCommandResult> => {
@@ -909,9 +911,9 @@ export function createCmsPageService({
         case "set-block-data":
           return applySetBlockData({ catalog, pageStore }, command);
         case "move-block-up":
-          return applyMoveBlockUp(command);
+          return applyMoveBlockUp({ catalog, pageStore }, command);
         case "move-block-down":
-          return applyMoveBlockDown(command);
+          return applyMoveBlockDown({ catalog, pageStore }, command);
         case "delete-block":
           return applyDeleteBlock(command);
         case "add-block":
