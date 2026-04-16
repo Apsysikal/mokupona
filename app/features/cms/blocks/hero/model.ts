@@ -92,3 +92,5 @@ export type HeroBlockType = BlockBaseType<
   typeof BLOCK_VERSION,
   z.infer<typeof HeroBlockDataSchema>
 >;
+
+export type HeroBlockData = HeroBlockType["data"];
