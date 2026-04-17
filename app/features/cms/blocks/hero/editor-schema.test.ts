@@ -54,31 +54,8 @@ describe("hero editor schema image behavior", () => {
     expect(defaults.imageAccessibility).toBe("");
   });
 
-  test("builds an uploaded decorative image when replacing with upload", () => {
-    const next = applyHeroBlockEditorValue(
-      makeHeroData({ kind: "asset", src: "/hero-image.jpg" }),
-      {
-        eyebrow: "eyebrow",
-        headline: "new headline",
-        description: "new description",
-        actions: [{ label: "Join", href: "/dinners" }],
-        imageAction: "replace",
-        imageAccessibility: "decorative",
-        imageAlt: "",
-      },
-      { uploadedImageId: "img_123" },
-    );
-
-    expect(next.image).toEqual({
-      kind: "uploaded",
-      imageId: "img_123",
-      fallbackAssetSrc: "/hero-image.jpg",
-      decorative: true,
-    });
-  });
-
-  test("reverts uploaded image back to default asset on remove action", () => {
-    const next = applyHeroBlockEditorValue(
+  test("default form values expose keep action and uploaded accessibility state", () => {
+    const defaults = getHeroBlockEditorDefaultValue(
       makeHeroData({
         kind: "uploaded",
         imageId: "img_123",
@@ -86,50 +63,12 @@ describe("hero editor schema image behavior", () => {
         decorative: false,
         alt: "A plated dinner",
       }),
-      {
-        eyebrow: "eyebrow",
-        headline: "headline",
-        description: "description",
-        actions: [{ label: "Join", href: "/dinners" }],
-        imageAction: "remove",
-        imageAccessibility: "decorative",
-        imageAlt: "",
-      },
+      linkTargetRegistry,
     );
 
-    expect(next.image).toEqual({
-      kind: "asset",
-      src: "/hero-image.jpg",
-    });
-  });
-
-  test("updates uploaded image accessibility metadata without re-uploading", () => {
-    const next = applyHeroBlockEditorValue(
-      makeHeroData({
-        kind: "uploaded",
-        imageId: "img_123",
-        fallbackAssetSrc: "/hero-image.jpg",
-        decorative: false,
-        alt: "A plated dinner",
-      }),
-      {
-        eyebrow: "eyebrow",
-        headline: "headline",
-        description: "description",
-        actions: [{ label: "Join", href: "/dinners" }],
-        imageAction: "keep",
-        imageAccessibility: "decorative",
-        imageAlt: "",
-      },
-    );
-
-    expect(next.image).toEqual({
-      kind: "uploaded",
-      imageId: "img_123",
-      fallbackAssetSrc: "/hero-image.jpg",
-      decorative: true,
-      alt: undefined,
-    });
+    expect(defaults.imageAction).toBe("keep");
+    expect(defaults.imageAccessibility).toBe("descriptive");
+    expect(defaults.imageAlt).toBe("A plated dinner");
   });
 
   test("recovers malformed persisted hero data when applying editor values", () => {
@@ -151,20 +90,28 @@ describe("hero editor schema image behavior", () => {
     expect(next.headline).toBe("Recovered hero headline");
   });
 
-  test("default form values expose keep action and uploaded accessibility state", () => {
-    const defaults = getHeroBlockEditorDefaultValue(
-      makeHeroData({
-        kind: "uploaded",
-        imageId: "img_123",
-        fallbackAssetSrc: "/hero-image.jpg",
-        decorative: false,
-        alt: "A plated dinner",
-      }),
-      linkTargetRegistry,
+  test("apply preserves hero-specific fields alongside image changes", () => {
+    const next = applyHeroBlockEditorValue(
+      makeHeroData({ kind: "asset", src: "/hero-image.jpg" }),
+      {
+        eyebrow: "new eyebrow",
+        headline: "new headline",
+        description: "new description",
+        actions: [{ label: "Join", href: "/dinners" }],
+        imageAction: "replace",
+        imageAccessibility: "decorative",
+      },
+      { uploadedImageId: "img_123" },
     );
 
-    expect(defaults.imageAction).toBe("keep");
-    expect(defaults.imageAccessibility).toBe("descriptive");
-    expect(defaults.imageAlt).toBe("A plated dinner");
+    expect(next.eyebrow).toBe("new eyebrow");
+    expect(next.headline).toBe("new headline");
+    expect(next.description).toBe("new description");
+    expect(next.image).toEqual({
+      kind: "uploaded",
+      imageId: "img_123",
+      fallbackAssetSrc: "/hero-image.jpg",
+      decorative: true,
+    });
   });
 });

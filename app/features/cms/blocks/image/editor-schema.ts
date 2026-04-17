@@ -1,6 +1,12 @@
 import { z } from "zod/v4";
 
 import type { BlockRef } from "../block-ref";
+import {
+  applyImageSlot,
+  hydrateImageSlot,
+  imageSlotSchema,
+  refineImageSlot,
+} from "../image-action";
 
 import type { ImageBlockType } from "./model";
 
@@ -22,60 +28,23 @@ export function createImageBlockEditorFormSchema() {
   return z
     .object({
       variant: z.enum(["default", "full-width"]),
-      imageAction: z.enum(["keep", "replace", "remove"]).default("keep"),
-      imageAccessibility: z.preprocess(
-        (value) => (value === "" ? undefined : value),
-        z.enum(["decorative", "descriptive"]).optional(),
-      ),
-      imageAlt: z
-        .string()
-        .trim()
-        .optional()
-        .transform((value) => (value ? value : undefined)),
+      ...imageSlotSchema().shape,
     })
     .superRefine((value, ctx) => {
-      if (value.imageAction !== "replace") {
-        return;
-      }
-
-      if (!value.imageAccessibility) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["imageAccessibility"],
-          message: "Image accessibility choice is required",
-        });
-      }
-
-      if (
-        value.imageAccessibility === "descriptive" &&
-        (!value.imageAlt || value.imageAlt.length === 0)
-      ) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["imageAlt"],
-          message: "Alt text is required for descriptive images",
-        });
-      }
+      refineImageSlot(ctx, value);
     });
 }
 
 export function getImageBlockEditorDefaultValue(
   data: ImageBlockType["data"],
 ): ImageBlockEditorFormShape {
-  const imageAccessibility =
-    data.image.kind === "uploaded"
-      ? data.image.decorative
-        ? "decorative"
-        : "descriptive"
-      : "";
-  const imageAlt =
-    data.image.kind === "uploaded" && imageAccessibility === "descriptive"
-      ? (data.image.alt ?? "")
-      : "";
+  const { imageAction, imageAccessibility, imageAlt } = hydrateImageSlot(
+    data.image,
+  );
 
   return {
     variant: data.variant,
-    imageAction: "keep",
+    imageAction,
     imageAccessibility,
     imageAlt,
   };
@@ -88,40 +57,12 @@ export function applyImageBlockEditorValue(
     uploadedImageId?: string;
   },
 ): ImageBlockType["data"] {
-  const currentImage = currentData.image;
+  const rawImage = applyImageSlot(currentData.image, value, options ?? {});
+  // Image block assets always carry an explicit alt (empty string when decorative/unset)
   const image =
-    value.imageAction === "replace" && options?.uploadedImageId
-      ? {
-          kind: "uploaded" as const,
-          imageId: options.uploadedImageId,
-          fallbackAssetSrc:
-            currentImage.kind === "asset"
-              ? currentImage.src
-              : currentImage.fallbackAssetSrc,
-          decorative: value.imageAccessibility !== "descriptive",
-          alt:
-            value.imageAccessibility === "descriptive"
-              ? value.imageAlt
-              : undefined,
-        }
-      : value.imageAction === "remove" && currentImage.kind === "uploaded"
-        ? {
-            kind: "asset" as const,
-            src: currentImage.fallbackAssetSrc,
-            alt: "",
-          }
-        : value.imageAction === "keep" &&
-            currentImage.kind === "uploaded" &&
-            value.imageAccessibility
-          ? {
-              ...currentImage,
-              decorative: value.imageAccessibility !== "descriptive",
-              alt:
-                value.imageAccessibility === "descriptive"
-                  ? value.imageAlt
-                  : undefined,
-            }
-          : currentImage;
+    rawImage.kind === "asset"
+      ? { ...rawImage, alt: rawImage.alt ?? "" }
+      : rawImage;
 
   return {
     ...currentData,

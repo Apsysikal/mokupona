@@ -23,21 +23,15 @@ import {
   refByPageBlockId,
 } from "~/features/cms/blocks/block-ref";
 import {
-  applyHeroBlockEditorValue,
-  createHeroBlockEditorFormSchema,
-} from "~/features/cms/blocks/hero/editor-schema";
-import {
-  applyImageBlockEditorValue,
-  createImageBlockEditorFormSchema,
-} from "~/features/cms/blocks/image/editor-schema";
+  heroBlockEditor,
+  imageBlockEditor,
+  textSectionBlockEditor,
+  type BlockEditor,
+} from "~/features/cms/blocks/block-editor";
 import {
   createDefaultImageBlockData,
   type ImageBlockType,
 } from "~/features/cms/blocks/image/model";
-import {
-  applyTextSectionBlockEditorValue,
-  createTextSectionBlockEditorFormSchema,
-} from "~/features/cms/blocks/text-section/editor-schema";
 import type { TextSectionBlockType } from "~/features/cms/blocks/text-section/model";
 import type { BlockType } from "~/features/cms/blocks/types";
 import type {
@@ -285,315 +279,130 @@ export async function action({ request, params }: Route.ActionArgs) {
       const blockVersion = Number(blockVersionRaw);
       const serializedBlockRef = JSON.stringify(blockRef);
 
-      if (blockType === "hero" && blockVersion === 1) {
-        const heroSchema = createHeroBlockEditorFormSchema(
-          siteLinkTargetRegistry,
-        );
-        const heroSubmission = parseWithZod(formData, {
-          schema: heroSchema,
-        });
+      const editors: Record<string, BlockEditor<unknown, unknown>> = {
+        hero: heroBlockEditor({ linkTargetRegistry: siteLinkTargetRegistry }),
+        image: imageBlockEditor(),
+        "text-section": textSectionBlockEditor(),
+      };
+      const editor = editors[blockType];
 
-        if (heroSubmission.status !== "success" || !heroSubmission.value) {
-          return {
-            status: "block-validation-error" as const,
-            blockRef: serializedBlockRef,
-            editorModel: await siteCmsPageService.readEditorModel(pageKey),
-            lastResult: heroSubmission.reply(),
-          };
-        }
+      if (!editor) {
+        throw new Response("Unsupported block editor payload", { status: 400 });
+      }
 
-        const currentEditorModel =
-          await siteCmsPageService.readEditorModel(pageKey);
-        const currentBlocks = currentEditorModel.pageSnapshot.blocks;
-        const currentBlock = resolveBlock(currentBlocks, blockRef);
-        if (!currentBlock || currentBlock.type !== "hero") {
-          return {
-            status: "block-conflict" as const,
-            blockRef: serializedBlockRef,
-            conflictMessage:
-              "Block could not be saved — the editor has been refreshed with the current block.",
-            editorModel: currentEditorModel,
-          };
-        }
+      const submission = parseWithZod(formData, { schema: editor.schema });
 
-        const imageFileEntry = formData.get("imageFile");
+      if (submission.status !== "success" || !submission.value) {
+        return {
+          status: "block-validation-error" as const,
+          blockRef: serializedBlockRef,
+          editorModel: await siteCmsPageService.readEditorModel(pageKey),
+          lastResult: submission.reply(),
+        };
+      }
+
+      const currentEditorModel =
+        await siteCmsPageService.readEditorModel(pageKey);
+      const currentBlocks = currentEditorModel.pageSnapshot.blocks;
+      const currentBlock = resolveBlock(currentBlocks, blockRef);
+      if (!currentBlock || currentBlock.type !== blockType) {
+        return {
+          status: "block-conflict" as const,
+          blockRef: serializedBlockRef,
+          conflictMessage:
+            "Block could not be saved — the editor has been refreshed with the current block.",
+          editorModel: currentEditorModel,
+        };
+      }
+
+      const formValue = submission.value as { imageAction?: string };
+      const imageFileEntry = formData.get("imageFile");
+
+      if (
+        formValue.imageAction === "replace" &&
+        (!(imageFileEntry instanceof File) || imageFileEntry.size <= 0)
+      ) {
+        return {
+          status: "block-conflict" as const,
+          blockRef: serializedBlockRef,
+          conflictMessage: "Please choose an image file before replacing.",
+          editorModel: currentEditorModel,
+        };
+      }
+
+      if (
+        imageFileEntry instanceof File &&
+        imageFileEntry.size > MAX_IMAGE_SIZE_BYTES
+      ) {
+        return {
+          status: "block-conflict" as const,
+          blockRef: serializedBlockRef,
+          conflictMessage: "File cannot be greater than 3MB",
+          editorModel: currentEditorModel,
+        };
+      }
+
+      const uploadedImageId =
+        formValue.imageAction === "replace"
+          ? await persistHeroUploadedImage(imageFileEntry, {
+              persistImage: uploadResult.persistImage,
+            })
+          : undefined;
+
+      if (formValue.imageAction === "replace" && !uploadedImageId) {
+        return {
+          status: "block-conflict" as const,
+          blockRef: serializedBlockRef,
+          conflictMessage: "Please choose an image file before replacing.",
+          editorModel: currentEditorModel,
+        };
+      }
+
+      const previousImageId = getUploadedCmsImageId(currentBlock.data);
+      const nextBlockData = editor.apply(currentBlock.data, submission.value, {
+        uploadedImageId,
+      });
+      const nextImageId = getUploadedCmsImageId(nextBlockData);
+
+      const command = commandBuilder.setBlockData(
+        blockRef,
+        blockType as BlockType,
+        blockVersion,
+        nextBlockData,
+      );
+
+      const result = await siteCmsPageService.applyPageCommand(command);
+
+      if (result.status === "conflict") {
         if (
-          heroSubmission.value.imageAction === "replace" &&
-          (!(imageFileEntry instanceof File) || imageFileEntry.size <= 0)
+          formValue.imageAction === "replace" &&
+          nextImageId &&
+          nextImageId !== previousImageId
         ) {
-          return {
-            status: "block-conflict" as const,
-            blockRef: serializedBlockRef,
-            conflictMessage: "Please choose an image file before replacing.",
-            editorModel: currentEditorModel,
-          };
-        }
-
-        if (
-          imageFileEntry instanceof File &&
-          imageFileEntry.size > MAX_IMAGE_SIZE_BYTES
-        ) {
-          return {
-            status: "block-conflict" as const,
-            blockRef: serializedBlockRef,
-            conflictMessage: "File cannot be greater than 3MB",
-            editorModel: currentEditorModel,
-          };
-        }
-
-        const uploadedImageId =
-          heroSubmission.value.imageAction === "replace"
-            ? await persistHeroUploadedImage(imageFileEntry, {
-                persistImage: uploadResult.persistImage,
-              })
-            : undefined;
-        if (
-          heroSubmission.value.imageAction === "replace" &&
-          !uploadedImageId
-        ) {
-          return {
-            status: "block-conflict" as const,
-            blockRef: serializedBlockRef,
-            conflictMessage: "Please choose an image file before replacing.",
-            editorModel: currentEditorModel,
-          };
-        }
-
-        const heroCommand = commandBuilder.setBlockData(
-          blockRef,
-          blockType as BlockType,
-          blockVersion,
-          applyHeroBlockEditorValue(
-            currentBlock.data as Parameters<
-              typeof applyHeroBlockEditorValue
-            >[0],
-            heroSubmission.value,
-            { uploadedImageId },
-          ),
-        );
-        const nextData = heroCommand.data as Parameters<
-          typeof getUploadedCmsImageId
-        >[0];
-        const previousImageId = getUploadedCmsImageId(currentBlock.data);
-        const nextImageId = getUploadedCmsImageId(nextData);
-
-        const heroResult =
-          await siteCmsPageService.applyPageCommand(heroCommand);
-
-        if (heroResult.status === "conflict") {
-          if (
-            heroSubmission.value.imageAction === "replace" &&
-            nextImageId &&
-            nextImageId !== previousImageId
-          ) {
-            await deleteCmsImagesIfUnreferenced({
-              imageIds: [nextImageId],
-              prisma,
-            });
-          }
-          return {
-            status: "block-conflict" as const,
-            blockRef: serializedBlockRef,
-            conflictMessage: conflictMessageFromDiagnostics(
-              heroResult.diagnostics,
-              "Block could not be saved — please refresh and retry.",
-            ),
-            editorModel: heroResult.currentEditorModel,
-          };
-        }
-
-        if (previousImageId && previousImageId !== nextImageId) {
-          await cleanupRemovedCmsImages({
-            previousBlocks: currentBlocks,
-            nextBlocks: heroResult.editorModel.pageSnapshot.blocks,
+          await deleteCmsImagesIfUnreferenced({
+            imageIds: [nextImageId],
+            prisma,
           });
         }
-
-        return redirect(`/admin/pages/${pageKey}`);
-      }
-
-      if (blockType === "text-section" && blockVersion === 1) {
-        const textSectionSchema = createTextSectionBlockEditorFormSchema();
-        const textSectionSubmission = parseWithZod(formData, {
-          schema: textSectionSchema,
-        });
-
-        if (
-          textSectionSubmission.status !== "success" ||
-          !textSectionSubmission.value
-        ) {
-          return {
-            status: "block-validation-error" as const,
-            blockRef: serializedBlockRef,
-            editorModel: await siteCmsPageService.readEditorModel(pageKey),
-            lastResult: textSectionSubmission.reply(),
-          };
-        }
-
-        const currentEditorModel =
-          await siteCmsPageService.readEditorModel(pageKey);
-        const currentBlocks = currentEditorModel.pageSnapshot.blocks;
-        const currentBlock = resolveBlock(currentBlocks, blockRef);
-        if (!currentBlock || currentBlock.type !== "text-section") {
-          return {
-            status: "block-conflict" as const,
-            blockRef: serializedBlockRef,
-            conflictMessage:
-              "Block could not be saved — the editor has been refreshed with the current block.",
-            editorModel: currentEditorModel,
-          };
-        }
-
-        const textSectionCommand = commandBuilder.setBlockData(
-          blockRef,
-          "text-section",
-          1,
-          applyTextSectionBlockEditorValue(
-            currentBlock.data as TextSectionBlockType["data"],
-            textSectionSubmission.value,
+        return {
+          status: "block-conflict" as const,
+          blockRef: serializedBlockRef,
+          conflictMessage: conflictMessageFromDiagnostics(
+            result.diagnostics,
+            "Block could not be saved — please refresh and retry.",
           ),
-        );
-
-        const textSectionResult =
-          await siteCmsPageService.applyPageCommand(textSectionCommand);
-
-        if (textSectionResult.status === "conflict") {
-          return {
-            status: "block-conflict" as const,
-            blockRef: serializedBlockRef,
-            conflictMessage: conflictMessageFromDiagnostics(
-              textSectionResult.diagnostics,
-              "Block could not be saved — please refresh and retry.",
-            ),
-            editorModel: textSectionResult.currentEditorModel,
-          };
-        }
-
-        return redirect(`/admin/pages/${pageKey}`);
+          editorModel: result.currentEditorModel,
+        };
       }
 
-      if (blockType === "image" && blockVersion === 1) {
-        const imageSchema = createImageBlockEditorFormSchema();
-        const imageSubmission = parseWithZod(formData, {
-          schema: imageSchema,
+      if (previousImageId && previousImageId !== nextImageId) {
+        await cleanupRemovedCmsImages({
+          previousBlocks: currentBlocks,
+          nextBlocks: result.editorModel.pageSnapshot.blocks,
         });
-
-        if (imageSubmission.status !== "success" || !imageSubmission.value) {
-          return {
-            status: "block-validation-error" as const,
-            blockRef: serializedBlockRef,
-            editorModel: await siteCmsPageService.readEditorModel(pageKey),
-            lastResult: imageSubmission.reply(),
-          };
-        }
-
-        const currentEditorModel =
-          await siteCmsPageService.readEditorModel(pageKey);
-        const currentBlocks = currentEditorModel.pageSnapshot.blocks;
-        const currentBlock = resolveBlock(currentBlocks, blockRef);
-        if (!currentBlock || currentBlock.type !== "image") {
-          return {
-            status: "block-conflict" as const,
-            blockRef: serializedBlockRef,
-            conflictMessage:
-              "Block could not be saved — the editor has been refreshed with the current block.",
-            editorModel: currentEditorModel,
-          };
-        }
-
-        const imageFileEntry = formData.get("imageFile");
-        if (
-          imageSubmission.value.imageAction === "replace" &&
-          (!(imageFileEntry instanceof File) || imageFileEntry.size <= 0)
-        ) {
-          return {
-            status: "block-conflict" as const,
-            blockRef: serializedBlockRef,
-            conflictMessage: "Please choose an image file before replacing.",
-            editorModel: currentEditorModel,
-          };
-        }
-
-        if (
-          imageFileEntry instanceof File &&
-          imageFileEntry.size > MAX_IMAGE_SIZE_BYTES
-        ) {
-          return {
-            status: "block-conflict" as const,
-            blockRef: serializedBlockRef,
-            conflictMessage: "File cannot be greater than 3MB",
-            editorModel: currentEditorModel,
-          };
-        }
-
-        const uploadedImageId =
-          imageSubmission.value.imageAction === "replace"
-            ? await persistHeroUploadedImage(imageFileEntry, {
-                persistImage: uploadResult.persistImage,
-              })
-            : undefined;
-        if (
-          imageSubmission.value.imageAction === "replace" &&
-          !uploadedImageId
-        ) {
-          return {
-            status: "block-conflict" as const,
-            blockRef: serializedBlockRef,
-            conflictMessage: "Please choose an image file before replacing.",
-            editorModel: currentEditorModel,
-          };
-        }
-
-        const imageCommand = commandBuilder.setBlockData(
-          blockRef,
-          "image",
-          1,
-          applyImageBlockEditorValue(
-            currentBlock.data as ImageBlockType["data"],
-            imageSubmission.value,
-            { uploadedImageId },
-          ),
-        );
-        const nextData = imageCommand.data as ImageBlockType["data"];
-        const previousImageId = getUploadedCmsImageId(currentBlock.data);
-        const nextImageId = getUploadedCmsImageId(nextData);
-
-        const imageResult =
-          await siteCmsPageService.applyPageCommand(imageCommand);
-
-        if (imageResult.status === "conflict") {
-          if (
-            imageSubmission.value.imageAction === "replace" &&
-            nextImageId &&
-            nextImageId !== previousImageId
-          ) {
-            await deleteCmsImagesIfUnreferenced({
-              imageIds: [nextImageId],
-              prisma,
-            });
-          }
-          return {
-            status: "block-conflict" as const,
-            blockRef: serializedBlockRef,
-            conflictMessage: conflictMessageFromDiagnostics(
-              imageResult.diagnostics,
-              "Block could not be saved — please refresh and retry.",
-            ),
-            editorModel: imageResult.currentEditorModel,
-          };
-        }
-
-        if (previousImageId && previousImageId !== nextImageId) {
-          await cleanupRemovedCmsImages({
-            previousBlocks: currentBlocks,
-            nextBlocks: imageResult.editorModel.pageSnapshot.blocks,
-          });
-        }
-
-        return redirect(`/admin/pages/${pageKey}`);
       }
 
-      throw new Response("Unsupported block editor payload", { status: 400 });
+      return redirect(`/admin/pages/${pageKey}`);
     }
 
     if (intent === "move-block-up" || intent === "move-block-down") {
