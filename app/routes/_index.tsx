@@ -8,12 +8,12 @@ import { getDomainUrl } from "~/utils/misc";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
-  const projection = await siteCmsPageService.readPublicProjection("home", {
+  const { public: view } = await siteCmsPageService.readPublicPage("home", {
     domainUrl: getDomainUrl(request),
     pathname: url.pathname,
   });
 
-  return { projection };
+  return view;
 }
 
 export function meta({ loaderData }: Route.MetaArgs) {
@@ -21,15 +21,15 @@ export function meta({ loaderData }: Route.MetaArgs) {
     return [];
   }
 
-  return loaderData.projection.meta;
+  return loaderData.meta;
 }
 
 export default function Index() {
-  const { projection } = useLoaderData<typeof loader>();
+  const view = useLoaderData<typeof loader>();
 
   return (
     <main>
-      <PublicPageRenderer projection={projection} />
+      <PublicPageRenderer view={view} />
     </main>
   );
 }

@@ -3,11 +3,13 @@ import { UnknownBlockTypeError } from "./catalog";
 import type {
   BlockInstance,
   CmsCatalog,
+  MetaTag,
   PageKey,
   PageSnapshot,
   PublicProjection,
   PublicProjectionContext,
 } from "./catalog";
+import { computePublicProjection } from "./public-projection";
 import {
   createBlockBrokenDataDiagnostic,
   createBlockDisallowedTypeDiagnostic,
@@ -17,10 +19,7 @@ import {
   createMutationStaleWriteDiagnostic,
   createPageMigratedDiagnostic,
   createPagePublicFallbackDefaultsDiagnostic,
-  createPagePublicOmittedBrokenBlocksDiagnostic,
-  isRecoverableBlockDiagnosticCode,
   isRuntimeMigrationDiagnosticCode,
-  mergeCmsDiagnostics,
   type CmsDiagnostic,
   type CmsDiagnosticCode,
 } from "./diagnostics";
@@ -70,6 +69,16 @@ export type ResolvedPage = {
   status: PageStatus;
   pageSnapshot: PageSnapshot;
   diagnostics: readonly Diagnostic[];
+};
+
+export type PublicPageView = {
+  meta: MetaTag[];
+  blocks: BlockInstance[];
+};
+
+export type ResolvedPublicPage = {
+  public: PublicPageView;
+  resolved: ResolvedPage;
 };
 
 export type EditablePageSummary = {
@@ -141,6 +150,10 @@ export type CmsPageService = {
     pageKey: PageKey,
     context: PublicProjectionContext,
   ): Promise<PublicProjection>;
+  readPublicPage(
+    pageKey: PageKey,
+    context: PublicProjectionContext,
+  ): Promise<ResolvedPublicPage>;
   readEditorModel(pageKey: PageKey): Promise<EditorModel>;
   applyPageCommand(command: PageCommand): Promise<ApplyPageCommandResult>;
 };
@@ -845,67 +858,15 @@ export function createCmsPageService({
     },
     async readPublicProjection(pageKey, context) {
       const resolved = await readResolvedPage(deps, pageKey);
-      if (resolved.status.kind === "default-backed") {
-        const projection = catalog.projectPublic(
-          resolved.pageSnapshot,
-          context,
-        );
-        return {
-          ...projection,
-          diagnostics: mergeCmsDiagnostics(
-            projection.diagnostics,
-            resolved.diagnostics,
-          ),
-        };
-      }
-
-      const omitDiagnostics = resolved.diagnostics.filter((diagnostic) =>
-        isRecoverableBlockDiagnosticCode(diagnostic.code),
-      );
-      const omittedBlockIndexes = new Set(
-        omitDiagnostics.flatMap((diagnostic) =>
-          typeof diagnostic.blockIndex === "number"
-            ? [diagnostic.blockIndex]
-            : [],
-        ),
-      );
-      const publicBlocks = resolved.pageSnapshot.blocks.filter((_, index) => {
-        return !omittedBlockIndexes.has(index);
-      });
-
-      if (!hasValidRequiredLeadingBlocks(catalog, pageKey, publicBlocks)) {
-        const fallbackSnapshot = catalog.readPageSnapshot(pageKey);
-        const projection = catalog.projectPublic(fallbackSnapshot, context);
-        return {
-          ...projection,
-          diagnostics: mergeCmsDiagnostics(
-            projection.diagnostics,
-            resolved.diagnostics,
-            [createPagePublicFallbackDefaultsDiagnostic()],
-          ),
-        };
-      }
-
-      const projection = catalog.projectPublic(
-        {
-          ...resolved.pageSnapshot,
-          blocks: publicBlocks,
-        },
-        context,
-      );
-      const publicDiagnostics = mergeCmsDiagnostics(
-        projection.diagnostics,
-        resolved.diagnostics,
-      );
-      if (publicBlocks.length !== resolved.pageSnapshot.blocks.length) {
-        return {
-          ...projection,
-          diagnostics: mergeCmsDiagnostics(publicDiagnostics, [
-            createPagePublicOmittedBrokenBlocksDiagnostic(),
-          ]),
-        };
-      }
-      return { ...projection, diagnostics: publicDiagnostics };
+      return computePublicProjection(resolved, catalog, context);
+    },
+    async readPublicPage(pageKey, context) {
+      const resolved = await readResolvedPage(deps, pageKey);
+      const projection = computePublicProjection(resolved, catalog, context);
+      return {
+        public: { meta: projection.meta, blocks: projection.blocks },
+        resolved,
+      };
     },
     async readEditorModel(pageKey) {
       return readResolvedPage(deps, pageKey);
