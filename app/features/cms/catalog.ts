@@ -92,6 +92,9 @@ export type PageDefinition = {
   migrate?(input: { snapshot: PageSnapshot }): PageSnapshot | null;
 };
 
+export type InferBlockType<T extends BlockDefinition> =
+  T extends BlockDefinition<infer TBlock> ? TBlock : never;
+
 export type CmsCatalog = {
   listPageKeys(): readonly PageKey[];
   getBlockDefinition(blockType: BlockType): BlockDefinition;
@@ -105,6 +108,7 @@ export type CmsCatalog = {
     snapshot: PageSnapshot,
     context: PublicProjectionContext,
   ): PublicProjection;
+  renderBlock(block: BlockInstance, key: string): React.ReactNode;
 };
 
 export class UnknownBlockTypeError extends Error {
@@ -236,6 +240,11 @@ export function createCmsCatalog({
         },
         migrated: true,
       };
+    },
+    renderBlock(block, key) {
+      const def = blockDefinitions.get(block.type);
+      if (!def) throw new UnknownBlockTypeError(block.type);
+      return def.render(block);
     },
     projectPublic(snapshot, context) {
       const meta: MetaTag[] = [

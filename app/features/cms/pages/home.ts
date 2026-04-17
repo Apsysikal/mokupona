@@ -2,7 +2,6 @@ import type { MetaDescriptor } from "react-router";
 
 import type { HeroBlockType } from "../blocks/hero";
 import type { ImageBlockType } from "../blocks/image";
-import type { CmsBlock } from "../blocks/registry";
 import type { TextSectionBlockType } from "../blocks/text-section";
 import { definePageDefinition } from "../catalog";
 
@@ -74,7 +73,7 @@ const homeAboutBlock: TextSectionBlockType = {
   },
 };
 
-export const homePageBlocks: readonly CmsBlock[] = [
+export const homePageBlocks: readonly (HeroBlockType | TextSectionBlockType | ImageBlockType)[] = [
   homeHeroBlock,
   homeVisionBlock,
   homeImageBlock,

@@ -1,4 +1,4 @@
-import { renderCmsBlock, type CmsBlock } from "./blocks/registry";
+import { siteCmsCatalog, type CmsBlock } from "./site-catalog";
 
 type CmsPublicPageBlocksProps = {
   blocks: readonly CmsBlock[];
@@ -7,7 +7,9 @@ type CmsPublicPageBlocksProps = {
 export function CmsPublicPageBlocks({ blocks }: CmsPublicPageBlocksProps) {
   return (
     <>
-      {blocks.map((block, index) => renderCmsBlock(block, `${block.type}-${index}`))}
+      {blocks.map((block, index) =>
+        siteCmsCatalog.renderBlock(block, `${block.type}-${index}`),
+      )}
     </>
   );
 }

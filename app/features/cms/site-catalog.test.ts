@@ -3,7 +3,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router";
 import { describe, expect, test } from "vitest";
 
-import { renderCmsBlock, type CmsBlock } from "./registry";
+import { UnknownBlockTypeError } from "./catalog";
+import { siteCmsCatalog, type CmsBlock } from "./site-catalog";
 
 const blocks: CmsBlock[] = [
   {
@@ -36,15 +37,25 @@ const blocks: CmsBlock[] = [
   },
 ];
 
-describe("renderCmsBlock", () => {
-  test.each(blocks)(
-    "renders $type blocks with the central renderer",
-    (block) => {
-      const html = renderToStaticMarkup(
-        createElement(MemoryRouter, {}, renderCmsBlock(block, block.type)),
-      );
+describe("siteCmsCatalog.renderBlock", () => {
+  test.each(blocks)("renders $type blocks without throwing", (block) => {
+    const html = renderToStaticMarkup(
+      createElement(
+        MemoryRouter,
+        {},
+        siteCmsCatalog.renderBlock(block, block.type),
+      ),
+    );
 
-      expect(html).toBeTruthy();
-    },
-  );
+    expect(html).toBeTruthy();
+  });
+
+  test("throws UnknownBlockTypeError for unknown block types", () => {
+    expect(() =>
+      siteCmsCatalog.renderBlock(
+        { type: "unknown" as never, version: 1, data: {} },
+        "key",
+      ),
+    ).toThrow(UnknownBlockTypeError);
+  });
 });
