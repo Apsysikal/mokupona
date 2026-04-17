@@ -12,6 +12,14 @@ export const heroBlockDefinition = defineBlockDefinition<HeroBlockType>({
   type: "hero",
   version: 1,
   schema: HeroBlockDataSchema,
+  getUploadedImageIds(data) {
+    const parsed = HeroBlockDataSchema.safeParse(data);
+    if (!parsed.success || parsed.data.image.kind !== "uploaded") {
+      return [];
+    }
+
+    return [parsed.data.image.imageId];
+  },
   render(block) {
     return createElement(HeroBlockView, { blockData: block });
   },

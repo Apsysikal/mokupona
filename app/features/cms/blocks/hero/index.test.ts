@@ -22,4 +22,39 @@ describe("heroBlockDefinition schema", () => {
     });
     expect(result.success).toBe(true);
   });
+
+  test("extracts uploaded image ids from uploaded hero data", () => {
+    expect(
+      heroBlockDefinition.getUploadedImageIds?.({
+        ...validHeroData,
+        image: {
+          kind: "uploaded",
+          imageId: "img_123",
+          fallbackAssetSrc: "/hero-image.jpg",
+          decorative: true,
+        },
+      }),
+    ).toEqual(["img_123"]);
+  });
+
+  test("returns no image ids for asset-backed hero data", () => {
+    expect(heroBlockDefinition.getUploadedImageIds?.(validHeroData)).toEqual(
+      [],
+    );
+  });
+
+  test("returns no image ids when hero data is invalid", () => {
+    expect(
+      heroBlockDefinition.getUploadedImageIds?.({
+        headline: "",
+        actions: [],
+        image: {
+          kind: "uploaded",
+          imageId: "",
+          fallbackAssetSrc: "/hero-image.jpg",
+          decorative: false,
+        },
+      }),
+    ).toEqual([]);
+  });
 });

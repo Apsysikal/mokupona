@@ -41,8 +41,8 @@ import type {
 } from "~/features/cms/catalog";
 import { UnknownBlockTypeError } from "~/features/cms/catalog";
 import {
-  deleteCmsImagesIfUnreferenced,
-  getRemovedUploadedHeroImageIds,
+  discardOrphanedUploadedImage,
+  reconcileCmsImageLifecycle,
 } from "~/features/cms/cms-image-lifecycle.server";
 import {
   cmsDiagnosticCodes,
@@ -344,7 +344,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
       const uploadedImageId =
         formValue.imageAction === "replace"
-          ? await persistHeroUploadedImage(imageFileEntry, {
+          ? await persistUploadedImage(imageFileEntry, {
               persistImage: uploadResult.persistImage,
             })
           : undefined;
@@ -358,11 +358,9 @@ export async function action({ request, params }: Route.ActionArgs) {
         };
       }
 
-      const previousImageId = getUploadedCmsImageId(currentBlock.data);
       const nextBlockData = editor.apply(currentBlock.data, submission.value, {
         uploadedImageId,
       });
-      const nextImageId = getUploadedCmsImageId(nextBlockData);
 
       const command = commandBuilder.setBlockData(
         blockRef,
@@ -374,13 +372,9 @@ export async function action({ request, params }: Route.ActionArgs) {
       const result = await siteCmsPageService.applyPageCommand(command);
 
       if (result.status === "conflict") {
-        if (
-          formValue.imageAction === "replace" &&
-          nextImageId &&
-          nextImageId !== previousImageId
-        ) {
-          await deleteCmsImagesIfUnreferenced({
-            imageIds: [nextImageId],
+        if (formValue.imageAction === "replace" && uploadedImageId) {
+          await discardOrphanedUploadedImage({
+            imageId: uploadedImageId,
             prisma,
           });
         }
@@ -395,12 +389,12 @@ export async function action({ request, params }: Route.ActionArgs) {
         };
       }
 
-      if (previousImageId && previousImageId !== nextImageId) {
-        await cleanupRemovedCmsImages({
-          previousBlocks: currentBlocks,
-          nextBlocks: result.editorModel.pageSnapshot.blocks,
-        });
-      }
+      await reconcileCmsImageLifecycle({
+        previousBlocks: currentBlocks,
+        nextBlocks: result.editorModel.pageSnapshot.blocks,
+        prisma,
+        catalog: siteCmsCatalog,
+      });
 
       return redirect(`/admin/pages/${pageKey}`);
     }
@@ -458,9 +452,11 @@ export async function action({ request, params }: Route.ActionArgs) {
         };
       }
 
-      await cleanupRemovedCmsImages({
+      await reconcileCmsImageLifecycle({
         previousBlocks: currentEditorModel.pageSnapshot.blocks,
         nextBlocks: result.editorModel.pageSnapshot.blocks,
+        prisma,
+        catalog: siteCmsCatalog,
       });
 
       return redirect(`/admin/pages/${pageKey}`);
@@ -472,7 +468,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 }
 
-async function persistHeroUploadedImage(
+async function persistUploadedImage(
   fileEntry: FormDataEntryValue | null,
   upload: {
     persistImage(file: File): Promise<string>;
@@ -484,44 +480,6 @@ async function persistHeroUploadedImage(
 
   return upload.persistImage(fileEntry);
 }
-
-async function cleanupRemovedCmsImages({
-  previousBlocks,
-  nextBlocks,
-}: {
-  previousBlocks: readonly BlockInstance[];
-  nextBlocks: readonly BlockInstance[];
-}) {
-  const removedImageIds = getRemovedUploadedHeroImageIds(
-    previousBlocks,
-    nextBlocks,
-  );
-
-  if (removedImageIds.length === 0) {
-    return;
-  }
-
-  await deleteCmsImagesIfUnreferenced({
-    imageIds: removedImageIds,
-    prisma,
-  });
-}
-
-function getUploadedCmsImageId(blockData: unknown): string | null {
-  const data = blockData as {
-    image?: {
-      kind?: string;
-      imageId?: string;
-    };
-  };
-
-  if (data.image?.kind !== "uploaded" || !data.image.imageId) {
-    return null;
-  }
-
-  return data.image.imageId;
-}
-
 function resolveBlock(
   blocks: BlockInstance[],
   ref: BlockRef,

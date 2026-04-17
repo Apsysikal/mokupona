@@ -72,6 +72,11 @@ export type BlockDefinition<TBlock extends BlockInstance = BlockInstance> = {
   type: TBlock["type"];
   version: TBlock["version"];
   schema: ZodType<TBlock["data"]>;
+  /**
+   * Returns uploaded image IDs embedded in the block data.
+   * Omit for blocks that do not carry uploaded images.
+   */
+  getUploadedImageIds?(data: unknown): string[];
   migrate?(input: {
     fromVersion: number;
     data: unknown;
