@@ -9,20 +9,13 @@ import type {
   PublicProjection,
   PublicProjectionContext,
 } from "./catalog";
-import { computePublicProjection } from "./public-projection";
 import {
-  createBlockBrokenDataDiagnostic,
-  createBlockDisallowedTypeDiagnostic,
-  createBlockMigratedDiagnostic,
-  createBlockUnsupportedTypeDiagnostic,
-  createBlockUnsupportedVersionDiagnostic,
   createMutationStaleWriteDiagnostic,
-  createPageMigratedDiagnostic,
-  createPagePublicFallbackDefaultsDiagnostic,
   isRuntimeMigrationDiagnosticCode,
   type CmsDiagnostic,
   type CmsDiagnosticCode,
 } from "./diagnostics";
+import { createPageReader, type PageReader } from "./page-reader.server";
 import type {
   AddBlockCommand,
   DeleteBlockCommand,
@@ -202,20 +195,6 @@ function resolvedPageFromPersisted(
   };
 }
 
-function hasValidRequiredLeadingBlocks(
-  catalog: CmsCatalog,
-  pageKey: PageKey,
-  blocks: readonly BlockInstance[],
-): boolean {
-  const requiredLeading = catalog.getPageRule(pageKey).requiredLeadingBlockTypes;
-  if (!requiredLeading || requiredLeading.length === 0) {
-    return true;
-  }
-  return requiredLeading.every(
-    (requiredType, index) => blocks[index]?.type === requiredType,
-  );
-}
-
 function getRequiredLeadingCount(catalog: CmsCatalog, pageKey: PageKey): number {
   return catalog.getPageRule(pageKey).requiredLeadingBlockTypes?.length ?? 0;
 }
@@ -243,199 +222,14 @@ function canMoveBlockDown(
   );
 }
 
-function normalizePersistedBlocks(
-  catalog: CmsCatalog,
-  {
-    pageKey,
-    blocks,
-  }: {
-    pageKey: PageKey;
-    blocks: readonly BlockInstance[];
-  },
-): {
-  adminBlocks: BlockInstance[];
-  publicBlocks: BlockInstance[];
-  diagnostics: Diagnostic[];
-} {
-    const adminBlocks: BlockInstance[] = [];
-    const publicBlocks: BlockInstance[] = [];
-    const diagnostics: Diagnostic[] = [];
-    const allowedBlockTypes = new Set(
-      catalog.getPageRule(pageKey).allowedBlockTypes,
-    );
-    const pushUnsupportedVersionDiagnostic = (input: {
-      blockType: string;
-      blockIndex: number;
-      fromVersion: number;
-      toVersion: number;
-    }) => {
-      diagnostics.push(
-        createBlockUnsupportedVersionDiagnostic({
-          pageKey,
-          ...input,
-        }),
-      );
-    };
-
-    for (const [index, block] of blocks.entries()) {
-      const clonedBlock = structuredClone(block);
-      let definition;
-
-      try {
-        definition = catalog.getBlockDefinition(clonedBlock.type);
-      } catch (error) {
-        if (!(error instanceof UnknownBlockTypeError)) {
-          throw error;
-        }
-
-        diagnostics.push(
-          createBlockUnsupportedTypeDiagnostic({
-            pageKey,
-            blockType: clonedBlock.type,
-            blockIndex: index,
-          }),
-        );
-        adminBlocks.push(clonedBlock);
-        continue;
-      }
-
-      if (!allowedBlockTypes.has(clonedBlock.type)) {
-        diagnostics.push(
-          createBlockDisallowedTypeDiagnostic({
-            pageKey,
-            blockType: clonedBlock.type,
-            blockIndex: index,
-          }),
-        );
-        adminBlocks.push(clonedBlock);
-        continue;
-      }
-
-      let normalizedBlock = clonedBlock;
-      let migratedFromVersion: number | null = null;
-
-      if (normalizedBlock.version !== definition.version) {
-        const migration = definition.migrate?.({
-          fromVersion: normalizedBlock.version,
-          data: normalizedBlock.data,
-        });
-
-        if (!migration) {
-          pushUnsupportedVersionDiagnostic({
-            blockType: normalizedBlock.type,
-            blockIndex: index,
-            fromVersion: normalizedBlock.version,
-            toVersion: definition.version,
-          });
-          adminBlocks.push(normalizedBlock);
-          continue;
-        }
-
-        if (migration.version !== definition.version) {
-          pushUnsupportedVersionDiagnostic({
-            blockType: normalizedBlock.type,
-            blockIndex: index,
-            fromVersion: normalizedBlock.version,
-            toVersion: definition.version,
-          });
-          adminBlocks.push(normalizedBlock);
-          continue;
-        }
-
-        migratedFromVersion = normalizedBlock.version;
-        normalizedBlock = {
-          ...normalizedBlock,
-          version: migration.version,
-          data: migration.data,
-        };
-      }
-
-      const result = definition.schema.safeParse(normalizedBlock.data);
-      if (!result.success) {
-        diagnostics.push(
-          createBlockBrokenDataDiagnostic({
-            pageKey,
-            blockType: normalizedBlock.type,
-            blockIndex: index,
-          }),
-        );
-        adminBlocks.push(clonedBlock);
-        continue;
-      }
-
-      const validatedBlock: BlockInstance = {
-        ...normalizedBlock,
-        data: result.data,
-      };
-      if (migratedFromVersion !== null) {
-        diagnostics.push(
-          createBlockMigratedDiagnostic({
-            pageKey,
-            blockType: validatedBlock.type,
-            blockIndex: index,
-            fromVersion: migratedFromVersion,
-            toVersion: validatedBlock.version,
-          }),
-        );
-      }
-      adminBlocks.push(validatedBlock);
-      publicBlocks.push(validatedBlock);
-    }
-
-    return { adminBlocks, publicBlocks, diagnostics };
-}
-
-async function readResolvedPage(
-  { catalog, pageStore }: { catalog: CmsCatalog; pageStore: CmsPageStore },
-  pageKey: PageKey,
-): Promise<ResolvedPage> {
-  const persistedPage = await pageStore.readPage(pageKey);
-
-  if (!persistedPage) {
-    return defaultBackedPage(catalog, pageKey);
-  }
-
-  const migratedSnapshot = catalog.migratePageSnapshot({
-    snapshot: {
-      pageKey,
-      provenance: "persisted",
-      title: persistedPage.title,
-      description: persistedPage.description,
-      blocks: persistedPage.blocks,
-    },
-  });
-  const normalized = normalizePersistedBlocks(catalog, {
-    pageKey,
-    blocks: migratedSnapshot.snapshot.blocks,
-  });
-  const diagnostics = [...normalized.diagnostics];
-  if (migratedSnapshot.migrated) {
-    diagnostics.push(createPageMigratedDiagnostic(pageKey));
-  }
-  if (!hasValidRequiredLeadingBlocks(catalog, pageKey, normalized.publicBlocks)) {
-    diagnostics.push(createPagePublicFallbackDefaultsDiagnostic());
-  }
-
-  return {
-    pageKey,
-    status: { kind: "persisted", revision: persistedPage.revision },
-    pageSnapshot: {
-      pageKey,
-      provenance: "persisted",
-      title: migratedSnapshot.snapshot.title,
-      description: migratedSnapshot.snapshot.description,
-      blocks: normalized.adminBlocks,
-    },
-    diagnostics,
-  };
-}
+type Deps = { catalog: CmsCatalog; pageStore: CmsPageStore; reader: PageReader };
 
 /**
  * Apply a block mutation to a persisted snapshot, persist it, and return the result.
  * Handles materialization if the page is still default-backed.
  */
 async function applyBlockMutation(
-  { catalog, pageStore }: { catalog: CmsCatalog; pageStore: CmsPageStore },
+  { pageStore, reader }: Deps,
   command:
     | SetBlockDataCommand
     | MoveBlockUpCommand
@@ -444,7 +238,7 @@ async function applyBlockMutation(
     | AddBlockCommand,
   mutate: (blocks: BlockInstance[]) => BlockInstance[] | null,
 ): Promise<ApplyPageCommandResult> {
-  const currentPage = await readResolvedPage({ catalog, pageStore }, command.pageKey);
+  const currentPage = await reader.readAdminPage(command.pageKey);
 
   // Check concurrency
   if (currentPage.status.kind === "default-backed") {
@@ -491,10 +285,9 @@ async function applyBlockMutation(
     });
 
     if (writeResult.status === "conflict") {
-      const refreshed = await readResolvedPage({ catalog, pageStore }, command.pageKey);
       return {
         status: "conflict",
-        currentEditorModel: refreshed,
+        currentEditorModel: await reader.readAdminPage(command.pageKey),
         diagnostics: [],
       };
     }
@@ -518,10 +311,9 @@ async function applyBlockMutation(
   });
 
   if (writeResult.status === "conflict") {
-    const refreshed = await readResolvedPage({ catalog, pageStore }, command.pageKey);
     return {
       status: "conflict",
-      currentEditorModel: refreshed,
+      currentEditorModel: await reader.readAdminPage(command.pageKey),
       diagnostics: [],
     };
   }
@@ -537,9 +329,10 @@ async function applyBlockMutation(
 }
 
 async function applySetBlockData(
-  { catalog, pageStore }: { catalog: CmsCatalog; pageStore: CmsPageStore },
+  deps: Deps,
   command: SetBlockDataCommand,
 ): Promise<ApplyPageCommandResult> {
+  const { catalog, reader } = deps;
   let definition;
   try {
     definition = catalog.getBlockDefinition(command.blockType);
@@ -550,7 +343,7 @@ async function applySetBlockData(
 
     return {
       status: "conflict",
-      currentEditorModel: await readResolvedPage({ catalog, pageStore }, command.pageKey),
+      currentEditorModel: await reader.readAdminPage(command.pageKey),
       diagnostics: [],
     };
   }
@@ -559,21 +352,21 @@ async function applySetBlockData(
   if (!parseResult.success) {
     return {
       status: "conflict",
-      currentEditorModel: await readResolvedPage({ catalog, pageStore }, command.pageKey),
+      currentEditorModel: await reader.readAdminPage(command.pageKey),
       diagnostics: [],
     };
   }
   if (command.blockVersion !== definition.version) {
     return {
       status: "conflict",
-      currentEditorModel: await readResolvedPage({ catalog, pageStore }, command.pageKey),
+      currentEditorModel: await reader.readAdminPage(command.pageKey),
       diagnostics: [],
     };
   }
 
   const validatedData = parseResult.data;
 
-  return applyBlockMutation({ catalog, pageStore }, command, (blocks) => {
+  return applyBlockMutation(deps, command, (blocks) => {
     const index = resolveBlockIndex(blocks, command.ref);
     if (index === -1) return null;
     const targetBlock = blocks[index];
@@ -590,11 +383,9 @@ async function applySetBlockData(
   });
 }
 
-function applyMoveBlockUp(
-  { catalog, pageStore }: { catalog: CmsCatalog; pageStore: CmsPageStore },
-  command: MoveBlockUpCommand,
-): Promise<ApplyPageCommandResult> {
-  return applyBlockMutation({ catalog, pageStore }, command, (blocks) => {
+function applyMoveBlockUp(deps: Deps, command: MoveBlockUpCommand): Promise<ApplyPageCommandResult> {
+  const { catalog } = deps;
+  return applyBlockMutation(deps, command, (blocks) => {
     const index = resolveBlockIndex(blocks, command.ref);
     const requiredLeadingCount = getRequiredLeadingCount(catalog, command.pageKey);
     if (!canMoveBlockUp(index, requiredLeadingCount)) return null;
@@ -606,11 +397,9 @@ function applyMoveBlockUp(
   });
 }
 
-function applyMoveBlockDown(
-  { catalog, pageStore }: { catalog: CmsCatalog; pageStore: CmsPageStore },
-  command: MoveBlockDownCommand,
-): Promise<ApplyPageCommandResult> {
-  return applyBlockMutation({ catalog, pageStore }, command, (blocks) => {
+function applyMoveBlockDown(deps: Deps, command: MoveBlockDownCommand): Promise<ApplyPageCommandResult> {
+  const { catalog } = deps;
+  return applyBlockMutation(deps, command, (blocks) => {
     const index = resolveBlockIndex(blocks, command.ref);
     const requiredLeadingCount = getRequiredLeadingCount(catalog, command.pageKey);
     if (!canMoveBlockDown(index, blocks.length, requiredLeadingCount)) {
@@ -626,11 +415,9 @@ function applyMoveBlockDown(
   });
 }
 
-function applyDeleteBlock(
-  { catalog, pageStore }: { catalog: CmsCatalog; pageStore: CmsPageStore },
-  command: DeleteBlockCommand,
-): Promise<ApplyPageCommandResult> {
-  return applyBlockMutation({ catalog, pageStore }, command, (blocks) => {
+function applyDeleteBlock(deps: Deps, command: DeleteBlockCommand): Promise<ApplyPageCommandResult> {
+  const { catalog } = deps;
+  return applyBlockMutation(deps, command, (blocks) => {
     const index = resolveBlockIndex(blocks, command.ref);
     const requiredLeadingCount = getRequiredLeadingCount(catalog, command.pageKey);
     if (!canMutateBlockAtIndex(index, requiredLeadingCount)) return null;
@@ -641,10 +428,8 @@ function applyDeleteBlock(
   });
 }
 
-function applyAddBlock(
-  { catalog, pageStore }: { catalog: CmsCatalog; pageStore: CmsPageStore },
-  command: AddBlockCommand,
-): Promise<ApplyPageCommandResult> {
+async function applyAddBlock(deps: Deps, command: AddBlockCommand): Promise<ApplyPageCommandResult> {
+  const { catalog, reader } = deps;
   let definition;
   try {
     definition = catalog.getBlockDefinition(command.blockType);
@@ -653,36 +438,36 @@ function applyAddBlock(
       throw error;
     }
 
-    return readResolvedPage({ catalog, pageStore }, command.pageKey).then((currentPage) => ({
+    return {
       status: "conflict" as const,
-      currentEditorModel: currentPage,
+      currentEditorModel: await reader.readAdminPage(command.pageKey),
       diagnostics: [],
-    }));
+    };
   }
 
   const pageRule = catalog.getPageRule(command.pageKey);
   if (!pageRule.allowedBlockTypes.includes(command.blockType)) {
-    return readResolvedPage({ catalog, pageStore }, command.pageKey).then((currentPage) => ({
+    return {
       status: "conflict" as const,
-      currentEditorModel: currentPage,
+      currentEditorModel: await reader.readAdminPage(command.pageKey),
       diagnostics: [],
-    }));
+    };
   }
 
   const parseResult = definition.schema.safeParse(command.data);
   if (!parseResult.success) {
-    return readResolvedPage({ catalog, pageStore }, command.pageKey).then((currentPage) => ({
+    return {
       status: "conflict" as const,
-      currentEditorModel: currentPage,
+      currentEditorModel: await reader.readAdminPage(command.pageKey),
       diagnostics: [],
-    }));
+    };
   }
   if (command.blockVersion !== definition.version) {
-    return readResolvedPage({ catalog, pageStore }, command.pageKey).then((currentPage) => ({
+    return {
       status: "conflict" as const,
-      currentEditorModel: currentPage,
+      currentEditorModel: await reader.readAdminPage(command.pageKey),
       diagnostics: [],
-    }));
+    };
   }
 
   const validatedData = parseResult.data;
@@ -692,14 +477,12 @@ function applyAddBlock(
     data: validatedData,
   };
 
-  return applyBlockMutation({ catalog, pageStore }, command, (blocks) => [...blocks, newBlock]);
+  return applyBlockMutation(deps, command, (blocks) => [...blocks, newBlock]);
 }
 
-async function applySetPageMeta(
-  { catalog, pageStore }: { catalog: CmsCatalog; pageStore: CmsPageStore },
-  command: SetPageMetaCommand,
-): Promise<ApplyPageCommandResult> {
-  const currentPage = await readResolvedPage({ catalog, pageStore }, command.pageKey);
+async function applySetPageMeta(deps: Deps, command: SetPageMetaCommand): Promise<ApplyPageCommandResult> {
+  const { pageStore, reader } = deps;
+  const currentPage = await reader.readAdminPage(command.pageKey);
 
   if (currentPage.status.kind === "default-backed") {
     if (command.baseRevision !== null) {
@@ -720,10 +503,9 @@ async function applySetPageMeta(
     });
 
     if (writeResult.status === "conflict") {
-      const refreshed = await readResolvedPage({ catalog, pageStore }, command.pageKey);
       return {
         status: "conflict",
-        currentEditorModel: refreshed,
+        currentEditorModel: await reader.readAdminPage(command.pageKey),
         diagnostics: [],
       };
     }
@@ -749,8 +531,8 @@ async function applySetPageMeta(
     };
   }
 
-  const hasRuntimeMigrations = currentPage.diagnostics.some((diagnostic) =>
-    isRuntimeMigrationDiagnosticCode(diagnostic.code),
+  const hasRuntimeMigrations = currentPage.diagnostics.some(
+    (diagnostic: CmsDiagnostic) => isRuntimeMigrationDiagnosticCode(diagnostic.code),
   );
   const writeResult = hasRuntimeMigrations
     ? await pageStore.updatePage({
@@ -768,10 +550,9 @@ async function applySetPageMeta(
       });
 
   if (writeResult.status === "conflict") {
-    const refreshed = await readResolvedPage({ catalog, pageStore }, command.pageKey);
     return {
       status: "conflict",
-      currentEditorModel: refreshed,
+      currentEditorModel: await reader.readAdminPage(command.pageKey),
       diagnostics: [],
     };
   }
@@ -786,11 +567,9 @@ async function applySetPageMeta(
   };
 }
 
-async function applyResetPage(
-  { catalog, pageStore }: { catalog: CmsCatalog; pageStore: CmsPageStore },
-  command: ResetPageCommand,
-): Promise<ApplyPageCommandResult> {
-  const currentPage = await readResolvedPage({ catalog, pageStore }, command.pageKey);
+async function applyResetPage(deps: Deps, command: ResetPageCommand): Promise<ApplyPageCommandResult> {
+  const { catalog, pageStore, reader } = deps;
+  const currentPage = await reader.readAdminPage(command.pageKey);
 
   if (currentPage.status.kind === "default-backed") {
     if (command.baseRevision !== null) {
@@ -834,13 +613,14 @@ export function createCmsPageService({
   catalog: CmsCatalog;
   pageStore: CmsPageStore;
 }): CmsPageService {
-  const deps = { catalog, pageStore };
+  const reader = createPageReader({ catalog, pageStore });
+  const deps: Deps = { catalog, pageStore, reader };
 
   return {
     async listEditablePages() {
       return Promise.all(
         catalog.listPageKeys().map(async (pageKey) => {
-          const resolved = await readResolvedPage(deps, pageKey);
+          const resolved = await reader.readAdminPage(pageKey);
           return {
             pageKey,
             title: resolved.pageSnapshot.title,
@@ -854,22 +634,16 @@ export function createCmsPageService({
       return catalog.listPageKeys().includes(pageKey);
     },
     async readPage(pageKey) {
-      return readResolvedPage(deps, pageKey);
+      return reader.readAdminPage(pageKey);
     },
     async readPublicProjection(pageKey, context) {
-      const resolved = await readResolvedPage(deps, pageKey);
-      return computePublicProjection(resolved, catalog, context);
+      return reader.readPublicProjection(pageKey, context);
     },
     async readPublicPage(pageKey, context) {
-      const resolved = await readResolvedPage(deps, pageKey);
-      const projection = computePublicProjection(resolved, catalog, context);
-      return {
-        public: { meta: projection.meta, blocks: projection.blocks },
-        resolved,
-      };
+      return reader.readPublicPage(pageKey, context);
     },
     async readEditorModel(pageKey) {
-      return readResolvedPage(deps, pageKey);
+      return reader.readAdminPage(pageKey);
     },
     async applyPageCommand(command) {
       switch (command.type) {

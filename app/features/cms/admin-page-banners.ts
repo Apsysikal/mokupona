@@ -1,7 +1,7 @@
 import type { PageStatus } from "./page-status";
 import {
   cmsDiagnosticCodes,
-  isRecoverableBlockDiagnosticCode,
+  isAdminOnlyBlockDiagnosticCode,
   type CmsDiagnostic,
 } from "./diagnostics";
 
@@ -20,7 +20,7 @@ export function derivePageBanners(input: {
     ({ code }) => code === cmsDiagnosticCodes.pagePublicFallbackDefaults,
   );
   const hasRecoverableBlocks = input.diagnostics.some(({ code }) =>
-    isRecoverableBlockDiagnosticCode(code),
+    isAdminOnlyBlockDiagnosticCode(code),
   );
 
   const banners: string[] = [];

@@ -47,7 +47,7 @@ import {
 import {
   cmsDiagnosticCodes,
   getCmsDiagnosticIdentity,
-  isRecoverableBlockDiagnosticCode,
+  isAdminOnlyBlockDiagnosticCode,
 } from "~/features/cms/diagnostics";
 import {
   createPageCommandBuilder,
@@ -632,7 +632,7 @@ export default function AdminPageEditorRoute() {
           const blockDiagnostic = displayEditorModel.diagnostics.find(
             (diagnostic) =>
               diagnostic.blockIndex === index &&
-              isRecoverableBlockDiagnosticCode(diagnostic.code),
+              isAdminOnlyBlockDiagnosticCode(diagnostic.code),
           );
           let definition = null;
           try {
