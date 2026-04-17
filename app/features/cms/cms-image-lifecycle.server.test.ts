@@ -2,13 +2,15 @@ import { describe, expect, test, vi } from "vitest";
 
 import type { BlockInstance } from "./catalog";
 import {
-  collectUploadedHeroImageIdsFromBlocks,
-  getRemovedUploadedHeroImageIds,
+  collectUploadedImageIds,
   deleteCmsImagesIfUnreferenced,
+  discardOrphanedUploadedImage,
+  reconcileCmsImageLifecycle,
 } from "./cms-image-lifecycle.server";
+import { siteCmsCatalog } from "./site-catalog";
 
 describe("cms image lifecycle", () => {
-  test("collects uploaded hero image ids from page blocks", () => {
+  test("collects uploaded image ids from block definitions", () => {
     const blocks: BlockInstance[] = [
       {
         type: "hero",
@@ -25,42 +27,53 @@ describe("cms image lifecycle", () => {
         },
       },
       {
+        type: "image",
+        version: 1,
+        data: {
+          image: {
+            kind: "uploaded",
+            imageId: "img_456",
+            fallbackAssetSrc: "/accent-image.png",
+            decorative: true,
+          },
+          variant: "default",
+        },
+      },
+      {
         type: "text-section",
         version: 1,
         data: { headline: "x", body: "y", variant: "plain" },
       },
     ];
 
-    expect([...collectUploadedHeroImageIdsFromBlocks(blocks)]).toEqual([
+    expect([...collectUploadedImageIds(blocks, siteCmsCatalog)]).toEqual([
       "img_123",
+      "img_456",
     ]);
   });
 
-  test("deletes candidate image when no references remain", async () => {
-    const prisma = {
-      pageBlock: {
-        count: vi.fn().mockResolvedValue(0),
+  test("returns no image ids when block data is invalid", () => {
+    const blocks: BlockInstance[] = [
+      {
+        type: "hero",
+        version: 1,
+        data: {
+          headline: "",
+          actions: [],
+          image: {
+            kind: "uploaded",
+            imageId: "",
+            fallbackAssetSrc: "/hero-image.jpg",
+            decorative: false,
+          },
+        },
       },
-      event: {
-        count: vi.fn().mockResolvedValue(0),
-      },
-      image: {
-        count: vi.fn().mockResolvedValue(0),
-        delete: vi.fn().mockResolvedValue(undefined),
-      },
-    };
+    ];
 
-    await deleteCmsImagesIfUnreferenced({
-      prisma: prisma as never,
-      imageIds: ["img_123"],
-    });
-
-    expect(prisma.image.delete).toHaveBeenCalledWith({
-      where: { id: "img_123" },
-    });
+    expect([...collectUploadedImageIds(blocks, siteCmsCatalog)]).toEqual([]);
   });
 
-  test("finds uploaded hero images removed by a replace or remove edit", () => {
+  test("reconciles removed uploaded images after a replace edit", async () => {
     const previousBlocks: BlockInstance[] = [
       {
         pageBlockId: "hero-1",
@@ -95,63 +108,109 @@ describe("cms image lifecycle", () => {
         },
       },
     ];
+    const prisma = {
+      pageBlock: {
+        count: vi.fn().mockResolvedValue(0),
+      },
+      event: {
+        count: vi.fn().mockResolvedValue(0),
+      },
+      image: {
+        count: vi.fn().mockResolvedValue(0),
+        delete: vi.fn().mockResolvedValue(undefined),
+      },
+    };
 
-    expect(getRemovedUploadedHeroImageIds(previousBlocks, nextBlocks)).toEqual([
-      "img_old",
-    ]);
+    await reconcileCmsImageLifecycle({
+      previousBlocks,
+      nextBlocks,
+      prisma: prisma as never,
+      catalog: siteCmsCatalog,
+    });
+
+    expect(prisma.image.delete).toHaveBeenCalledWith({
+      where: { id: "img_old" },
+    });
   });
 
-  test("finds uploaded hero images removed when the block disappears", () => {
-    const previousBlocks: BlockInstance[] = [
-      {
-        pageBlockId: "hero-1",
-        type: "hero",
-        version: 1,
-        data: {
-          headline: "hero",
-          actions: [{ label: "Join", href: "/dinners" }],
-          image: {
-            kind: "uploaded",
-            imageId: "img_old",
-            fallbackAssetSrc: "/hero-image.jpg",
-            decorative: true,
-          },
-        },
+  test("ignores blocks whose definitions do not declare uploaded image ids", async () => {
+    const prisma = {
+      pageBlock: {
+        count: vi.fn().mockResolvedValue(0),
       },
-      {
-        pageBlockId: "text-1",
-        type: "text-section",
-        version: 1,
-        data: { headline: "x", body: "y", variant: "plain" },
+      event: {
+        count: vi.fn().mockResolvedValue(0),
       },
-    ];
+      image: {
+        count: vi.fn().mockResolvedValue(0),
+        delete: vi.fn().mockResolvedValue(undefined),
+      },
+    };
 
-    expect(getRemovedUploadedHeroImageIds(previousBlocks, [])).toEqual([
-      "img_old",
-    ]);
+    await reconcileCmsImageLifecycle({
+      previousBlocks: [
+        {
+          pageBlockId: "text-1",
+          type: "text-section",
+          version: 1,
+          data: { headline: "x", body: "y", variant: "plain" },
+        },
+      ],
+      nextBlocks: [],
+      prisma: prisma as never,
+      catalog: siteCmsCatalog,
+    });
+
+    expect(prisma.pageBlock.count).not.toHaveBeenCalled();
+    expect(prisma.image.delete).not.toHaveBeenCalled();
   });
 
-  test("finds uploaded image-block images removed when the block disappears", () => {
-    const previousBlocks: BlockInstance[] = [
-      {
-        pageBlockId: "image-1",
-        type: "image",
-        version: 1,
-        data: {
-          image: {
-            kind: "uploaded",
-            imageId: "img_old",
-            fallbackAssetSrc: "/accent-image.png",
-            decorative: true,
-          },
-          variant: "default",
-        },
+  test("deletes candidate image when no references remain", async () => {
+    const prisma = {
+      pageBlock: {
+        count: vi.fn().mockResolvedValue(0),
       },
-    ];
+      event: {
+        count: vi.fn().mockResolvedValue(0),
+      },
+      image: {
+        count: vi.fn().mockResolvedValue(0),
+        delete: vi.fn().mockResolvedValue(undefined),
+      },
+    };
 
-    expect(getRemovedUploadedHeroImageIds(previousBlocks, [])).toEqual([
-      "img_old",
-    ]);
+    await deleteCmsImagesIfUnreferenced({
+      prisma: prisma as never,
+      imageIds: ["img_123"],
+    });
+
+    expect(prisma.image.delete).toHaveBeenCalledWith({
+      where: { id: "img_123" },
+    });
+  });
+
+  test("discards orphaned uploaded images", async () => {
+    const prisma = {
+      pageBlock: {
+        count: vi.fn().mockResolvedValue(0),
+      },
+      event: {
+        count: vi.fn().mockResolvedValue(0),
+      },
+      image: {
+        count: vi.fn().mockResolvedValue(0),
+        delete: vi.fn().mockResolvedValue(undefined),
+      },
+    };
+
+    await discardOrphanedUploadedImage({
+      imageId: "img_123",
+      prisma: prisma as never,
+    });
+
+    expect(prisma.image.delete).toHaveBeenCalledWith({
+      where: { id: "img_123" },
+    });
   });
 
   test("does not delete candidate image when still referenced by a page block", async () => {

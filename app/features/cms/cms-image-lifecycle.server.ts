@@ -1,6 +1,10 @@
-import type { BlockInstance } from "./catalog";
+import {
+  type BlockInstance,
+  type CmsCatalog,
+  UnknownBlockTypeError,
+} from "./catalog";
 
-type CmsImageLifecyclePrisma = {
+export type CmsImageLifecyclePrisma = {
   pageBlock: {
     count(args: { where: { data: { contains: string } } }): Promise<number>;
   };
@@ -15,41 +19,86 @@ type CmsImageLifecyclePrisma = {
   };
 };
 
-export function collectUploadedHeroImageIdsFromBlocks(
+export function collectUploadedImageIds(
   blocks: readonly BlockInstance[],
+  catalog: CmsCatalog,
 ): Set<string> {
   const imageIds = new Set<string>();
 
   for (const block of blocks) {
-    if (block.type !== "hero" && block.type !== "image") continue;
-
-    const data = block.data as {
-      image?: {
-        kind?: string;
-        imageId?: string;
-      };
-    };
-
-    if (
-      data.image?.kind === "uploaded" &&
-      typeof data.image.imageId === "string"
-    ) {
-      imageIds.add(data.image.imageId);
+    try {
+      const ids = catalog
+        .getBlockDefinition(block.type)
+        .getUploadedImageIds?.(block.data);
+      for (const imageId of ids ?? []) {
+        if (imageId.length > 0) {
+          imageIds.add(imageId);
+        }
+      }
+    } catch (error) {
+      if (!(error instanceof UnknownBlockTypeError)) {
+        throw error;
+      }
     }
   }
 
   return imageIds;
 }
 
-export function getRemovedUploadedHeroImageIds(
+function getRemovedUploadedImageIds(
   previousBlocks: readonly BlockInstance[],
   nextBlocks: readonly BlockInstance[],
+  catalog: CmsCatalog,
 ): string[] {
-  const nextImageIds = collectUploadedHeroImageIdsFromBlocks(nextBlocks);
+  const nextImageIds = collectUploadedImageIds(nextBlocks, catalog);
 
-  return [...collectUploadedHeroImageIdsFromBlocks(previousBlocks)].filter(
-    (imageId) => !nextImageIds.has(imageId),
+  return [...collectUploadedImageIds(previousBlocks, catalog)].filter((id) => {
+    return !nextImageIds.has(id);
+  });
+}
+
+export async function reconcileCmsImageLifecycle({
+  previousBlocks,
+  nextBlocks,
+  prisma,
+  catalog,
+}: {
+  previousBlocks: readonly BlockInstance[];
+  nextBlocks: readonly BlockInstance[];
+  prisma: CmsImageLifecyclePrisma;
+  catalog: CmsCatalog;
+}) {
+  const removedImageIds = getRemovedUploadedImageIds(
+    previousBlocks,
+    nextBlocks,
+    catalog,
   );
+
+  if (removedImageIds.length === 0) {
+    return;
+  }
+
+  await deleteCmsImagesIfUnreferenced({
+    imageIds: removedImageIds,
+    prisma,
+  });
+}
+
+export async function discardOrphanedUploadedImage({
+  imageId,
+  prisma,
+}: {
+  imageId: string;
+  prisma: CmsImageLifecyclePrisma;
+}) {
+  if (imageId.length === 0) {
+    return;
+  }
+
+  await deleteCmsImagesIfUnreferenced({
+    imageIds: [imageId],
+    prisma,
+  });
 }
 
 export async function deleteCmsImagesIfUnreferenced({

@@ -1,26 +1,22 @@
 import { Fragment } from "react";
 
-import type { CmsCatalog, PublicProjection } from "./catalog";
+import type { CmsCatalog } from "./catalog";
+import type { PublicPageView } from "./page-service.server";
 import { siteCmsCatalog } from "./site-catalog";
 
 type PublicPageRendererProps = {
-  projection: PublicProjection;
+  view: PublicPageView;
   catalog?: CmsCatalog;
 };
 
 export function PublicPageRenderer({
-  projection,
+  view,
   catalog = siteCmsCatalog,
 }: PublicPageRendererProps) {
   return (
     <>
-      {projection.blocks.map((block, index) => (
-        <Fragment
-          key={
-            block.definitionKey ??
-            `${projection.pageKey}:${block.type}:${index}`
-          }
-        >
+      {view.blocks.map((block, index) => (
+        <Fragment key={block.definitionKey ?? `${block.type}:${index}`}>
           {catalog.getBlockDefinition(block.type).render(block)}
         </Fragment>
       ))}

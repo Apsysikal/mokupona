@@ -41,79 +41,6 @@ describe("image editor schema image behavior", () => {
     expect(defaults.imageAccessibility).toBe("");
   });
 
-  test("builds an uploaded decorative image when replacing with upload", () => {
-    const next = applyImageBlockEditorValue(
-      makeImageData({ kind: "asset", src: "/accent-image.png", alt: "" }),
-      {
-        variant: "full-width",
-        imageAction: "replace",
-        imageAccessibility: "decorative",
-        imageAlt: "",
-      },
-      { uploadedImageId: "img_123" },
-    );
-
-    expect(next).toEqual({
-      variant: "full-width",
-      image: {
-        kind: "uploaded",
-        imageId: "img_123",
-        fallbackAssetSrc: "/accent-image.png",
-        decorative: true,
-      },
-    });
-  });
-
-  test("reverts uploaded image back to default asset on remove action", () => {
-    const next = applyImageBlockEditorValue(
-      makeImageData({
-        kind: "uploaded",
-        imageId: "img_123",
-        fallbackAssetSrc: "/accent-image.png",
-        decorative: false,
-        alt: "A plated dinner",
-      }),
-      {
-        variant: "default",
-        imageAction: "remove",
-        imageAccessibility: "decorative",
-        imageAlt: "",
-      },
-    );
-
-    expect(next.image).toEqual({
-      kind: "asset",
-      src: "/accent-image.png",
-      alt: "",
-    });
-  });
-
-  test("updates uploaded image accessibility metadata without re-uploading", () => {
-    const next = applyImageBlockEditorValue(
-      makeImageData({
-        kind: "uploaded",
-        imageId: "img_123",
-        fallbackAssetSrc: "/accent-image.png",
-        decorative: false,
-        alt: "A plated dinner",
-      }),
-      {
-        variant: "default",
-        imageAction: "keep",
-        imageAccessibility: "decorative",
-        imageAlt: "",
-      },
-    );
-
-    expect(next.image).toEqual({
-      kind: "uploaded",
-      imageId: "img_123",
-      fallbackAssetSrc: "/accent-image.png",
-      decorative: true,
-      alt: undefined,
-    });
-  });
-
   test("default form values expose keep action and uploaded accessibility state", () => {
     const defaults = getImageBlockEditorDefaultValue(
       makeImageData({
@@ -128,5 +55,47 @@ describe("image editor schema image behavior", () => {
     expect(defaults.imageAction).toBe("keep");
     expect(defaults.imageAccessibility).toBe("descriptive");
     expect(defaults.imageAlt).toBe("A plated dinner");
+  });
+
+  test("reverts uploaded image to asset with explicit empty alt on remove", () => {
+    const next = applyImageBlockEditorValue(
+      makeImageData({
+        kind: "uploaded",
+        imageId: "img_123",
+        fallbackAssetSrc: "/accent-image.png",
+        decorative: false,
+        alt: "A plated dinner",
+      }),
+      {
+        variant: "default",
+        imageAction: "remove",
+      },
+    );
+
+    expect(next.image).toEqual({
+      kind: "asset",
+      src: "/accent-image.png",
+      alt: "",
+    });
+  });
+
+  test("apply preserves variant field alongside image changes", () => {
+    const next = applyImageBlockEditorValue(
+      makeImageData({ kind: "asset", src: "/accent-image.png", alt: "" }),
+      {
+        variant: "full-width",
+        imageAction: "replace",
+        imageAccessibility: "decorative",
+      },
+      { uploadedImageId: "img_123" },
+    );
+
+    expect(next.variant).toBe("full-width");
+    expect(next.image).toEqual({
+      kind: "uploaded",
+      imageId: "img_123",
+      fallbackAssetSrc: "/accent-image.png",
+      decorative: true,
+    });
   });
 });

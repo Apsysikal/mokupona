@@ -1991,42 +1991,6 @@ describe("createCmsPageService — block commands", () => {
     expect(store.peek("home")?.revision).toBe(revision);
   });
 
-  test("set-block-data rejects CTA href values outside the registered site targets", async () => {
-    const { service, store, revision } = await setupPersisted();
-
-    const heroBlock = store.peek("home")!.blocks[0];
-    const ref = refByPageBlockId(heroBlock.pageBlockId!, 0);
-
-    const result = await service.applyPageCommand({
-      type: "set-block-data",
-      pageKey: "home",
-      baseRevision: revision,
-      ref,
-      blockType: "hero",
-      blockVersion: 1,
-      data: {
-        ...(heroBlock.data as object),
-        actions: [{ label: "Join", href: "https://example.com" }],
-      },
-    });
-
-    expect(result.status).toBe("conflict");
-    if (result.status !== "conflict") return;
-
-    expect(result.currentEditorModel.status).toEqual({
-      kind: "persisted",
-      revision,
-    });
-    expect(
-      (
-        result.currentEditorModel.pageSnapshot.blocks[0].data as {
-          actions: { href: string }[];
-        }
-      ).actions[0].href,
-    ).toBe("/dinners");
-    expect(store.peek("home")?.revision).toBe(revision);
-  });
-
   test("set-block-data returns conflict when command block type does not match the targeted block", async () => {
     const { service, store, revision } = await setupPersisted();
 

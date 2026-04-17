@@ -11,7 +11,7 @@ import {
   createPagePublicFallbackDefaultsDiagnostic,
   createPagePublicOmittedBrokenBlocksDiagnostic,
   getCmsDiagnosticIdentity,
-  isRecoverableBlockDiagnosticCode,
+  isAdminOnlyBlockDiagnosticCode,
   isRuntimeMigrationDiagnosticCode,
   mergeCmsDiagnostics,
 } from "./diagnostics";
@@ -29,15 +29,15 @@ describe("cms diagnostics helpers", () => {
     ).toBe(false);
   });
 
-  test("classifies recoverable block diagnostics", () => {
+  test("classifies admin-only block diagnostics", () => {
     expect(
-      isRecoverableBlockDiagnosticCode(cmsDiagnosticCodes.blockBrokenData),
+      isAdminOnlyBlockDiagnosticCode(cmsDiagnosticCodes.blockBrokenData),
     ).toBe(true);
     expect(
-      isRecoverableBlockDiagnosticCode(cmsDiagnosticCodes.blockUnsupportedType),
+      isAdminOnlyBlockDiagnosticCode(cmsDiagnosticCodes.blockUnsupportedType),
     ).toBe(true);
     expect(
-      isRecoverableBlockDiagnosticCode(cmsDiagnosticCodes.pageMigrated),
+      isAdminOnlyBlockDiagnosticCode(cmsDiagnosticCodes.pageMigrated),
     ).toBe(false);
   });
 

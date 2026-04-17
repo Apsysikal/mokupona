@@ -166,15 +166,12 @@ const runtimeMigrationDiagnosticCodeSet = new Set<CmsDiagnosticCode>(
   runtimeMigrationDiagnosticCodes,
 );
 
-export const recoverableBlockDiagnosticCodes = [
+const adminOnlyBlockDiagnosticCodeSet = new Set<CmsDiagnosticCode>([
   cmsDiagnosticCodes.blockDisallowedType,
   cmsDiagnosticCodes.blockBrokenData,
   cmsDiagnosticCodes.blockUnsupportedType,
   cmsDiagnosticCodes.blockUnsupportedVersion,
-] as const satisfies readonly CmsDiagnosticCode[];
-const recoverableBlockDiagnosticCodeSet = new Set<CmsDiagnosticCode>(
-  recoverableBlockDiagnosticCodes,
-);
+]);
 
 export function isRuntimeMigrationDiagnosticCode(
   code: CmsDiagnosticCode,
@@ -182,8 +179,8 @@ export function isRuntimeMigrationDiagnosticCode(
   return runtimeMigrationDiagnosticCodeSet.has(code);
 }
 
-export function isRecoverableBlockDiagnosticCode(
+export function isAdminOnlyBlockDiagnosticCode(
   code: CmsDiagnosticCode,
 ): boolean {
-  return recoverableBlockDiagnosticCodeSet.has(code);
+  return adminOnlyBlockDiagnosticCodeSet.has(code);
 }

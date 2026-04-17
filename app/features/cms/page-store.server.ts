@@ -1,6 +1,7 @@
 import type { BlockInstance } from "./catalog";
 import type { CmsPageStore, PersistedPageRecord } from "./page-service.server";
 
+import { planBlockOperations, type BlockOperation } from "./block-operations";
 import { Prisma } from "~/db.server";
 import { prisma as defaultPrisma } from "~/db.server";
 
@@ -10,6 +11,7 @@ type PageStoreClient = Pick<
 >;
 
 type PageStoreReader = Pick<typeof defaultPrisma, "page">;
+type PageBlockWriter = Pick<typeof defaultPrisma, "pageBlock">;
 
 export function createPrismaCmsPageStore({
   prisma = defaultPrisma,
@@ -99,70 +101,17 @@ export function createPrismaCmsPageStore({
           data: { title, description, revision: { increment: 1 } },
         });
 
-        // Upsert blocks: preserve existing row IDs where pageBlockId matches,
-        // delete removed blocks, insert new ones.
         const existingBlocks = await tx.pageBlock.findMany({
           where: { pageId: existingPage.id },
           select: { id: true },
         });
-        const positionShift = existingBlocks.length;
-        const existingIds = new Set(existingBlocks.map((b) => b.id));
-        const incomingIds = new Set(
-          blocks
-            .map((b) => b.pageBlockId)
-            .filter((id): id is string => id !== undefined),
+        const operations = planBlockOperations(
+          existingBlocks,
+          blocks,
+          existingPage.id,
         );
-        const retainedIds = [...existingIds].filter((id) =>
-          incomingIds.has(id),
-        );
-        const retainedIdSet = new Set(retainedIds);
 
-        // Delete blocks that are no longer present
-        const toDelete = [...existingIds].filter((id) => !incomingIds.has(id));
-        if (toDelete.length > 0) {
-          await tx.pageBlock.deleteMany({ where: { id: { in: toDelete } } });
-        }
-
-        // Move retained rows out of the target position range first so swaps
-        // cannot violate the (pageId, position) uniqueness constraint.
-        if (retainedIds.length > 0) {
-          await tx.pageBlock.updateMany({
-            where: { id: { in: retainedIds } },
-            data: {
-              position: {
-                increment: positionShift,
-              },
-            },
-          });
-        }
-
-        // Upsert each block in the new order
-        for (let position = 0; position < blocks.length; position++) {
-          const block = blocks[position];
-          if (block.pageBlockId && retainedIdSet.has(block.pageBlockId)) {
-            await tx.pageBlock.update({
-              where: { id: block.pageBlockId },
-              data: {
-                definitionKey: block.definitionKey ?? null,
-                type: block.type,
-                version: block.version,
-                position,
-                data: JSON.stringify(block.data),
-              },
-            });
-          } else {
-            await tx.pageBlock.create({
-              data: {
-                pageId: existingPage.id,
-                definitionKey: block.definitionKey ?? null,
-                type: block.type,
-                version: block.version,
-                position,
-                data: JSON.stringify(block.data),
-              },
-            });
-          }
-        }
+        await executeBlockOperations(tx, operations);
 
         return {
           status: "saved" as const,
@@ -212,6 +161,55 @@ export function createPrismaCmsPageStore({
       });
     },
   };
+}
+
+async function executeBlockOperations(
+  tx: PageBlockWriter,
+  operations: readonly BlockOperation[],
+) {
+  for (const operation of operations) {
+    switch (operation.op) {
+      case "delete":
+        await tx.pageBlock.deleteMany({
+          where: { id: { in: [operation.id] } },
+        });
+        break;
+      case "shift":
+        await tx.pageBlock.updateMany({
+          where: { id: { in: operation.ids } },
+          data: {
+            position: {
+              increment: operation.by,
+            },
+          },
+        });
+        break;
+      case "update":
+        await tx.pageBlock.update({
+          where: { id: operation.id },
+          data: {
+            definitionKey: operation.block.definitionKey ?? null,
+            type: operation.block.type,
+            version: operation.block.version,
+            position: operation.position,
+            data: JSON.stringify(operation.block.data),
+          },
+        });
+        break;
+      case "create":
+        await tx.pageBlock.create({
+          data: {
+            pageId: operation.pageId,
+            definitionKey: operation.block.definitionKey ?? null,
+            type: operation.block.type,
+            version: operation.block.version,
+            position: operation.position,
+            data: JSON.stringify(operation.block.data),
+          },
+        });
+        break;
+    }
+  }
 }
 
 async function readPersistedPage(

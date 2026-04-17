@@ -60,7 +60,7 @@ test("PublicPageRenderer renders projected blocks in page order", () => {
   });
 
   const html = renderToStaticMarkup(
-    <PublicPageRenderer catalog={catalog} projection={projection} />,
+    <PublicPageRenderer catalog={catalog} view={projection} />,
   );
 
   expect(html).toContain("first block");
@@ -78,7 +78,7 @@ test("PublicPageRenderer renders the real home page through the site catalog", (
 
   const html = renderToStaticMarkup(
     <MemoryRouter>
-      <PublicPageRenderer catalog={siteCmsCatalog} projection={projection} />
+      <PublicPageRenderer catalog={siteCmsCatalog} view={projection} />
     </MemoryRouter>,
   );
 

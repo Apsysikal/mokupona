@@ -1,9 +1,9 @@
 import { z } from "zod/v4";
 
-import type { BlockBaseType, BlockType } from "../types";
+import type { BlockBaseType, BlockType, BlockVersion } from "../types";
 
 const BLOCK_TYPE: BlockType = "image";
-const BLOCK_VERSION = 1;
+const BLOCK_VERSION: BlockVersion = 1;
 export const DEFAULT_IMAGE_BLOCK_ASSET_SRC = "/accent-image.png";
 
 const ImageAssetSchema = z.object({
@@ -46,6 +46,8 @@ export type ImageBlockType = BlockBaseType<
   typeof BLOCK_VERSION,
   z.infer<typeof ImageBlockDataSchema>
 >;
+
+export type ImageBlockData = ImageBlockType["data"];
 
 export function createDefaultImageBlockData(): ImageBlockType["data"] {
   return {

@@ -1,6 +1,5 @@
 import { z } from "zod/v4";
 
-import type { LinkTargetRegistry } from "../../link-targets";
 import { ActionSchema } from "../models";
 import type { BlockBaseType, BlockType, BlockVersion } from "../types";
 
@@ -51,32 +50,20 @@ function requiredCopyFieldSchema(fieldLabel: string) {
     .min(1, `${fieldLabel} is required`);
 }
 
-export function createHeroActionSchema(
-  linkTargetRegistry?: LinkTargetRegistry,
-) {
-  const hrefSchema = requiredCopyFieldSchema("CTA destination");
-  const safeHrefSchema = linkTargetRegistry
-    ? hrefSchema.refine(
-        (href) => linkTargetRegistry.byHref[href] !== undefined,
-        "CTA destination must be one of the registered site links",
-      )
-    : hrefSchema;
-
+export function createHeroActionSchema() {
   return ActionSchema.extend({
     label: requiredCopyFieldSchema("CTA label"),
-    href: safeHrefSchema,
+    href: requiredCopyFieldSchema("CTA destination"),
   });
 }
 
-export function createHeroBlockDataSchema(
-  linkTargetRegistry?: LinkTargetRegistry,
-) {
+export function createHeroBlockDataSchema() {
   return z.object({
     eyebrow: optionalCopyFieldSchema(),
     headline: requiredCopyFieldSchema("Headline"),
     description: optionalCopyFieldSchema(),
     actions: z
-      .array(createHeroActionSchema(linkTargetRegistry))
+      .array(createHeroActionSchema())
       .min(1, "At least one CTA is required"),
     image: z.discriminatedUnion("kind", [
       HeroAssetImageSchema,
@@ -92,3 +79,5 @@ export type HeroBlockType = BlockBaseType<
   typeof BLOCK_VERSION,
   z.infer<typeof HeroBlockDataSchema>
 >;
+
+export type HeroBlockData = HeroBlockType["data"];
