@@ -133,10 +133,18 @@ export function createHeroBlockEditorFormSchema(
         .optional()
         .transform((value) => (value ? value : undefined)),
       actions: z.tuple([
-        createHeroActionSchema(linkTargetRegistry).pick({
-          label: true,
-          href: true,
-        }),
+        createHeroActionSchema()
+          .pick({ label: true, href: true })
+          .superRefine((action, ctx) => {
+            if (linkTargetRegistry.byHref[action.href] === undefined) {
+              ctx.addIssue({
+                code: "custom",
+                path: ["href"],
+                message:
+                  "CTA destination must be one of the registered site links",
+              });
+            }
+          }),
       ]),
       ...imageSlotSchema().shape,
     })

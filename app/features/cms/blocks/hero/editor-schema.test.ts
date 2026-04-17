@@ -90,6 +90,24 @@ describe("hero editor schema image behavior", () => {
     expect(next.headline).toBe("Recovered hero headline");
   });
 
+  test("rejects hrefs not in registry", () => {
+    const schema = createHeroBlockEditorFormSchema(linkTargetRegistry);
+    const parsed = schema.safeParse({
+      eyebrow: "",
+      headline: "headline",
+      description: "",
+      actions: [{ label: "Join", href: "/not-a-registered-href" }],
+      imageAction: "keep",
+      imageAccessibility: "",
+      imageAlt: "",
+    });
+    expect(parsed.success).toBe(false);
+    if (parsed.success) return;
+    expect(
+      parsed.error.issues.some((issue) => issue.path.includes("href")),
+    ).toBe(true);
+  });
+
   test("apply preserves hero-specific fields alongside image changes", () => {
     const next = applyHeroBlockEditorValue(
       makeHeroData({ kind: "asset", src: "/hero-image.jpg" }),
