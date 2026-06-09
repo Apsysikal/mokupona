@@ -286,11 +286,18 @@ return (
 
 ### Editor
 
-1. Load the page; each block's data is migrated to the current shape (used as the form's default values).
+1. Load the page; each block resolves to its current shape (the form's default
+   values). A block that fails validation comes back `status: "error"` and
+   renders a fix-or-delete affordance instead of crashing its `editorComponent`.
 2. Render each block's `editorComponent` with that data.
-3. Compose the page form schema from the blocks' current schemas (Conform).
-4. On save, persist each block's data **and stamp the current version**
-   (server-side), catching the row up.
+3. Compose the page form schema from `blockRegistry` (Conform). React list keys
+   come from Conform, not the block id.
+4. Add / move / delete are **form-only** intents (`insert` / `remove` /
+   `reorder`) — they mutate the form, never the DB. Progressively enhanced: move
+   buttons work without JS; drag is a JS-only layer on top.
+5. On save, the whole ordered list goes to `updatePage` (see [Pages](#pages)).
+   Strict: a block must be valid to be saved, so broken blocks are fixed or
+   deleted first; delete never requires valid data.
 
 New blocks take default data from the schema, or render the form empty.
 
@@ -307,31 +314,65 @@ const schema = z.object({ heading: z.string().default("Untitled") });
 A page holds metadata and an ordered list of blocks, hidden behind a service layer.
 
 ```ts
+// The stored Block (data: string) is the raw DB row; it never leaves the
+// persistence layer. Pages expose ResolvedBlock — validated + migrated to the
+// current shape, discriminated on kind, carrying its validation status.
+type ResolvedBlock =
+  | { id: string; kind: "hero"; status: "ok"; data: z.infer<typeof heroSchema> }
+  // …one "ok" variant per kind
+  | { id: string; kind: string; status: "error"; error: z.ZodError; raw: string };
+
 type Page = {
+  id: string; // identity — updatePage keys by this
+  slug: string; // mutable metadata (user-editable URL) — getPage keys by this
   title: string;
   description: string;
-  blocks: Block[];
+  blocks: ResolvedBlock[]; // ordered; resolved, may be status: "error"
 };
 
 type PageService = {
-  getPage: (slug: string) => Page;
-  // Composes the page form schema from each block's current schema (for Conform).
+  getPage: (slug: string) => Promise<Page>;
+  // Parameterless: the form schema is z.array(discriminatedUnion("kind", …))
+  // derived from blockRegistry. Assumes every page accepts every block, any order.
   getPageSchema: () => z.ZodTypeAny;
-  updatePage: (
-    slug: string,
-    title: string,
-    description: string,
-    blocks: Block[],
-  ) => void;
+  // Keyed by id. `blocks` is the full ordered desired state; strict, so every
+  // block is status: "ok". `id` is omitted on a new block (absence = insert).
+  updatePage: (input: {
+    id: string;
+    slug: string;
+    title: string;
+    description: string;
+    blocks: ResolvedBlock[];
+  }) => Promise<void>;
 };
 ```
+
+`updatePage` is a command (returns `void` — after save the editor's loader
+revalidates and re-reads through `getPage`). In one transaction it diffs the
+incoming blocks against the page's stored rows **by id**:
+
+- id **absent** → insert (the DB default mints the cuid),
+- id **present** → update,
+- a stored id **missing from the payload** → delete.
+
+`position` is renumbered from array order; `currentVersion` is stamped
+server-side. Writes are scoped to the page (`WHERE pageId = …`).
 
 ## Open / deferred decisions
 
 - **Cross-registry sync assert** (kinds present in both registries) — deferred to implementation.
-- **Block ordering** — `position` as integers means reordering rewrites
-  siblings; fractional indexing is an option if reordering gets painful.
-- **Per-block render failure** — decide whether a block that fails validation on
-  the public path renders a fallback, is skipped, or fails the page.
-- **Page form composition** — how block fields are namespaced (stable id vs
-  position) when the same kind appears twice; prototype before committing.
+- **Per-block render failure (public path)** — resolved blocks carry
+  `status: "error"`; still to decide whether the *public* renderer shows a
+  fallback, skips, or fails the page. (Editor path is settled: strict — fix or
+  delete before save.)
+
+Resolved during design:
+
+- **Block ordering** — whole-list-replace renumbers `position` from array order
+  on save; fractional indexing only reopens if we move to incremental (per-intent) saves.
+- **Page form composition** — schema is index-based
+  `z.array(discriminatedUnion("kind", …))` from `blockRegistry`; render stability
+  uses Conform's managed list key, not the block id.
+- **Block identity** — client/editor never mints ids; absent id ⇒ insert (DB
+  mints the cuid), present id ⇒ update. (Concurrent edits / stale clients out of
+  scope for now.)
