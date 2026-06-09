@@ -13,7 +13,7 @@ A block is a single row in the database:
 type Block = {
   id: string; // row id
   kind: string; // which block type, e.g. "hero"
-  version: number; // the schema version the `data` was written at (the STORED version)
+  version: number; // STORED version — a stable absolute identifier, NOT the chain length
   position: number; // order within the page
   pageId: string; // the page this block belongs to
   data: string; // JSON; opaque until validated against the kind's schema
@@ -91,19 +91,24 @@ it prevents _missing_ migrations because an incomplete chain won't compile.
 
 `Head` is threaded through every `.migrate`, so each migration's input is typed
 as the previous migration's output. A missing or out-of-order step won't compile
-— **gaps are unrepresentable, not merely detected.** `version` is derived from
-the chain length, so it can't drift from the schema.
+— **gaps are unrepresentable, not merely detected.** Versions are stable absolute
+identifiers: the chain carries a `baseVersion` (the oldest schema it still holds)
+and derives `currentVersion = baseVersion + schemas.length - 1`. Auto-numbering
+keeps the no-gaps guarantee; the base only moves when a chain is truncated (see
+[Truncating a chain](#truncating-a-chain)).
 
 ```ts
 class MigrationBuilder<Head extends z.ZodTypeAny> {
   private constructor(
-    private readonly schemas: z.ZodTypeAny[], // every version, oldest first
+    private readonly baseVersion: number, // version of the OLDEST schema still held
+    private readonly schemas: z.ZodTypeAny[], // every version still held, oldest first
     private readonly migrations: Array<(d: unknown) => unknown>,
     private readonly head: Head, // newest shape so far
   ) {}
 
-  static from<S extends z.ZodTypeAny>(v1: S) {
-    return new MigrationBuilder([v1], [], v1);
+  // `baseVersion` defaults to 1; it only moves when an old chain is truncated.
+  static from<S extends z.ZodTypeAny>(v1: S, baseVersion = 1) {
+    return new MigrationBuilder(baseVersion, [v1], [], v1);
   }
 
   // fn's input = current head, output = next schema; head advances to `next`
@@ -112,6 +117,7 @@ class MigrationBuilder<Head extends z.ZodTypeAny> {
     fn: (d: z.infer<Head>) => z.infer<Next>,
   ) {
     return new MigrationBuilder<Next>(
+      this.baseVersion,
       [...this.schemas, next],
       [...this.migrations, fn as (d: unknown) => unknown],
       next,
@@ -122,7 +128,8 @@ class MigrationBuilder<Head extends z.ZodTypeAny> {
   // This is the compile-time stitch across the client/server file boundary.
   seal(current: z.ZodType<z.infer<Head>>) {
     return {
-      version: this.schemas.length,
+      baseVersion: this.baseVersion,
+      currentVersion: this.baseVersion + this.schemas.length - 1, // stable absolute id
       schemas: this.schemas,
       migrations: this.migrations,
     };
@@ -155,7 +162,7 @@ export const migrationRegistry = {
 - The **client** imports `blockRegistry` only.
 - The **server** imports both. Migrations and old schemas never enter the client bundle.
 - A kind still on v1 (no migrations yet) needs no `migrationRegistry` entry —
-  `readBlock` falls back to `{ version: 1, schemas: [currentSchema], migrations: [] }`.
+  `readBlock` falls back to `{ baseVersion: 1, currentVersion: 1, schemas: [currentSchema], migrations: [] }`.
   A new block kind only needs its view file until its first migration.
 
 > **Deferred decision:** nothing guarantees the two maps agree on the set of
@@ -171,11 +178,24 @@ export const migrationRegistry = {
 function readBlock(kind: string, storedVersion: number, raw: unknown) {
   const { schema } = blockRegistry[kind]; // current schema (isomorphic)
   const chain = migrationRegistry[kind]; // chain (server only), may be absent
+
+  // A kind with no chain behaves as a single-version chain at version 1.
+  const baseVersion = chain?.baseVersion ?? 1;
+  const currentVersion = chain?.currentVersion ?? 1;
   const schemas = chain?.schemas ?? [schema];
   const migrations = chain?.migrations ?? [];
 
-  let value: unknown = schemas[storedVersion - 1].parse(raw); // 1. validate the STORED shape
-  for (const m of migrations.slice(storedVersion - 1)) {
+  // Guard: stored version must fall inside the window the running code can serve.
+  // Below base = a row a backfill missed; above current = data from newer code.
+  if (storedVersion < baseVersion || storedVersion > currentVersion) {
+    throw new Error(
+      `block ${kind}: stored version ${storedVersion} outside [${baseVersion}, ${currentVersion}]`,
+    );
+  }
+
+  const idx = storedVersion - baseVersion; // absolute id -> array index
+  let value: unknown = schemas[idx].parse(raw); // 1. validate the STORED shape
+  for (const m of migrations.slice(idx)) {
     // 2. types link the steps; no parse between
     value = m(value);
   }
@@ -206,6 +226,10 @@ There are two version numbers and they are deliberately different:
 - **Current version** — the registry's latest (e.g. `3`), matching the one live
   component and schema.
 
+Both are **stable absolute identifiers**, not positions in the chain: a stored
+number always means the same schema, even after older versions are dropped.
+`currentVersion` is derived as `baseVersion + schemas.length - 1`.
+
 Migration is **lazy**: `readBlock` brings data up to the current shape on read,
 but the migrated data is only **persisted on save** (the editor flow). So the DB
 row stays at its stored version until a save catches it up — the gap between
@@ -216,6 +240,24 @@ version it returns to the client must be the current version, not the raw stored
 version.** The stored version is a server-side DB fact used only by `readBlock`;
 it must not reach the client labeled as "the version of this data," or the
 client would hold current-shaped data tagged with an old number.
+
+## Truncating a chain
+
+Old schemas are server-only, so a long chain costs nothing on the client and the
+read cache covers the per-read cost — truncation is for code tidiness, not
+performance, and isn't needed until a chain gets genuinely unwieldy. When it is,
+the ritual is three steps that only make sense together:
+
+1. **Backfill** every row of the kind up to `currentVersion` (the one-time eager
+   sweep that breaks laziness — unedited rows won't migrate on their own).
+2. **Re-base** the chain: drop the leading schemas and migrations and pass the
+   new oldest version to `MigrationBuilder.from(schema, baseVersion)`. Stored
+   numbers keep their meaning — that's the whole point of absolute versions.
+3. **Deploy.** Any straggler the backfill missed now trips `readBlock`'s bounds
+   guard loudly instead of mis-indexing silently.
+
+> _Note:_ before the first truncation, add a test that fails if any kind's
+> `currentVersion` ever decreases across commits — deferred until truncation is real.
 
 ## Client / server split
 
