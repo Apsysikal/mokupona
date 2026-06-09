@@ -153,10 +153,14 @@ export const blockRegistry = {
 };
 
 // migration-registry.ts — server only (never imported by the client)
+// Keys are constrained to real views: the server file may import the isomorphic
+// blockRegistry (imports flow server → isomorphic, nothing leaks back to the
+// client), so a migration for a kind that has no view won't compile. `Partial`
+// because a chain is optional — a kind still on v1 has no entry.
 export const migrationRegistry = {
   hero: heroMigrations,
   // ...only kinds that have at least one migration
-};
+} satisfies Partial<Record<keyof typeof blockRegistry, MigrationChain>>;
 ```
 
 - The **client** imports `blockRegistry` only.
@@ -165,18 +169,28 @@ export const migrationRegistry = {
   `readBlock` falls back to `{ baseVersion: 1, currentVersion: 1, schemas: [currentSchema], migrations: [] }`.
   A new block kind only needs its view file until its first migration.
 
-> **Deferred decision:** nothing guarantees the two maps agree on the set of
-> kinds (a kind in one but not the other). `seal` ties each chain to its schema,
-> but cross-registry completeness is a runtime concern. A startup assert (every
-> kind in `blockRegistry` either has a `migrationRegistry` entry or is
-> intentionally absent) would buy it back with a legible error. Left to
-> implementation for now.
+> **Kind drift — resolved by construction, no runtime assert.** `blockRegistry`
+> is the single source of truth for the set of kinds. `type Kind = keyof typeof
+blockRegistry` is exported isomorphically (the editor's "add a block" menu uses
+> it). `migrationRegistry` is typed `Partial<Record<Kind, …>>`, so its keys can't
+> drift from the views. The `ResolvedBlock` / `BlockInput` unions are _derived_
+> from the registry (see [Pages](#pages)), never hand-maintained — adding a view
+> grows them automatically. The only residue is a row whose kind was removed from
+> code, which is data, not code, and is handled in `readBlock` (see below).
 
 ## Reading a block (server)
 
 ```ts
 function readBlock(kind: string, storedVersion: number, raw: unknown) {
-  const { schema } = blockRegistry[kind]; // current schema (isomorphic)
+  const view = blockRegistry[kind];
+  // Unknown kind = a row whose block type was removed from code. By invariant a
+  // kind is only retired *after* its rows are removed (a ritual like truncation),
+  // so a live unknown-kind row is a bug — throw loudly rather than degrade. This
+  // guard sits ahead of the lookup because there's no schema/component/editor to
+  // fall back to. Swappable for a status:"error" arm later; the change stays
+  // local to readBlock + one union arm.
+  if (!view) throw new Error(`block: unknown kind ${kind}`);
+  const { schema } = view; // current schema (isomorphic)
   const chain = migrationRegistry[kind]; // chain (server only), may be absent
 
   // A kind with no chain behaves as a single-version chain at version 1.
@@ -235,11 +249,10 @@ but the migrated data is only **persisted on save** (the editor flow). So the DB
 row stays at its stored version until a save catches it up — the gap between
 stored and current is the normal steady state, not an edge case.
 
-Because the loader returns data already migrated to the current shape, **the
-version it returns to the client must be the current version, not the raw stored
-version.** The stored version is a server-side DB fact used only by `readBlock`;
-it must not reach the client labeled as "the version of this data," or the
-client would hold current-shaped data tagged with an old number.
+The version never crosses to the client. The loader returns data already
+migrated to the current shape, and the server stamps `currentVersion` on save
+(see [Pages](#pages)), so the client has no use for a version number. Keeping it
+server-only means stored-vs-current can't leak as a client concern at all.
 
 ## Truncating a chain
 
@@ -287,11 +300,13 @@ return (
 ### Editor
 
 1. Load the page; each block resolves to its current shape (the form's default
-   values). A block that fails validation comes back `status: "error"` and
-   renders a fix-or-delete affordance instead of crashing its `editorComponent`.
+   values). A block that fails *data* validation comes back `status: "error"`;
+   the editor seeds the form with salvaged values and flags what it reset (see
+   [Salvaging broken blocks](#salvaging-broken-blocks)) so it's fixed in place,
+   never crashing its `editorComponent`. Delete is always available.
 2. Render each block's `editorComponent` with that data.
-3. Compose the page form schema from `blockRegistry` (Conform). React list keys
-   come from Conform, not the block id.
+3. Compose the page form schema via `buildPageSchema()` (from `blockRegistry`,
+   Conform). React list keys come from Conform, not the block id.
 4. Add / move / delete are **form-only** intents (`insert` / `remove` /
    `reorder`) — they mutate the form, never the DB. Progressively enhanced: move
    buttons work without JS; drag is a JS-only layer on top.
@@ -309,18 +324,78 @@ Defined on the schema where needed:
 const schema = z.object({ heading: z.string().default("Untitled") });
 ```
 
+## Salvaging broken blocks
+
+When a row fails its **entry** validation (bad data, not a bad migration — see
+[Reading a block](#reading-a-block-server)), the editor neither crashes nor drops
+to a raw-JSON editor. It runs a flat, best-effort `salvage`: parse each field on
+its own, keep what's valid, fall back to the field's `.default()` for the rest,
+and return the names of the fields it had to reset so the editor can show an error
+beneath the block. The salvaged object seeds the form as a *draft* — a field with
+no default that couldn't be recovered stays empty and the form flags it, so the
+strict save-gate still guarantees only valid blocks persist.
+
+Salvage lives **beside** the canonical schema, never inside it: the schema stays
+strict so `readBlock` and the public renderer keep detecting brokenness. Flat
+objects only — a nested/array field that fails is reset whole, not recursed into.
+
+```ts
+function salvage<S extends z.ZodObject<z.ZodRawShape>>(
+  schema: S,
+  raw: unknown, // the failed row's parsed JSON — may be anything
+): { data: Partial<z.infer<S>>; reset: string[] } {
+  const data: Record<string, unknown> = {};
+  const reset: string[] = [];
+  for (const [key, field] of Object.entries(schema.shape)) {
+    const hit = field.safeParse((raw as any)?.[key]);
+    if (hit.success) {
+      data[key] = hit.data; // valid as-is (a missing field with a .default() lands here too)
+      continue;
+    }
+    reset.push(key); // unreadable — note it for the message under the block
+    const def = field.safeParse(undefined); // recover the field's .default() if it has one
+    if (def.success) data[key] = def.data; // else leave empty; the form flags it on save
+  }
+  return { data: data as Partial<z.infer<S>>, reset };
+}
+```
+
+> Migration bugs (final-parse failures) and out-of-bounds rows are *not* salvaged
+> — the data was fine, the fault is ours. Those render read-only and alert us
+> rather than inviting an editor to overwrite good data with a lossy fix.
+
 ## Pages
 
 A page holds metadata and an ordered list of blocks, hidden behind a service layer.
 
 ```ts
 // The stored Block (data: string) is the raw DB row; it never leaves the
-// persistence layer. Pages expose ResolvedBlock — validated + migrated to the
-// current shape, discriminated on kind, carrying its validation status.
+// persistence layer. ResolvedBlock is the READ output — validated + migrated to
+// the current shape, discriminated on kind, carrying validation status because a
+// stored row might be broken (provenance).
+// `Kind` and both unions derive from blockRegistry — never hand-maintained.
+// Adding a view grows them automatically, so they can't drift from the kind set.
+type Kind = keyof typeof blockRegistry;
+type DataOf<K extends Kind> = z.infer<(typeof blockRegistry)[K]["schema"]>;
+
 type ResolvedBlock =
-  | { id: string; kind: "hero"; status: "ok"; data: z.infer<typeof heroSchema> }
-  // …one "ok" variant per kind
-  | { id: string; kind: string; status: "error"; error: z.ZodError; raw: string };
+  | {
+      [K in Kind]: { id: string; kind: K; status: "ok"; data: DataOf<K> };
+    }[Kind]
+  | {
+      id: string;
+      kind: string;
+      status: "error";
+      error: z.ZodError;
+      raw: string;
+    };
+
+// BlockInput is the WRITE input — typed domain data the editor's action has
+// already validated. No status/error arm (form data is valid or never submitted),
+// `id` optional (absence = insert). Read carries provenance; write carries intent.
+type BlockInput = {
+  [K in Kind]: { id?: string; kind: K; data: DataOf<K> };
+}[Kind];
 
 type Page = {
   id: string; // identity — updatePage keys by this
@@ -332,17 +407,15 @@ type Page = {
 
 type PageService = {
   getPage: (slug: string) => Promise<Page>;
-  // Parameterless: the form schema is z.array(discriminatedUnion("kind", …))
-  // derived from blockRegistry. Assumes every page accepts every block, any order.
-  getPageSchema: () => z.ZodTypeAny;
-  // Keyed by id. `blocks` is the full ordered desired state; strict, so every
-  // block is status: "ok". `id` is omitted on a new block (absence = insert).
+  // Keyed by id. `blocks` is the full ordered desired state — already valid
+  // BlockInput (the action validated the form; the service may defensively
+  // re-parse domain data, but never touches raw form data). `id` absent = insert.
   updatePage: (input: {
     id: string;
     slug: string;
     title: string;
     description: string;
-    blocks: ResolvedBlock[];
+    blocks: BlockInput[];
   }) => Promise<void>;
 };
 ```
@@ -360,19 +433,33 @@ server-side. Writes are scoped to the page (`WHERE pageId = …`).
 
 ## Open / deferred decisions
 
-- **Cross-registry sync assert** (kinds present in both registries) — deferred to implementation.
 - **Per-block render failure (public path)** — resolved blocks carry
-  `status: "error"`; still to decide whether the *public* renderer shows a
+  `status: "error"`; still to decide whether the _public_ renderer shows a
   fallback, skips, or fails the page. (Editor path is settled: strict — fix or
   delete before save.)
 
 Resolved during design:
 
+- **Kind drift** — `blockRegistry` is the single source of truth. `Kind`,
+  `ResolvedBlock`, and `BlockInput` derive from it; `migrationRegistry` is keyed
+  `Partial<Record<Kind, …>>`. Drift between the registries and the unions is
+  unrepresentable, so no startup assert is needed. (See
+  [Registries](#registries).)
+- **Retired block kinds** — deleting a block kind is a ritual like truncation:
+  its rows are removed or rewritten _first_. A live row of an unknown kind is
+  therefore a bug, and `readBlock` throws loudly. Reversible to a graceful
+  `status: "error"` arm later, kept local to `readBlock`.
+
 - **Block ordering** — whole-list-replace renumbers `position` from array order
   on save; fractional indexing only reopens if we move to incremental (per-intent) saves.
-- **Page form composition** — schema is index-based
-  `z.array(discriminatedUnion("kind", …))` from `blockRegistry`; render stability
-  uses Conform's managed list key, not the block id.
+- **Page form composition** — the form schema lives in the registry/form layer
+  (not `PageService`), behind a single `buildPageSchema()` derived from
+  `blockRegistry`: index-based `z.array(discriminatedUnion("kind", …))`, imported
+  by the editor's action to validate the form. Global today (every page accepts
+  every block, any order); per-page restrictions (allowed kinds, positioning)
+  would make it `buildPageSchema(pageContext)` — that one function is the seam,
+  deferred until needed. Render stability uses Conform's managed list key, not
+  the block id.
 - **Block identity** — client/editor never mints ids; absent id ⇒ insert (DB
   mints the cuid), present id ⇒ update. (Concurrent edits / stale clients out of
   scope for now.)
