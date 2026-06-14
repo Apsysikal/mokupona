@@ -300,7 +300,7 @@ return (
 ### Editor
 
 1. Load the page; each block resolves to its current shape (the form's default
-   values). A block that fails *data* validation comes back `status: "error"`;
+   values). A block that fails _data_ validation comes back `status: "error"`;
    the editor seeds the form with salvaged values and flags what it reset (see
    [Salvaging broken blocks](#salvaging-broken-blocks)) so it's fixed in place,
    never crashing its `editorComponent`. Delete is always available.
@@ -331,7 +331,7 @@ When a row fails its **entry** validation (bad data, not a bad migration — see
 to a raw-JSON editor. It runs a flat, best-effort `salvage`: parse each field on
 its own, keep what's valid, fall back to the field's `.default()` for the rest,
 and return the names of the fields it had to reset so the editor can show an error
-beneath the block. The salvaged object seeds the form as a *draft* — a field with
+beneath the block. The salvaged object seeds the form as a _draft_ — a field with
 no default that couldn't be recovered stays empty and the form flags it, so the
 strict save-gate still guarantees only valid blocks persist.
 
@@ -360,7 +360,7 @@ function salvage<S extends z.ZodObject<z.ZodRawShape>>(
 }
 ```
 
-> Migration bugs (final-parse failures) and out-of-bounds rows are *not* salvaged
+> Migration bugs (final-parse failures) and out-of-bounds rows are _not_ salvaged
 > — the data was fine, the fault is ours. Those render read-only and alert us
 > rather than inviting an editor to overwrite good data with a lossy fix.
 

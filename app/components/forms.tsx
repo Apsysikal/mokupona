@@ -1,4 +1,4 @@
-import { useInputControl } from "@conform-to/react";
+import { getCollectionProps, useInputControl } from "@conform-to/react";
 import React, { useId } from "react";
 
 import type { CheckboxProps } from "./ui/checkbox";
@@ -177,6 +177,40 @@ export function CheckboxField({
       <div className="px-4 pt-1 pb-3">
         {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
       </div>
+    </div>
+  );
+}
+
+export function RadioField({
+  labelProps,
+  inputProps,
+  errors,
+  className,
+}: {
+  labelProps: React.InputHTMLAttributes<HTMLLabelElement>;
+  inputProps: ReturnType<typeof getCollectionProps>;
+  errors?: ListOfErrors;
+  className?: string;
+}) {
+  const fallbackId = useId();
+  const errorId = errors?.length ? `${fallbackId}-error` : undefined;
+
+  return (
+    <div className={className}>
+      <Label {...labelProps} />
+      <div
+        role="radiogroup"
+        aria-invalid={errors ? true : undefined}
+        aria-describedby={errorId}
+      >
+        {inputProps.map(({ key, ...props }) => (
+          <div key={key ?? props.id} className="flex items-center gap-2">
+            <input {...props} />
+            <Label htmlFor={props.id}>{props.value}</Label>
+          </div>
+        ))}
+      </div>
+      {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
     </div>
   );
 }

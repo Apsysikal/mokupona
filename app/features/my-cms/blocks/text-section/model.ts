@@ -1,0 +1,19 @@
+import type React from "react";
+import z from "zod";
+import type { Block } from "../types";
+
+export const schema = z.object({
+  headline: z.string(),
+  body: z.string(),
+  variant: z.literal(["plain", "slanted"]),
+});
+
+export type TextSectionBlock = Block<
+  typeof schema,
+  React.ComponentProps<"div">
+>;
+
+export type ViewProps = React.ComponentProps<TextSectionBlock["viewComponent"]>;
+export type EditorProps = React.ComponentProps<
+  TextSectionBlock["editorComponent"]
+>;
