@@ -1,7 +1,8 @@
 import type React from "react";
 import z from "zod";
+import { saveImage } from "~/models/image.server";
 import { linkTargets } from "../link-targets";
-import type { Block } from "../types";
+import type { Block, FormMapper } from "../types";
 
 const MAX_UPLOAD_SIZE = 1024 * 1024 * 3;
 
@@ -61,6 +62,39 @@ export const editorSchema = z
       path: ["imageFile"],
     },
   );
+
+export const formMapper: FormMapper<typeof schema, typeof editorSchema> = {
+  fromForm: async (fd) => {
+    let imageId = fd.imageId;
+
+    if (fd.imageFile) {
+      const image = await saveImage({ file: fd.imageFile, alt: fd.alt });
+      imageId = image.id;
+    }
+
+    if (!imageId) {
+      throw new Error(`No image provided, but it is required`);
+    }
+
+    return {
+      eyebrow: fd.eyebrow,
+      headline: fd.headline,
+      description: fd.description,
+      actions: fd.actions,
+      image: { imageId, alt: fd.alt },
+    };
+  },
+  toForm: (d) => {
+    return {
+      eyebrow: d.eyebrow,
+      headline: d.headline,
+      description: d.description,
+      actions: d.actions,
+      imageId: d.image.imageId,
+      alt: d.image.alt,
+    };
+  },
+};
 
 export type HeroSectionBlock = Block<
   typeof schema,

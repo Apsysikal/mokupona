@@ -1,5 +1,5 @@
 import { TextSectionBlockEditor } from "./editor";
-import { type TextSectionBlock, schema } from "./model";
+import { type TextSectionBlock, formMapper, schema } from "./model";
 import { TextSectionBlockView } from "./view";
 
 export const textSectionBlock = {
@@ -7,4 +7,7 @@ export const textSectionBlock = {
   viewComponent: TextSectionBlockView,
   editorSchema: schema,
   editorComponent: TextSectionBlockEditor,
+  formMapper,
 } satisfies TextSectionBlock;
+
+export { migrations } from "./migrations";

@@ -32,8 +32,7 @@ class BlockRegistryBuilder<R extends BlockRegistry = {}> {
   }
 }
 
-const builder = BlockRegistryBuilder.create();
-const registry = builder
+export const registry = BlockRegistryBuilder.create()
   .addBlock("text-section", textSectionBlock)
   .addBlock("image", imageSectionBlock)
   .addBlock("hero", heroSectionBlock)

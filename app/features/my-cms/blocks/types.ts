@@ -19,6 +19,20 @@ export type Block<
   editorComponent: React.ComponentType<
     { fields: Fieldset<EditorSchema> } & EditorComponentProps
   >;
+  formMapper: FormMapper<ViewSchema, EditorSchema>;
+};
+
+export type FormMapper<S extends z.ZodType, F extends z.ZodType> = {
+  fromForm: (formData: z.output<F>) => Promise<z.output<S>>;
+  toForm: (data: z.output<S>) => z.output<F>;
+};
+
+export type Migration = {
+  baseVersion: number;
+  currentVersion: number;
+  schemas: Array<z.ZodType>;
+  migrations: Array<(d: unknown) => unknown>;
 };
 
 export type BlockRegistry = Record<string, Block>;
+export type MigrationRegistry = Record<string, Migration>;

@@ -1,5 +1,10 @@
 import type z from "zod";
 
+import { migrations as heroBlockMigrations } from "./hero";
+import { migrations as imageBlockMigrations } from "./image";
+import { migrations as textSectionBlockMigrations } from "./text-section";
+import type { Migration, MigrationRegistry } from "./types";
+
 export class BlockMigrationBuilder<Head extends z.ZodType> {
   private constructor(
     private readonly baseVersion: number,
@@ -33,3 +38,31 @@ export class BlockMigrationBuilder<Head extends z.ZodType> {
     };
   }
 }
+
+class MigrationRegistryBuilder<R extends MigrationRegistry = {}> {
+  private constructor(private registry: R) {}
+
+  static create(): MigrationRegistryBuilder {
+    return new MigrationRegistryBuilder({});
+  }
+
+  addMigration<K extends string>(
+    kind: K,
+    migration: Migration,
+  ): MigrationRegistryBuilder<R & Record<K, Migration>> {
+    return new MigrationRegistryBuilder({
+      ...this.registry,
+      [kind]: migration,
+    });
+  }
+
+  build(): R {
+    return this.registry;
+  }
+}
+
+export const registry = MigrationRegistryBuilder.create()
+  .addMigration("hero", heroBlockMigrations)
+  .addMigration("text-section", textSectionBlockMigrations)
+  .addMigration("image", imageBlockMigrations)
+  .build();

@@ -1,5 +1,10 @@
 import { HeroSectionBlockEditor } from "./editor";
-import { editorSchema, type HeroSectionBlock, schema } from "./model";
+import {
+  editorSchema,
+  formMapper,
+  type HeroSectionBlock,
+  schema,
+} from "./model";
 import { HeroSectionBlockView } from "./view";
 
 export const heroSectionBlock = {
@@ -7,4 +12,7 @@ export const heroSectionBlock = {
   viewComponent: HeroSectionBlockView,
   editorSchema: editorSchema,
   editorComponent: HeroSectionBlockEditor,
+  formMapper,
 } satisfies HeroSectionBlock;
+
+export { migrations } from "./migrations";
