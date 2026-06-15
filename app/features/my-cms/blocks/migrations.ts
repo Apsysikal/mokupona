@@ -1,9 +1,12 @@
 import type z from "zod";
 
+import { registry as blockRegistry } from "./blocks";
 import { migrations as heroBlockMigrations } from "./hero";
 import { migrations as imageBlockMigrations } from "./image";
 import { migrations as textSectionBlockMigrations } from "./text-section";
 import type { Migration, MigrationRegistry } from "./types";
+
+type BlockRegistry = typeof blockRegistry;
 
 export class BlockMigrationBuilder<Head extends z.ZodType> {
   private constructor(
@@ -46,7 +49,7 @@ class MigrationRegistryBuilder<R extends MigrationRegistry = {}> {
     return new MigrationRegistryBuilder({});
   }
 
-  addMigration<K extends string>(
+  addMigration<K extends keyof BlockRegistry>(
     kind: K,
     migration: Migration,
   ): MigrationRegistryBuilder<R & Record<K, Migration>> {
