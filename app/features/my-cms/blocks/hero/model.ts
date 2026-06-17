@@ -1,8 +1,10 @@
 import type React from "react";
 import z from "zod";
-import { saveImage } from "~/models/image.server";
+
 import { linkTargets } from "../link-targets";
-import type { Block, FormMapper } from "../types";
+import type { Fieldset, FormMapper } from "../types";
+
+import { saveImage } from "~/models/image.server";
 
 const MAX_UPLOAD_SIZE = 1024 * 1024 * 3;
 
@@ -96,15 +98,10 @@ export const formMapper: FormMapper<typeof schema, typeof editorSchema> = {
   },
 };
 
-export type HeroSectionBlock = Block<
-  typeof schema,
-  React.ComponentProps<"section">,
-  typeof editorSchema,
-  React.ComponentProps<"div">
->;
+export type ViewProps = {
+  data: z.infer<typeof schema>;
+} & React.ComponentProps<"section">;
 
-export type ViewProps = React.ComponentProps<HeroSectionBlock["viewComponent"]>;
-
-export type EditorProps = React.ComponentProps<
-  HeroSectionBlock["editorComponent"]
->;
+export type EditorProps = {
+  fields: Fieldset<typeof editorSchema>;
+} & React.ComponentProps<"div">;

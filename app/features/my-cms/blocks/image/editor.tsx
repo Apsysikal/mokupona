@@ -1,6 +1,8 @@
 import { getInputProps, getSelectProps } from "@conform-to/react";
-import { Field, SelectField } from "~/components/forms";
+
 import { type EditorProps, editorSchema } from "./model";
+
+import { Field, SelectField } from "~/components/forms";
 
 export function ImageBlockEditor({ fields, ...props }: EditorProps) {
   return (

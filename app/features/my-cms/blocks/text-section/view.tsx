@@ -1,5 +1,6 @@
-import { cn } from "~/lib/utils";
 import type { ViewProps } from "./model";
+
+import { cn } from "~/lib/utils";
 
 export function TextSectionBlockView({ data, ...props }: ViewProps) {
   const { headline, body, variant } = data;

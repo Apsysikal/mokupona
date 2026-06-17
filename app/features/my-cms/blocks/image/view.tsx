@@ -1,5 +1,6 @@
-import { OptimizedImage } from "~/components/optimized-image";
 import type { ViewProps } from "./model";
+
+import { OptimizedImage } from "~/components/optimized-image";
 
 export function ImageBlockView({ data, ...props }: ViewProps) {
   const { image, variant } = data;

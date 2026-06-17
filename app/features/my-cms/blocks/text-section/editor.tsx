@@ -3,10 +3,11 @@ import {
   getInputProps,
   getTextareaProps,
 } from "@conform-to/react";
+
 import type { EditorProps } from "./model";
+import { schema } from "./model";
 
 import { Field, RadioField, TextareaField } from "~/components/forms";
-import { schema } from "./model";
 
 export function TextSectionBlockEditor({ fields, ...props }: EditorProps) {
   return (

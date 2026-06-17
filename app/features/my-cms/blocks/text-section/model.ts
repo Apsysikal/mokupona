@@ -1,6 +1,7 @@
 import type React from "react";
 import z from "zod";
-import type { Block, FormMapper } from "../types";
+
+import type { Fieldset, FormMapper } from "../types";
 
 export const schema = z.object({
   headline: z.string(),
@@ -13,12 +14,9 @@ export const formMapper: FormMapper<typeof schema, typeof schema> = {
   toForm: (d) => d,
 };
 
-export type TextSectionBlock = Block<
-  typeof schema,
-  React.ComponentProps<"div">
->;
-
-export type ViewProps = React.ComponentProps<TextSectionBlock["viewComponent"]>;
-export type EditorProps = React.ComponentProps<
-  TextSectionBlock["editorComponent"]
->;
+export type ViewProps = {
+  data: z.infer<typeof schema>;
+} & React.ComponentProps<"div">;
+export type EditorProps = {
+  fields: Fieldset<typeof schema>;
+} & React.ComponentProps<"div">;

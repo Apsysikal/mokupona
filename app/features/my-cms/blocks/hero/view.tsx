@@ -1,7 +1,9 @@
 import { Link } from "react-router";
+
+import type { ViewProps } from "./model";
+
 import { OptimizedImage } from "~/components/optimized-image";
 import { Button } from "~/components/ui/button";
-import type { ViewProps } from "./model";
 
 export function HeroSectionBlockView({ data, ...props }: ViewProps) {
   const { eyebrow, headline, description, actions, image } = data;

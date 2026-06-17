@@ -1,9 +1,20 @@
 import type { FieldMetadata } from "@conform-to/react";
 import type z from "zod";
 
-type Fieldset<S extends z.ZodType> = {
+export type Fieldset<S extends z.ZodType> = {
   [K in keyof z.infer<S>]-?: FieldMetadata<z.infer<S>[K]>;
 };
+
+/**
+ * Collapses a union `A | B | C` into the intersection `A & B & C`.
+ * Used to derive the props common to every block's component, so the
+ * `<BlockView>` / `<BlockEditor>` dispatch can forward shared extras safely.
+ */
+export type UnionToIntersection<U> = (
+  U extends unknown ? (k: U) => void : never
+) extends (k: infer I) => void
+  ? I
+  : never;
 
 export type Block<
   ViewSchema extends z.ZodType = z.ZodType,

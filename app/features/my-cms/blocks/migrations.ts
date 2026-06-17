@@ -1,46 +1,8 @@
-import type z from "zod";
-
-import { registry as blockRegistry } from "./blocks";
+import type { BlockRegistryKey } from "./engine";
 import { migrations as heroBlockMigrations } from "./hero";
 import { migrations as imageBlockMigrations } from "./image";
 import { migrations as textSectionBlockMigrations } from "./text-section";
 import type { Migration, MigrationRegistry } from "./types";
-
-type BlockRegistry = typeof blockRegistry;
-
-export class BlockMigrationBuilder<Head extends z.ZodType> {
-  private constructor(
-    private readonly baseVersion: number,
-    private readonly schemas: z.ZodType[],
-    private readonly migrations: Array<(d: unknown) => unknown>,
-    private readonly head: Head,
-  ) {}
-
-  static from<S extends z.ZodType>(baseSchema: S, baseVersion = 1) {
-    return new BlockMigrationBuilder(baseVersion, [baseSchema], [], baseSchema);
-  }
-
-  addMigration<Next extends z.ZodType>(
-    nextSchema: Next,
-    fn: (d: z.infer<Head>) => z.infer<Next>,
-  ) {
-    return new BlockMigrationBuilder(
-      this.baseVersion,
-      [...this.schemas, nextSchema],
-      [...this.migrations, fn as (d: unknown) => unknown],
-      nextSchema,
-    );
-  }
-
-  finish(current: z.ZodType<z.infer<Head>>) {
-    return {
-      baseVersion: this.baseVersion,
-      currentVersion: this.baseVersion + this.schemas.length - 1,
-      schemas: this.schemas,
-      migrations: this.migrations,
-    };
-  }
-}
 
 class MigrationRegistryBuilder<R extends MigrationRegistry = {}> {
   private constructor(private registry: R) {}
@@ -49,10 +11,27 @@ class MigrationRegistryBuilder<R extends MigrationRegistry = {}> {
     return new MigrationRegistryBuilder({});
   }
 
-  addMigration<K extends keyof BlockRegistry>(
+  addMigration<K extends BlockRegistryKey>(
     kind: K,
     migration: Migration,
   ): MigrationRegistryBuilder<R & Record<K, Migration>> {
+    const { baseVersion, currentVersion, schemas, migrations } = migration;
+    const expectedSchemas = currentVersion - baseVersion + 1;
+
+    if (schemas.length !== expectedSchemas) {
+      throw new Error(
+        `Migration "${String(kind)}": expected ${expectedSchemas} schema(s) for versions ` +
+          `${baseVersion}..${currentVersion}, got ${schemas.length}`,
+      );
+    }
+
+    if (migrations.length !== schemas.length - 1) {
+      throw new Error(
+        `Migration "${String(kind)}": expected ${schemas.length - 1} migration fn(s) ` +
+          `for ${schemas.length} schema(s), got ${migrations.length}`,
+      );
+    }
+
     return new MigrationRegistryBuilder({
       ...this.registry,
       [kind]: migration,

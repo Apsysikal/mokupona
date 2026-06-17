@@ -4,9 +4,11 @@ import {
   getTextareaProps,
   useFormMetadata,
 } from "@conform-to/react";
+
+import { editorSchema, type EditorProps } from "./model";
+
 import { Field, SelectField, TextareaField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
-import { editorSchema, type EditorProps } from "./model";
 
 export function HeroSectionBlockEditor({ fields, ...props }: EditorProps) {
   const form = useFormMetadata(fields.actions.formId);

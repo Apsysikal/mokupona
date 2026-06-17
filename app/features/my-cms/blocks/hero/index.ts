@@ -1,18 +1,15 @@
+import { defineBlock } from "../define";
+
 import { HeroSectionBlockEditor } from "./editor";
-import {
-  editorSchema,
-  formMapper,
-  type HeroSectionBlock,
-  schema,
-} from "./model";
+import { editorSchema, formMapper, schema } from "./model";
 import { HeroSectionBlockView } from "./view";
 
-export const heroSectionBlock = {
+export const heroSectionBlock = defineBlock({
   viewSchema: schema,
   viewComponent: HeroSectionBlockView,
-  editorSchema: editorSchema,
+  editorSchema,
   editorComponent: HeroSectionBlockEditor,
   formMapper,
-} satisfies HeroSectionBlock;
+});
 
 export { migrations } from "./migrations";

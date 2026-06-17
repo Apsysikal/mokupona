@@ -1,7 +1,9 @@
 import type React from "react";
 import z from "zod";
+
+import type { Fieldset, FormMapper } from "../types";
+
 import { saveImage } from "~/models/image.server";
-import type { Block, FormMapper } from "../types";
 
 const MAX_UPLOAD_SIZE = 1024 * 1024 * 3;
 
@@ -69,17 +71,10 @@ export const formMapper: FormMapper<typeof schema, typeof editorSchema> = {
   },
 };
 
-export type ImageSectionBlock = Block<
-  typeof schema,
-  React.ComponentProps<"picture">,
-  typeof editorSchema,
-  React.ComponentProps<"div">
->;
+export type ViewProps = {
+  data: z.infer<typeof schema>;
+} & React.ComponentProps<"picture">;
 
-export type ViewProps = React.ComponentProps<
-  ImageSectionBlock["viewComponent"]
->;
-
-export type EditorProps = React.ComponentProps<
-  ImageSectionBlock["editorComponent"]
->;
+export type EditorProps = {
+  fields: Fieldset<typeof editorSchema>;
+} & React.ComponentProps<"div">;

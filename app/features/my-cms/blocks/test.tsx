@@ -1,12 +1,14 @@
-import { bindBlock, registry as blockRegistry } from "./blocks";
 import { readBlock } from "./engine";
+import { BlockView } from "./render";
 
-const readFromDb = () => "";
+const readFromDb = () => "hero";
 
-const result = readBlock("test", readFromDb(), 0, {});
+const result = readBlock("test", readFromDb(), 1, {});
 
-function render() {
+export function Render() {
   if (result.status !== "success") return null;
-  const component = blockRegistry[result.kind];
-  const { data, render } = bindBlock(component, result.data);
+
+  // `result` is now the discriminated success union; <BlockView> dispatches it
+  // and forwards shared extras (className) without a call-site cast.
+  return <BlockView block={result} className="mx-2" />;
 }
