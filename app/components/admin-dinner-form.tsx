@@ -63,6 +63,13 @@ export function AdminDinnerForm({
     },
   });
 
+  const options = addresses.map((address) => {
+    const label = `${address.streetName} ${address.houseNumber} - ${address.zip} ${address.city}`;
+    const value = address.id;
+
+    return { label, value };
+  });
+
   return (
     <Form
       method="POST"
@@ -159,17 +166,7 @@ export function AdminDinnerForm({
         labelProps={{ children: "Address" }}
         selectProps={{
           ...getSelectProps(fields.addressId),
-          children: addresses.map((address) => {
-            const { id } = address;
-
-            return (
-              <option key={id} value={id}>
-                {`${address.streetName} ${address.houseNumber} - ${address.zip} ${address.city}`}
-              </option>
-            );
-          }),
-          className:
-            "focus-visible:border-0 flex h-9 w-full appearance-none rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground file:placeholder:text-foreground focus-visible:outline-hidden focus-visible:inset-ring-2 focus-visible:inset-ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+          options,
         }}
         errors={fields.addressId.errors}
         className="flex w-full flex-col gap-2"

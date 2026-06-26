@@ -1,6 +1,7 @@
 import { useInputControl } from "@conform-to/react";
 import React, { useId } from "react";
 
+import { cn } from "~/lib/utils";
 import type { CheckboxProps } from "./ui/checkbox";
 import { Checkbox } from "./ui/checkbox";
 import { Input } from "./ui/input";
@@ -96,13 +97,22 @@ export function SelectField({
   className,
 }: {
   labelProps: React.InputHTMLAttributes<HTMLLabelElement>;
-  selectProps: React.InputHTMLAttributes<HTMLSelectElement>;
+  selectProps: React.InputHTMLAttributes<HTMLSelectElement> & {
+    options?: Array<{ label: string; value: string }>;
+  };
   errors?: ListOfErrors;
   className?: string;
 }) {
   const fallbackId = useId();
   const id = selectProps.id ?? fallbackId;
   const errorId = errors?.length ? `${id}-error` : undefined;
+
+  const {
+    children,
+    options,
+    className: selectClassName,
+    ...props
+  } = selectProps;
 
   return (
     <div className={className}>
@@ -111,8 +121,18 @@ export function SelectField({
         id={id}
         aria-invalid={errors ? true : undefined}
         aria-describedby={errorId}
-        {...selectProps}
-      />
+        className={cn(
+          "border-input bg-background placeholder:text-muted-foreground file:placeholder:text-foreground focus-visible:inset-ring-ring flex h-9 w-full appearance-none rounded-md border px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:border-0 focus-visible:inset-ring-2 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
+          selectClassName,
+        )}
+        {...props}
+      >
+        {options?.map(({ label, value }) => (
+          <option key={value} value={value}>
+            {label}
+          </option>
+        )) ?? children}
+      </select>
       {errors ? (
         <p id={errorId} className="text-destructive text-sm">
           {errors}

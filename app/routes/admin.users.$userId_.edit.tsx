@@ -113,6 +113,10 @@ export default function DinnersPage({
   });
 
   const isAdmin = user.role.name === "admin";
+  const options = [
+    { label: "User", value: "user" },
+    { label: "Moderator", value: "moderator" },
+  ];
 
   return (
     <div className="flex flex-col gap-2">
@@ -134,20 +138,7 @@ export default function DinnersPage({
           selectProps={{
             ...getSelectProps(fields.roleName),
             disabled: isAdmin,
-            children: [
-              { name: "User", value: "user" },
-              { name: "Moderator", value: "moderator" },
-            ].map((role) => {
-              const { name, value } = role;
-
-              return (
-                <option key={value} value={value}>
-                  {name}
-                </option>
-              );
-            }),
-            className:
-              "focus-visible:border-0 flex h-9 w-full appearance-none rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground file:placeholder:text-foreground focus-visible:outline-hidden focus-visible:inset-ring-2 focus-visible:inset-ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+            options,
           }}
           errors={fields.roleName.errors}
           className="flex w-full flex-col gap-2"
