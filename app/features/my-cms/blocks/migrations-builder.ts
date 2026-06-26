@@ -1,16 +1,5 @@
 import type z from "zod";
 
-import type { Migration } from "./types";
-
-/**
- * Builds a per-block migration chain, threading the head schema's type so each
- * `addMigration` is type-checked against the previous version's output (and
- * `NoInfer` pins the target version to its schema, not the migration's return).
- *
- * Lives in its own leaf module (only type imports) so per-block `migrations.ts`
- * files can use it without importing the registry module — which would form an
- * import cycle (registry -> blocks -> per-block index -> per-block migrations).
- */
 export class BlockMigrationBuilder<Head extends z.ZodType> {
   private constructor(
     private readonly baseVersion: number,

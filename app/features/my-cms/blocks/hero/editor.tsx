@@ -12,7 +12,7 @@ import { Button } from "~/components/ui/button";
 
 export function HeroSectionBlockEditor({ fields, ...props }: EditorProps) {
   const form = useFormMetadata(fields.actions.formId);
-  const actions = fields.actions.getFieldList();
+  const actions = fields;
 
   return (
     <div {...props}>
@@ -50,15 +50,7 @@ export function HeroSectionBlockEditor({ fields, ...props }: EditorProps) {
                 labelProps={{ children: "Link target" }}
                 selectProps={{
                   ...getSelectProps(href),
-                  children: [
-                    [
-                      ...editorSchema.shape.actions.element.shape.href.values,
-                    ].map((v) => {
-                      return <option value={v}>{v}</option>;
-                    }),
-                  ],
-                  className:
-                    "focus-visible:border-0 flex h-9 w-full appearance-none rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground file:placeholder:text-foreground focus-visible:outline-hidden focus-visible:inset-ring-2 focus-visible:inset-ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+                  options: [],
                 }}
                 errors={href.errors}
               />

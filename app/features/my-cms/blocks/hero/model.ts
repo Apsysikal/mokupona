@@ -19,10 +19,7 @@ export const schema = z.object({
       z.object({
         label: z.string().trim().min(1, "Label is required"),
         href: z.literal(hrefValues, "Choose a valid link target"),
-        variant: z
-          .literal(["primary", "secondary"])
-          .optional()
-          .default("primary"),
+        variant: z.enum(["primary", "secondary"]).optional().default("primary"),
       }),
     )
     .min(1, "At least one call to action is requried")

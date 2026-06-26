@@ -96,13 +96,28 @@ export function SelectField({
   className,
 }: {
   labelProps: React.InputHTMLAttributes<HTMLLabelElement>;
-  selectProps: React.InputHTMLAttributes<HTMLSelectElement>;
+  selectProps: React.InputHTMLAttributes<HTMLSelectElement> & {
+    options?: {
+      label: string;
+      value: string;
+    }[];
+  };
   errors?: ListOfErrors;
   className?: string;
 }) {
   const fallbackId = useId();
   const id = selectProps.id ?? fallbackId;
   const errorId = errors?.length ? `${id}-error` : undefined;
+
+  const children = selectProps.children
+    ? selectProps.children
+    : selectProps.options?.map((option) => {
+        return (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        );
+      });
 
   return (
     <div className={className}>
@@ -112,6 +127,7 @@ export function SelectField({
         aria-invalid={errors ? true : undefined}
         aria-describedby={errorId}
         {...selectProps}
+        children={children}
       />
       {errors ? (
         <p id={errorId} className="text-destructive text-sm">

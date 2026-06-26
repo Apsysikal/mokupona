@@ -1,49 +1,48 @@
 import type { FieldMetadata } from "@conform-to/react";
-import type z from "zod";
-
-export type Fieldset<S extends z.ZodType> = {
-  [K in keyof z.infer<S>]-?: FieldMetadata<z.infer<S>[K]>;
-};
+import z from "zod";
 
 /**
- * Collapses a union `A | B | C` into the intersection `A & B & C`.
- * Used to derive the props common to every block's component, so the
- * `<BlockView>` / `<BlockEditor>` dispatch can forward shared extras safely.
+ * This function makes keys of the object required
+ * but preservers the optionality of values that might
+ * exist.
  */
-export type UnionToIntersection<U> = (
-  U extends unknown ? (k: U) => void : never
-) extends (k: infer I) => void
-  ? I
-  : never;
+type RequiredKeys<T extends z.ZodType> = {
+  [P in keyof Required<z.infer<T>>]: z.infer<T>[P];
+};
 
-export type Block<
+type ViewBlockPartial<S extends z.ZodType, P extends {}> = {
+  schema: S;
+  component: React.ComponentType<{ data: z.infer<S> } & P>;
+};
+
+type EditorBlockPartial<S extends z.ZodType, P extends {}> = {
+  schema: S;
+  component: React.ComponentType<
+    {
+      fields: FieldMetadata<RequiredKeys<S>>;
+    } & P
+  >;
+};
+
+export type BaseBlock<
   ViewSchema extends z.ZodType = z.ZodType,
-  ViewComponentProps extends object = {},
-  EditorSchema extends z.ZodType = ViewSchema,
-  EditorComponentProps extends object = ViewComponentProps,
+  ViewBlockProps extends {} = {},
+  EditorSchema extends z.ZodType = z.ZodType,
+  EditorBlockProps extends {} = {},
 > = {
-  viewSchema: ViewSchema;
-  viewComponent: React.ComponentType<
-    { data: z.infer<ViewSchema> } & ViewComponentProps
-  >;
-  editorSchema: EditorSchema;
-  editorComponent: React.ComponentType<
-    { fields: Fieldset<EditorSchema> } & EditorComponentProps
-  >;
-  formMapper: FormMapper<ViewSchema, EditorSchema>;
+  view: ViewBlockPartial<ViewSchema, ViewBlockProps>;
+  editor: EditorBlockPartial<EditorSchema, EditorBlockProps>;
+  migrations: Migration[];
+  transforms: {
+    toForm: (d: z.infer<ViewSchema>) => Promise<z.infer<EditorSchema>>;
+    fromForm: (d: z.infer<EditorSchema>) => Promise<z.infer<ViewSchema>>;
+  };
 };
 
-export type FormMapper<S extends z.ZodType, F extends z.ZodType> = {
-  fromForm: (formData: z.output<F>) => Promise<z.output<S>>;
-  toForm: (data: z.output<S>) => z.output<F>;
-};
+type MigrationFunction = (input: unknown) => unknown;
 
 export type Migration = {
-  baseVersion: number;
-  currentVersion: number;
-  schemas: Array<z.ZodType>;
-  migrations: Array<(d: unknown) => unknown>;
+  from: number;
+  to: number;
+  fn: MigrationFunction;
 };
-
-export type BlockRegistry = Record<string, Block>;
-export type MigrationRegistry = Record<string, Migration>;

@@ -1,14 +1,47 @@
-import { readBlock } from "./engine";
-import { BlockView } from "./render";
+function validateViewData(params: {
+  type: string;
+  version: number;
+  data: unknown;
+}) {
+  const migrationResult = migrate(type, version, data);
+  const validationResult = validate(type, data);
+  return validationResult;
+}
 
-const readFromDb = () => "hero";
+function saveBlock(params: { id?: string; type: string; data: unknown }) {
+  const validationResult = validate(type, data);
+  const currentVersion = getCurrentVersion(type);
+  const result = db.block.save({
+    type,
+    version: currentVersion,
+    data,
+  });
+  return result;
+}
 
-const result = readBlock("test", readFromDb(), 1, {});
+function renderView<K extends string>(params: {
+  type: K;
+  data: (typeof registry)[K];
+}) {
+  let Component = null;
 
-export function Render() {
-  if (result.status !== "success") return null;
+  // get component
 
-  // `result` is now the discriminated success union; <BlockView> dispatches it
-  // and forwards shared extras (className) without a call-site cast.
-  return <BlockView block={result} className="mx-2" />;
+  return <Component {...data} />;
+}
+
+function renderEditor<K extends string>(params: {
+  id?: string;
+  type: K;
+  fields: object;
+}) {
+  let Component = null;
+
+  // get component
+
+  return <Component {...data} />;
+}
+
+function getFormData(params: { type: string; data: object }) {
+  return registry[type].transforms.toForm(data);
 }
