@@ -102,9 +102,10 @@ export function toUtcEventDate(date: Date, clientHints: ClientHints): Date {
  * string (YYYY-MM-DDTHH:mm) that a browser `<input type="datetime-local">`
  * can display in the user's timezone.
  */
-export function toDisplayEventDate(date: Date, clientHints: ClientHints): string {
+export function toDisplayEventDate(
+  date: Date,
+  clientHints: ClientHints,
+): string {
   const eventOffset = getTimezoneOffsetMinutes(date, EVENT_TIMEZONE);
-  return offsetDate(date, eventOffset)
-    .toISOString()
-    .substring(0, 16);
+  return offsetDate(date, eventOffset).toISOString().substring(0, 16);
 }

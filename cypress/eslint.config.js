@@ -1,4 +1,4 @@
-import pluginCypress from 'eslint-plugin-cypress';
+import pluginCypress from "eslint-plugin-cypress";
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -9,8 +9,8 @@ export default [
     languageOptions: {
       parserOptions: {
         tsconfigRootDir: import.meta.dirname,
-        project: "./tsconfig.json"
-      }
-    }
-  }
-]
+        project: "./tsconfig.json",
+      },
+    },
+  },
+];
