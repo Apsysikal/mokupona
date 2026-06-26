@@ -1,4 +1,4 @@
-import { parse } from "cookie";
+import { parseCookie } from "cookie";
 
 import { getUserByEmail } from "~/models/user.server";
 import { createUserSession } from "~/utils/session.server";
@@ -31,7 +31,7 @@ async function createRoleSession(roleArg: string | undefined) {
     throw new Error("Cookie missing from createUserSession response");
   }
 
-  const parsedCookie = parse(cookieValue);
+  const parsedCookie = parseCookie(cookieValue);
 
   console.log(
     `

@@ -2,7 +2,6 @@ import { randomUUID } from "node:crypto";
 
 import type { FileUpload } from "@remix-run/form-data-parser";
 import {
-  FormDataParseError,
   MaxFilesExceededError,
   MaxFileSizeExceededError,
   parseFormData,
@@ -97,20 +96,10 @@ export async function parseImageFormData(
   } catch (error) {
     // Clean up any partial write before returning an error result.
     await discardImage();
-    if (
-      error instanceof MaxFileSizeExceededError ||
-      (error instanceof FormDataParseError &&
-        "cause" in error &&
-        error.cause instanceof MaxFileSizeExceededError)
-    ) {
+    if (error instanceof MaxFileSizeExceededError) {
       return { success: false, uploadError: "File cannot be greater than 3MB" };
     }
-    if (
-      error instanceof MaxFilesExceededError ||
-      (error instanceof FormDataParseError &&
-        "cause" in error &&
-        error.cause instanceof MaxFilesExceededError)
-    ) {
+    if (error instanceof MaxFilesExceededError) {
       return { success: false, uploadError: "You can only upload one file" };
     }
     throw error;

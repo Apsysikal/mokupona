@@ -4,7 +4,7 @@
 // and it will log out the cookie value you can use to interact with the server
 // as that new user.
 
-import { parse } from "cookie";
+import { parseCookie } from "cookie";
 
 import { createUser } from "~/models/user.server";
 import { createUserSession } from "~/utils/session.server";
@@ -30,8 +30,8 @@ async function createAndLogin(email: string) {
   if (!cookieValue) {
     throw new Error("Cookie missing from createUserSession response");
   }
-  const parsedCookie = parse(cookieValue);
-  // we log it like this so our cypress command can parse it out and set it as
+  const parsedCookie = parseCookie(cookieValue);
+  // we log it like this so our cypress command can parseCookie it out and set it as
   // the cookie value.
   console.log(
     `
