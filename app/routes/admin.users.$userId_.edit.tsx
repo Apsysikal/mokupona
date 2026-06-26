@@ -1,7 +1,6 @@
 import { getFormProps, getSelectProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import { Form, redirect, useActionData, useLoaderData } from "react-router";
-import invariant from "tiny-invariant";
+import { Form, redirect } from "react-router";
 import { z } from "zod";
 
 import type { Route } from "./+types/admin.users.$userId_.edit";
@@ -21,7 +20,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["admin"]);
 
   const { userId } = params;
-  invariant(typeof userId === "string", "Parameter userId is missing");
 
   const select = {
     email: true,
@@ -49,7 +47,6 @@ export async function action({ request, params }: Route.ActionArgs) {
   await requireUserWithRole(request, ["admin"]);
 
   const { userId } = params;
-  invariant(typeof userId === "string", "Parameter userId is missing");
 
   const formData = await request.formData();
   const submission = await parseWithZod(formData, {
@@ -97,9 +94,12 @@ export async function action({ request, params }: Route.ActionArgs) {
   return redirect(`/admin/users`);
 }
 
-export default function DinnersPage() {
-  const { user } = useLoaderData<typeof loader>();
-  const lastResult = useActionData<typeof action>();
+export default function DinnersPage({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
+  const { user } = loaderData;
+  const lastResult = actionData;
   const [form, fields] = useForm({
     lastResult,
     shouldValidate: "onBlur",

@@ -1,8 +1,7 @@
 import { useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { useEffect, useRef, useState } from "react";
-import { redirect, useActionData, useLoaderData } from "react-router";
-import invariant from "tiny-invariant";
+import { redirect } from "react-router";
 
 import type { Route } from "./+types/admin.dinners.$dinnerId_.edit";
 
@@ -22,11 +21,8 @@ import { requireUserWithRole } from "~/utils/session.server";
 
 const VALID_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-export function meta({ data }: Route.MetaArgs) {
-  if (!data) return [{ title: "Admin - Dinner" }];
-
-  const { dinner } = data;
-  if (!dinner) return [{ title: "Admin - Dinner" }];
+export function meta({ loaderData }: Route.MetaArgs) {
+  const { dinner } = loaderData;
 
   return [{ title: `Admin - Dinner - ${dinner.title} - Edit` }];
 }
@@ -36,7 +32,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const clientHints = getClientHints(request);
 
   const { dinnerId } = params;
-  invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
 
   const addresses = await getAddresses();
   const event = await getEventById(dinnerId);
@@ -62,7 +57,6 @@ export async function action({ request, params }: Route.ActionArgs) {
   const clientHints = getClientHints(request);
 
   const { dinnerId } = params;
-  invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
 
   const uploadResult = await parseImageFormData(request, "cover");
 
@@ -133,10 +127,13 @@ export async function action({ request, params }: Route.ActionArgs) {
   return redirect(`/admin/dinners/${event.id}`);
 }
 
-export default function DinnersPage() {
+export default function DinnersPage({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
   const schema = EventSchema.partial({ cover: true });
-  const { addresses, validImageTypes, dinner } = useLoaderData<typeof loader>();
-  const lastSubmission = useActionData<typeof action>();
+  const { addresses, validImageTypes, dinner } = loaderData;
+  const lastSubmission = actionData;
   const coverErrors =
     lastSubmission && "uploadHandlerError" in lastSubmission
       ? [lastSubmission.uploadHandlerError]

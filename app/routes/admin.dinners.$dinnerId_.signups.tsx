@@ -1,6 +1,3 @@
-import { useLoaderData } from "react-router";
-import invariant from "tiny-invariant";
-
 import type { Route } from "./+types/admin.dinners.$dinnerId_.signups";
 
 import { Button } from "~/components/ui/button";
@@ -21,7 +18,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   const { dinnerId } = params;
-  invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
 
   const event = await getEventById(dinnerId);
   const responses = await getEventResponsesForEvent(dinnerId);
@@ -34,17 +30,16 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   };
 }
 
-export const meta: Route.MetaFunction = ({ data }) => {
-  if (!data) return [{ title: "Admin - Dinner" }];
-
-  const { event } = data;
-  if (!event) return [{ title: "Admin - Dinner" }];
+export const meta: Route.MetaFunction = ({ loaderData }) => {
+  const { event } = loaderData;
 
   return [{ title: `Admin - Dinner - ${event.title} - Signups` }];
 };
 
-export default function DinnerSignupsPage() {
-  const { event, responses } = useLoaderData<typeof loader>();
+export default function DinnerSignupsPage({
+  loaderData,
+}: Route.ComponentProps) {
+  const { event, responses } = loaderData;
 
   return (
     <main className="flex grow flex-col gap-5">
@@ -63,7 +58,7 @@ export default function DinnerSignupsPage() {
         <TableCaption>Signups for {event.title}</TableCaption>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[100px]">Email</TableHead>
+            <TableHead className="w-25">Email</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Date</TableHead>
           </TableRow>

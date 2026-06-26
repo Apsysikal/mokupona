@@ -1,5 +1,4 @@
-import { Form, Link, useLoaderData } from "react-router";
-import invariant from "tiny-invariant";
+import { Form, Link } from "react-router";
 
 import type { Route } from "./+types/admin.dinners.$dinnerId";
 
@@ -11,27 +10,21 @@ import { requireUserWithRole } from "~/utils/session.server";
 export async function loader({ params, request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
-  const { dinnerId } = params;
-  invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
-
-  const event = await getEventById(dinnerId);
+  const event = await getEventById(params.dinnerId);
 
   if (!event) throw new Response("Not found", { status: 404 });
 
   return { event };
 }
 
-export const meta: Route.MetaFunction = ({ data }) => {
-  if (!data) return [{ title: "Admin - Dinner" }];
-
-  const { event } = data;
-  if (!event) return [{ title: "Admin - Dinner" }];
+export const meta: Route.MetaFunction = ({ loaderData }) => {
+  const { event } = loaderData;
 
   return [{ title: `Dinner - ${event.title}` }];
 };
 
-export default function DinnerPage() {
-  const { event } = useLoaderData<typeof loader>();
+export default function DinnerPage({ loaderData }: Route.ComponentProps) {
+  const { event } = loaderData;
 
   return (
     <main className="mx-auto flex max-w-4xl grow flex-col gap-5">

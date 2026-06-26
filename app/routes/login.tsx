@@ -1,12 +1,6 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import {
-  Form,
-  Link,
-  redirect,
-  useActionData,
-  useSearchParams,
-} from "react-router";
+import { Form, Link, redirect, useSearchParams } from "react-router";
 import { z } from "zod";
 
 import type { Route } from "./+types/login";
@@ -94,10 +88,10 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
 export const meta: Route.MetaFunction = () => [{ title: "Login" }];
 
-export default function LoginPage() {
+export default function LoginPage({ actionData }: Route.ComponentProps) {
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/dinners";
-  const lastResult = useActionData<typeof action>();
+  const lastResult = actionData;
   const [form, fields] = useForm({
     lastResult,
     shouldValidate: "onBlur",

@@ -1,5 +1,5 @@
 import { ChevronRightIcon, PersonIcon } from "@radix-ui/react-icons";
-import { Link, Outlet, useLoaderData } from "react-router";
+import { Link, Outlet } from "react-router";
 
 import type { Route } from "./+types/admin.board-members";
 import { OptimizedImage } from "./file.$fileId";
@@ -15,8 +15,10 @@ export async function loader({ request }: Route.LoaderArgs) {
   return { boardMembers };
 }
 
-export default function BoardMembersIndexRoute() {
-  const { boardMembers } = useLoaderData<typeof loader>();
+export default function BoardMembersIndexRoute({
+  loaderData,
+}: Route.ComponentProps) {
+  const { boardMembers } = loaderData;
 
   return (
     <main>

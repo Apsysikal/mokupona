@@ -1,6 +1,6 @@
 import { parseWithZod } from "@conform-to/zod/v4";
 import type { MetaFunction } from "react-router";
-import { redirect, useActionData, useLoaderData } from "react-router";
+import { redirect } from "react-router";
 
 import type { Route } from "./+types/admin.dinners.new";
 
@@ -94,9 +94,12 @@ export async function action({ request }: Route.ActionArgs) {
   return redirect(`/admin/dinners/${event.id}`);
 }
 
-export default function DinnersPage() {
-  const { addresses, validImageTypes } = useLoaderData<typeof loader>();
-  const lastSubmission = useActionData<typeof action>();
+export default function DinnersPage({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
+  const { addresses, validImageTypes } = loaderData;
+  const lastSubmission = actionData;
   const coverErrors =
     lastSubmission && "uploadHandlerError" in lastSubmission
       ? [lastSubmission.uploadHandlerError]

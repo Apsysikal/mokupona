@@ -67,8 +67,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   );
 };
 
-export default function App() {
-  const { allowIndexing } = useLoaderData<typeof loader>();
+export default function App({ loaderData }: Route.ComponentProps) {
+  const { allowIndexing } = loaderData;
 
   return (
     <html lang="en" className="h-full scroll-smooth">

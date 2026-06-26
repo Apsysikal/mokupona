@@ -1,14 +1,6 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import {
-  Form,
-  Link,
-  redirect,
-  useActionData,
-  useLoaderData,
-  useLocation,
-} from "react-router";
-import invariant from "tiny-invariant";
+import { Form, Link, redirect, useLocation } from "react-router";
 import { z } from "zod";
 
 import type { Route } from "./+types/admin.board-members.$userId.edit";
@@ -47,7 +39,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   const { userId } = params;
-  invariant(typeof userId === "string", "Parameter userId is missing");
 
   const boardMember = await prisma.boardMember.findUnique({
     where: {
@@ -64,7 +55,6 @@ export async function action({ request, params }: Route.ActionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   const { userId } = params;
-  invariant(typeof userId === "string", "Parameter userId is missing");
 
   const uploadResult = await parseImageFormData(request, "image");
 
@@ -123,10 +113,13 @@ export async function action({ request, params }: Route.ActionArgs) {
   return redirect("/admin/board-members/new");
 }
 
-export default function BoardMemberEditRoute() {
+export default function BoardMemberEditRoute({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
   const location = useLocation();
-  const { boardMember } = useLoaderData<typeof loader>();
-  const lastSubmission = useActionData<typeof action>();
+  const { boardMember } = loaderData;
+  const lastSubmission = actionData;
   const [form, fields] = useForm({
     // This key makes sure, that when selecting another member the form updates to the new default values
     id: location.key,

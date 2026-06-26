@@ -1,5 +1,3 @@
-import invariant from "tiny-invariant";
-
 import type { EventResponse } from "#prisma/generated/client";
 
 import type { Route } from "./+types/admin.dinners.$dinnerId.[signups.csv]";
@@ -23,7 +21,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   const { dinnerId } = params;
-  invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
 
   const event = await getEventById(dinnerId);
   const responses = await getEventResponsesForEvent(dinnerId);

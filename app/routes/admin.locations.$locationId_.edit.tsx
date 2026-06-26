@@ -1,7 +1,6 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import { Form, redirect, useActionData, useLoaderData } from "react-router";
-import invariant from "tiny-invariant";
+import { Form, redirect } from "react-router";
 
 import type { Route } from "./+types/admin.locations.$locationId_.edit";
 
@@ -15,7 +14,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   const { locationId } = params;
-  invariant(typeof locationId === "string", "Parameter locationId is missing");
 
   const address = await getAddressById(locationId);
 
@@ -34,7 +32,6 @@ export async function action({ request, params }: Route.ActionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
   const { locationId } = params;
-  invariant(typeof locationId === "string", "Parameter locationId is missing");
 
   const formData = await request.formData();
   const submission = parseWithZod(formData, { schema: AddressSchema });
@@ -55,9 +52,12 @@ export async function action({ request, params }: Route.ActionArgs) {
   return redirect(`/admin/locations`);
 }
 
-export default function DinnersPage() {
-  const { location } = useLoaderData<typeof loader>();
-  const lastResult = useActionData<typeof action>();
+export default function DinnersPage({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
+  const { location } = loaderData;
+  const lastResult = actionData;
   const [form, fields] = useForm({
     lastResult,
     shouldValidate: "onBlur",

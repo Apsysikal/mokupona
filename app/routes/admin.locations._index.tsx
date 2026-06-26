@@ -1,4 +1,4 @@
-import { Link, useFetcher, useLoaderData } from "react-router";
+import { Link, useFetcher } from "react-router";
 
 import type { Address } from "#prisma/generated/client";
 
@@ -19,8 +19,8 @@ export const meta: Route.MetaFunction = () => {
   return [{ title: "Admin - Locations" }];
 };
 
-export default function DinnersPage() {
-  const { addresses } = useLoaderData<typeof loader>();
+export default function DinnersPage({ loaderData }: Route.ComponentProps) {
+  const { addresses } = loaderData;
 
   return (
     <div className="flex flex-col gap-2">

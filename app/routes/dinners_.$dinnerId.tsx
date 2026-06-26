@@ -6,14 +6,7 @@ import {
 } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { ArrowRightIcon } from "@radix-ui/react-icons";
-import {
-  Form,
-  isRouteErrorResponse,
-  Link,
-  useActionData,
-  useLoaderData,
-} from "react-router";
-import invariant from "tiny-invariant";
+import { Form, isRouteErrorResponse, Link } from "react-router";
 import { z } from "zod";
 
 import type { Route } from "./+types/dinners_.$dinnerId";
@@ -58,20 +51,17 @@ const schema = z
     },
   );
 
-export const meta: Route.MetaFunction = ({ data, matches, location }) => {
+export const meta: Route.MetaFunction = ({ loaderData, matches, location }) => {
   const metaTags = [
     {
       title: "Dinner",
     },
   ];
 
-  if (!data) return metaTags;
+  if (!loaderData) return metaTags;
 
-  const { event } = data;
-  if (!event) return metaTags;
-
-  const domainUrl = matches[0].data.domainUrl;
-  if (!domainUrl) return metaTags;
+  const { event } = loaderData;
+  const domainUrl = matches[0].loaderData.domainUrl;
 
   const dinnerUrl = new URL(location.pathname, domainUrl);
   const imageUrl = new URL(getImageUrl(event.imageId), domainUrl);
@@ -88,8 +78,6 @@ export const meta: Route.MetaFunction = ({ data, matches, location }) => {
 export async function loader({ params }: Route.LoaderArgs) {
   const { dinnerId } = params;
 
-  invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
-
   const event = await getEventById(dinnerId);
 
   if (!event) throw new Response("Not found", { status: 404 });
@@ -99,8 +87,6 @@ export async function loader({ params }: Route.LoaderArgs) {
 
 export async function action({ params, request }: Route.ActionArgs) {
   const { dinnerId } = params;
-
-  invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
 
   const dinner = await getEventById(dinnerId);
 
@@ -176,9 +162,12 @@ export async function action({ params, request }: Route.ActionArgs) {
   });
 }
 
-export default function DinnerPage() {
-  const { event } = useLoaderData<typeof loader>();
-  const lastResult = useActionData<typeof action>();
+export default function DinnerPage({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
+  const { event } = loaderData;
+  const lastResult = actionData;
   const [form, fields] = useForm({
     lastResult,
     shouldValidate: "onBlur",

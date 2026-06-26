@@ -21,7 +21,7 @@ export function ErrorList({
   return (
     <ul id={id} className="flex flex-col gap-1">
       {errorsToRender.map((e) => (
-        <li key={e} className="text-sm text-destructive">
+        <li key={e} className="text-destructive text-sm">
           {e}
         </li>
       ))}
@@ -114,7 +114,7 @@ export function SelectField({
         {...selectProps}
       />
       {errors ? (
-        <p id={errorId} className="text-sm text-destructive">
+        <p id={errorId} className="text-destructive text-sm">
           {errors}
         </p>
       ) : null}
@@ -174,7 +174,7 @@ export function CheckboxField({
         />
         <Label htmlFor={id} {...labelProps} />
       </div>
-      <div className="px-4 pb-3 pt-1">
+      <div className="px-4 pt-1 pb-3">
         {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
       </div>
     </div>

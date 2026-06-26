@@ -1,6 +1,5 @@
 import type { ComponentProps } from "react";
 import sharp, { type FitEnum } from "sharp";
-import invariant from "tiny-invariant";
 import { z } from "zod";
 
 import type { Route } from "./+types/file.$fileId";
@@ -71,9 +70,8 @@ export function OptimizedImage({
   );
 }
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  const url = new URL(request.url);
-  const searchParams = url.searchParams;
+export async function loader({ url, params }: Route.LoaderArgs) {
+  const searchParams = new URL(url).searchParams;
   const { fileId } = params;
 
   const options = SearchParamsSchema.safeParse({
@@ -90,8 +88,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       status: 400,
     });
   }
-
-  invariant(typeof fileId === "string", "Parameter fileId must be provided");
 
   const { width, height, fit } = options.data;
   const cacheKey = getCacheKey(`${fileId}-${width}-${height}-${fit}`);

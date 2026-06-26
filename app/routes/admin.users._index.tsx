@@ -1,4 +1,4 @@
-import { Link, useFetcher, useLoaderData } from "react-router";
+import { Link, useFetcher } from "react-router";
 
 import type { Route } from "./+types/admin.users._index";
 
@@ -29,8 +29,8 @@ export const meta: Route.MetaFunction = () => {
   return [{ title: "Admin - Users" }];
 };
 
-export default function DinnersPage() {
-  const { users } = useLoaderData<typeof loader>();
+export default function DinnersPage({ loaderData }: Route.ComponentProps) {
+  const { users } = loaderData;
 
   return (
     <div className="flex flex-col gap-2">

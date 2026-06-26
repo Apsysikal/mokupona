@@ -1,5 +1,3 @@
-import { useLoaderData } from "react-router";
-
 import type { Route } from "./+types/dinners._index";
 
 import { DinnerCard } from "~/components/dinner-card";
@@ -13,8 +11,8 @@ export const loader = async () => {
 
 export const meta: Route.MetaFunction = () => [{ title: "Dinners" }];
 
-export default function DinnersIndexPage() {
-  const { events } = useLoaderData<typeof loader>();
+export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
+  const { events } = loaderData;
 
   const upcomingEvents = events.filter((event) => {
     const eventDate = new Date(event.date);

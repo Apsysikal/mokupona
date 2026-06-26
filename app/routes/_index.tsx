@@ -23,8 +23,7 @@ export const meta: MetaFunction<null, { root: RootLoaderData }> = ({
     },
   ] satisfies ReturnType<MetaFunction>;
 
-  const domainUrl = matches.find(({ id }) => id === "root")?.data.domainUrl;
-  if (!domainUrl) return metaTags;
+  const domainUrl = matches[0].loaderData.domainUrl;
 
   const imageUrl = new URL("/landing-page-default.jpg", domainUrl);
   const currentUrl = new URL(location.pathname, domainUrl);

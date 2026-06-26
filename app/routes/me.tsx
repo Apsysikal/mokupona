@@ -1,4 +1,4 @@
-import { redirect, useLoaderData } from "react-router";
+import { redirect } from "react-router";
 
 import type { Route } from "./+types/me";
 
@@ -23,8 +23,8 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   return { user };
 };
 
-export default function MeRoute() {
-  const { user } = useLoaderData<typeof loader>();
+export default function MeRoute({ loaderData }: Route.ComponentProps) {
+  const { user } = loaderData;
 
   return (
     <main className="relative mx-auto flex max-w-4xl flex-col gap-2">

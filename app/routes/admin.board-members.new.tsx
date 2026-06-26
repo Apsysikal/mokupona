@@ -1,6 +1,6 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import { Form, redirect, useActionData, useLocation } from "react-router";
+import { Form, redirect, useLocation } from "react-router";
 import { z } from "zod";
 
 import type { Route } from "./+types/admin.board-members.new";
@@ -90,9 +90,11 @@ export async function action({ request }: Route.ActionArgs) {
   return redirect("/admin/board-members/new");
 }
 
-export default function BoardMemberNewRoute() {
+export default function BoardMemberNewRoute({
+  actionData,
+}: Route.ComponentProps) {
   const location = useLocation();
-  const lastSubmission = useActionData<typeof action>();
+  const lastSubmission = actionData;
   const [form, fields] = useForm({
     // This id makes sure to clear out the form when redirecting to the same page
     id: location.key,

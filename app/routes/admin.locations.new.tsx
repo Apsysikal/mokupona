@@ -1,7 +1,7 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import type { MetaFunction } from "react-router";
-import { Form, redirect, useActionData } from "react-router";
+import { Form, redirect } from "react-router";
 
 import type { Route } from "./+types/admin.locations.new";
 
@@ -43,8 +43,8 @@ export async function action({ request }: Route.ActionArgs) {
   return redirect("/admin/locations");
 }
 
-export default function DinnersPage() {
-  const lastResult = useActionData<typeof action>();
+export default function DinnersPage({ actionData }: Route.ComponentProps) {
+  const lastResult = actionData;
   const [form, fields] = useForm({
     lastResult,
     shouldValidate: "onBlur",
