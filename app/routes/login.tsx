@@ -16,7 +16,7 @@ import { getClientIPAddress, obscureEmail, safeRedirect } from "~/utils/misc";
 import { createUserSession, getUserId } from "~/utils/session.server";
 
 const schema = z.object({
-  email: z.string({ error: "Email is required" }).email("Invalid email"),
+  email: z.email({ error: "Email is required" }),
   password: z
     .string({
       error: "Password is required",
@@ -43,7 +43,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
         if (!user) {
           ctx.addIssue({
             path: ["password"],
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             message: "Invalid username or password",
           });
           return z.NEVER;

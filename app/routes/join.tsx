@@ -16,7 +16,7 @@ import { createUserSession, getUserId } from "~/utils/session.server";
 
 const schema = z
   .object({
-    email: z.string({ error: "Email is required" }).email("Invalid email"),
+    email: z.email({ error: "Email is required" }),
     password: z
       .string({
         error: "Password is required",

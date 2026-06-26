@@ -59,7 +59,7 @@ export async function action({ request, params }: Route.ActionArgs) {
         if (!role) {
           ctx.addIssue({
             path: ["roleName"],
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             message: "Invalid role",
           });
           return z.NEVER;

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const SignupPersonSchema = z.object({
   name: z.string({ error: "Name is required" }).trim(),
-  email: z.string({ error: "Email is required" }).email("Invalid email").trim(),
+  email: z.email({ error: "Email is required" }),
   phone: z.string({ error: "Phone number is required" }).trim(),
   alternativeMenu: z.boolean().default(false),
   student: z.boolean().default(false),
