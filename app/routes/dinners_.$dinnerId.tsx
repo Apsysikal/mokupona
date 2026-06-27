@@ -3,14 +3,15 @@ import {
   getInputProps,
   getTextareaProps,
   useForm,
+  type FieldMetadata,
 } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { ArrowRightIcon } from "@radix-ui/react-icons";
 import { Form, isRouteErrorResponse, Link } from "react-router";
-import { z } from "zod";
 
 import type { Route } from "./+types/dinners_.$dinnerId";
 
+import React from "react";
 import { DinnerView } from "~/components/dinner-view";
 import {
   CheckboxField,
@@ -19,37 +20,18 @@ import {
   TextareaField,
 } from "~/components/forms";
 import { Button } from "~/components/ui/button";
+import { DEFAULT_FORM_SCHEMA } from "~/features/signup-form/default-form";
+import {
+  getViewForField,
+  type FieldDescriptor,
+} from "~/features/signup-form/fields";
 import { logger } from "~/logger.server";
 import { createEventResponse } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
-import {
-  PersonSchema as person,
-  SignupPersonSchema as signupPerson,
-} from "~/utils/event-signup-validation";
 import { getClientIPAddress, getImageUrl, obscureEmail } from "~/utils/misc";
 import { redirectWithToast } from "~/utils/toast.server";
 
-const schema = z
-  .object({
-    signupPerson,
-    people: z
-      .array(person)
-      .min(0, "You must at least sign up one person")
-      .max(3, "You can't sign up more than 4 people"),
-    comment: z.string().trim().optional(),
-    acceptedPrivacy: z.boolean({
-      error: "You must agree to signup",
-    }),
-  })
-  .refine(
-    (data) => {
-      return data.acceptedPrivacy === true;
-    },
-    {
-      message: "You must agree to register",
-      path: ["acceptedPrivacy"],
-    },
-  );
+const schema = DEFAULT_FORM_SCHEMA;
 
 export const meta: Route.MetaFunction = ({ loaderData, matches, location }) => {
   const metaTags = [
@@ -168,6 +150,7 @@ export default function DinnerPage({
 }: Route.ComponentProps) {
   const { event } = loaderData;
   const lastResult = actionData;
+
   const [form, fields] = useForm({
     lastResult,
     shouldValidate: "onBlur",
@@ -176,8 +159,10 @@ export default function DinnerPage({
       return parseWithZod(formData, { schema });
     },
   });
+
   const signupPerson = fields.signupPerson.getFieldset();
   const people = fields.people.getFieldList();
+  const group = fields.group.getFieldset();
   const isPastEvent = event.date < new Date();
 
   const JumpToFormButton = !isPastEvent ? (
@@ -193,7 +178,8 @@ export default function DinnerPage({
     <main className="mx-auto mt-16 flex max-w-4xl grow flex-col gap-5 px-2 pt-4 pb-8">
       <DinnerView event={event} topButton={JumpToFormButton} />
 
-      {isPastEvent ? null : (
+      {/** @ts-ignore */}
+      {null ? null : (
         <>
           <h2 id="sign-up" className="text-primary mt-8 text-2xl">
             Sign Up
@@ -395,4 +381,14 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       </div>
     );
   }
+}
+
+function FieldView(descriptor: FieldDescriptor, metadata: FieldMetadata) {
+  const viewComponent = getViewForField(descriptor);
+  const viewProps = {
+    fieldConfig: descriptor,
+    fieldMetadata: metadata,
+  };
+
+  return React.createElement(viewComponent, viewProps);
 }
