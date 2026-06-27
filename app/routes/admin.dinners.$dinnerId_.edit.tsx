@@ -1,7 +1,6 @@
-import { useForm } from "@conform-to/react";
+import { getFormProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import { useEffect, useRef, useState } from "react";
-import { redirect } from "react-router";
+import { Form, redirect } from "react-router";
 
 import type { Route } from "./+types/admin.dinners.$dinnerId_.edit";
 
@@ -134,78 +133,46 @@ export default function DinnersPage({
   const schema = EventSchema.partial({ cover: true });
   const { addresses, validImageTypes, dinner } = loaderData;
   const lastSubmission = actionData;
-  const coverErrors =
-    lastSubmission && "uploadHandlerError" in lastSubmission
-      ? [lastSubmission.uploadHandlerError]
-      : undefined;
-  const lastResult =
-    lastSubmission && "uploadHandlerError" in lastSubmission
-      ? undefined
-      : lastSubmission;
+  const hasUploadError =
+    lastSubmission && "uploadHandlerError" in lastSubmission;
+  const coverErrors = hasUploadError
+    ? [lastSubmission.uploadHandlerError]
+    : undefined;
+  const lastResult = hasUploadError ? undefined : lastSubmission;
+
+  const addressOptions = addresses.map((address) => {
+    const label = `${address.streetName} ${address.houseNumber} - ${address.zip} ${address.city}`;
+    const value = address.id;
+
+    return { label, value };
+  });
+
   const [form, fields] = useForm({
     lastResult,
     shouldValidate: "onBlur",
     constraint: getZodConstraint(schema),
     defaultValue: {
-      title: dinner.title,
-      description: dinner.description,
-      menuDescription: dinner.menuDescription,
-      donationDescription: dinner.donationDescription,
-      date: dinner.date,
-      slots: dinner.slots,
-      price: dinner.price,
-      discounts: dinner.discounts,
-      addressId: dinner.addressId,
+      ...dinner,
     },
     onValidate({ formData }) {
       return parseWithZod(formData, { schema });
     },
   });
 
-  const [textContent, setTextContent] = useState<string>();
-  const textRef = useRef<HTMLTextAreaElement>(null);
-  const mountedRef = useRef<boolean>(false);
-
-  useEffect(() => {
-    if (!canUseDOM()) return;
-    if (!textRef || !textRef.current) return;
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-      return;
-    }
-
-    textRef.current.style.height = `${textRef.current.scrollHeight}px`;
-  }, [textContent, textRef]);
-
   return (
-    <>
+    <Form
+      method="POST"
+      encType="multipart/form-data"
+      replace
+      {...getFormProps(form)}
+    >
       <AdminDinnerForm
-        schema={EventSchema.partial({ cover: true })}
+        fields={fields}
+        addressOptions={addressOptions}
         validImageTypes={validImageTypes}
-        addresses={addresses}
-        lastResult={lastResult}
         coverErrors={coverErrors}
-        defaultValues={{
-          title: dinner.title,
-          description: dinner.description,
-          menuDescription: dinner.menuDescription || undefined,
-          donationDescription: dinner.donationDescription || undefined,
-          date: dinner.date,
-          slots: dinner.slots,
-          price: dinner.price,
-          discounts: dinner.discounts || undefined,
-          addressId: dinner.addressId,
-        }}
         submitText="Update Dinner"
       />
-    </>
-  );
-}
-
-export function canUseDOM() {
-  return !!(
-    typeof window !== "undefined" &&
-    typeof window.document !== "undefined" &&
-    typeof window.document.createElement !== "undefined"
+    </Form>
   );
 }

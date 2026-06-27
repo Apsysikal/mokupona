@@ -1,9 +1,10 @@
-import { parseWithZod } from "@conform-to/zod/v4";
+import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import type { MetaFunction } from "react-router";
-import { redirect } from "react-router";
+import { Form, redirect } from "react-router";
 
 import type { Route } from "./+types/admin.dinners.new";
 
+import { getFormProps, useForm } from "@conform-to/react";
 import { AdminDinnerForm } from "~/components/admin-dinner-form";
 import { logger } from "~/logger.server";
 import { getAddresses } from "~/models/address.server";
@@ -100,26 +101,46 @@ export default function DinnersPage({
 }: Route.ComponentProps) {
   const { addresses, validImageTypes } = loaderData;
   const lastSubmission = actionData;
-  const coverErrors =
-    lastSubmission && "uploadHandlerError" in lastSubmission
-      ? [lastSubmission.uploadHandlerError]
-      : undefined;
-  const lastResult =
-    lastSubmission && "uploadHandlerError" in lastSubmission
-      ? undefined
-      : lastSubmission;
+  const hasUploadError =
+    lastSubmission && "uploadHandlerError" in lastSubmission;
+  const coverErrors = hasUploadError
+    ? [lastSubmission.uploadHandlerError]
+    : undefined;
+  const lastResult = hasUploadError ? undefined : lastSubmission;
+
+  const addressOptions = addresses.map((address) => {
+    const label = `${address.streetName} ${address.houseNumber} - ${address.zip} ${address.city}`;
+    const value = address.id;
+
+    return { label, value };
+  });
+
+  const [form, fields] = useForm({
+    lastResult,
+    shouldValidate: "onBlur",
+    constraint: getZodConstraint(EventSchema),
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema: EventSchema });
+    },
+  });
 
   return (
     <>
       <div>Create a new dinner</div>
-      <AdminDinnerForm
-        schema={EventSchema}
-        validImageTypes={validImageTypes}
-        addresses={addresses}
-        lastResult={lastResult}
-        coverErrors={coverErrors}
-        submitText="Create Dinner"
-      />
+      <Form
+        method="POST"
+        encType="multipart/form-data"
+        replace
+        {...getFormProps(form)}
+      >
+        <AdminDinnerForm
+          fields={fields}
+          addressOptions={addressOptions}
+          validImageTypes={validImageTypes}
+          coverErrors={coverErrors}
+          submitText="Create Dinner"
+        />
+      </Form>
     </>
   );
 }

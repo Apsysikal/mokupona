@@ -1,83 +1,40 @@
-import type { SubmissionResult } from "@conform-to/react";
+import type { FieldMetadata } from "@conform-to/react";
 import {
-  getFormProps,
   getInputProps,
   getSelectProps,
   getTextareaProps,
-  useForm,
 } from "@conform-to/react";
-import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import { Form } from "react-router";
 
 import type { ListOfErrors } from "./forms";
 import { Field, SelectField, TextareaField } from "./forms";
 import { Button } from "./ui/button";
 
+import type z from "zod";
 import { EventSchema } from "~/utils/event-validation";
 
-const test = EventSchema.partial({ cover: true });
+const EventFormSchema = EventSchema.partial({ cover: true });
 
-export interface AdminDinnerFormProps {
-  schema: typeof EventSchema | typeof test;
+type FieldsetOf<Schema extends z.ZodType> = {
+  [K in keyof z.input<Schema>]-?: FieldMetadata<z.input<Schema>[K]>;
+};
+
+type UpdatedAdminDinnerFormProps = {
+  fields: FieldsetOf<typeof EventFormSchema>;
+  addressOptions: Array<{ label: string; value: string }>;
   validImageTypes: string[];
-  addresses: {
-    id: string;
-    streetName: string;
-    houseNumber: string;
-    zip: string;
-    city: string;
-  }[];
-  lastResult?: SubmissionResult<string[]>;
   coverErrors?: ListOfErrors;
   submitText: string;
-  defaultValues?: Partial<{
-    title: string;
-    description: string;
-    menuDescription: string;
-    donationDescription: string;
-    date: string;
-    slots: number;
-    price: number;
-    discounts: string;
-    addressId: string;
-    cover: never;
-  }>;
-}
+};
 
 export function AdminDinnerForm({
-  schema,
+  fields,
+  addressOptions,
   validImageTypes,
-  addresses,
-  lastResult,
   coverErrors,
   submitText,
-  defaultValues,
-}: AdminDinnerFormProps) {
-  const [form, fields] = useForm({
-    lastResult,
-    shouldValidate: "onBlur",
-    constraint: getZodConstraint(schema),
-    defaultValue: defaultValues,
-    onValidate({ formData }) {
-      return parseWithZod(formData, { schema });
-    },
-  });
-
-  const options = addresses.map((address) => {
-    const label = `${address.streetName} ${address.houseNumber} - ${address.zip} ${address.city}`;
-    const value = address.id;
-
-    return { label, value };
-  });
-
+}: UpdatedAdminDinnerFormProps) {
   return (
-    <Form
-      method="POST"
-      encType="multipart/form-data"
-      replace
-      className="flex flex-col gap-6"
-      {...getFormProps(form)}
-    >
+    <div className="flex flex-col gap-6">
       <Field
         labelProps={{ children: "Title" }}
         inputProps={{ ...getInputProps(fields.title, { type: "text" }) }}
@@ -128,14 +85,18 @@ export function AdminDinnerForm({
         <Field
           className="flex grow flex-col gap-2"
           labelProps={{ children: "Slots" }}
-          inputProps={{ ...getInputProps(fields.slots, { type: "number" }) }}
+          inputProps={{
+            ...getInputProps(fields.slots, { type: "number" }),
+          }}
           errors={fields.slots.errors}
         />
 
         <Field
           className="flex grow flex-col gap-2"
           labelProps={{ children: "Price" }}
-          inputProps={{ ...getInputProps(fields.price, { type: "number" }) }}
+          inputProps={{
+            ...getInputProps(fields.price, { type: "number" }),
+          }}
           errors={fields.price.errors}
         />
       </div>
@@ -166,13 +127,13 @@ export function AdminDinnerForm({
         labelProps={{ children: "Address" }}
         selectProps={{
           ...getSelectProps(fields.addressId),
-          options,
+          options: addressOptions,
         }}
         errors={fields.addressId.errors}
         className="flex w-full flex-col gap-2"
       />
 
       <Button type="submit">{submitText}</Button>
-    </Form>
+    </div>
   );
 }
