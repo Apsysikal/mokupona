@@ -141,7 +141,6 @@ export default function DinnersPage({
             options,
           }}
           errors={fields.roleName.errors}
-          className="flex w-full flex-col gap-2"
         />
 
         <Button type="submit">Update User</Button>

@@ -1,7 +1,5 @@
-import { useInputControl } from "@conform-to/react";
 import React, { useId } from "react";
 
-import type { CheckboxProps } from "./ui/checkbox";
 import { Checkbox } from "./ui/checkbox";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -10,6 +8,19 @@ import { Textarea } from "./ui/textarea";
 import { cn } from "~/lib/utils";
 
 export type ListOfErrors = (string | null | undefined)[] | null | undefined;
+
+export type FieldProps = {
+  labelProps: React.ComponentProps<"label">;
+  errors?: ListOfErrors;
+  className?: string;
+};
+
+function useFieldIds(id: string | undefined, errors?: ListOfErrors) {
+  const fallbackId = useId();
+  const resolvedId = id ?? fallbackId;
+  const errorId = errors?.length ? `${resolvedId}-error` : undefined;
+  return { id: resolvedId, errorId };
+}
 
 export function ErrorList({
   id,
@@ -36,22 +47,17 @@ export function Field({
   inputProps,
   errors,
   className,
-}: {
-  labelProps: React.InputHTMLAttributes<HTMLLabelElement>;
+}: FieldProps & {
   inputProps: React.InputHTMLAttributes<HTMLInputElement>;
-  errors?: ListOfErrors;
-  className?: string;
 }) {
-  const fallbackId = useId();
-  const id = inputProps.id ?? fallbackId;
-  const errorId = errors?.length ? `${id}-error` : undefined;
+  const { id, errorId } = useFieldIds(inputProps.id, errors);
 
   return (
-    <div className={className}>
+    <div className={cn("flex flex-col gap-2", className)}>
       <Label htmlFor={id} {...labelProps} />
       <Input
         id={id}
-        aria-invalid={errors ? true : undefined}
+        aria-invalid={errorId ? true : undefined}
         aria-describedby={errorId}
         {...inputProps}
       />
@@ -65,24 +71,17 @@ export function TextareaField({
   textareaProps,
   errors,
   className,
-}: {
-  labelProps: React.InputHTMLAttributes<HTMLLabelElement>;
-  textareaProps: React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
-    ref?: React.RefObject<HTMLTextAreaElement>;
-  };
-  errors?: ListOfErrors;
-  className?: string;
+}: FieldProps & {
+  textareaProps: React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 }) {
-  const fallbackId = useId();
-  const id = textareaProps.id ?? fallbackId;
-  const errorId = errors?.length ? `${id}-error` : undefined;
+  const { id, errorId } = useFieldIds(textareaProps.id, errors);
 
   return (
-    <div className={className}>
+    <div className={cn("flex flex-col gap-2", className)}>
       <Label htmlFor={id} {...labelProps} />
       <Textarea
         id={id}
-        aria-invalid={errors ? true : undefined}
+        aria-invalid={errorId ? true : undefined}
         aria-describedby={errorId}
         {...textareaProps}
       />
@@ -96,17 +95,12 @@ export function SelectField({
   selectProps,
   errors,
   className,
-}: {
-  labelProps: React.InputHTMLAttributes<HTMLLabelElement>;
-  selectProps: React.InputHTMLAttributes<HTMLSelectElement> & {
+}: FieldProps & {
+  selectProps: React.SelectHTMLAttributes<HTMLSelectElement> & {
     options?: Array<{ label: string; value: string }>;
   };
-  errors?: ListOfErrors;
-  className?: string;
 }) {
-  const fallbackId = useId();
-  const id = selectProps.id ?? fallbackId;
-  const errorId = errors?.length ? `${id}-error` : undefined;
+  const { id, errorId } = useFieldIds(selectProps.id, errors);
 
   const {
     children,
@@ -116,11 +110,11 @@ export function SelectField({
   } = selectProps;
 
   return (
-    <div className={className}>
+    <div className={cn("flex flex-col gap-2", className)}>
       <Label htmlFor={id} {...labelProps} />
       <select
         id={id}
-        aria-invalid={errors ? true : undefined}
+        aria-invalid={errorId ? true : undefined}
         aria-describedby={errorId}
         className={cn(
           "border-input bg-background placeholder:text-muted-foreground file:placeholder:text-foreground focus-visible:inset-ring-ring flex h-9 w-full appearance-none rounded-md border px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:border-0 focus-visible:inset-ring-2 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
@@ -134,11 +128,7 @@ export function SelectField({
           </option>
         )) ?? children}
       </select>
-      {errors ? (
-        <p id={errorId} className="text-destructive text-sm">
-          {errors}
-        </p>
-      ) : null}
+      {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
     </div>
   );
 }
@@ -148,56 +138,23 @@ export function CheckboxField({
   buttonProps,
   errors,
   className,
-}: {
-  labelProps: React.ComponentProps<"label">;
-  buttonProps: CheckboxProps & {
-    name: string;
-    form: string;
-    value?: string;
-  };
-  errors?: ListOfErrors;
-  className?: string;
+}: FieldProps & {
+  buttonProps: React.ComponentProps<"input"> & { name: string };
 }) {
-  const { key, defaultChecked, ...checkboxProps } = buttonProps;
-  const fallbackId = useId();
-  const checkedValue = buttonProps.value ?? "on";
-  const input = useInputControl({
-    key,
-    name: buttonProps.name,
-    formId: buttonProps.form,
-    initialValue: defaultChecked ? checkedValue : undefined,
-  });
-  const id = buttonProps.id ?? fallbackId;
-  const errorId = errors?.length ? `${id}-error` : undefined;
+  const { id, errorId } = useFieldIds(buttonProps.id, errors);
 
   return (
-    <div className={className}>
+    <div className={cn("flex flex-col gap-2", className)}>
       <div className="flex gap-2">
         <Checkbox
-          {...checkboxProps}
+          {...buttonProps}
           id={id}
           aria-invalid={errorId ? true : undefined}
           aria-describedby={errorId}
-          checked={input.value === checkedValue}
-          onCheckedChange={(state) => {
-            input.change(state.valueOf() ? checkedValue : "");
-            buttonProps.onCheckedChange?.(state);
-          }}
-          onFocus={(event) => {
-            input.focus();
-            buttonProps.onFocus?.(event);
-          }}
-          onBlur={(event) => {
-            input.blur();
-            buttonProps.onBlur?.(event);
-          }}
-          type="button"
         />
         <Label htmlFor={id} {...labelProps} />
       </div>
-      <div className="px-4 pt-1 pb-3">
-        {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
-      </div>
+      {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
     </div>
   );
 }

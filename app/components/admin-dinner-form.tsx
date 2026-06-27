@@ -39,7 +39,6 @@ export function AdminDinnerForm({
         labelProps={{ children: "Title" }}
         inputProps={{ ...getInputProps(fields.title, { type: "text" }) }}
         errors={fields.title.errors}
-        className="flex w-full flex-col gap-2"
       />
 
       <TextareaField
@@ -49,7 +48,6 @@ export function AdminDinnerForm({
           rows: 10,
         }}
         errors={fields.description.errors}
-        className="flex w-full flex-col gap-2"
       />
 
       <TextareaField
@@ -59,7 +57,6 @@ export function AdminDinnerForm({
           rows: 10,
         }}
         errors={fields.menuDescription.errors}
-        className="flex w-full flex-col gap-2"
       />
 
       <TextareaField
@@ -69,7 +66,6 @@ export function AdminDinnerForm({
           rows: 10,
         }}
         errors={fields.donationDescription.errors}
-        className="flex w-full flex-col gap-2"
       />
 
       <Field
@@ -78,12 +74,11 @@ export function AdminDinnerForm({
           ...getInputProps(fields.date, { type: "datetime-local" }),
         }}
         errors={fields.date.errors}
-        className="flex w-full flex-col gap-2"
       />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
         <Field
-          className="flex grow flex-col gap-2"
+          className="grow"
           labelProps={{ children: "Slots" }}
           inputProps={{
             ...getInputProps(fields.slots, { type: "number" }),
@@ -92,7 +87,7 @@ export function AdminDinnerForm({
         />
 
         <Field
-          className="flex grow flex-col gap-2"
+          className="grow"
           labelProps={{ children: "Price" }}
           inputProps={{
             ...getInputProps(fields.price, { type: "number" }),
@@ -108,7 +103,6 @@ export function AdminDinnerForm({
           rows: 3,
         }}
         errors={fields.discounts.errors}
-        className="flex w-full flex-col gap-2"
       />
 
       <Field
@@ -117,10 +111,8 @@ export function AdminDinnerForm({
           ...getInputProps(fields.cover, { type: "file" }),
           tabIndex: 0,
           accept: validImageTypes.join(","),
-          className: "file:text-foreground",
         }}
         errors={fields.cover.errors ?? coverErrors}
-        className="flex w-full flex-col gap-2"
       />
 
       <SelectField
@@ -130,7 +122,6 @@ export function AdminDinnerForm({
           options: addressOptions,
         }}
         errors={fields.addressId.errors}
-        className="flex w-full flex-col gap-2"
       />
 
       <Button type="submit">{submitText}</Button>

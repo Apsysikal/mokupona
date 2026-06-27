@@ -140,11 +140,7 @@ export default function LoginPage({ actionData }: Route.ComponentProps) {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <Checkbox
-                id="remember"
-                name="remember"
-                className="size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
+              <Checkbox id="remember" name="remember" />
               <Label htmlFor="remember" className="ml-2 block text-sm">
                 Remember me
               </Label>

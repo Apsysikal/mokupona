@@ -168,14 +168,12 @@ export default function BoardMemberEditRoute({
           labelProps={{ children: "Name" }}
           inputProps={{ ...getInputProps(fields.name, { type: "text" }) }}
           errors={fields.name.errors}
-          className="flex flex-col gap-3"
         />
 
         <Field
           labelProps={{ children: "Position" }}
           inputProps={{ ...getInputProps(fields.position, { type: "text" }) }}
           errors={fields.position.errors}
-          className="flex flex-col gap-3"
         />
 
         <Field
@@ -184,10 +182,8 @@ export default function BoardMemberEditRoute({
             ...getInputProps(fields.image, { type: "file" }),
             tabIndex: 0,
             accept: validImageTypes.join(","),
-            className: "file:text-foreground",
           }}
           errors={fields.image.errors ?? fileUploadErrors}
-          className="flex flex-col gap-3"
         />
 
         <Button type="submit">Update {boardMember.name}</Button>

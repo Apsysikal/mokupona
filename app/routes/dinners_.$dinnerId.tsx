@@ -297,7 +297,7 @@ export default function DinnerPage({
                         buttonProps={{
                           ...getInputProps(student, { type: "checkbox" }),
                         }}
-                        errors={alternativeMenu.errors}
+                        errors={student.errors}
                       />
 
                       <Field

@@ -135,14 +135,12 @@ export default function BoardMemberNewRoute({
           labelProps={{ children: "Name" }}
           inputProps={{ ...getInputProps(fields.name, { type: "text" }) }}
           errors={fields.name.errors}
-          className="flex flex-col gap-3"
         />
 
         <Field
           labelProps={{ children: "Position" }}
           inputProps={{ ...getInputProps(fields.position, { type: "text" }) }}
           errors={fields.position.errors}
-          className="flex flex-col gap-3"
         />
 
         <Field
@@ -151,10 +149,8 @@ export default function BoardMemberNewRoute({
             ...getInputProps(fields.image, { type: "file" }),
             tabIndex: 0,
             accept: validImageTypes.join(","),
-            className: "file:text-foreground",
           }}
           errors={fields.image.errors ?? fileUploadErros}
-          className="flex flex-col gap-3"
         />
 
         <Button type="submit">Add new board member</Button>
