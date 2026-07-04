@@ -27,6 +27,21 @@ export type NonListFieldDescriptor = z.infer<
 >;
 export type NonListFieldType = NonListFieldDescriptor["type"];
 
+// The runtime list of non-list types (the union above is type-level only);
+// the completeness check below fails to compile if the two ever drift.
+export const NON_LIST_FIELD_TYPES = [
+  "text",
+  "textarea",
+  "email",
+  "phone",
+  "checkbox",
+] as const satisfies readonly NonListFieldType[];
+
+type AssertAllTypesListed =
+  NonListFieldType extends (typeof NON_LIST_FIELD_TYPES)[number] ? true : never;
+// becomes `never` (a compile error) when a union member is missing above
+export const NON_LIST_FIELD_TYPES_COMPLETE: AssertAllTypesListed = true;
+
 // Constrains a view registry so each type maps to a view accepting exactly
 // that type's descriptor — registering a view under the wrong key fails to
 // compile. Views narrow the metadata's value type themselves, so it stays

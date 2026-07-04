@@ -1,4 +1,4 @@
-import { getFormProps, useForm } from "@conform-to/react";
+import { FormProvider, getFormProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { Form, redirect } from "react-router";
 
@@ -9,9 +9,16 @@ import {
   splitUploadActionData,
   toAddressOptions,
 } from "~/components/admin-dinner-form";
+import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
+import {
+  builderRowsToDescriptors,
+  defaultBuilderRows,
+  descriptorsToBuilderRows,
+} from "~/features/signup-form/builder";
 import { logger } from "~/logger.server";
 import { getAddresses } from "~/models/address.server";
 import { getEventById, updateEvent } from "~/models/event.server";
+import { getCurrentFormVersionForEvent } from "~/models/form.server";
 import { getClientHints } from "~/utils/client-hints.server";
 import {
   toDisplayEventDate,
@@ -36,17 +43,27 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const { dinnerId } = params;
 
-  const addresses = await getAddresses();
-  const event = await getEventById(dinnerId);
+  const [addresses, event, version] = await Promise.all([
+    getAddresses(),
+    getEventById(dinnerId),
+    getCurrentFormVersionForEvent(dinnerId),
+  ]);
 
-  if (!event) throw new Response("Not found", { status: 404 });
+  if (!event || !version) throw new Response("Not found", { status: 404 });
 
   logger.info(`Client zone offset: ${clientHints.userTimezoneOffset}`);
   logger.info(`Client zone: ${clientHints.userTimezone}`);
 
+  // an unparseable stored schema (a bug state) surfaces as the default form;
+  // saving then repairs the event's form
+  const storedFields = parseStoredFormSchemaOrLog(version);
+
   return {
     validImageTypes: VALID_IMAGE_TYPES,
     addresses,
+    signupForm: storedFields
+      ? descriptorsToBuilderRows(storedFields)
+      : defaultBuilderRows(),
     dinner: {
       ...event,
       date: toDisplayEventDate(event.date, clientHints),
@@ -94,6 +111,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     discounts,
     cover,
     addressId,
+    signupForm,
   } = submission.value;
 
   logger.info(`Client zone offset: ${clientHints.userTimezoneOffset}`);
@@ -109,23 +127,31 @@ export async function action({ request, params }: Route.ActionArgs) {
     fieldName: "donationDescription",
   });
 
-  const event = await updateEvent(dinnerId, {
-    title,
-    description,
-    ...(menuDescriptionUpdateValue !== undefined && {
-      menuDescription: menuDescriptionUpdateValue,
-    }),
-    ...(donationDescriptionUpdateValue !== undefined && {
-      donationDescription: donationDescriptionUpdateValue,
-    }),
-    date: toUtcEventDate(date, clientHints),
-    slots,
-    price,
-    discounts,
-    addressId,
-    ...(imageId && { imageId }),
-    createdById: user.id,
-  });
+  // event data and the authored form persist in one transaction; the form
+  // follows the §9 versioning policy (deep-equal skip / in-place while
+  // unsubmitted / new version), validated by SignupFormSchema inside
+  // EventSchema's signupForm field
+  const event = await updateEvent(
+    dinnerId,
+    {
+      title,
+      description,
+      ...(menuDescriptionUpdateValue !== undefined && {
+        menuDescription: menuDescriptionUpdateValue,
+      }),
+      ...(donationDescriptionUpdateValue !== undefined && {
+        donationDescription: donationDescriptionUpdateValue,
+      }),
+      date: toUtcEventDate(date, clientHints),
+      slots,
+      price,
+      discounts,
+      addressId,
+      ...(imageId && { imageId }),
+      createdById: user.id,
+    },
+    builderRowsToDescriptors(signupForm),
+  );
 
   return redirect(`/admin/dinners/${event.id}`);
 }
@@ -135,7 +161,7 @@ export default function DinnersPage({
   actionData,
 }: Route.ComponentProps) {
   const schema = EventSchema.partial({ cover: true });
-  const { addresses, validImageTypes, dinner } = loaderData;
+  const { addresses, validImageTypes, dinner, signupForm } = loaderData;
   const { coverErrors, lastResult } = splitUploadActionData(actionData);
   const addressOptions = toAddressOptions(addresses);
 
@@ -145,6 +171,7 @@ export default function DinnersPage({
     constraint: getZodConstraint(schema),
     defaultValue: {
       ...dinner,
+      signupForm,
     },
     onValidate({ formData }) {
       return parseWithZod(formData, { schema });
@@ -152,19 +179,21 @@ export default function DinnersPage({
   });
 
   return (
-    <Form
-      method="POST"
-      encType="multipart/form-data"
-      replace
-      {...getFormProps(form)}
-    >
-      <AdminDinnerForm
-        fields={fields}
-        addressOptions={addressOptions}
-        validImageTypes={validImageTypes}
-        coverErrors={coverErrors}
-        submitText="Update Dinner"
-      />
-    </Form>
+    <FormProvider context={form.context}>
+      <Form
+        method="POST"
+        encType="multipart/form-data"
+        replace
+        {...getFormProps(form)}
+      >
+        <AdminDinnerForm
+          fields={fields}
+          addressOptions={addressOptions}
+          validImageTypes={validImageTypes}
+          coverErrors={coverErrors}
+          submitText="Update Dinner"
+        />
+      </Form>
+    </FormProvider>
   );
 }

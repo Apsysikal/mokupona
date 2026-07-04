@@ -42,38 +42,48 @@ export async function saveFormSchema(
   formId: string,
   fields: FieldDescriptor[],
 ) {
+  return prisma.$transaction(async (tx) =>
+    saveFormSchemaInTx(tx, formId, fields),
+  );
+}
+
+// The same policy composed into a caller's transaction (e.g. the event edit
+// action persists event data and form schema atomically).
+export async function saveFormSchemaInTx(
+  tx: Prisma.TransactionClient,
+  formId: string,
+  fields: FieldDescriptor[],
+) {
   const next = FormSchema.parse(fields);
 
-  return prisma.$transaction(async (tx) => {
-    const current = await tx.formVersion.findFirstOrThrow({
-      ...currentVersionArgs({ formId }),
-      include: { _count: { select: { submissions: true } } },
+  const current = await tx.formVersion.findFirstOrThrow({
+    ...currentVersionArgs({ formId }),
+    include: { _count: { select: { submissions: true } } },
+  });
+
+  const stored = parseStoredFormSchema(current.schema);
+  if (stored.success && isDeepStrictEqual(stored.data, next)) {
+    return current;
+  }
+
+  if (current._count.submissions === 0) {
+    // the no-submissions condition is re-checked inside the write itself:
+    // a submission that lands between the count read and this statement
+    // must not have its pinned version mutated under it
+    const updated = await tx.formVersion.updateMany({
+      where: { id: current.id, submissions: { none: {} } },
+      data: { schema: next as Prisma.InputJsonValue },
     });
-
-    const stored = parseStoredFormSchema(current.schema);
-    if (stored.success && isDeepStrictEqual(stored.data, next)) {
-      return current;
+    if (updated.count === 1) {
+      return tx.formVersion.findUniqueOrThrow({ where: { id: current.id } });
     }
+  }
 
-    if (current._count.submissions === 0) {
-      // the no-submissions condition is re-checked inside the write itself:
-      // a submission that lands between the count read and this statement
-      // must not have its pinned version mutated under it
-      const updated = await tx.formVersion.updateMany({
-        where: { id: current.id, submissions: { none: {} } },
-        data: { schema: next as Prisma.InputJsonValue },
-      });
-      if (updated.count === 1) {
-        return tx.formVersion.findUniqueOrThrow({ where: { id: current.id } });
-      }
-    }
-
-    return tx.formVersion.create({
-      data: {
-        formId,
-        version: current.version + 1,
-        schema: next as Prisma.InputJsonValue,
-      },
-    });
+  return tx.formVersion.create({
+    data: {
+      formId,
+      version: current.version + 1,
+      schema: next as Prisma.InputJsonValue,
+    },
   });
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildEventData } from "../../test/factories";
 
-import { createEvent, deleteEvent } from "./event.server";
+import { createEvent, deleteEvent, updateEvent } from "./event.server";
 import {
   createFormSubmission,
   FormVersionChangedError,
@@ -60,6 +60,48 @@ describe("createEvent", () => {
     await expect(
       createEvent(await buildEventData(), duplicateNames),
     ).rejects.toThrow();
+  });
+});
+
+describe("updateEvent", () => {
+  it("persists event data and form schema together", async () => {
+    const event = await createEvent(await buildEventData());
+    const edited: FieldDescriptor[] = DEFAULT_FORM.map((field) =>
+      field.type === "textarea" && field.data.name === "comment"
+        ? { ...field, data: { ...field.data, label: "Anything else?" } }
+        : field,
+    );
+
+    const updated = await updateEvent(event.id, { title: "New Title" }, edited);
+
+    expect(updated.title).toBe("New Title");
+    const version = await getCurrentFormVersion(event.formId);
+    expect(version.schema).toEqual(edited);
+  });
+
+  it("rolls the event data back when the form save fails", async () => {
+    const event = await createEvent(await buildEventData());
+    const invalid: FieldDescriptor[] = [
+      {
+        type: "text",
+        version: 1,
+        data: { name: "dup", label: "One", required: false },
+      },
+      {
+        type: "text",
+        version: 1,
+        data: { name: "dup", label: "Two", required: false },
+      },
+    ];
+
+    await expect(
+      updateEvent(event.id, { title: "Should Not Persist" }, invalid),
+    ).rejects.toThrow();
+
+    const after = await prisma.event.findUniqueOrThrow({
+      where: { id: event.id },
+    });
+    expect(after.title).not.toBe("Should Not Persist");
   });
 });
 

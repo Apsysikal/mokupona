@@ -1,6 +1,9 @@
 import { z } from "zod";
 
+import { SignupFormBuilderSchema } from "~/features/signup-form/builder";
+
 export const EventSchema = z.object({
+  signupForm: SignupFormBuilderSchema,
   title: z.string({ error: "Title is required" }).trim(),
   description: z.string({ error: "Description is required" }).trim(),
   menuDescription: z.string().trim().optional(),

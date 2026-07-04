@@ -7,6 +7,7 @@ import {
 
 import type { ListOfErrors } from "./forms";
 import { Field, SelectField, TextareaField } from "./forms";
+import { SignupFormBuilder } from "./signup-form-builder";
 import { Button } from "./ui/button";
 
 import type z from "zod";
@@ -154,6 +155,8 @@ export function AdminDinnerForm({
         }}
         errors={fields.addressId.errors}
       />
+
+      <SignupFormBuilder field={fields.signupForm} />
 
       <Button type="submit">{submitText}</Button>
     </div>

@@ -1,9 +1,13 @@
 import {
   dinnerFormValues,
   FILE_TOO_LARGE_ERROR,
+  fillDinnerForm,
+  getDinnerIdFromPathname,
+  getFirstAddressId,
   runUploadDbCommand,
   submitMultipartRequest,
   UPLOAD_HANDLER_LIMIT_BYTES,
+  uploadDinnerCover,
   uploadFileInput,
   VALID_UPLOAD_FIXTURE_PATH,
   type DinnerRecord,
@@ -14,72 +18,6 @@ type DinnerCleanup = {
   id: string;
   extraImageIds?: string[];
 };
-
-function getFirstAddressId() {
-  return cy
-    .findByLabelText(/^address$/i)
-    .find("option")
-    .first()
-    .then(($option) => {
-      const addressId = $option.val();
-
-      if (typeof addressId !== "string") {
-        throw new Error("Address value missing from dinner form");
-      }
-
-      return addressId;
-    });
-}
-
-function selectFirstAddress() {
-  getFirstAddressId().then((addressId) => {
-    cy.findByLabelText(/^address$/i).select(addressId);
-  });
-}
-
-function fillDinnerForm(values: ReturnType<typeof dinnerFormValues>) {
-  cy.findByLabelText(/^title$/i)
-    .clear()
-    .type(values.title);
-  cy.findByLabelText(/^description$/i)
-    .clear()
-    .type(values.description);
-  cy.findByLabelText(/^menu$/i)
-    .clear()
-    .type(values.menuDescription);
-  cy.findByLabelText(/^donation$/i)
-    .clear()
-    .type(values.donationDescription);
-  cy.findByLabelText(/^date$/i)
-    .clear()
-    .type(values.date);
-  cy.findByLabelText(/^slots$/i)
-    .clear()
-    .type(values.slots);
-  cy.findByLabelText(/^price$/i)
-    .clear()
-    .type(values.price);
-  cy.findByLabelText(/^discounts$/i)
-    .clear()
-    .type(values.discounts);
-  selectFirstAddress();
-}
-
-function uploadDinnerCover(file: string | Cypress.FileReferenceObject) {
-  cy.findByLabelText(/^cover$/i).selectFile(file, { force: true });
-}
-
-function getDinnerIdFromPathname(pathname: string) {
-  const dinnerId = pathname.match(
-    /\/admin\/dinners\/([^/.]+)(?:\.data)?$/,
-  )?.[1];
-
-  if (!dinnerId) {
-    throw new Error(`Unable to determine dinner id from pathname: ${pathname}`);
-  }
-
-  return dinnerId;
-}
 
 describe("admin dinner uploads", () => {
   let dinnersToCleanup: DinnerCleanup[];

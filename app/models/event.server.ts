@@ -3,6 +3,7 @@ import type { Prisma } from "#prisma/generated/client";
 import { prisma } from "~/db.server";
 import { FormSchema, type FieldDescriptor } from "~/features/forms/fields";
 import { DEFAULT_FORM } from "~/features/signup-form/default-form";
+import { saveFormSchemaInTx } from "~/models/form.server";
 
 type EventsFilter = Prisma.EventWhereInput;
 
@@ -55,10 +56,22 @@ export async function createEvent(
   });
 }
 
-export async function updateEvent(id: string, data: EventUpdateInput) {
-  return prisma.event.update({
-    where: { id },
-    data,
+// When formFields are provided, event data and form schema persist in ONE
+// transaction (the create path is atomic too) — a failure must not leave the
+// event updated but its form unchanged.
+export async function updateEvent(
+  id: string,
+  data: EventUpdateInput,
+  formFields?: FieldDescriptor[],
+) {
+  if (!formFields) {
+    return prisma.event.update({ where: { id }, data });
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const event = await tx.event.update({ where: { id }, data });
+    await saveFormSchemaInTx(tx, event.formId, formFields);
+    return event;
   });
 }
 

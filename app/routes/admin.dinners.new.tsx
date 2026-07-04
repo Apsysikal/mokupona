@@ -4,12 +4,16 @@ import { Form, redirect } from "react-router";
 
 import type { Route } from "./+types/admin.dinners.new";
 
-import { getFormProps, useForm } from "@conform-to/react";
+import { FormProvider, getFormProps, useForm } from "@conform-to/react";
 import {
   AdminDinnerForm,
   splitUploadActionData,
   toAddressOptions,
 } from "~/components/admin-dinner-form";
+import {
+  builderRowsToDescriptors,
+  defaultBuilderRows,
+} from "~/features/signup-form/builder";
 import { logger } from "~/logger.server";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
@@ -75,6 +79,7 @@ export async function action({ request }: Route.ActionArgs) {
     discounts,
     cover,
     addressId,
+    signupForm,
   } = submission.value;
 
   logger.info(`Client zone offset: ${clientHints.userTimezoneOffset}`);
@@ -82,19 +87,23 @@ export async function action({ request }: Route.ActionArgs) {
 
   const imageId = await uploadResult.persistImage(cover);
 
-  const event = await createEvent({
-    title,
-    description,
-    menuDescription,
-    donationDescription,
-    date: toUtcEventDate(date, clientHints),
-    slots,
-    price,
-    discounts,
-    addressId,
-    imageId,
-    createdById: user.id,
-  });
+  const event = await createEvent(
+    {
+      title,
+      description,
+      menuDescription,
+      donationDescription,
+      date: toUtcEventDate(date, clientHints),
+      slots,
+      price,
+      discounts,
+      addressId,
+      imageId,
+      createdById: user.id,
+    },
+    // validated by SignupFormSchema inside EventSchema's signupForm field
+    builderRowsToDescriptors(signupForm),
+  );
 
   return redirect(`/admin/dinners/${event.id}`);
 }
@@ -111,6 +120,9 @@ export default function DinnersPage({
     lastResult,
     shouldValidate: "onBlur",
     constraint: getZodConstraint(EventSchema),
+    defaultValue: {
+      signupForm: defaultBuilderRows(),
+    },
     onValidate({ formData }) {
       return parseWithZod(formData, { schema: EventSchema });
     },
@@ -119,20 +131,22 @@ export default function DinnersPage({
   return (
     <>
       <div>Create a new dinner</div>
-      <Form
-        method="POST"
-        encType="multipart/form-data"
-        replace
-        {...getFormProps(form)}
-      >
-        <AdminDinnerForm
-          fields={fields}
-          addressOptions={addressOptions}
-          validImageTypes={validImageTypes}
-          coverErrors={coverErrors}
-          submitText="Create Dinner"
-        />
-      </Form>
+      <FormProvider context={form.context}>
+        <Form
+          method="POST"
+          encType="multipart/form-data"
+          replace
+          {...getFormProps(form)}
+        >
+          <AdminDinnerForm
+            fields={fields}
+            addressOptions={addressOptions}
+            validImageTypes={validImageTypes}
+            coverErrors={coverErrors}
+            submitText="Create Dinner"
+          />
+        </Form>
+      </FormProvider>
     </>
   );
 }

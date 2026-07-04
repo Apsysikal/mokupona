@@ -5,7 +5,9 @@ import { FormSchema } from "~/features/forms/fields";
 // loosens the public signup endpoint.
 export const MAX_FRIENDS_COUNT = 10;
 
-const FIXED_IDENTITY_FIELDS = [
+// Exported so the builder UI derives its pinned rows from the same list the
+// profile validates against.
+export const FIXED_IDENTITY_FIELDS = [
   { name: "name", type: "text" },
   { name: "email", type: "email" },
   { name: "phone", type: "phone" },
