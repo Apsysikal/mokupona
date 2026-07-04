@@ -26,10 +26,7 @@ export type NonListFieldDescriptor = z.infer<
 >;
 export type NonListFieldType = NonListFieldDescriptor["type"];
 
-export const NonListFieldViews: Record<
-  NonListFieldType,
-  React.ElementType
-> = {
+export const NonListFieldViews: Record<NonListFieldType, React.ElementType> = {
   text: TextField,
   email: EmailField,
   phone: PhoneField,
@@ -45,18 +42,23 @@ export function zodForField(descriptor: NonListFieldDescriptor) {
   const { type, data } = descriptor;
   const { required } = data;
 
+  const requiredError = `${data.label} is required`;
+
   switch (type) {
     case "text":
     case "textarea":
     case "phone": {
-      const schema = z.string().trim();
-      if (required) return schema.min(1);
+      const schema = z.string({ error: requiredError }).trim();
+      if (required) return schema.min(1, { error: requiredError });
       return schema.optional();
     }
 
     case "email": {
       // trim first: a format schema's check runs before a chained .trim()
-      const schema = z.string().trim().pipe(z.email());
+      const schema = z
+        .string({ error: requiredError })
+        .trim()
+        .pipe(z.email({ error: `${data.label} is invalid` }));
       if (required) return schema;
       return schema.optional();
     }

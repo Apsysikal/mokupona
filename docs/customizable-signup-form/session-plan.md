@@ -5,26 +5,32 @@ Companion to [`design.md`](./design.md) and [`implementation-plan.md`](./impleme
 ## Protocol (every session)
 
 1. **Start:** read `design.md`, `implementation-plan.md`, and this file. Check the status table below for where the previous session left off and any deviation notes.
-2. **Scope discipline:** do only this session's items. If you discover work that belongs to a later session, add a note under *Deviations & discoveries* — do not do it.
+2. **Scope discipline:** do only this session's items. If you discover work that belongs to a later session, add a note under _Deviations & discoveries_ — do not do it.
 3. **End:** all checks green, work committed on `dev`, tick the status row, and record deviations/discoveries below.
 4. Commits are the state carrier between sessions; this doc is the coordination carrier — commit its status updates alongside the session's work.
 
 ## Status
 
-| # | Session | Phase | Status |
-|---|---------|-------|--------|
-| 1 | Branch cleanup + generic forms library | cleanup + 0a | ☑ |
-| 2 | Signup page renders via registry (old storage) | 0b | ☐ |
-| 3 | Storage: schema, migration, backfill, models | 1a | ☐ |
-| 4 | Attendee read layer + admin/CSV switch | 1b | ☐ |
-| 5 | Write-path switch to FormSubmission | 1c | ☐ |
-| 6 | Admin builder UI — core | 2a | ☐ |
-| 7 | Builder guardrails + full e2e sweep | 2b | ☐ |
-| 8+ | New field types (one session each, `select` first) | 3 | ☐ |
+| #   | Session                                            | Phase        | Status |
+| --- | -------------------------------------------------- | ------------ | ------ |
+| 1   | Branch cleanup + generic forms library             | cleanup + 0a | ☑      |
+| 2   | Signup page renders via registry (old storage)     | 0b           | ☑      |
+| 3   | Storage: schema, migration, backfill, models       | 1a           | ☐      |
+| 4   | Attendee read layer + admin/CSV switch             | 1b           | ☐      |
+| 5   | Write-path switch to FormSubmission                | 1c           | ☐      |
+| 6   | Admin builder UI — core                            | 2a           | ☐      |
+| 7   | Builder guardrails + full e2e sweep                | 2b           | ☐      |
+| 8+  | New field types (one session each, `select` first) | 3            | ☐      |
 
 ## Deviations & discoveries
 
 _(append here, newest first, prefixed with the session number)_
+
+- **S2:** `zodForField` gained user-facing error messages derived from the label (`${label} is required`; email format errors say `${label} is invalid`). Without them the registry-driven page would show zod's raw "expected string, received undefined" where the live form said "Name is required". Deliberate message change: a _malformed_ (not missing) email now reads "Email is invalid" instead of the legacy quirk "Email is required".
+- **S2:** Conform's coercion strips **unchecked optional checkboxes from the parse output entirely** — the `.default(false)` in `zodForField` never runs under `parseWithZod` (it does under plain `.parse`, which is what the unit tests exercise). The route's temporary adapter schema re-applies `.default(false)` before the `createEventResponse` fan-out. **Session 5 must keep an equivalent normalization when writing `FormSubmission.answers`** (store explicit `false`, not absent keys) or teach the read layer to treat absence as false.
+- **S2:** The empty-list case from the S1 note is confirmed end-to-end: `parseWithZod` yields `friends: []` when no friend inputs are submitted (parity test) and the solo-signup e2e passes.
+- **S2:** The loader key for the descriptors is `formFields` (not `form`) — `form` collides with Conform's form object in the component. Session 5's loader should keep that name and add `formVersionId`.
+- **S2:** Incidental fix: the failed-submission log's `submission.payload["email"]` lookup now actually finds the email — under the legacy schema the payload key was `signupPerson.email`, so that log line always recorded `unknown@no-domain.com`.
 
 - **S1 (review):** `ListField` reads the form metadata via Conform's `useFormMetadata()` context instead of a `formMetadata` prop, so every field view shares the `{fieldConfig, fieldMetadata}` contract and the type-erased registry can't hide a missing prop. **Session 2's route must wrap the rendered fields in `<FormProvider context={form.context}>`.**
 - **S1 (review):** `buildSubmissionSchema` now maps `required: true` on a list to `.min(1)`; previously the flag was silently ignored for lists.

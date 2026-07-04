@@ -1,55 +1,49 @@
 import {
+  FormProvider,
   getFormProps,
   getInputProps,
-  getTextareaProps,
   useForm,
 } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { ArrowRightIcon } from "@radix-ui/react-icons";
+import { useMemo } from "react";
 import { Form, isRouteErrorResponse, Link } from "react-router";
 import { z } from "zod";
 
 import type { Route } from "./+types/dinners_.$dinnerId";
 
 import { DinnerView } from "~/components/dinner-view";
-import {
-  CheckboxField,
-  ErrorList,
-  Field,
-  TextareaField,
-} from "~/components/forms";
+import { CheckboxField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
+import { getViewForField } from "~/features/forms/fields";
+import { buildSignupSchema } from "~/features/signup-form/build-schema";
+import { DEFAULT_FORM } from "~/features/signup-form/default-form";
 import { logger } from "~/logger.server";
 import { createEventResponse } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
-import {
-  PersonSchema as person,
-  SignupPersonSchema as signupPerson,
-} from "~/utils/event-signup-validation";
 import { getClientIPAddress, getImageUrl, obscureEmail } from "~/utils/misc";
 import { redirectWithToast } from "~/utils/toast.server";
 
-const schema = z
-  .object({
-    signupPerson,
-    people: z
-      .array(person)
-      .min(0, "You must at least sign up one person")
-      .max(3, "You can't sign up more than 4 people"),
-    comment: z.string().trim().optional(),
-    acceptedPrivacy: z.boolean({
-      error: "You must agree to signup",
+// Temporary Phase-0 adapter (removed in Phase 1c): re-reads the validated
+// answers of DEFAULT_FORM with their concrete types so they can be fanned out
+// onto the legacy per-attendee EventResponse writes.
+const SignupAnswersSchema = z.object({
+  name: z.string(),
+  email: z.string(),
+  phone: z.string(),
+  vegetarian: z.boolean().default(false),
+  student: z.boolean().default(false),
+  restrictions: z.string().optional(),
+  friends: z.array(
+    z.object({
+      name: z.string(),
+      vegetarian: z.boolean().default(false),
+      student: z.boolean().default(false),
+      restrictions: z.string().optional(),
     }),
-  })
-  .refine(
-    (data) => {
-      return data.acceptedPrivacy === true;
-    },
-    {
-      message: "You must agree to register",
-      path: ["acceptedPrivacy"],
-    },
-  );
+  ),
+  comment: z.string().optional(),
+});
 
 export const meta: Route.MetaFunction = ({ loaderData, matches, location }) => {
   const metaTags = [
@@ -82,7 +76,9 @@ export async function loader({ params }: Route.LoaderArgs) {
 
   if (!event) throw new Response("Not found", { status: 404 });
 
-  return { event };
+  // Phase 0: every event still uses the static default form. Phase 1 replaces
+  // this with the event's current FormVersion from the DB.
+  return { event, formFields: DEFAULT_FORM };
 }
 
 export async function action({ params, request }: Route.ActionArgs) {
@@ -96,7 +92,9 @@ export async function action({ params, request }: Route.ActionArgs) {
   }
 
   const formData = await request.formData();
-  const submission = parseWithZod(formData, { schema });
+  const submission = parseWithZod(formData, {
+    schema: buildSignupSchema(DEFAULT_FORM),
+  });
 
   if (submission.status !== "success" || !submission.value) {
     logger.info("Failed submission for dinner signup", {
@@ -111,39 +109,42 @@ export async function action({ params, request }: Route.ActionArgs) {
     return submission.reply();
   }
 
-  const { signupPerson, people, comment } = submission.value;
+  const { acceptedPrivacy: _acceptedPrivacy, ...answers } = submission.value;
+  const {
+    name,
+    email,
+    phone,
+    vegetarian,
+    student,
+    restrictions,
+    friends,
+    comment,
+  } = SignupAnswersSchema.parse(answers);
 
   const allSignups = [
-    signupPerson,
-    ...people.map((person) => {
-      return {
-        email: signupPerson.email,
-        phone: signupPerson.phone,
-        ...person,
-      };
-    }),
+    { name, vegetarian, student, restrictions },
+    // friends inherit the signer's contact info, as today
+    ...friends,
   ];
 
-  const allSignupsPromises = allSignups.map(
-    ({ name, email, phone, alternativeMenu, student, dietaryRestrictions }) => {
-      return createEventResponse(
-        dinnerId,
-        name,
-        email,
-        phone,
-        alternativeMenu,
-        student,
-        dietaryRestrictions,
-        comment,
-      );
-    },
-  );
+  const allSignupsPromises = allSignups.map((person) => {
+    return createEventResponse(
+      dinnerId,
+      person.name,
+      email,
+      phone,
+      person.vegetarian,
+      person.student,
+      person.restrictions,
+      comment,
+    );
+  });
 
   await Promise.all(allSignupsPromises).catch((reason) => {
     logger.info("Failed submission for dinner signup", {
       ip: getClientIPAddress(request),
       dinner: dinner.id,
-      email: obscureEmail(submission.value.signupPerson.email),
+      email: obscureEmail(email),
       reason: reason,
     });
   });
@@ -151,7 +152,7 @@ export async function action({ params, request }: Route.ActionArgs) {
   logger.info("Successful submission for dinner signup", {
     ip: getClientIPAddress(request),
     dinner: dinner.id,
-    email: obscureEmail(submission.value.signupPerson.email),
+    email: obscureEmail(email),
   });
 
   return redirectWithToast("/dinners", {
@@ -166,8 +167,10 @@ export default function DinnerPage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const { event } = loaderData;
+  const { event, formFields } = loaderData;
   const lastResult = actionData;
+
+  const schema = useMemo(() => buildSignupSchema(formFields), [formFields]);
 
   const [form, fields] = useForm({
     lastResult,
@@ -178,8 +181,6 @@ export default function DinnerPage({
     },
   });
 
-  const signupPerson = fields.signupPerson.getFieldset();
-  const people = fields.people.getFieldList();
   const isPastEvent = event.date < new Date();
 
   const JumpToFormButton = !isPastEvent ? (
@@ -200,173 +201,52 @@ export default function DinnerPage({
           <h2 id="sign-up" className="text-primary mt-8 text-2xl">
             Sign Up
           </h2>
-          <Form
-            method="post"
-            {...getFormProps(form)}
-            className="flex flex-col gap-4"
-          >
-            {/**
-             * This button is needed as hitting Enter would otherwise remove the first person.
-             * https://github.com/edmundhung/conform/issues/216
-             */}
-            <button type="submit" hidden />
+          <FormProvider context={form.context}>
+            <Form
+              method="post"
+              {...getFormProps(form)}
+              className="flex flex-col gap-4"
+            >
+              {/**
+               * This button is needed as hitting Enter would otherwise remove the first person.
+               * https://github.com/edmundhung/conform/issues/216
+               */}
+              <button type="submit" hidden />
 
-            <ul className="flex flex-col gap-20">
-              <li className="flex gap-3">
-                <fieldset className="flex w-full flex-col gap-4">
-                  <Field
-                    labelProps={{ children: "Name" }}
-                    inputProps={{
-                      ...getInputProps(signupPerson.name, { type: "text" }),
-                    }}
-                    errors={signupPerson.name.errors}
-                  />
-
-                  <Field
-                    labelProps={{ children: "Email" }}
-                    inputProps={{
-                      ...getInputProps(signupPerson.email, { type: "email" }),
-                    }}
-                    errors={signupPerson.email.errors}
-                  />
-
-                  <Field
-                    labelProps={{ children: "Phone number" }}
-                    inputProps={{
-                      ...getInputProps(signupPerson.phone, { type: "tel" }),
-                    }}
-                    errors={signupPerson.phone.errors}
-                  />
-
-                  <CheckboxField
-                    labelProps={{ children: "Vegan / Vegetarian" }}
-                    buttonProps={{
-                      ...getInputProps(signupPerson.alternativeMenu, {
-                        type: "checkbox",
-                      }),
-                    }}
-                    errors={signupPerson.alternativeMenu.errors}
-                  />
-
-                  <CheckboxField
-                    labelProps={{ children: "Student" }}
-                    buttonProps={{
-                      ...getInputProps(signupPerson.student, {
-                        type: "checkbox",
-                      }),
-                    }}
-                    errors={signupPerson.student.errors}
-                  />
-
-                  <Field
-                    labelProps={{ children: "Dietary restrictions" }}
-                    inputProps={{
-                      ...getInputProps(signupPerson.dietaryRestrictions, {
-                        type: "text",
-                      }),
-                    }}
-                    errors={signupPerson.dietaryRestrictions.errors}
-                  />
-                </fieldset>
-              </li>
-              {people.map((person, index) => {
-                const { name, alternativeMenu, dietaryRestrictions, student } =
-                  person.getFieldset();
+              {formFields.map((descriptor) => {
+                const FieldView = getViewForField(descriptor);
 
                 return (
-                  <li key={person.id} className="flex gap-3">
-                    <fieldset className="flex w-full flex-col gap-4">
-                      <Field
-                        labelProps={{ children: "Name" }}
-                        inputProps={{
-                          ...getInputProps(name, { type: "text" }),
-                        }}
-                        errors={name.errors}
-                      />
-
-                      <CheckboxField
-                        labelProps={{ children: "Vegan / Vegetarian" }}
-                        buttonProps={{
-                          ...getInputProps(alternativeMenu, {
-                            type: "checkbox",
-                          }),
-                        }}
-                        errors={alternativeMenu.errors}
-                      />
-
-                      <CheckboxField
-                        labelProps={{ children: "Student" }}
-                        buttonProps={{
-                          ...getInputProps(student, { type: "checkbox" }),
-                        }}
-                        errors={student.errors}
-                      />
-
-                      <Field
-                        labelProps={{ children: "Dietary restrictions" }}
-                        inputProps={{
-                          ...getInputProps(dietaryRestrictions, {
-                            type: "text",
-                          }),
-                        }}
-                        errors={dietaryRestrictions.errors}
-                      />
-
-                      <Button
-                        {...{
-                          ...form.remove.getButtonProps({
-                            name: fields.people.name,
-                            index,
-                          }),
-                          disabled: people.length === 0,
-                        }}
-                        variant="destructive"
-                      >
-                        Remove this person
-                      </Button>
-                    </fieldset>
-                  </li>
+                  <FieldView
+                    key={descriptor.data.name}
+                    fieldConfig={descriptor}
+                    fieldMetadata={fields[descriptor.data.name]}
+                  />
                 );
               })}
-            </ul>
 
-            {people.length < 3 ? (
-              <Button
-                variant="outline"
-                {...form.insert.getButtonProps({ name: fields.people.name })}
-                className="mt-20"
-              >
-                Add a friend
-              </Button>
-            ) : null}
+              <CheckboxField
+                labelProps={{
+                  children: (
+                    <span>
+                      Agree to{" "}
+                      <Link to="/privacy" className="text-primary">
+                        Privacy Policy
+                      </Link>
+                    </span>
+                  ),
+                }}
+                buttonProps={{
+                  ...getInputProps(fields.acceptedPrivacy, {
+                    type: "checkbox",
+                  }),
+                }}
+                errors={fields.acceptedPrivacy.errors}
+              />
 
-            <ErrorList id={fields.people.id} errors={fields.people.errors} />
-
-            <TextareaField
-              labelProps={{ children: "Comment" }}
-              textareaProps={{ ...getTextareaProps(fields.comment) }}
-              errors={fields.comment.errors}
-            />
-
-            <CheckboxField
-              labelProps={{
-                children: (
-                  <span>
-                    Agree to{" "}
-                    <Link to="/privacy" className="text-primary">
-                      Privacy Policy
-                    </Link>
-                  </span>
-                ),
-              }}
-              buttonProps={{
-                ...getInputProps(fields.acceptedPrivacy, { type: "checkbox" }),
-              }}
-              errors={fields.acceptedPrivacy.errors}
-            />
-
-            <Button type="submit">Join</Button>
-          </Form>
+              <Button type="submit">Join</Button>
+            </Form>
+          </FormProvider>
         </>
       )}
     </main>
