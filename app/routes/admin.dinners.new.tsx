@@ -1,10 +1,9 @@
+import { FormProvider, getFormProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import type { MetaFunction } from "react-router";
 import { Form, redirect } from "react-router";
 
 import type { Route } from "./+types/admin.dinners.new";
 
-import { FormProvider, getFormProps, useForm } from "@conform-to/react";
 import {
   AdminDinnerForm,
   splitUploadActionData,
@@ -36,7 +35,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   };
 }
 
-export const meta: MetaFunction<typeof loader> = () => {
+export const meta: Route.MetaFunction = () => {
   return [{ title: "Admin - Create Dinner" }];
 };
 
@@ -129,24 +128,23 @@ export default function DinnersPage({
   });
 
   return (
-    <>
-      <div>Create a new dinner</div>
-      <FormProvider context={form.context}>
-        <Form
-          method="POST"
-          encType="multipart/form-data"
-          replace
-          {...getFormProps(form)}
-        >
-          <AdminDinnerForm
-            fields={fields}
-            addressOptions={addressOptions}
-            validImageTypes={validImageTypes}
-            coverErrors={coverErrors}
-            submitText="Create Dinner"
-          />
-        </Form>
-      </FormProvider>
-    </>
+    <FormProvider context={form.context}>
+      <Form
+        method="POST"
+        encType="multipart/form-data"
+        replace
+        {...getFormProps(form)}
+      >
+        <AdminDinnerForm
+          fields={fields}
+          addressOptions={addressOptions}
+          validImageTypes={validImageTypes}
+          coverErrors={coverErrors}
+          submitText="Create Dinner"
+          pageTitle="Create a new dinner"
+          cancelHref="/admin/dinners"
+        />
+      </Form>
+    </FormProvider>
   );
 }

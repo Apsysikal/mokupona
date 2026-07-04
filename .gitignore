@@ -17,3 +17,5 @@ logs/
 .DS_Store
 
 /prisma/generated
+
+tmp/

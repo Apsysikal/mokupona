@@ -196,6 +196,8 @@ export default function DinnersPage({
           validImageTypes={validImageTypes}
           coverErrors={coverErrors}
           submitText="Update Dinner"
+          pageTitle={`Edit ${dinner.title}`}
+          cancelHref={`/admin/dinners/${dinner.id}`}
           lockFieldKeys={formHasSubmissions}
         />
       </Form>

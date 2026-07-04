@@ -66,7 +66,11 @@ describe("admin signup form builder", () => {
         dinnersToCleanup.push(dinnerId);
 
         // builder round-trip: the edit screen shows the authored field again
+        // (stored rows load collapsed — expand via the row header first)
         cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
+        cy.findAllByRole("button", { name: /favorite dish/i })
+          .first()
+          .click();
         cy.findByDisplayValue("Favorite dish").should("be.visible");
         cy.findByDisplayValue("favorite_dish").should("be.visible");
 
@@ -141,6 +145,11 @@ describe("admin signup form builder", () => {
           "have.length.greaterThan",
           0,
         );
+        // the collapsed friend twin's header is hidden, so this hits the
+        // signer row
+        cy.findAllByRole("button", { name: /dietary restrictions/i })
+          .first()
+          .click();
         cy.findAllByDisplayValue("Dietary restrictions")
           .first()
           .clear()
@@ -199,12 +208,19 @@ describe("admin signup form builder", () => {
         // relabel a default field and disable friends
         cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
         // both the signer field and the friend item carry this label; edit
-        // the signer one (first in DOM order)
+        // the signer one (first in DOM order — the friend twin's collapsed
+        // header is hidden inside the collapsed friends row)
+        cy.findAllByRole("button", { name: /dietary restrictions/i })
+          .first()
+          .click();
         cy.findAllByDisplayValue("Dietary restrictions")
           .first()
           .clear()
           .type("Allergies");
-        cy.findByLabelText(/maximum friends per signup/i)
+        cy.findAllByRole("button", { name: /friends/i })
+          .first()
+          .click();
+        cy.findByLabelText(/max per signup/i)
           .clear()
           .type("0");
         cy.findByRole("button", { name: /update dinner/i }).click();
@@ -212,8 +228,11 @@ describe("admin signup form builder", () => {
 
         // reload shows the edited form
         cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
+        cy.findAllByRole("button", { name: /allergies/i })
+          .first()
+          .click();
         cy.findByDisplayValue("Allergies").should("be.visible");
-        cy.findByLabelText(/maximum friends per signup/i).should(
+        cy.findByLabelText(/max per signup/i).should(
           "have.value",
           "0",
         );
