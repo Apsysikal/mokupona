@@ -45,6 +45,25 @@ export async function createFormSubmission({
   });
 }
 
+// Whether anyone has signed up for the event — the builder locks field keys
+// once this is true. Legacy EventResponse rows count too: they merge into
+// the roster under the same DEFAULT_FORM keys, so renaming a key splits
+// their columns just as it would for FormSubmission answers.
+export async function eventHasSignups(eventId: string) {
+  const [submission, legacyResponse] = await Promise.all([
+    prisma.formSubmission.findFirst({
+      where: { formVersion: { form: { event: { id: eventId } } } },
+      select: { id: true },
+    }),
+    prisma.eventResponse.findFirst({
+      where: { eventId },
+      select: { id: true },
+    }),
+  ]);
+
+  return submission !== null || legacyResponse !== null;
+}
+
 // Submissions carry no eventId; the link is Event.formId -> FormVersion.formId.
 // Each submission comes with the version it answered so stored answers are
 // interpreted against the exact schema they were written for.

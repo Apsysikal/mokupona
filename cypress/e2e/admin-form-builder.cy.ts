@@ -1,8 +1,8 @@
-import { faker } from "@faker-js/faker";
-
 import {
+  acceptPrivacyAndJoin,
   dinnerFormValues,
   fillDinnerForm,
+  fillSignupContact,
   getDinnerIdFromPathname,
   runUploadDbCommand,
   uniqueSuffix,
@@ -61,20 +61,12 @@ describe("admin signup form builder", () => {
 
         // the public signup page renders the custom question
         cy.visitAndCheck(`/dinners/${dinnerId}`);
-        cy.findAllByRole("textbox", { name: /^name$/i })
-          .first()
-          .type(signerName);
-        cy.findByRole("textbox", { name: /email/i }).type(
-          `builder-${suffix}@example.com`,
-        );
-        cy.findByRole("textbox", { name: /phone number/i }).type(
-          faker.phone.number({ style: "international" }),
-        );
+        fillSignupContact({
+          name: signerName,
+          email: `builder-${suffix}@example.com`,
+        });
         cy.findByRole("textbox", { name: /favorite dish/i }).type("Ramen");
-        cy.findByLabelText(/agree to privacy policy/i).click();
-        cy.findByRole("button", { name: /join/i }).click();
-        cy.location("pathname").should("equal", "/dinners");
-        cy.findByText(/signup complete/i);
+        acceptPrivacyAndJoin();
 
         // the answer reaches the admin table and the CSV column union
         cy.visitAndCheck(`/admin/dinners/${dinnerId}/signups`);
@@ -85,6 +77,90 @@ describe("admin signup form builder", () => {
             expect(response.body).to.include("Favorite dish");
             expect(response.body).to.include("Ramen");
             expect(response.body).to.include(signerName);
+          },
+        );
+      });
+  });
+
+  it("versions a submitted form and exports mixed legacy + multi-version rows", () => {
+    const suffix = uniqueSuffix();
+    const values = dinnerFormValues(`builder-versions-${suffix}`);
+    const legacyName = `Legacy Guest ${suffix}`;
+    const v1Signer = `V1 Signer ${suffix}`;
+    const v1Friend = `V1 Friend ${suffix}`;
+    const v2Signer = `V2 Signer ${suffix}`;
+
+    cy.visitAndCheck("/admin/dinners/new");
+    fillDinnerForm(values);
+    uploadDinnerCover(VALID_UPLOAD_FIXTURE_PATH);
+    cy.findByRole("button", { name: /create dinner/i }).click();
+    cy.findByRole("heading", { name: values.title }).should("be.visible");
+
+    cy.location("pathname")
+      .should("match", /\/admin\/dinners\/[^/.]+$/)
+      .then((pathname) => {
+        const dinnerId = getDinnerIdFromPathname(pathname);
+        dinnersToCleanup.push(dinnerId);
+
+        // legacy rows can't be written through the app anymore
+        runUploadDbCommand("create-legacy-response", {
+          eventId: dinnerId,
+          name: legacyName,
+        });
+
+        // v1 signup with a friend
+        cy.visitAndCheck(`/dinners/${dinnerId}`);
+        fillSignupContact({
+          name: v1Signer,
+          email: `v1-${suffix}@example.com`,
+        });
+        cy.findByRole("button", { name: /add a friend/i }).click();
+        cy.findAllByRole("textbox", { name: /^name$/i })
+          .should("have.length", 2)
+          .last()
+          .type(v1Friend);
+        acceptPrivacyAndJoin();
+
+        // with submissions, existing field keys are locked and edits fork v2
+        cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
+        cy.findAllByLabelText(/field key \(locked/i).should(
+          "have.length.greaterThan",
+          0,
+        );
+        cy.findAllByDisplayValue("Dietary restrictions")
+          .first()
+          .clear()
+          .type("Allergies");
+        cy.findByRole("button", { name: /update dinner/i }).click();
+        cy.findByRole("heading", { name: values.title }).should("be.visible");
+
+        // v2 signup (solo) against the renamed field
+        cy.visitAndCheck(`/dinners/${dinnerId}`);
+        fillSignupContact({
+          name: v2Signer,
+          email: `v2-${suffix}@example.com`,
+        });
+        cy.findAllByRole("textbox", { name: /allergies/i })
+          .first()
+          .type("pollen");
+        acceptPrivacyAndJoin();
+
+        // all four people from three sources share one roster and one CSV;
+        // the header carries the latest label
+        cy.visitAndCheck(`/admin/dinners/${dinnerId}/signups`);
+        cy.findByText(legacyName);
+        cy.findByText(v1Signer);
+        cy.findByText(v1Friend);
+        cy.findByText(v2Signer);
+
+        cy.request(`/admin/dinners/${dinnerId}/signups.csv`).then(
+          (response) => {
+            expect(response.body).to.include("Allergies");
+            expect(response.body).to.include(legacyName);
+            expect(response.body).to.include(v1Signer);
+            expect(response.body).to.include(v1Friend);
+            expect(response.body).to.include(v2Signer);
+            expect(response.body).to.include("pollen");
           },
         );
       });

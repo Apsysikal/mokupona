@@ -19,12 +19,21 @@ Companion to [`design.md`](./design.md) and [`implementation-plan.md`](./impleme
 | 4   | Attendee read layer + admin/CSV switch             | 1b           | ☑      |
 | 5   | Write-path switch to FormSubmission                | 1c           | ☑      |
 | 6   | Admin builder UI — core                            | 2a           | ☑      |
-| 7   | Builder guardrails + full e2e sweep                | 2b           | ☐      |
+| 7   | Builder guardrails + full e2e sweep                | 2b           | ☑      |
 | 8+  | New field types (one session each, `select` first) | 3            | ☐      |
 
 ## Deviations & discoveries
 
 _(append here, newest first, prefixed with the session number)_
+
+- **S7 (review):** Locking is driven by `eventHasSignups`, which counts **legacy `EventResponse` rows too** — they merge into the roster under the same keys, so a rename splits their columns just the same (previously pre-migration dinners got no locks at all). Existence checks use `findFirst`, not `count`.
+- **S7 (review):** "Reset to default" now asks for confirmation (with a stronger warning when signups exist) — it previously bypassed both guardrails in one click. Stored-row identity for locking/pinning is captured **at mount from Conform's row keys** (a `useRef` set): `initialValue` is rewritten by intents (the label auto-slug `update`, the twin `insert`), which had two consequences — brand-new rows locked their keys the moment the auto-slug ran, and a custom row auto-slugged to "email" would have morphed into a pinned row. One lock predicate is computed per row and passed down.
+- **S7 (review, accepted):** Key immutability remains UI-only, per the session spec ("UI enforcement; server already validates via versioning policy"). A server-side rename check is not implementable coherently: a rename is indistinguishable from remove+add, both of which are legitimate; the versioning policy keeps every stored answer interpretable regardless.
+- **S7 (review):** The e2e signup fill blocks were deduplicated into `fillSignupContact`/`acceptPrivacyAndJoin` in `upload-test-utils.ts`; the sync-nudge twin spreads `NEW_ROW`.
+
+- **S7:** The sync nudge is an always-available per-row button ("Also ask each friend" / "Also ask the signer"), shown while the row has a key and the other scope lacks it — not a one-time prompt at add time. It inserts the twin with the same key, type, and label.
+- **S7:** Key immutability is scoped: keys lock (readOnly + explanatory label) only for rows that existed when the edit screen loaded (`initialValue` key present) and only when the event's form has submissions (`eventHasFormSubmissions`); new fields always pick their keys freely. The remove-warning is a `window.confirm` on the same rows. "Reset to default" dispatches Conform's `update` intent with the default rows.
+- **S7:** Legacy `EventResponse` rows can no longer be produced through the app, so the e2e sweep gained a test-only `create-legacy-response` db command. The sweep test covers: locked keys once submissions exist, an edit-with-submissions forking a new version, old submissions still exporting, and one CSV mixing legacy + v1 + v2 rows under the latest header labels.
 
 - **S6 (review):** Builder validation errors now actually render: each row shows its row-level errors (duplicate keys, cross-scope type conflicts land on row paths), the friends section shows `itemFields`-level errors (the min-1 rule), and item rows their own. Previously a blocked submit looked like a dead button. Pinned-ness is decided by the row's **initial** key, not the live value — typing the key "email" into a custom row no longer morphs it into an unremovable pinned row. A cleared "Maximum friends" input is a validation error instead of silently storing `maxCount: 0`.
 - **S6 (review):** Dinner **edit** now persists event data and form schema in one transaction (`updateEvent(id, data, formFields?)` composing `saveFormSchemaInTx`) — previously a form-save failure after the event write left a half-applied save. Single sources of truth: `FIELD_KEY_REGEX` exported from `fields/base.ts`, `FIXED_IDENTITY_FIELDS` exported from the profile (the UI pin set derives from it), `NON_LIST_FIELD_TYPES` exported from the registry with a compile-time completeness check (builder enum + type options derive from it).

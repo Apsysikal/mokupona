@@ -18,6 +18,7 @@ import {
 import { logger } from "~/logger.server";
 import { getAddresses } from "~/models/address.server";
 import { getEventById, updateEvent } from "~/models/event.server";
+import { eventHasSignups } from "~/models/form-submission.server";
 import { getCurrentFormVersionForEvent } from "~/models/form.server";
 import { getClientHints } from "~/utils/client-hints.server";
 import {
@@ -43,10 +44,11 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const { dinnerId } = params;
 
-  const [addresses, event, version] = await Promise.all([
+  const [addresses, event, version, formHasSubmissions] = await Promise.all([
     getAddresses(),
     getEventById(dinnerId),
     getCurrentFormVersionForEvent(dinnerId),
+    eventHasSignups(dinnerId),
   ]);
 
   if (!event || !version) throw new Response("Not found", { status: 404 });
@@ -61,6 +63,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   return {
     validImageTypes: VALID_IMAGE_TYPES,
     addresses,
+    formHasSubmissions,
     signupForm: storedFields
       ? descriptorsToBuilderRows(storedFields)
       : defaultBuilderRows(),
@@ -161,7 +164,8 @@ export default function DinnersPage({
   actionData,
 }: Route.ComponentProps) {
   const schema = EventSchema.partial({ cover: true });
-  const { addresses, validImageTypes, dinner, signupForm } = loaderData;
+  const { addresses, validImageTypes, dinner, signupForm, formHasSubmissions } =
+    loaderData;
   const { coverErrors, lastResult } = splitUploadActionData(actionData);
   const addressOptions = toAddressOptions(addresses);
 
@@ -192,6 +196,7 @@ export default function DinnersPage({
           validImageTypes={validImageTypes}
           coverErrors={coverErrors}
           submitText="Update Dinner"
+          lockFieldKeys={formHasSubmissions}
         />
       </Form>
     </FormProvider>

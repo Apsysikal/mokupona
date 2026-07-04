@@ -42,6 +42,14 @@ type CommandInput =
       };
     }
   | {
+      action: "create-legacy-response";
+      payload: {
+        eventId: string;
+        name: string;
+        email?: string;
+      };
+    }
+  | {
       action: "create-board-member";
       payload: {
         name: string;
@@ -250,6 +258,24 @@ async function deleteImage(
   return outputJson({ deleted: true, id: payload.payload.id });
 }
 
+// Legacy EventResponse rows can no longer be produced through the app (the
+// write path moved to FormSubmission); tests exercising the legacy merge
+// insert them directly.
+async function createLegacyResponse(
+  payload: Extract<CommandInput, { action: "create-legacy-response" }>,
+) {
+  const response = await prisma.eventResponse.create({
+    data: {
+      eventId: payload.payload.eventId,
+      name: payload.payload.name,
+      email: payload.payload.email ?? "legacy@example.com",
+      phone: "000",
+    },
+  });
+
+  return outputJson({ id: response.id, name: response.name });
+}
+
 async function createBoardMember(
   payload: Extract<CommandInput, { action: "create-board-member" }>,
 ) {
@@ -359,6 +385,7 @@ function parseCommand(): CommandInput {
     case "get-dinner":
     case "delete-dinner":
     case "delete-image":
+    case "create-legacy-response":
     case "create-board-member":
     case "get-board-member":
     case "get-board-member-by-name":
@@ -385,6 +412,8 @@ async function main() {
       return deleteDinner(command);
     case "delete-image":
       return deleteImage(command);
+    case "create-legacy-response":
+      return createLegacyResponse(command);
     case "create-board-member":
       return createBoardMember(command);
     case "get-board-member":

@@ -4,6 +4,7 @@ import {
   useFormMetadata,
   type FieldMetadata,
 } from "@conform-to/react";
+import { useRef } from "react";
 
 import { CheckboxField, ErrorList, Field, SelectField } from "./forms";
 import { Button } from "./ui/button";
@@ -13,6 +14,7 @@ import {
   type NonListFieldType,
 } from "~/features/forms/fields/non-list";
 import {
+  defaultBuilderRows,
   slugifyFieldKey,
   type BuilderItemRow,
   type BuilderItemRowInput,
@@ -53,18 +55,74 @@ const NEW_ROW: BuilderItemRow = {
   required: false,
 };
 
+const REMOVE_RESPONDED_FIELD_MESSAGE =
+  "This form already has signups; answers to this field will disappear from future versions. Remove it anyway?";
+
 type RowMetadata = FieldMetadata<BuilderRowInput>;
 type ItemRowMetadata = FieldMetadata<BuilderItemRowInput>;
 // EditableRowView renders the keys the two row shapes share
 type EditableRowMetadata = RowMetadata | ItemRowMetadata;
 
+// The sync nudge's target: the other scope's field list and the keys it
+// already holds (twins share name + type — the roster merge link, design §10)
+interface TwinTarget {
+  listName: string;
+  existingKeys: Set<string>;
+  buttonLabel: string;
+}
+
 export function SignupFormBuilder({
   field,
+  lockFieldKeys = false,
 }: {
   field: FieldMetadata<BuilderRowInput[]>;
+  // true once the event's form has submissions: existing keys become
+  // immutable and removals of existing fields ask for confirmation
+  lockFieldKeys?: boolean;
 }) {
   const form = useFormMetadata();
   const rows = field.getFieldList();
+
+  const friendsRow = rows.find(
+    (row) =>
+      String((row as RowMetadata).getFieldset().type.value ?? "") === "list",
+  ) as RowMetadata | undefined;
+  const itemFieldsMeta = friendsRow?.getFieldset().itemFields;
+
+  // The rows present when the screen loaded, identified by Conform's stable
+  // row keys. `initialValue` cannot distinguish stored rows from new ones —
+  // intents (the label auto-slug update, the twin insert) write it too — and
+  // pinning/locking must never trap a row the admin just created.
+  const initialRowKeysRef = useRef<Set<string> | null>(null);
+  initialRowKeysRef.current ??= new Set(
+    [
+      ...rows.map((row) => row.key),
+      ...(itemFieldsMeta?.getFieldList() ?? []).map((row) => row.key),
+    ].filter((key): key is string => key !== undefined),
+  );
+  const initialRowKeys = initialRowKeysRef.current;
+  const isStoredRow = (rowKey: string | undefined) =>
+    rowKey !== undefined && initialRowKeys.has(rowKey);
+
+  const topLevelKeys = collectKeys(
+    rows.filter((row) => row !== friendsRow) as RowMetadata[],
+  );
+  const itemKeys = collectKeys(
+    (itemFieldsMeta?.getFieldList() ?? []) as ItemRowMetadata[],
+  );
+
+  const friendTwinTarget: TwinTarget | undefined = itemFieldsMeta
+    ? {
+        listName: itemFieldsMeta.name,
+        existingKeys: itemKeys,
+        buttonLabel: "Also ask each friend",
+      }
+    : undefined;
+  const signerTwinTarget: TwinTarget = {
+    listName: field.name,
+    existingKeys: topLevelKeys,
+    buttonLabel: "Also ask the signer",
+  };
 
   return (
     <fieldset className="flex flex-col gap-4 rounded-md border p-4">
@@ -80,20 +138,50 @@ export function SignupFormBuilder({
             listName={field.name}
             index={index}
             count={rows.length}
+            lockFieldKeys={lockFieldKeys}
+            isStoredRow={isStoredRow}
+            friendTwinTarget={friendTwinTarget}
+            signerTwinTarget={signerTwinTarget}
           />
         ))}
       </ul>
 
-      <Button
-        variant="outline"
-        {...form.insert.getButtonProps({
-          name: field.name,
-          defaultValue: NEW_ROW,
-        })}
-      >
-        Add field
-      </Button>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button
+          variant="outline"
+          {...form.insert.getButtonProps({
+            name: field.name,
+            defaultValue: NEW_ROW,
+          })}
+        >
+          Add field
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            // this discards every edit — and with signups, removed fields'
+            // answers disappear from future versions
+            const message = lockFieldKeys
+              ? "This replaces the whole signup form with the default fields. This form already has signups — answers to removed fields will disappear from future versions. Continue?"
+              : "Replace the signup form with the default fields?";
+            if (window.confirm(message)) {
+              form.update({ name: field.name, value: defaultBuilderRows() });
+            }
+          }}
+        >
+          Reset to default
+        </Button>
+      </div>
     </fieldset>
+  );
+}
+
+function collectKeys(rows: (RowMetadata | ItemRowMetadata)[]): Set<string> {
+  return new Set(
+    rows
+      .map((row) => String(row.getFieldset().name.value ?? ""))
+      .filter(Boolean),
   );
 }
 
@@ -102,17 +190,26 @@ function BuilderRowView({
   listName,
   index,
   count,
+  lockFieldKeys,
+  isStoredRow,
+  friendTwinTarget,
+  signerTwinTarget,
 }: {
   row: RowMetadata;
   listName: string;
   index: number;
   count: number;
+  lockFieldKeys: boolean;
+  isStoredRow: (rowKey: string | undefined) => boolean;
+  friendTwinTarget?: TwinTarget;
+  signerTwinTarget: TwinTarget;
 }) {
   const rowFields = row.getFieldset();
   const type = String(rowFields.type.value ?? "");
-  // pinned-ness is decided by the row's INITIAL key: a custom row whose key
-  // is edited to "email" must not morph into an unremovable pinned row
   const initialKey = String(rowFields.name.initialValue ?? "");
+  // the single lock predicate: the row was stored when the screen loaded AND
+  // the form already has signups
+  const rowLocked = lockFieldKeys && isStoredRow(row.key);
 
   if (type === "list") {
     return (
@@ -124,12 +221,20 @@ function BuilderRowView({
           count={count}
         />
         <ErrorList id={row.errorId} errors={row.errors} />
-        <FriendsRowView row={row} />
+        <FriendsRowView
+          row={row}
+          lockFieldKeys={lockFieldKeys}
+          isStoredRow={isStoredRow}
+          signerTwinTarget={signerTwinTarget}
+        />
       </li>
     );
   }
 
-  const isPinnedIdentity = PINNED_IDENTITY_KEYS.has(initialKey);
+  // pinned-ness needs mount-time identity too: a custom row auto-slugged to
+  // "email" must not morph into an unremovable pinned row
+  const isPinnedIdentity =
+    PINNED_IDENTITY_KEYS.has(initialKey) && isStoredRow(row.key);
 
   return (
     <li className="flex flex-col gap-4 rounded-md border p-3">
@@ -139,12 +244,19 @@ function BuilderRowView({
         index={index}
         count={count}
         removable={!isPinnedIdentity}
+        confirmRemoveMessage={
+          rowLocked ? REMOVE_RESPONDED_FIELD_MESSAGE : undefined
+        }
       />
       <ErrorList id={row.errorId} errors={row.errors} />
       {isPinnedIdentity ? (
         <PinnedIdentityRowView row={row} />
       ) : (
-        <EditableRowView row={row} />
+        <EditableRowView
+          row={row}
+          keyLocked={rowLocked}
+          twinTarget={friendTwinTarget}
+        />
       )}
     </li>
   );
@@ -157,12 +269,14 @@ function RowHeader({
   index,
   count,
   removable = false,
+  confirmRemoveMessage,
 }: {
   title: string;
   listName: string;
   index: number;
   count: number;
   removable?: boolean;
+  confirmRemoveMessage?: string;
 }) {
   const form = useFormMetadata();
 
@@ -199,6 +313,15 @@ function RowHeader({
             variant="destructive"
             size="sm"
             {...form.remove.getButtonProps({ name: listName, index })}
+            onClick={
+              confirmRemoveMessage
+                ? (event) => {
+                    if (!window.confirm(confirmRemoveMessage)) {
+                      event.preventDefault();
+                    }
+                  }
+                : undefined
+            }
           >
             Remove
           </Button>
@@ -231,10 +354,28 @@ function PinnedIdentityRowView({ row }: { row: RowMetadata }) {
   );
 }
 
-function EditableRowView({ row }: { row: EditableRowMetadata }) {
+function EditableRowView({
+  row,
+  keyLocked = false,
+  twinTarget,
+}: {
+  row: EditableRowMetadata;
+  // keys are the merge/answers link — immutable once submissions exist; new
+  // fields still pick theirs freely (the parent derives this from mount-time
+  // row identity)
+  keyLocked?: boolean;
+  twinTarget?: TwinTarget;
+}) {
   const form = useFormMetadata();
   const rowFields = row.getFieldset();
   const labelInputProps = getInputProps(rowFields.label, { type: "text" });
+
+  const keyValue = String(rowFields.name.value ?? "");
+
+  const showTwinButton =
+    twinTarget !== undefined &&
+    keyValue !== "" &&
+    !twinTarget.existingKeys.has(keyValue);
 
   return (
     <div className="flex flex-col gap-3">
@@ -267,25 +408,65 @@ function EditableRowView({ row }: { row: EditableRowMetadata }) {
         />
         <Field
           className="grow"
-          labelProps={{ children: "Field key" }}
-          inputProps={{ ...getInputProps(rowFields.name, { type: "text" }) }}
+          labelProps={{
+            children: keyLocked
+              ? "Field key (locked — this form already has signups)"
+              : "Field key",
+          }}
+          inputProps={{
+            ...getInputProps(rowFields.name, { type: "text" }),
+            readOnly: keyLocked,
+          }}
           errors={rowFields.name.errors}
         />
       </div>
-      <CheckboxField
-        labelProps={{ children: "Required" }}
-        buttonProps={{
-          ...getInputProps(rowFields.required, { type: "checkbox" }),
-        }}
-        errors={rowFields.required.errors}
-      />
+      <div className="flex flex-wrap items-center gap-4">
+        <CheckboxField
+          labelProps={{ children: "Required" }}
+          buttonProps={{
+            ...getInputProps(rowFields.required, { type: "checkbox" }),
+          }}
+          errors={rowFields.required.errors}
+        />
+        {showTwinButton ? (
+          // sync nudge (design §10): create the twin with the same key and
+          // type so the answers merge into one roster column
+          <Button
+            variant="outline"
+            size="sm"
+            {...form.insert.getButtonProps({
+              name: twinTarget.listName,
+              // the two twin targets carry different Conform name brands, so
+              // the payload type can't be inferred here — it is a plain row
+              defaultValue: {
+                ...NEW_ROW,
+                type: String(rowFields.type.value ?? "text"),
+                name: keyValue,
+                label: String(rowFields.label.value ?? "") || keyValue,
+              } satisfies Record<string, unknown> as never,
+            })}
+          >
+            {twinTarget.buttonLabel}
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 }
 
 // The friends list is pinned: it cannot be removed or renamed, and lists are
 // not addable — its item fields and maxCount are the only structural knobs.
-function FriendsRowView({ row }: { row: RowMetadata }) {
+function FriendsRowView({
+  row,
+  lockFieldKeys,
+  isStoredRow,
+  signerTwinTarget,
+}: {
+  row: RowMetadata;
+  lockFieldKeys: boolean;
+  isStoredRow: (rowKey: string | undefined) => boolean;
+  signerTwinTarget: TwinTarget;
+}) {
   const form = useFormMetadata();
   const rowFields = row.getFieldset();
   const itemFields = rowFields.itemFields.getFieldList();
@@ -323,19 +504,30 @@ function FriendsRowView({ row }: { row: RowMetadata }) {
           errors={rowFields.itemFields.errors}
         />
         <ul className="flex flex-col gap-4">
-          {itemFields.map((itemRow, index) => (
-            <li key={itemRow.key} className="flex flex-col gap-3">
-              <RowHeader
-                title="Friend field"
-                listName={rowFields.itemFields.name}
-                index={index}
-                count={itemFields.length}
-                removable
-              />
-              <ErrorList id={itemRow.errorId} errors={itemRow.errors} />
-              <EditableRowView row={itemRow as ItemRowMetadata} />
-            </li>
-          ))}
+          {itemFields.map((itemRow, index) => {
+            const itemLocked = lockFieldKeys && isStoredRow(itemRow.key);
+
+            return (
+              <li key={itemRow.key} className="flex flex-col gap-3">
+                <RowHeader
+                  title="Friend field"
+                  listName={rowFields.itemFields.name}
+                  index={index}
+                  count={itemFields.length}
+                  removable
+                  confirmRemoveMessage={
+                    itemLocked ? REMOVE_RESPONDED_FIELD_MESSAGE : undefined
+                  }
+                />
+                <ErrorList id={itemRow.errorId} errors={itemRow.errors} />
+                <EditableRowView
+                  row={itemRow as ItemRowMetadata}
+                  keyLocked={itemLocked}
+                  twinTarget={signerTwinTarget}
+                />
+              </li>
+            );
+          })}
         </ul>
         <Button
           variant="outline"

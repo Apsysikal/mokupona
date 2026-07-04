@@ -25,6 +25,8 @@ type UpdatedAdminDinnerFormProps = {
   validImageTypes: string[];
   coverErrors?: ListOfErrors;
   submitText: string;
+  // true once the event's form has submissions (edit screen only)
+  lockFieldKeys?: boolean;
 };
 
 // Shared by the dinner create and edit routes so the address label format
@@ -64,6 +66,7 @@ export function AdminDinnerForm({
   validImageTypes,
   coverErrors,
   submitText,
+  lockFieldKeys,
 }: UpdatedAdminDinnerFormProps) {
   return (
     <div className="flex flex-col gap-6">
@@ -156,7 +159,10 @@ export function AdminDinnerForm({
         errors={fields.addressId.errors}
       />
 
-      <SignupFormBuilder field={fields.signupForm} />
+      <SignupFormBuilder
+        field={fields.signupForm}
+        lockFieldKeys={lockFieldKeys}
+      />
 
       <Button type="submit">{submitText}</Button>
     </div>

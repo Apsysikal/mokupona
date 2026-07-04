@@ -1,3 +1,5 @@
+import { faker } from "@faker-js/faker";
+
 export const ZOD_LIMIT_BYTES = 1024 * 1024 * 3;
 export const UPLOAD_HANDLER_LIMIT_BYTES = 1024 * 1024 * 4;
 export const FILE_TOO_LARGE_ERROR = "File cannot be greater than 3MB";
@@ -30,6 +32,7 @@ type UploadDbAction =
   | "get-dinner"
   | "delete-dinner"
   | "delete-image"
+  | "create-legacy-response"
   | "create-board-member"
   | "get-board-member"
   | "get-board-member-by-name"
@@ -201,4 +204,28 @@ export function getDinnerIdFromPathname(pathname: string) {
   }
 
   return dinnerId;
+}
+
+// Signup-page interactions shared by the specs that submit real signups.
+export function fillSignupContact({
+  name,
+  email,
+}: {
+  name: string;
+  email: string;
+}) {
+  cy.findAllByRole("textbox", { name: /^name$/i })
+    .first()
+    .type(name);
+  cy.findByRole("textbox", { name: /email/i }).type(email);
+  cy.findByRole("textbox", { name: /phone number/i }).type(
+    faker.phone.number({ style: "international" }),
+  );
+}
+
+export function acceptPrivacyAndJoin() {
+  cy.findByLabelText(/agree to privacy policy/i).click();
+  cy.findByRole("button", { name: /join/i }).click();
+  cy.location("pathname").should("equal", "/dinners");
+  cy.findByText(/signup complete/i);
 }
