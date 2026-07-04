@@ -1,13 +1,18 @@
 const newLine = "\n";
 
+// Excel ignores the HTTP charset and assumes a legacy codepage unless the
+// file starts with a UTF-8 byte-order mark — without it, umlauts and other
+// non-ASCII characters render as mojibake ("Jürgen" -> "JÃ¼rgen").
+const UTF8_BOM = "\uFEFF";
+
 export interface CSVReturnObject {
-  // Mime type, always "text/csv"
-  mimeType: "text/csv";
+  // Mime type, always UTF-8 CSV
+  mimeType: "text/csv; charset=utf-8";
 
   // The size of the content string in UTF-8 bytes (Content-Length safe)
   size: number;
 
-  // The concatenated string of values
+  // The concatenated string of values, BOM included
   data: string;
 }
 
@@ -21,9 +26,9 @@ export function buildCSVObject(
     return valueArray.map((value) => sanitizeCSVValue(value));
   });
 
-  const data = nestedArrayToCSVString(sanitizedArray, separator);
+  const data = UTF8_BOM + nestedArrayToCSVString(sanitizedArray, separator);
   return {
-    mimeType: "text/csv",
+    mimeType: "text/csv; charset=utf-8",
     // string length counts UTF-16 code units, which undercounts multi-byte
     // characters and truncates downloads when used as Content-Length
     size: Buffer.byteLength(data, "utf8"),
