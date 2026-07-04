@@ -93,7 +93,7 @@ describe("buildSubmissionSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejects more list items than maxCount", () => {
+  it("rejects more list items than maxCount with a readable message", () => {
     const schema = buildSubmissionSchema(FIELDS);
     const result = schema.safeParse({
       title: "Hello",
@@ -102,6 +102,10 @@ describe("buildSubmissionSchema", () => {
     });
 
     expect(result.success).toBe(false);
+    if (result.success) throw new Error("unreachable");
+    expect(result.error.issues[0].message).toBe(
+      "Entries can have at most 2 entries",
+    );
   });
 
   it("accepts only an empty list when maxCount is 0", () => {

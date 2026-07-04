@@ -18,7 +18,7 @@ export function EmailField({
     <Field
       labelProps={{ children: config.data.label }}
       inputProps={{
-        ...getInputProps(metadata, { type: "text" }),
+        ...getInputProps(metadata, { type: "email" }),
       }}
       errors={metadata.errors}
     />

@@ -115,6 +115,34 @@ function legacyFormData(signup: Signup): FormData {
   return formData;
 }
 
+// Both schemas leave unchecked checkboxes absent under Conform's coercion
+// (see the S2 deviation note); normalize to explicit booleans and the new
+// field vocabulary before comparing values.
+function normalizePerson(
+  person: Person,
+): Required<Omit<Person, "restrictions">> & Pick<Person, "restrictions"> {
+  return {
+    name: person.name ?? "",
+    vegetarian: person.vegetarian ?? false,
+    student: person.student ?? false,
+    restrictions: person.restrictions,
+  };
+}
+
+function legacyPersonToNew(person: {
+  name?: string;
+  alternativeMenu?: boolean;
+  student?: boolean;
+  dietaryRestrictions?: string;
+}): Person {
+  return {
+    name: person.name,
+    vegetarian: person.alternativeMenu,
+    student: person.student,
+    restrictions: person.dietaryRestrictions,
+  };
+}
+
 const validSignup: Signup = {
   name: "Ada Lovelace",
   email: "ada@example.com",
@@ -167,6 +195,63 @@ describe("DEFAULT_FORM parity with the legacy signup schema", () => {
     });
 
     expect(newResult.status).toBe(legacyResult.status);
+
+    // For accepted submissions the *values* must match too — a status-only
+    // check would miss trimming or key-mapping regressions that end up in
+    // EventResponse rows.
+    if (newResult.status !== "success" || legacyResult.status !== "success") {
+      return;
+    }
+
+    const value = newResult.value as unknown as Signup & { friends: Person[] };
+    const legacyValue = legacyResult.value;
+
+    expect({
+      ...normalizePerson(value),
+      email: value.email,
+      phone: value.phone,
+      comment: value.comment,
+      friends: value.friends.map(normalizePerson),
+    }).toEqual({
+      ...normalizePerson(legacyPersonToNew(legacyValue.signupPerson)),
+      email: legacyValue.signupPerson.email,
+      phone: legacyValue.signupPerson.phone,
+      comment: legacyValue.comment,
+      friends: legacyValue.people.map((person) =>
+        normalizePerson(legacyPersonToNew(person)),
+      ),
+    });
+  });
+
+  // Divergences below are deliberate improvements over the legacy schema,
+  // recorded in the session plan's deviation notes — these tests pin them so
+  // they stay intentional rather than accidental.
+  describe("deliberate divergences from the legacy schema", () => {
+    it("rejects a whitespace-only name that the legacy schema accepted as an empty name", () => {
+      const signup: Signup = { ...validSignup, name: "   " };
+
+      expect(
+        parseWithZod(newFormData(signup), { schema: signupSchema }).status,
+      ).toBe("error");
+      expect(
+        parseWithZod(legacyFormData(signup), { schema: legacySchema }).status,
+      ).toBe("success");
+    });
+
+    it("accepts and trims a whitespace-padded email that the legacy schema rejected", () => {
+      const signup: Signup = { ...validSignup, email: " ada@example.com " };
+
+      const result = parseWithZod(newFormData(signup), {
+        schema: signupSchema,
+      });
+      expect(result.status).toBe("success");
+      if (result.status !== "success") throw new Error("unreachable");
+      expect(result.value.email).toBe("ada@example.com");
+
+      expect(
+        parseWithZod(legacyFormData(signup), { schema: legacySchema }).status,
+      ).toBe("error");
+    });
   });
 
   it("produces the nested answer shape for a signup with friends", () => {

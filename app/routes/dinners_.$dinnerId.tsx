@@ -13,7 +13,7 @@ import { z } from "zod";
 import type { Route } from "./+types/dinners_.$dinnerId";
 
 import { DinnerView } from "~/components/dinner-view";
-import { CheckboxField } from "~/components/forms";
+import { CheckboxField, ErrorList } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { getViewForField } from "~/features/forms/fields";
 import { buildSignupSchema } from "~/features/signup-form/build-schema";
@@ -44,6 +44,10 @@ const SignupAnswersSchema = z.object({
   ),
   comment: z.string().optional(),
 });
+
+// DEFAULT_FORM is static in Phase 0, so the server schema is too; the
+// component still derives its schema from loader data (the Phase 1 shape).
+const signupSchema = buildSignupSchema(DEFAULT_FORM);
 
 export const meta: Route.MetaFunction = ({ loaderData, matches, location }) => {
   const metaTags = [
@@ -92,9 +96,7 @@ export async function action({ params, request }: Route.ActionArgs) {
   }
 
   const formData = await request.formData();
-  const submission = parseWithZod(formData, {
-    schema: buildSignupSchema(DEFAULT_FORM),
-  });
+  const submission = parseWithZod(formData, { schema: signupSchema });
 
   if (submission.status !== "success" || !submission.value) {
     logger.info("Failed submission for dinner signup", {
@@ -109,7 +111,23 @@ export async function action({ params, request }: Route.ActionArgs) {
     return submission.reply();
   }
 
-  const { acceptedPrivacy: _acceptedPrivacy, ...answers } = submission.value;
+  // acceptedPrivacy is stripped here: the adapter schema doesn't know it, and
+  // zod objects drop unknown keys.
+  const answers = SignupAnswersSchema.safeParse(submission.value);
+
+  if (!answers.success) {
+    // Bug guard: we control both schemas, so a mismatch means SignupAnswersSchema
+    // drifted from DEFAULT_FORM. Fail soft with a form error instead of a 500.
+    logger.error("Signup adapter schema drifted from DEFAULT_FORM", {
+      dinner: dinner.id,
+      error: answers.error,
+    });
+
+    return submission.reply({
+      formErrors: ["Something went wrong. Please try again later."],
+    });
+  }
+
   const {
     name,
     email,
@@ -119,7 +137,7 @@ export async function action({ params, request }: Route.ActionArgs) {
     restrictions,
     friends,
     comment,
-  } = SignupAnswersSchema.parse(answers);
+  } = answers.data;
 
   const allSignups = [
     { name, vegetarian, student, restrictions },
@@ -140,14 +158,20 @@ export async function action({ params, request }: Route.ActionArgs) {
     );
   });
 
-  await Promise.all(allSignupsPromises).catch((reason) => {
-    logger.info("Failed submission for dinner signup", {
+  try {
+    await Promise.all(allSignupsPromises);
+  } catch (reason) {
+    logger.error("Failed to persist dinner signup", {
       ip: getClientIPAddress(request),
       dinner: dinner.id,
       email: obscureEmail(email),
       reason: reason,
     });
-  });
+
+    return submission.reply({
+      formErrors: ["Your signup could not be saved. Please try again."],
+    });
+  }
 
   logger.info("Successful submission for dinner signup", {
     ip: getClientIPAddress(request),
@@ -243,6 +267,8 @@ export default function DinnerPage({
                 }}
                 errors={fields.acceptedPrivacy.errors}
               />
+
+              <ErrorList id={form.errorId} errors={form.errors} />
 
               <Button type="submit">Join</Button>
             </Form>

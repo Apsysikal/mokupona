@@ -13,12 +13,13 @@ export function buildSubmissionSchema(descriptors: Array<FieldDescriptor>) {
           zodForField(itemField),
         ]),
       );
-      const listSchema = z
-        .array(z.object(itemShape))
-        .max(descriptor.data.maxCount);
+      const { label, maxCount } = descriptor.data;
+      const listSchema = z.array(z.object(itemShape)).max(maxCount, {
+        error: `${label} can have at most ${maxCount} ${maxCount === 1 ? "entry" : "entries"}`,
+      });
       // a required list must contain at least one item
       shape[descriptor.data.name] = descriptor.data.required
-        ? listSchema.min(1)
+        ? listSchema.min(1, { error: `${label} is required` })
         : listSchema;
     } else {
       shape[descriptor.data.name] = zodForField(descriptor);
