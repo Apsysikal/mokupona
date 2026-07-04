@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { getEventResponsesForEvent } from "~/models/event-response.server";
+import { getAttendeesForEvent } from "~/features/signup-form/read.server";
 import { getEventById } from "~/models/event.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
@@ -19,14 +19,16 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const { dinnerId } = params;
 
-  const event = await getEventById(dinnerId);
-  const responses = await getEventResponsesForEvent(dinnerId);
+  const [event, attendees] = await Promise.all([
+    getEventById(dinnerId),
+    getAttendeesForEvent(dinnerId),
+  ]);
 
   if (!event) throw new Response("Not found", { status: 404 });
 
   return {
     event,
-    responses,
+    attendees,
   };
 }
 
@@ -39,7 +41,7 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
 export default function DinnerSignupsPage({
   loaderData,
 }: Route.ComponentProps) {
-  const { event, responses } = loaderData;
+  const { event, attendees } = loaderData;
 
   return (
     <main className="flex grow flex-col gap-5">
@@ -64,13 +66,14 @@ export default function DinnerSignupsPage({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {responses.map((response) => {
+          {attendees.map((attendee, index) => {
             return (
-              <TableRow key={response.id}>
-                <TableCell className="font-medium">{response.email}</TableCell>
-                <TableCell>{response.name}</TableCell>
+              // a party shares its submissionId, so the key needs the index
+              <TableRow key={`${attendee.submissionId}-${index}`}>
+                <TableCell className="font-medium">{attendee.email}</TableCell>
+                <TableCell>{attendee.name}</TableCell>
                 <TableCell>
-                  {new Date(response.createdAt).toLocaleString()}
+                  {new Date(attendee.createdAt).toLocaleString()}
                 </TableCell>
               </TableRow>
             );

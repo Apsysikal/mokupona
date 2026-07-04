@@ -16,7 +16,7 @@ Companion to [`design.md`](./design.md) and [`implementation-plan.md`](./impleme
 | 1   | Branch cleanup + generic forms library             | cleanup + 0a | ☑      |
 | 2   | Signup page renders via registry (old storage)     | 0b           | ☑      |
 | 3   | Storage: schema, migration, backfill, models       | 1a           | ☑      |
-| 4   | Attendee read layer + admin/CSV switch             | 1b           | ☐      |
+| 4   | Attendee read layer + admin/CSV switch             | 1b           | ☑      |
 | 5   | Write-path switch to FormSubmission                | 1c           | ☐      |
 | 6   | Admin builder UI — core                            | 2a           | ☐      |
 | 7   | Builder guardrails + full e2e sweep                | 2b           | ☐      |
@@ -25,6 +25,15 @@ Companion to [`design.md`](./design.md) and [`implementation-plan.md`](./impleme
 ## Deviations & discoveries
 
 _(append here, newest first, prefixed with the session number)_
+
+- **S4 (review):** Answers are **not** strictly re-validated on read anymore. The review showed `buildSubmissionSchema` is stricter than what valid writers can store (absent optional `friends` key, optional email persisted as `""`), so one drifted shape would silently drop a whole party from the roster. `flattenSubmission` now extracts structurally (typeof-filtered against the pinned version's descriptors); the schema blob itself is still Zod-validated. This amends design §3's "every Json is Zod-validated on read" for `answers` — deliberate: a reader must never be stricter than any writer.
+- **S4 (review):** The CSV export can no longer come back header-less: the column union falls back current version → `DEFAULT_FORM` when every parse fails. `buildCSVObject` now does real RFC-4180 escaping (embedded quotes doubled — previously a quoted value produced a misparsing row) and reports `size` in UTF-8 bytes (`data.length` undercounted non-ASCII and truncated downloads via Content-Length). The download filename strips non-`[\w.-]` characters (quotes/emoji in a title made the header invalid).
+- **S4 (review):** `saveFormSchema`'s in-place update re-checks `submissions: { none: {} }` inside the UPDATE itself, so a submission landing between the count read and the write forks a new version instead of mutating the version it just pinned. Distinct form versions are parsed once per roster load (not once per submission); the table path no longer computes columns or fetches the current version; both signups loaders parallelize their queries.
+
+- **S4:** CSV headers are now label-derived (design §8), so three header texts change for existing data: "Phone" → "Phone number", "Vegetarian/Vegan" → "Vegan / Vegetarian", "Restrictions" → "Dietary restrictions". Row **values** were verified identical against a migrated copy of the dev DB (script compared the legacy formatter with the read layer per event).
+- **S4:** The read layer exports `getAttendeeRosterForEvent(eventId) → { attendees, columns }` alongside the design's `getAttendeesForEvent` — the CSV needs the column union and labels, and computing them belongs with the signup semantics. Two judgment calls in the column union: an event with **no** submissions falls back to its **current** version's fields (spec text only mentions versions with submissions), and the legacy-default columns merge in only when the event actually has legacy rows.
+- **S4:** Attendees are ordered by `createdAt` across legacy and new rows (the old table used insertion order, which for legacy rows is the same thing).
+- **S4:** On read, answers re-validate through `buildSubmissionSchema` of their pinned version; a parse failure logs at error level and skips that submission (a bug case — every writer validates). Absent optional answers surface as missing keys and print as `""` in the CSV; **absent checkboxes stay absent on read** — reaffirming the S2 note that Session 5 must write explicit `false`.
 
 - **S3 (review):** DB-level `ON DELETE CASCADE` paths into `Event` (from `User`, `Address`, and `Image`) bypassed `deleteEvent` and orphaned form rows. The app-level cascade now lives in `deleteEventsInTx`, and `deleteUserById`/`deleteUserByEmail`, `deleteAddress`, and the cypress `delete-image` task run it in the same transaction before deleting the cascading parent. Pinned by a regression test (user delete removes the events' form data). **Any future delete path that can reach `Event` must do the same.**
 - **S3 (review):** `saveFormSchema` and `createEvent` re-parse their input through `FormSchema` before comparing/persisting: comparing the Zod-normalized stored schema against raw caller fields misdetected semantically identical saves as changes (spurious versions once submissions exist), and no descriptor blob can reach the DB unvalidated anymore (profile validation via `SignupFormSchema` remains the event actions' job in Session 6). The "current version" query is defined once (`currentVersionArgs`).

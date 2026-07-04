@@ -6,17 +6,25 @@ import { prisma } from "~/db.server";
 import { FormSchema, type FieldDescriptor } from "~/features/forms/fields";
 import { parseStoredFormSchema } from "~/features/forms/serialization";
 
-// The single definition of "current version": max(version) for the form.
-const currentVersionArgs = (formId: string) =>
+// The single definition of "current version": max(version) among the rows
+// matching the filter.
+const currentVersionArgs = (where: Prisma.FormVersionWhereInput) =>
   ({
-    where: { formId },
+    where,
     orderBy: { version: "desc" },
   }) satisfies Prisma.FormVersionFindFirstArgs;
 
 // Every form has at least one version by construction (created with the
 // event, backfilled by migration).
 export async function getCurrentFormVersion(formId: string) {
-  return prisma.formVersion.findFirstOrThrow(currentVersionArgs(formId));
+  return prisma.formVersion.findFirstOrThrow(currentVersionArgs({ formId }));
+}
+
+// Null when the event does not exist — callers 404 on the event themselves.
+export async function getCurrentFormVersionForEvent(eventId: string) {
+  return prisma.formVersion.findFirst(
+    currentVersionArgs({ form: { event: { id: eventId } } }),
+  );
 }
 
 // Versioning policy (design §9), applied on every save of a form's schema:
@@ -38,7 +46,7 @@ export async function saveFormSchema(
 
   return prisma.$transaction(async (tx) => {
     const current = await tx.formVersion.findFirstOrThrow({
-      ...currentVersionArgs(formId),
+      ...currentVersionArgs({ formId }),
       include: { _count: { select: { submissions: true } } },
     });
 
@@ -48,10 +56,16 @@ export async function saveFormSchema(
     }
 
     if (current._count.submissions === 0) {
-      return tx.formVersion.update({
-        where: { id: current.id },
+      // the no-submissions condition is re-checked inside the write itself:
+      // a submission that lands between the count read and this statement
+      // must not have its pinned version mutated under it
+      const updated = await tx.formVersion.updateMany({
+        where: { id: current.id, submissions: { none: {} } },
         data: { schema: next as Prisma.InputJsonValue },
       });
+      if (updated.count === 1) {
+        return tx.formVersion.findUniqueOrThrow({ where: { id: current.id } });
+      }
     }
 
     return tx.formVersion.create({

@@ -4,7 +4,7 @@ export interface CSVReturnObject {
   // Mime type, always "text/csv"
   mimeType: "text/csv";
 
-  // The size of the content string in characters/bytes
+  // The size of the content string in UTF-8 bytes (Content-Length safe)
   size: number;
 
   // The concatenated string of values
@@ -24,22 +24,21 @@ export function buildCSVObject(
   const data = nestedArrayToCSVString(sanitizedArray, separator);
   return {
     mimeType: "text/csv",
-    size: data.length,
+    // string length counts UTF-16 code units, which undercounts multi-byte
+    // characters and truncates downloads when used as Content-Length
+    size: Buffer.byteLength(data, "utf8"),
     data,
   };
 }
 
+// RFC 4180: a field containing separators, quotes, or line breaks is wrapped
+// in double quotes, and embedded double quotes are doubled.
 function sanitizeCSVValue(value: string) {
-  const valuesToSanitize = [",", "\n"];
-  let needsSanitization = false;
+  const needsSanitization = [",", "\n", "\r", '"'].some((character) =>
+    value.includes(character),
+  );
 
-  valuesToSanitize.forEach((sanitizeValue) => {
-    if (value.includes(sanitizeValue)) {
-      needsSanitization = true;
-    }
-  });
-
-  if (needsSanitization) return '"' + value + '"';
+  if (needsSanitization) return '"' + value.replaceAll('"', '""') + '"';
   return value;
 }
 
