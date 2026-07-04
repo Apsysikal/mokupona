@@ -1,27 +1,24 @@
 import { prisma } from "~/db.server";
 
-export async function createEventResponse(
+// One transaction for a whole signup party: a partial failure must not
+// persist a subset of attendees, or the prompted retry duplicates them.
+export async function createEventResponses(
   eventId: string,
-  name: string,
-  email: string,
-  phone: string,
-  vegetarian = false,
-  student = false,
-  restrictions?: string,
-  comment?: string,
+  responses: {
+    name: string;
+    email: string;
+    phone: string;
+    vegetarian?: boolean;
+    student?: boolean;
+    restrictions?: string;
+    comment?: string;
+  }[],
 ) {
-  return prisma.eventResponse.create({
-    data: {
-      name,
-      email,
-      phone,
-      eventId,
-      vegetarian,
-      student,
-      restrictions,
-      comment,
-    },
-  });
+  return prisma.$transaction(
+    responses.map((response) =>
+      prisma.eventResponse.create({ data: { eventId, ...response } }),
+    ),
+  );
 }
 
 export async function getEventResponsesForEvent(eventId: string) {

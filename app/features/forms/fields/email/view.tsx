@@ -1,26 +1,8 @@
-import { getInputProps, type FieldMetadata } from "@conform-to/react";
 import type z from "zod";
+
+import { makeInputFieldView } from "../input-view";
 
 import type { EmailFieldSchema } from "./model";
 
-import { Field } from "~/components/forms";
-
-type EmailFieldProps = {
-  fieldConfig: z.infer<typeof EmailFieldSchema>;
-  fieldMetadata: FieldMetadata<string>;
-};
-
-export function EmailField({
-  fieldConfig: config,
-  fieldMetadata: metadata,
-}: EmailFieldProps) {
-  return (
-    <Field
-      labelProps={{ children: config.data.label }}
-      inputProps={{
-        ...getInputProps(metadata, { type: "email" }),
-      }}
-      errors={metadata.errors}
-    />
-  );
-}
+export const EmailField =
+  makeInputFieldView<z.infer<typeof EmailFieldSchema>>("email");

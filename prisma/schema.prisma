@@ -62,6 +62,45 @@ model Event {
 
   createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
   createdById String
+
+  form   Form   @relation(fields: [formId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  formId String @unique // non-nullable: every event has a form (backfilled)
+}
+
+model Form {
+  id String @id @default(cuid())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  versions FormVersion[]
+  event    Event? // back-relation only; Form itself stays event-agnostic
+}
+
+model FormVersion {
+  id      String @id @default(cuid())
+  version Int
+  schema  Json // FieldDescriptor[]; validated by SignupFormSchema on every write
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt // mutated in place only while no submissions reference it
+
+  form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  formId String
+
+  submissions FormSubmission[]
+
+  @@unique([formId, version])
+}
+
+model FormSubmission {
+  id      String @id @default(cuid())
+  answers Json // nested: { name, email, …, friends: [{ name, … }] }
+
+  createdAt DateTime @default(now())
+
+  formVersion   FormVersion @relation(fields: [formVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  formVersionId String
 }
 
 model EventResponse {

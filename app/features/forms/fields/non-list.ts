@@ -1,3 +1,4 @@
+import type { FieldMetadata } from "@conform-to/react";
 import z from "zod";
 
 import { CheckboxFieldSchema } from "./checkbox/model";
@@ -26,15 +27,31 @@ export type NonListFieldDescriptor = z.infer<
 >;
 export type NonListFieldType = NonListFieldDescriptor["type"];
 
-export const NonListFieldViews: Record<NonListFieldType, React.ElementType> = {
+// Constrains a view registry so each type maps to a view accepting exactly
+// that type's descriptor — registering a view under the wrong key fails to
+// compile. Views narrow the metadata's value type themselves, so it stays
+// `any` here (FieldMetadata<any> would collapse its members to unknown).
+export type ViewsFor<Descriptor extends { type: string }> = {
+  [K in Descriptor["type"]]: (props: {
+    fieldConfig: Extract<Descriptor, { type: K }>;
+    fieldMetadata: any;
+  }) => React.ReactNode;
+};
+
+export const NonListFieldViews = {
   text: TextField,
   email: EmailField,
   phone: PhoneField,
   textarea: TextareaField,
   checkbox: CheckboxField,
-} as const;
+} as const satisfies ViewsFor<NonListFieldDescriptor>;
 
-export function getViewForNonListField(descriptor: NonListFieldDescriptor) {
+// The registration above is type-checked; lookups are deliberately erased to
+// React.ElementType because the config/metadata pair is only correlated at
+// runtime.
+export function getViewForNonListField(
+  descriptor: NonListFieldDescriptor,
+): React.ElementType {
   return NonListFieldViews[descriptor.type];
 }
 

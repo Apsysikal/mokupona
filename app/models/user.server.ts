@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import type { Password, Prisma, Role, User } from "#prisma/generated/client";
 
 import { prisma } from "~/db.server";
+import { deleteEventsInTx } from "~/models/event.server";
 
 export type { User } from "#prisma/generated/client";
 
@@ -63,12 +64,21 @@ export async function createUser(
   });
 }
 
+// The DB cascades User -> Event, which would skip the app-level form cascade
+// and orphan Form/FormVersion/FormSubmission rows — delete the user's events
+// through it first, in the same transaction.
 export async function deleteUserByEmail(email: User["email"]) {
-  return prisma.user.delete({ where: { email } });
+  return prisma.$transaction(async (tx) => {
+    await deleteEventsInTx(tx, { createdBy: { email } });
+    return tx.user.delete({ where: { email } });
+  });
 }
 
 export async function deleteUserById(id: User["id"]) {
-  return prisma.user.delete({ where: { id } });
+  return prisma.$transaction(async (tx) => {
+    await deleteEventsInTx(tx, { createdById: id });
+    return tx.user.delete({ where: { id } });
+  });
 }
 
 export async function updateUser<T extends UserWhereUnique>(

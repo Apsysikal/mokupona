@@ -1,6 +1,7 @@
 import type { Prisma } from "#prisma/generated/client";
 
 import { prisma } from "~/db.server";
+import { deleteEventsInTx } from "~/models/event.server";
 
 export async function getAddresses(filter?: Prisma.AddressWhereInput) {
   return prisma.address.findMany({
@@ -58,8 +59,12 @@ export async function updateAddress(
   });
 }
 
+// The DB cascades Address -> Event, which would skip the app-level form
+// cascade and orphan Form/FormVersion/FormSubmission rows — delete the
+// address's events through it first, in the same transaction.
 export async function deleteAddress(id: string) {
-  return prisma.address.delete({
-    where: { id },
+  return prisma.$transaction(async (tx) => {
+    await deleteEventsInTx(tx, { addressId: id });
+    return tx.address.delete({ where: { id } });
   });
 }

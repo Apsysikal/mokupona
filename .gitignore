@@ -8,6 +8,8 @@ node_modules
 /cypress/videos
 /prisma/data.db
 /prisma/data.db-journal
+/prisma/test.db
+/prisma/test.db-journal
 
 .react-router/
 logs/

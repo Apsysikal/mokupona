@@ -26,6 +26,37 @@ type UpdatedAdminDinnerFormProps = {
   submitText: string;
 };
 
+// Shared by the dinner create and edit routes so the address label format
+// can't drift between the two pages.
+export function toAddressOptions(
+  addresses: Array<{
+    id: string;
+    streetName: string;
+    houseNumber: string;
+    zip: string;
+    city: string;
+  }>,
+) {
+  return addresses.map((address) => ({
+    label: `${address.streetName} ${address.houseNumber} - ${address.zip} ${address.city}`,
+    value: address.id,
+  }));
+}
+
+// Splits the dinner routes' two-shaped action data: an upload-handler failure
+// becomes cover errors, anything else is Conform's last result.
+export function splitUploadActionData<Result extends object>(
+  actionData: Result | { uploadHandlerError: string } | undefined,
+) {
+  const hasUploadError =
+    actionData !== undefined && "uploadHandlerError" in actionData;
+
+  return {
+    coverErrors: hasUploadError ? [actionData.uploadHandlerError] : undefined,
+    lastResult: hasUploadError ? undefined : actionData,
+  };
+}
+
 export function AdminDinnerForm({
   fields,
   addressOptions,

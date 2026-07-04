@@ -19,7 +19,7 @@ import { getViewForField } from "~/features/forms/fields";
 import { buildSignupSchema } from "~/features/signup-form/build-schema";
 import { DEFAULT_FORM } from "~/features/signup-form/default-form";
 import { logger } from "~/logger.server";
-import { createEventResponse } from "~/models/event-response.server";
+import { createEventResponses } from "~/models/event-response.server";
 import { getEventById } from "~/models/event.server";
 import { getClientIPAddress, getImageUrl, obscureEmail } from "~/utils/misc";
 import { redirectWithToast } from "~/utils/toast.server";
@@ -145,21 +145,13 @@ export async function action({ params, request }: Route.ActionArgs) {
     ...friends,
   ];
 
-  const allSignupsPromises = allSignups.map((person) => {
-    return createEventResponse(
-      dinnerId,
-      person.name,
-      email,
-      phone,
-      person.vegetarian,
-      person.student,
-      person.restrictions,
-      comment,
-    );
-  });
-
   try {
-    await Promise.all(allSignupsPromises);
+    // one transaction: a partial write would turn the retry we prompt for
+    // below into duplicate attendees
+    await createEventResponses(
+      dinnerId,
+      allSignups.map((person) => ({ ...person, email, phone, comment })),
+    );
   } catch (reason) {
     logger.error("Failed to persist dinner signup", {
       ip: getClientIPAddress(request),

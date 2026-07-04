@@ -67,9 +67,7 @@ describe("SignupFormSchema", () => {
 
   it("rejects a form where an identity field has the wrong type", () => {
     const emailAsCheckbox = DEFAULT_FORM.map((field) =>
-      field.type === "email"
-        ? { ...field, type: "checkbox" as const }
-        : field,
+      field.type === "email" ? { ...field, type: "checkbox" as const } : field,
     );
 
     expect(SignupFormSchema.safeParse(emailAsCheckbox).success).toBe(false);

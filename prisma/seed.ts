@@ -8,6 +8,7 @@ import { faker } from "@faker-js/faker";
 import bcrypt from "bcryptjs";
 
 import { prisma } from "~/db.server";
+import { createEvent } from "~/models/event.server";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -26,6 +27,19 @@ async function seed() {
   });
 
   await prisma.event.deleteMany().catch(() => {
+    /** */
+  });
+
+  // forms after events: Event.formId restricts deleting a referenced form
+  await prisma.formSubmission.deleteMany().catch(() => {
+    /** */
+  });
+
+  await prisma.formVersion.deleteMany().catch(() => {
+    /** */
+  });
+
+  await prisma.form.deleteMany().catch(() => {
     /** */
   });
 
@@ -110,30 +124,28 @@ async function seed() {
     },
   });
 
-  const event = await prisma.event.create({
-    data: {
-      title: faker.lorem.sentence({ min: 3, max: 7 }),
-      description: faker.lorem.paragraphs({ min: 3, max: 7 }),
-      date: faker.date.soon({ days: 3 }),
-      slots: faker.number.int({ min: 10, max: 20 }),
-      price: faker.number.int({ min: 15, max: 30 }),
-      imageId: image.id,
-      addressId: address.id,
-      createdById: moderator.id,
-    },
+  // createEvent (not prisma.event.create) so every seeded event gets its
+  // form + first version, like production writes
+  const event = await createEvent({
+    title: faker.lorem.sentence({ min: 3, max: 7 }),
+    description: faker.lorem.paragraphs({ min: 3, max: 7 }),
+    date: faker.date.soon({ days: 3 }),
+    slots: faker.number.int({ min: 10, max: 20 }),
+    price: faker.number.int({ min: 15, max: 30 }),
+    imageId: image.id,
+    addressId: address.id,
+    createdById: moderator.id,
   });
 
-  await prisma.event.create({
-    data: {
-      title: faker.lorem.sentence({ min: 3, max: 7 }),
-      description: faker.lorem.paragraphs({ min: 3, max: 7 }),
-      date: faker.date.soon({ days: 3 }),
-      slots: faker.number.int({ min: 10, max: 20 }),
-      price: faker.number.int({ min: 15, max: 30 }),
-      imageId: image2.id,
-      addressId: address.id,
-      createdById: moderator.id,
-    },
+  await createEvent({
+    title: faker.lorem.sentence({ min: 3, max: 7 }),
+    description: faker.lorem.paragraphs({ min: 3, max: 7 }),
+    date: faker.date.soon({ days: 3 }),
+    slots: faker.number.int({ min: 10, max: 20 }),
+    price: faker.number.int({ min: 15, max: 30 }),
+    imageId: image2.id,
+    addressId: address.id,
+    createdById: moderator.id,
   });
 
   for (let i = 0; i < event.slots - 5; i++) {

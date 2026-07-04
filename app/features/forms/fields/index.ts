@@ -8,6 +8,7 @@ import {
   NonListFieldDescriptorSchema,
   NonListFieldViews,
   type NonListFieldDescriptor,
+  type ViewsFor,
 } from "./non-list";
 
 export {
@@ -101,11 +102,15 @@ export const FormSchema = z
     }
   });
 
-const FieldViews: Record<FieldType, React.ElementType> = {
+const FieldViews = {
   ...NonListFieldViews,
   list: ListField,
-} as const;
+} as const satisfies ViewsFor<FieldDescriptor>;
 
-export function getViewForField(descriptor: FieldDescriptor) {
+// Registration is type-checked via ViewsFor; the lookup is deliberately
+// erased because the config/metadata pair is only correlated at runtime.
+export function getViewForField(
+  descriptor: FieldDescriptor,
+): React.ElementType {
   return FieldViews[descriptor.type];
 }

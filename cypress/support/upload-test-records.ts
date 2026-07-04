@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { prisma } from "~/db.server";
+import { createEvent, deleteEvent } from "~/models/event.server";
 import { getUserByEmail } from "~/models/user.server";
 
 const defaultImagePath = path.resolve(process.cwd(), "prisma/default.jpg");
@@ -136,27 +137,26 @@ async function createDinner(
     data: imageData,
   });
 
-  const event = await prisma.event.create({
-    data: {
-      title: payload.payload.title,
-      description:
-        payload.payload.description ?? `${payload.payload.title} description`,
-      menuDescription:
-        payload.payload.menuDescription ?? `${payload.payload.title} menu`,
-      donationDescription:
-        payload.payload.donationDescription ??
-        `${payload.payload.title} donation`,
-      date: payload.payload.date
-        ? new Date(payload.payload.date)
-        : new Date("2035-01-01T18:30:00.000Z"),
-      slots: payload.payload.slots ?? 16,
-      price: payload.payload.price ?? 25,
-      discounts:
-        payload.payload.discounts ?? `${payload.payload.title} discounts`,
-      addressId,
-      createdById: moderatorId,
-      imageId: image.id,
-    },
+  // createEvent (not prisma.event.create) so the event gets its form
+  const event = await createEvent({
+    title: payload.payload.title,
+    description:
+      payload.payload.description ?? `${payload.payload.title} description`,
+    menuDescription:
+      payload.payload.menuDescription ?? `${payload.payload.title} menu`,
+    donationDescription:
+      payload.payload.donationDescription ??
+      `${payload.payload.title} donation`,
+    date: payload.payload.date
+      ? new Date(payload.payload.date)
+      : new Date("2035-01-01T18:30:00.000Z"),
+    slots: payload.payload.slots ?? 16,
+    price: payload.payload.price ?? 25,
+    discounts:
+      payload.payload.discounts ?? `${payload.payload.title} discounts`,
+    addressId,
+    createdById: moderatorId,
+    imageId: image.id,
   });
 
   return outputJson<DinnerResult>({
@@ -214,7 +214,8 @@ async function deleteDinner(
   ].filter((imageId): imageId is string => Boolean(imageId));
 
   if (event) {
-    await prisma.event.delete({ where: { id: event.id } });
+    // deleteEvent (not prisma.event.delete) so the form data goes with it
+    await deleteEvent(event.id);
   }
 
   if (imageIds.length > 0) {
@@ -232,6 +233,16 @@ async function deleteDinner(
 async function deleteImage(
   payload: Extract<CommandInput, { action: "delete-image" }>,
 ) {
+  // The DB cascades Image -> Event; an event still attached to this image
+  // must go through deleteEvent so its form data goes with it.
+  const attachedEvent = await prisma.event.findFirst({
+    where: { imageId: payload.payload.id },
+    select: { id: true },
+  });
+  if (attachedEvent) {
+    await deleteEvent(attachedEvent.id);
+  }
+
   await prisma.image.deleteMany({
     where: { id: payload.payload.id },
   });

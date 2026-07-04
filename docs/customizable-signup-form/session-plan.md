@@ -15,7 +15,7 @@ Companion to [`design.md`](./design.md) and [`implementation-plan.md`](./impleme
 | --- | -------------------------------------------------- | ------------ | ------ |
 | 1   | Branch cleanup + generic forms library             | cleanup + 0a | ☑      |
 | 2   | Signup page renders via registry (old storage)     | 0b           | ☑      |
-| 3   | Storage: schema, migration, backfill, models       | 1a           | ☐      |
+| 3   | Storage: schema, migration, backfill, models       | 1a           | ☑      |
 | 4   | Attendee read layer + admin/CSV switch             | 1b           | ☐      |
 | 5   | Write-path switch to FormSubmission                | 1c           | ☐      |
 | 6   | Admin builder UI — core                            | 2a           | ☐      |
@@ -25,6 +25,18 @@ Companion to [`design.md`](./design.md) and [`implementation-plan.md`](./impleme
 ## Deviations & discoveries
 
 _(append here, newest first, prefixed with the session number)_
+
+- **S3 (review):** DB-level `ON DELETE CASCADE` paths into `Event` (from `User`, `Address`, and `Image`) bypassed `deleteEvent` and orphaned form rows. The app-level cascade now lives in `deleteEventsInTx`, and `deleteUserById`/`deleteUserByEmail`, `deleteAddress`, and the cypress `delete-image` task run it in the same transaction before deleting the cascading parent. Pinned by a regression test (user delete removes the events' form data). **Any future delete path that can reach `Event` must do the same.**
+- **S3 (review):** `saveFormSchema` and `createEvent` re-parse their input through `FormSchema` before comparing/persisting: comparing the Zod-normalized stored schema against raw caller fields misdetected semantically identical saves as changes (spurious versions once submissions exist), and no descriptor blob can reach the DB unvalidated anymore (profile validation via `SignupFormSchema` remains the event actions' job in Session 6). The "current version" query is defined once (`currentVersionArgs`).
+- **S3 (review):** The Session-2 signup fan-out now writes all attendees in one transaction (`createEventResponses`); previously a partial failure persisted a subset and the "please try again" error invited duplicating them. The orphaned single-row `createEventResponse` was deleted.
+- **S3 (review):** Cleanups from the review: text/email/phone views collapsed into a `makeInputFieldView` factory; view registries are compile-checked by a mapped `ViewsFor` type (wrong-key registration no longer type-checks; lookups stay deliberately erased); the dinner new/edit routes share `toAddressOptions`/`splitUploadActionData`; the test factory batches independent creates.
+- **S3 (review, deferred):** The signup action's past-event guard still returns 400 where 403 is meant — left alone because [`route-module-conventions/action-plan.md`](../route-module-conventions/action-plan.md) Phase 1 already tracks exactly that line.
+
+- **S3:** Design §3.2's delete order "submissions → versions → form → event" is unexecutable as written: `Event.formId → Form` is `onDelete: Restrict`, so the event row must go before its form. `deleteEvent` deletes submissions → versions → **event → form** in one transaction.
+- **S3:** DB-backed unit tests run against `prisma/test.db`, recreated from the real migrations by a vitest `globalSetup` on every run (which re-verifies the migration chain on an empty DB); `test.env` overrides `DATABASE_URL` (dotenv never overrides existing vars). `fileParallelism: false` — SQLite has one writer, and parallel workers aborted read-then-write transactions with `SQLITE_BUSY`.
+- **S3:** `cypress/support/upload-test-records.ts` switched from raw `prisma.event.create`/`.delete` to the `createEvent`/`deleteEvent` model helpers — raw creates would now violate the non-null `formId`, raw deletes would orphan form rows. The seed likewise creates events through `createEvent`.
+- **S3:** Backfilled `Form`/`FormVersion` ids are derived from the event id (`'form_' || id`) instead of cuids — SQLite can't mint cuids and the id column only needs uniqueness. Verified against a copy of the dev DB: backfill parses via `FormSchema` and deep-equals `DEFAULT_FORM`, and a Prisma-written `Json` round-trips identically to the SQL-written literal.
+- **S3:** `createEvent`'s signature changed to `(data, formFields = DEFAULT_FORM)` with `formId` stripped from the input type — callers can't supply their own form row; the event and its form/v1 are created in one transaction. Session 6's builder should pass authored descriptors as the second argument.
 
 - **S2 (review):** The action no longer fakes success when the DB write fails — the legacy `.catch` swallowed `createEventResponse` rejections and still showed the "Signup complete" toast (a bug carried over from main). It now logs at error level and returns a form-level error; the page renders `form.errors` via a new `ErrorList` above the submit button.
 - **S2 (review):** The adapter's `SignupAnswersSchema` parse fails soft: `safeParse` + an error log + a form-level "Something went wrong" reply instead of an uncaught ZodError 500, in case the hand-written adapter ever drifts from `DEFAULT_FORM` before Session 5 deletes it.

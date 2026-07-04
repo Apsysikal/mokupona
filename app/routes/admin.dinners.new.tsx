@@ -5,7 +5,11 @@ import { Form, redirect } from "react-router";
 import type { Route } from "./+types/admin.dinners.new";
 
 import { getFormProps, useForm } from "@conform-to/react";
-import { AdminDinnerForm } from "~/components/admin-dinner-form";
+import {
+  AdminDinnerForm,
+  splitUploadActionData,
+  toAddressOptions,
+} from "~/components/admin-dinner-form";
 import { logger } from "~/logger.server";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
@@ -100,20 +104,8 @@ export default function DinnersPage({
   actionData,
 }: Route.ComponentProps) {
   const { addresses, validImageTypes } = loaderData;
-  const lastSubmission = actionData;
-  const hasUploadError =
-    lastSubmission && "uploadHandlerError" in lastSubmission;
-  const coverErrors = hasUploadError
-    ? [lastSubmission.uploadHandlerError]
-    : undefined;
-  const lastResult = hasUploadError ? undefined : lastSubmission;
-
-  const addressOptions = addresses.map((address) => {
-    const label = `${address.streetName} ${address.houseNumber} - ${address.zip} ${address.city}`;
-    const value = address.id;
-
-    return { label, value };
-  });
+  const { coverErrors, lastResult } = splitUploadActionData(actionData);
+  const addressOptions = toAddressOptions(addresses);
 
   const [form, fields] = useForm({
     lastResult,
