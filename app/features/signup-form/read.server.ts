@@ -2,7 +2,8 @@ import type { EventResponse } from "#prisma/generated/client";
 
 import { DEFAULT_FORM } from "./default-form";
 
-import { parseStoredFormSchema } from "~/features/forms/serialization";
+import type { parseStoredFormSchema } from "~/features/forms/serialization";
+import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
 import { logger } from "~/logger.server";
 import { getEventResponsesForEvent } from "~/models/event-response.server";
 import { getFormSubmissionsForEvent } from "~/models/form-submission.server";
@@ -53,18 +54,9 @@ export async function getAttendeeRosterForEvent(eventId: string): Promise<{
   if (columnSchemas.length === 0) {
     const currentVersion = await getCurrentFormVersionForEvent(eventId);
     const parsed = currentVersion
-      ? parseStoredFormSchema(currentVersion.schema)
-      : undefined;
-    if (currentVersion && parsed) {
-      if (parsed.success) {
-        columnSchemas.push(parsed.data);
-      } else {
-        logger.error("Stored form schema failed to parse", {
-          formVersion: currentVersion.id,
-          error: parsed.error,
-        });
-      }
-    }
+      ? parseStoredFormSchemaOrLog(currentVersion)
+      : null;
+    if (parsed) columnSchemas.push(parsed);
   }
   if (hasLegacyRows || columnSchemas.length === 0) {
     columnSchemas.push(DEFAULT_FORM);
@@ -96,16 +88,8 @@ async function loadRoster(eventId: string): Promise<{
 
   const descriptorsByVersion = new Map<string, StoredFormSchema>();
   for (const version of versions) {
-    const parsed = parseStoredFormSchema(version.schema);
-    if (parsed.success) {
-      descriptorsByVersion.set(version.id, parsed.data);
-    } else {
-      // a bug — every writer validates; flag loudly rather than render wrong
-      logger.error("Stored form schema failed to parse", {
-        formVersion: version.id,
-        error: parsed.error,
-      });
-    }
+    const parsed = parseStoredFormSchemaOrLog(version);
+    if (parsed) descriptorsByVersion.set(version.id, parsed);
   }
 
   const attendees = [

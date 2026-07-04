@@ -17,7 +17,7 @@ Companion to [`design.md`](./design.md) and [`implementation-plan.md`](./impleme
 | 2   | Signup page renders via registry (old storage)     | 0b           | ☑      |
 | 3   | Storage: schema, migration, backfill, models       | 1a           | ☑      |
 | 4   | Attendee read layer + admin/CSV switch             | 1b           | ☑      |
-| 5   | Write-path switch to FormSubmission                | 1c           | ☐      |
+| 5   | Write-path switch to FormSubmission                | 1c           | ☑      |
 | 6   | Admin builder UI — core                            | 2a           | ☐      |
 | 7   | Builder guardrails + full e2e sweep                | 2b           | ☐      |
 | 8+  | New field types (one session each, `select` first) | 3            | ☐      |
@@ -25,6 +25,15 @@ Companion to [`design.md`](./design.md) and [`implementation-plan.md`](./impleme
 ## Deviations & discoveries
 
 _(append here, newest first, prefixed with the session number)_
+
+- **S5 (review):** The submission now pins the **rendered** version, not just the current one: the form posts a hidden `formVersionId`, the action rejects a mismatch with a "form was updated, please review" error (answers to removed fields would otherwise be silently stripped by zod), and `createFormSubmission` takes an `expectedVersionUpdatedAt` guard that aborts the insert inside a transaction if an in-place schema update raced the request (`FormVersionChangedError`). Client-side, `SignupForm` is keyed on the schema **content** (not the version id) so an in-place update remounts the form instead of leaving a stale memoized schema blocking validation.
+- **S5 (review):** The "Go straight to sign-up" button now hides together with the signup section when the stored schema is unparseable (it pointed at a dead anchor). The degraded-schema parse+log block was extracted to `parseStoredFormSchemaOrLog` (`serialization.server.ts`, four call sites); loader and action parallelize event + version queries via `getCurrentFormVersionForEvent`. The new e2e no longer asserts a seed-coupled row count and guards against pre-navigation URL capture and the not-yet-inserted friend fieldset.
+- **S5 (review, deferred):** Absence semantics (checkbox → `false`, list → `[]`) live as a type switch in `normalizeSubmissionValues` rather than in the per-field registry. Revisit when a Phase-3 type with its own absence semantics (e.g. `select`) lands — moving it then keeps today's code simpler.
+
+- **S5:** The S2 checkbox requirement is discharged by `normalizeSubmissionValues` (generic, `app/features/forms/normalize-submission.ts`): stored answers always carry explicit `false` for unchecked checkboxes (top-level and per list item), `[]` for absent lists, and no `undefined` values. Verified against the dev DB after the e2e run.
+- **S5:** The signup form moved into a `SignupForm` subcomponent — `useForm` can't be called conditionally, and the section must disappear entirely when the loader reports an unparseable stored schema (`formFields: null`, design §11). The component is keyed on `formVersionId` and memoizes the schema on it (S2's loader-key note honored: `formFields` + `formVersionId`).
+- **S5:** If the action itself hits an unparseable stored schema it 500s — the loader never rendered a form in that state, so no legitimate submission can arrive.
+- **S5:** `event-response.server.ts` is now read-only (`getEventResponsesForEvent` for the legacy merge); both write helpers are gone. The e2e suite gained the Phase-1 acceptance test: a signup with a friend appears in the admin table and the CSV export alongside existing rows (full suite 20/20).
 
 - **S4 (review):** Answers are **not** strictly re-validated on read anymore. The review showed `buildSubmissionSchema` is stricter than what valid writers can store (absent optional `friends` key, optional email persisted as `""`), so one drifted shape would silently drop a whole party from the roster. `flattenSubmission` now extracts structurally (typeof-filtered against the pinned version's descriptors); the schema blob itself is still Zod-validated. This amends design §3's "every Json is Zod-validated on read" for `answers` — deliberate: a reader must never be stricter than any writer.
 - **S4 (review):** The CSV export can no longer come back header-less: the column union falls back current version → `DEFAULT_FORM` when every parse fails. `buildCSVObject` now does real RFC-4180 escaping (embedded quotes doubled — previously a quoted value produced a misparsing row) and reports `size` in UTF-8 bytes (`data.length` undercounted non-ASCII and truncated downloads via Content-Length). The download filename strips non-`[\w.-]` characters (quotes/emoji in a title made the header invalid).

@@ -5,6 +5,7 @@ import { buildEventData } from "../../test/factories";
 import { createEvent, deleteEvent } from "./event.server";
 import {
   createFormSubmission,
+  FormVersionChangedError,
   getFormSubmissionsForEvent,
 } from "./form-submission.server";
 import { getCurrentFormVersion } from "./form.server";
@@ -95,6 +96,44 @@ describe("deleteEvent", () => {
 
   it("rejects for an unknown event id", async () => {
     await expect(deleteEvent("does-not-exist")).rejects.toThrow();
+  });
+});
+
+describe("createFormSubmission version guard", () => {
+  it("rejects the write when the pinned version changed after validation", async () => {
+    const event = await createEvent(await buildEventData());
+    const version = await getCurrentFormVersion(event.formId);
+
+    // simulate an in-place schema update racing the signup request
+    await prisma.formVersion.update({
+      where: { id: version.id },
+      data: { updatedAt: new Date(version.updatedAt.getTime() + 5_000) },
+    });
+
+    await expect(
+      createFormSubmission({
+        formVersionId: version.id,
+        answers: { name: "Raced Signer" },
+        expectedVersionUpdatedAt: version.updatedAt,
+      }),
+    ).rejects.toBeInstanceOf(FormVersionChangedError);
+
+    await expect(
+      prisma.formSubmission.count({ where: { formVersionId: version.id } }),
+    ).resolves.toBe(0);
+  });
+
+  it("writes when the pinned version is unchanged", async () => {
+    const event = await createEvent(await buildEventData());
+    const version = await getCurrentFormVersion(event.formId);
+
+    await expect(
+      createFormSubmission({
+        formVersionId: version.id,
+        answers: { name: "Safe Signer" },
+        expectedVersionUpdatedAt: version.updatedAt,
+      }),
+    ).resolves.toMatchObject({ formVersionId: version.id });
   });
 });
 
