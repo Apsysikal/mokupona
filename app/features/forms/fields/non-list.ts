@@ -7,6 +7,8 @@ import { EmailFieldSchema } from "./email/model";
 import { EmailField } from "./email/view";
 import { PhoneFieldSchema } from "./phone/model";
 import { PhoneField } from "./phone/view";
+import { SelectFieldSchema } from "./select/model";
+import { SelectField } from "./select/view";
 import { TextFieldSchema } from "./text/model";
 import { TextField } from "./text/view";
 import { TextareaFieldSchema } from "./textarea/model";
@@ -20,6 +22,7 @@ export const NonListFieldDescriptorSchema = z.discriminatedUnion("type", [
   EmailFieldSchema,
   PhoneFieldSchema,
   CheckboxFieldSchema,
+  SelectFieldSchema,
 ]);
 
 export type NonListFieldDescriptor = z.infer<
@@ -35,6 +38,7 @@ export const NON_LIST_FIELD_TYPES = [
   "email",
   "phone",
   "checkbox",
+  "select",
 ] as const satisfies readonly NonListFieldType[];
 
 type AssertAllTypesListed =
@@ -59,6 +63,7 @@ export const NonListFieldViews = {
   phone: PhoneField,
   textarea: TextareaField,
   checkbox: CheckboxField,
+  select: SelectField,
 } as const satisfies ViewsFor<NonListFieldDescriptor>;
 
 // The registration above is type-checked; lookups are deliberately erased to
@@ -71,12 +76,13 @@ export function getViewForNonListField(
 }
 
 export function zodForField(descriptor: NonListFieldDescriptor) {
-  const { type, data } = descriptor;
-  const { required } = data;
+  const { label, required } = descriptor.data;
 
-  const requiredError = `${data.label} is required`;
+  const requiredError = `${label} is required`;
 
-  switch (type) {
+  // switch on descriptor.type (not a destructured copy) so each case narrows
+  // the descriptor and can reach type-specific data like select options
+  switch (descriptor.type) {
     case "text":
     case "textarea":
     case "phone": {
@@ -90,7 +96,7 @@ export function zodForField(descriptor: NonListFieldDescriptor) {
       const schema = z
         .string({ error: requiredError })
         .trim()
-        .pipe(z.email({ error: `${data.label} is invalid` }));
+        .pipe(z.email({ error: `${label} is invalid` }));
       if (required) return schema;
       return schema.optional();
     }
@@ -99,12 +105,23 @@ export function zodForField(descriptor: NonListFieldDescriptor) {
       const schema = z.boolean().default(false);
       if (!required) return schema.optional();
       return schema.refine((value) => value === true, {
-        error: `${data.label} is required`,
+        error: `${label} is required`,
       });
     }
 
+    case "select": {
+      const { options } = descriptor.data;
+      const schema = z
+        .string({ error: requiredError })
+        .refine((value) => options.includes(value), {
+          error: `${label} is invalid`,
+        });
+      if (required) return schema;
+      return schema.optional();
+    }
+
     default:
-      assertNever(type);
+      assertNever(descriptor);
   }
 }
 

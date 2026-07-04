@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest";
 import { zodForField, type NonListFieldDescriptor } from "./non-list";
 
 function descriptor(
-  type: NonListFieldDescriptor["type"],
+  // select carries extra data (options) and has its own describe block below
+  type: Exclude<NonListFieldDescriptor["type"], "select">,
   required: boolean,
 ): NonListFieldDescriptor {
   return {
@@ -78,5 +79,72 @@ describe("zodForField", () => {
       expect(schema.safeParse(false).success).toBe(false);
       expect(schema.safeParse(undefined).success).toBe(false);
     });
+  });
+});
+
+describe("zodForField select", () => {
+  function selectDescriptor(required: boolean): NonListFieldDescriptor {
+    return {
+      type: "select",
+      version: 1,
+      data: {
+        name: "menu",
+        label: "Menu",
+        required,
+        options: ["Meat", "Vegan"],
+      },
+    };
+  }
+
+  it("accepts a configured option", () => {
+    const schema = zodForField(selectDescriptor(true));
+    expect(schema.parse("Vegan")).toBe("Vegan");
+  });
+
+  it("rejects a value outside the options", () => {
+    const schema = zodForField(selectDescriptor(true));
+    expect(schema.safeParse("Fish").success).toBe(false);
+  });
+
+  it("rejects a missing value when required", () => {
+    const schema = zodForField(selectDescriptor(true));
+    expect(schema.safeParse(undefined).success).toBe(false);
+  });
+
+  it("accepts a missing value when optional", () => {
+    const schema = zodForField(selectDescriptor(false));
+    expect(schema.parse(undefined)).toBeUndefined();
+  });
+
+  it("still rejects a non-option when optional", () => {
+    const schema = zodForField(selectDescriptor(false));
+    expect(schema.safeParse("Fish").success).toBe(false);
+  });
+});
+
+describe("SelectFieldSchema bounds", () => {
+  async function parseSelect(options: string[]) {
+    const { SelectFieldSchema } = await import("./select/model");
+    return SelectFieldSchema.safeParse({
+      type: "select",
+      version: 1,
+      data: { name: "menu", label: "Menu", required: false, options },
+    });
+  }
+
+  it("rejects duplicate options (after trimming)", async () => {
+    expect((await parseSelect(["Meat", "Meat "])).success).toBe(false);
+  });
+
+  it("rejects options containing line breaks", async () => {
+    expect((await parseSelect(["A\nB"])).success).toBe(false);
+  });
+
+  it("rejects an over-long option", async () => {
+    expect((await parseSelect(["x".repeat(101)])).success).toBe(false);
+  });
+
+  it("accepts a clean option list", async () => {
+    expect((await parseSelect(["Meat", "Vegan"])).success).toBe(true);
   });
 });

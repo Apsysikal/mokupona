@@ -45,6 +45,17 @@ describe("admin signup form builder", () => {
       .last()
       .should("have.value", "favorite_dish");
 
+    // and a select question with an options editor
+    cy.findByRole("button", { name: /^add field$/i }).click();
+    cy.findAllByLabelText(/^type$/i)
+      .last()
+      .select("select");
+    cy.findAllByLabelText(/^label$/i)
+      .last()
+      .type("Menu choice")
+      .blur();
+    cy.findByLabelText(/options \(one per line\)/i).type("Meat\nVegan");
+
     cy.findByRole("button", { name: /create dinner/i }).click();
     cy.findByRole("heading", { name: values.title }).should("be.visible");
 
@@ -66,6 +77,7 @@ describe("admin signup form builder", () => {
           email: `builder-${suffix}@example.com`,
         });
         cy.findByRole("textbox", { name: /favorite dish/i }).type("Ramen");
+        cy.findByRole("combobox", { name: /menu choice/i }).select("Vegan");
         acceptPrivacyAndJoin();
 
         // the answer reaches the admin table and the CSV column union
@@ -76,6 +88,8 @@ describe("admin signup form builder", () => {
           (response) => {
             expect(response.body).to.include("Favorite dish");
             expect(response.body).to.include("Ramen");
+            expect(response.body).to.include("Menu choice");
+            expect(response.body).to.include("Vegan");
             expect(response.body).to.include(signerName);
           },
         );

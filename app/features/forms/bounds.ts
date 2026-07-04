@@ -4,3 +4,5 @@
 // maxCount that can never exceed it.
 export const MAX_TOTAL_FIELDS = 40; // counts recursively: top-level + every list's itemFields
 export const MAX_LIST_COUNT = 10; // ceiling in code; authors pick a value 0..MAX in data
+export const MAX_SELECT_OPTIONS = 20; // per select field
+export const MAX_SELECT_OPTION_LENGTH = 100; // characters per option

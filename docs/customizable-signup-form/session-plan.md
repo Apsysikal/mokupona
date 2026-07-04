@@ -20,11 +20,15 @@ Companion to [`design.md`](./design.md) and [`implementation-plan.md`](./impleme
 | 5   | Write-path switch to FormSubmission                | 1c           | ☑      |
 | 6   | Admin builder UI — core                            | 2a           | ☑      |
 | 7   | Builder guardrails + full e2e sweep                | 2b           | ☑      |
-| 8+  | New field types (one session each, `select` first) | 3            | ☐      |
+| 8+  | New field types (one session each, `select` first) | 3            | ☑ `select` shipped; further types on demand |
 
 ## Deviations & discoveries
 
 _(append here, newest first, prefixed with the session number)_
+
+- **S8 (review):** `SelectFieldSchema` now rejects duplicate options (they double as answer values and rendering keys), options containing line breaks (making the one-per-line round-trip actually safe — the earlier claim that trim+min(1) forbade them was wrong), and options over `MAX_SELECT_OPTION_LENGTH = 100`. Toggling a row's type away from select keeps the typed options in play via a hidden input instead of dropping them with the unmounted textarea. Per-element option issue paths collapse onto the row's options textarea so future per-option rules can't fail invisibly; the sync-nudge twin only carries `options` for select rows.
+
+- **S8 (`select`):** The Phase-3 template holds: one folder (`select/model.ts` + `view.tsx`), a registry entry, a `zodForField` case, builder support, unit tests, one e2e touch — no migration. Options are plain strings (label = value, v1) with `MAX_SELECT_OPTIONS = 20` in `bounds.ts`; the rendered select carries an empty "Select…" option so "nothing chosen" stays representable (required rejects it, optional coerces to `undefined`). `zodForField` now switches on `descriptor.type` directly so cases can narrow to type-specific data. The builder edits options as one-per-line text (split/joined in the row transforms — an option containing a newline is unrepresentable, which the schema anyway forbids via trim+min(1) per line at authoring); the sync-nudge twin copies the options along. `SelectFieldSchema`'s min/max issue paths land on the row's options textarea.
 
 - **S7 (review):** Locking is driven by `eventHasSignups`, which counts **legacy `EventResponse` rows too** — they merge into the roster under the same keys, so a rename splits their columns just the same (previously pre-migration dinners got no locks at all). Existence checks use `findFirst`, not `count`.
 - **S7 (review):** "Reset to default" now asks for confirmation (with a stronger warning when signups exist) — it previously bypassed both guardrails in one click. Stored-row identity for locking/pinning is captured **at mount from Conform's row keys** (a `useRef` set): `initialValue` is rewritten by intents (the label auto-slug `update`, the twin `insert`), which had two consequences — brand-new rows locked their keys the moment the auto-slug ran, and a custom row auto-slugged to "email" would have morphed into a pinned row. One lock predicate is computed per row and passed down.

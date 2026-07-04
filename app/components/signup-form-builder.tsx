@@ -1,12 +1,19 @@
 import {
   getInputProps,
   getSelectProps,
+  getTextareaProps,
   useFormMetadata,
   type FieldMetadata,
 } from "@conform-to/react";
 import { useRef } from "react";
 
-import { CheckboxField, ErrorList, Field, SelectField } from "./forms";
+import {
+  CheckboxField,
+  ErrorList,
+  Field,
+  SelectField,
+  TextareaField,
+} from "./forms";
 import { Button } from "./ui/button";
 
 import {
@@ -41,6 +48,7 @@ const TYPE_LABELS: Record<NonListFieldType, string> = {
   email: "Email",
   phone: "Phone",
   checkbox: "Checkbox",
+  select: "Select",
 };
 
 const TYPE_OPTIONS = NON_LIST_FIELD_TYPES.map((type) => ({
@@ -371,6 +379,7 @@ function EditableRowView({
   const labelInputProps = getInputProps(rowFields.label, { type: "text" });
 
   const keyValue = String(rowFields.name.value ?? "");
+  const isSelect = String(rowFields.type.value ?? "") === "select";
 
   const showTwinButton =
     twinTarget !== undefined &&
@@ -420,6 +429,25 @@ function EditableRowView({
           errors={rowFields.name.errors}
         />
       </div>
+      {isSelect ? (
+        <TextareaField
+          labelProps={{ children: "Options (one per line)" }}
+          textareaProps={{
+            ...getTextareaProps(rowFields.options),
+            rows: 4,
+          }}
+          errors={rowFields.options.errors}
+        />
+      ) : (
+        // keep the typed options in play while the type is something else —
+        // toggling away from select and back must not discard them
+        <input
+          type="hidden"
+          name={rowFields.options.name}
+          value={String(rowFields.options.value ?? "")}
+          readOnly
+        />
+      )}
       <div className="flex flex-wrap items-center gap-4">
         <CheckboxField
           labelProps={{ children: "Required" }}
@@ -443,6 +471,10 @@ function EditableRowView({
                 type: String(rowFields.type.value ?? "text"),
                 name: keyValue,
                 label: String(rowFields.label.value ?? "") || keyValue,
+                // twins must match in type; a select twin needs the options
+                ...(isSelect
+                  ? { options: String(rowFields.options.value ?? "") }
+                  : {}),
               } satisfies Record<string, unknown> as never,
             })}
           >

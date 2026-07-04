@@ -16,6 +16,76 @@ describe("builder row transforms", () => {
     expect(builderRowsToDescriptors(rows)).toEqual(DEFAULT_FORM);
   });
 
+  it("round-trips a select field's one-per-line options", () => {
+    const rows = [
+      ...defaultBuilderRows(),
+      {
+        type: "select" as const,
+        name: "menu",
+        label: "Menu choice",
+        required: true,
+        options: "Meat\nVegan",
+      },
+    ];
+
+    const descriptors = builderRowsToDescriptors(rows);
+
+    expect(descriptors.at(-1)).toEqual({
+      type: "select",
+      version: 1,
+      data: {
+        name: "menu",
+        label: "Menu choice",
+        required: true,
+        options: ["Meat", "Vegan"],
+      },
+    });
+    expect(descriptorsToBuilderRows(descriptors)).toEqual(rows);
+    expect(SignupFormBuilderSchema.safeParse(rows).success).toBe(true);
+  });
+
+  it("rejects duplicate select options, anchored on the options field", () => {
+    const rows = [
+      ...defaultBuilderRows(),
+      {
+        type: "select" as const,
+        name: "menu",
+        label: "Menu choice",
+        required: false,
+        options: "Meat\nMeat ",
+      },
+    ];
+
+    const result = SignupFormBuilderSchema.safeParse(rows);
+
+    expect(result.success).toBe(false);
+    const issue = result.error?.issues.find((candidate) =>
+      candidate.message.includes("unique"),
+    );
+    expect(issue?.path).toEqual([rows.length - 1, "options"]);
+  });
+
+  it("rejects a select field without options, with the issue on the row", () => {
+    const rows = [
+      ...defaultBuilderRows(),
+      {
+        type: "select" as const,
+        name: "menu",
+        label: "Menu choice",
+        required: false,
+        options: "",
+      },
+    ];
+
+    const result = SignupFormBuilderSchema.safeParse(rows);
+
+    expect(result.success).toBe(false);
+    const issue = result.error?.issues.find((candidate) =>
+      candidate.message.includes("at least one option"),
+    );
+    expect(issue?.path).toEqual([rows.length - 1, "options"]);
+  });
+
   it("maps custom rows to versioned descriptors", () => {
     const descriptors = builderRowsToDescriptors([
       { type: "checkbox", name: "newsletter", label: "News?", required: true },

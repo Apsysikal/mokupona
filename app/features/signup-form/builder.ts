@@ -30,6 +30,9 @@ const BuilderItemRowSchema = z.object({
     .regex(FIELD_KEY_REGEX, { error: FIELD_KEY_ERROR }),
   label: z.string({ error: "Label is required" }).trim().min(1),
   required: z.boolean().default(false),
+  // select only: one option per line; SelectFieldSchema bounds the parsed
+  // list via the profile validation below
+  options: z.string().optional(),
 });
 
 const BuilderRowSchema = BuilderItemRowSchema.extend({
@@ -71,10 +74,15 @@ export const SignupFormBuilderSchema = z
     const result = SignupFormSchema.safeParse(builderRowsToDescriptors(rows));
 
     for (const issue of result.success ? [] : result.error.issues) {
+      const path = issue.path.filter((segment) => segment !== "data");
+      // per-element option issues ([i, "options", 3]) have no rendered field;
+      // collapse them onto the row's options textarea
+      const optionsIndex = path.indexOf("options");
+
       ctx.addIssue({
         code: "custom",
         message: issue.message,
-        path: issue.path.filter((segment) => segment !== "data"),
+        path: optionsIndex === -1 ? path : path.slice(0, optionsIndex + 1),
       });
     }
   });
@@ -106,16 +114,39 @@ export function builderRowsToDescriptors(
       name: row.name,
       label: row.label,
       required: row.required,
+      options: row.options,
     });
   });
 }
 
 function itemRowToDescriptor(row: BuilderItemRow): NonListFieldDescriptor {
+  if (row.type === "select") {
+    return {
+      type: "select",
+      version: 1,
+      data: {
+        name: row.name,
+        label: row.label,
+        required: row.required,
+        options: splitOptions(row.options ?? ""),
+      },
+    };
+  }
+
   return {
     type: row.type,
     version: 1,
     data: { name: row.name, label: row.label, required: row.required },
   };
+}
+
+// The builder edits options as one-per-line text; descriptors store them as
+// an array. Options are trimmed and non-empty, so the mapping round-trips.
+function splitOptions(text: string): string[] {
+  return text
+    .split("\n")
+    .map((option) => option.trim())
+    .filter(Boolean);
 }
 
 export function descriptorsToBuilderRows(
@@ -129,22 +160,26 @@ export function descriptorsToBuilderRows(
         label: descriptor.data.label,
         required: false,
         maxCount: descriptor.data.maxCount,
-        itemFields: descriptor.data.itemFields.map((item) => ({
-          type: item.type,
-          name: item.data.name,
-          label: item.data.label,
-          required: item.data.required,
-        })),
+        itemFields: descriptor.data.itemFields.map(descriptorToItemRow),
       };
     }
 
-    return {
-      type: descriptor.type,
-      name: descriptor.data.name,
-      label: descriptor.data.label,
-      required: descriptor.data.required,
-    };
+    return descriptorToItemRow(descriptor);
   });
+}
+
+function descriptorToItemRow(
+  descriptor: NonListFieldDescriptor,
+): BuilderItemRow {
+  return {
+    type: descriptor.type,
+    name: descriptor.data.name,
+    label: descriptor.data.label,
+    required: descriptor.data.required,
+    ...(descriptor.type === "select"
+      ? { options: descriptor.data.options.join("\n") }
+      : {}),
+  };
 }
 
 export function defaultBuilderRows(): BuilderRow[] {
