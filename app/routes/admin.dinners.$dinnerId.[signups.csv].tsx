@@ -5,6 +5,7 @@ import {
   type Attendee,
   type RosterColumn,
 } from "~/features/signup-form/read.server";
+import { contentDispositionAttachment } from "~/lib/content-disposition.server";
 import { buildCSVObject } from "~/lib/csv-builder.server";
 import { getEventById } from "~/models/event.server";
 import { requireUserWithRole } from "~/utils/session.server";
@@ -29,15 +30,15 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     attendees.map((attendee) => toCsvRow(attendee, columns)),
   );
 
-  // quotes or non-Latin-1 characters in the title would make the header
-  // invalid (or injectable), so the filename keeps a safe alphabet only
-  const filename = `${event.title.replace(/[^\w.-]+/g, "-")}-signups.csv`;
+  // the helper emits an ASCII-safe filename= fallback plus an RFC 5987
+  // filename*, so umlauts in the title survive into the saved file's name
+  const filename = `${event.title.split(" ").join("-")}-signups.csv`;
 
   return new Response(data.data, {
     headers: {
       "Content-Type": data.mimeType,
       "Content-Length": `${data.size}`,
-      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Disposition": contentDispositionAttachment(filename),
       "Cache-Control": "public, max-age=0, immutable",
     },
   });
