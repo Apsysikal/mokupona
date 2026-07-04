@@ -46,8 +46,8 @@ function listField(
 describe("FormSchema", () => {
   it("accepts a small valid form", () => {
     const result = FormSchema.safeParse([
-      textField("name"),
-      listField("friends", [textField("name")]),
+      textField("title"),
+      listField("entries", [textField("title")]),
     ]);
 
     expect(result.success).toBe(true);
@@ -59,7 +59,7 @@ describe("FormSchema", () => {
       ...Array.from({ length: MAX_TOTAL_FIELDS - 2 }, (_, i) =>
         textField(`field_${i}`),
       ),
-      listField("friends", [textField("name")]),
+      listField("entries", [textField("title")]),
     ];
     expect(FormSchema.safeParse(atLimit).success).toBe(true);
 
@@ -68,15 +68,15 @@ describe("FormSchema", () => {
       ...Array.from({ length: MAX_TOTAL_FIELDS - 2 }, (_, i) =>
         textField(`field_${i}`),
       ),
-      listField("friends", [textField("name"), textField("extra")]),
+      listField("entries", [textField("title"), textField("extra")]),
     ];
     expect(FormSchema.safeParse(overLimit).success).toBe(false);
   });
 
   it("rejects duplicate names among top-level fields", () => {
     const result = FormSchema.safeParse([
-      textField("name"),
-      textField("name"),
+      textField("title"),
+      textField("title"),
     ]);
 
     expect(result.success).toBe(false);
@@ -84,7 +84,7 @@ describe("FormSchema", () => {
 
   it("rejects duplicate names within a list's itemFields", () => {
     const result = FormSchema.safeParse([
-      listField("friends", [textField("name"), textField("name")]),
+      listField("entries", [textField("title"), textField("title")]),
     ]);
 
     expect(result.success).toBe(false);
@@ -92,9 +92,9 @@ describe("FormSchema", () => {
 
   it("allows the same name across scopes when the type matches", () => {
     const result = FormSchema.safeParse([
-      textField("name"),
-      checkboxField("vegetarian"),
-      listField("friends", [textField("name"), checkboxField("vegetarian")]),
+      textField("title"),
+      checkboxField("subscribed"),
+      listField("entries", [textField("title"), checkboxField("subscribed")]),
     ]);
 
     expect(result.success).toBe(true);
@@ -102,8 +102,8 @@ describe("FormSchema", () => {
 
   it("rejects the same name across scopes with different types", () => {
     const result = FormSchema.safeParse([
-      textField("vegetarian"),
-      listField("friends", [checkboxField("vegetarian")]),
+      textField("subscribed"),
+      listField("entries", [checkboxField("subscribed")]),
     ]);
 
     expect(result.success).toBe(false);
@@ -114,13 +114,13 @@ describe("FormSchema", () => {
       type: "list",
       version: 1,
       data: {
-        name: "friends",
-        label: "Friends",
+        name: "entries",
+        label: "Entries",
         required: false,
         maxCount: 3,
         addLabel: "Add",
         removeLabel: "Remove",
-        itemFields: [listField("inner", [textField("name")])],
+        itemFields: [listField("inner", [textField("title")])],
       },
     };
 
@@ -128,7 +128,7 @@ describe("FormSchema", () => {
   });
 
   it("rejects a maxCount above MAX_LIST_COUNT", () => {
-    const list = listField("friends", [textField("name")]);
+    const list = listField("entries", [textField("title")]);
     if (list.type !== "list") throw new Error("unreachable");
     list.data.maxCount = 11;
 
@@ -139,8 +139,8 @@ describe("FormSchema", () => {
     expect(FormSchema.safeParse([textField("Invalid Name")]).success).toBe(
       false,
     );
-    expect(FormSchema.safeParse([textField("1starts_with_digit")]).success).toBe(
-      false,
-    );
+    expect(
+      FormSchema.safeParse([textField("1starts_with_digit")]).success,
+    ).toBe(false);
   });
 });

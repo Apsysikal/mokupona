@@ -13,9 +13,13 @@ export function buildSubmissionSchema(descriptors: Array<FieldDescriptor>) {
           zodForField(itemField),
         ]),
       );
-      shape[descriptor.data.name] = z
+      const listSchema = z
         .array(z.object(itemShape))
         .max(descriptor.data.maxCount);
+      // a required list must contain at least one item
+      shape[descriptor.data.name] = descriptor.data.required
+        ? listSchema.min(1)
+        : listSchema;
     } else {
       shape[descriptor.data.name] = zodForField(descriptor);
     }

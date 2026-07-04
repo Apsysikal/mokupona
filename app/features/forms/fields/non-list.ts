@@ -10,7 +10,6 @@ import { TextFieldSchema } from "./text/model";
 import { TextField } from "./text/view";
 import { TextareaFieldSchema } from "./textarea/model";
 import { TextareaField } from "./textarea/view";
-import type { FieldType } from "./types";
 
 // Lives outside index.ts so the list field can depend on the non-list union
 // without an import cycle (index.ts imports the list field).
@@ -25,9 +24,10 @@ export const NonListFieldDescriptorSchema = z.discriminatedUnion("type", [
 export type NonListFieldDescriptor = z.infer<
   typeof NonListFieldDescriptorSchema
 >;
+export type NonListFieldType = NonListFieldDescriptor["type"];
 
 export const NonListFieldViews: Record<
-  Exclude<FieldType, "list">,
+  NonListFieldType,
   React.ElementType
 > = {
   text: TextField,
@@ -46,27 +46,18 @@ export function zodForField(descriptor: NonListFieldDescriptor) {
   const { required } = data;
 
   switch (type) {
-    case "text": {
-      const schema = z.string().trim();
-      if (required) return schema.min(1);
-      return schema.optional();
-    }
-
-    case "textarea": {
+    case "text":
+    case "textarea":
+    case "phone": {
       const schema = z.string().trim();
       if (required) return schema.min(1);
       return schema.optional();
     }
 
     case "email": {
-      const schema = z.email().trim();
+      // trim first: a format schema's check runs before a chained .trim()
+      const schema = z.string().trim().pipe(z.email());
       if (required) return schema;
-      return schema.optional();
-    }
-
-    case "phone": {
-      const schema = z.string().trim();
-      if (required) return schema.min(1);
       return schema.optional();
     }
 

@@ -2,47 +2,66 @@ import z from "zod";
 
 import { MAX_TOTAL_FIELDS } from "../bounds";
 
-import { CheckboxFieldSchema } from "./checkbox/model";
-import { EmailFieldSchema } from "./email/model";
 import { ListFieldSchema } from "./list/model";
 import { ListField } from "./list/view";
 import {
+  NonListFieldDescriptorSchema,
   NonListFieldViews,
   type NonListFieldDescriptor,
 } from "./non-list";
-import { PhoneFieldSchema } from "./phone/model";
-import { TextFieldSchema } from "./text/model";
-import { TextareaFieldSchema } from "./textarea/model";
-import type { FieldType } from "./types";
 
 export {
   NonListFieldDescriptorSchema,
   zodForField,
   type NonListFieldDescriptor,
+  type NonListFieldType,
 } from "./non-list";
 export { ListFieldSchema } from "./list/model";
 
 export const FieldDescriptorSchema = z.discriminatedUnion("type", [
-  TextFieldSchema,
-  TextareaFieldSchema,
-  EmailFieldSchema,
-  PhoneFieldSchema,
-  CheckboxFieldSchema,
+  ...NonListFieldDescriptorSchema.options,
   ListFieldSchema,
 ]);
 
 export type FieldDescriptor = z.infer<typeof FieldDescriptorSchema>;
 export type ListFieldDescriptor = z.infer<typeof ListFieldSchema>;
+export type FieldType = FieldDescriptor["type"];
+
+interface PlacedDescriptor {
+  descriptor: FieldDescriptor | NonListFieldDescriptor;
+  path: (string | number)[];
+}
+
+// One flat view of the two-level structure: the top-level fields form one
+// scope, each list's itemFields another. Every bound below walks this instead
+// of re-traversing the tree.
+function flattenIntoScopes(fields: FieldDescriptor[]): PlacedDescriptor[][] {
+  const topLevel = fields.map((descriptor, index) => ({
+    descriptor,
+    path: [index],
+  }));
+
+  const listScopes = fields.flatMap((field, index) =>
+    field.type === "list"
+      ? [
+          field.data.itemFields.map((descriptor, itemIndex) => ({
+            descriptor,
+            path: [index, "data", "itemFields", itemIndex],
+          })),
+        ]
+      : [],
+  );
+
+  return [topLevel, ...listScopes];
+}
 
 export const FormSchema = z
   .array(FieldDescriptorSchema)
   .superRefine((fields, ctx) => {
-    const totalFields = fields.reduce(
-      (sum, field) =>
-        sum + 1 + (field.type === "list" ? field.data.itemFields.length : 0),
-      0,
-    );
-    if (totalFields > MAX_TOTAL_FIELDS) {
+    const scopes = flattenIntoScopes(fields);
+    const allPlaced = scopes.flat();
+
+    if (allPlaced.length > MAX_TOTAL_FIELDS) {
       ctx.addIssue({
         code: "custom",
         message: `A form can have at most ${MAX_TOTAL_FIELDS} fields in total`,
@@ -51,70 +70,36 @@ export const FormSchema = z
 
     // name uniqueness per scope: among top-level fields, and within each
     // list's itemFields
-    checkUniqueNames(
-      fields.map((field) => field.data.name),
-      ctx,
-      [],
-    );
-    fields.forEach((field, index) => {
-      if (field.type !== "list") return;
-      checkUniqueNames(
-        field.data.itemFields.map((itemField) => itemField.data.name),
-        ctx,
-        [index, "data", "itemFields"],
-      );
-    });
+    for (const scope of scopes) {
+      const seen = new Set<string>();
+      for (const { descriptor, path } of scope) {
+        if (seen.has(descriptor.data.name)) {
+          ctx.addIssue({
+            code: "custom",
+            message: `Duplicate field name "${descriptor.data.name}"`,
+            path,
+          });
+        }
+        seen.add(descriptor.data.name);
+      }
+    }
 
     // the same name across scopes is the merge link, not a collision — but it
     // must carry the same field type everywhere it appears
     const typeByName = new Map<string, FieldType>();
-    const checkConsistentType = (
-      descriptor: FieldDescriptor | NonListFieldDescriptor,
-      path: (string | number)[],
-    ) => {
-      const { name } = descriptor.data;
-      const seenType = typeByName.get(name);
+    for (const { descriptor, path } of allPlaced) {
+      const seenType = typeByName.get(descriptor.data.name);
       if (seenType === undefined) {
-        typeByName.set(name, descriptor.type);
+        typeByName.set(descriptor.data.name, descriptor.type);
       } else if (seenType !== descriptor.type) {
         ctx.addIssue({
           code: "custom",
-          message: `Field "${name}" must have the same type everywhere it is used (found "${seenType}" and "${descriptor.type}")`,
+          message: `Field "${descriptor.data.name}" must have the same type everywhere it is used (found "${seenType}" and "${descriptor.type}")`,
           path,
         });
       }
-    };
-    fields.forEach((field, index) => {
-      checkConsistentType(field, [index]);
-      if (field.type !== "list") return;
-      field.data.itemFields.forEach((itemField, itemIndex) => {
-        checkConsistentType(itemField, [
-          index,
-          "data",
-          "itemFields",
-          itemIndex,
-        ]);
-      });
-    });
-  });
-
-function checkUniqueNames(
-  names: string[],
-  ctx: z.RefinementCtx,
-  basePath: (string | number)[],
-) {
-  const seen = new Set<string>();
-  names.forEach((name, index) => {
-    if (seen.has(name)) {
-      ctx.addIssue({
-        code: "custom",
-        message: `Duplicate field name "${name}"`,
-        path: [...basePath, index],
-      });
     }
-    seen.add(name);
   });
-}
 
 const FieldViews: Record<FieldType, React.ElementType> = {
   ...NonListFieldViews,

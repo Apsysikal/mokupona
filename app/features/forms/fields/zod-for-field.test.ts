@@ -14,37 +14,21 @@ function descriptor(
 }
 
 describe("zodForField", () => {
-  describe("text", () => {
+  describe.each(["text", "textarea", "phone"] as const)("%s", (type) => {
     it("trims and accepts a value", () => {
-      const schema = zodForField(descriptor("text", true));
+      const schema = zodForField(descriptor(type, true));
       expect(schema.parse("  hello  ")).toBe("hello");
     });
 
     it("rejects an empty value when required", () => {
-      const schema = zodForField(descriptor("text", true));
+      const schema = zodForField(descriptor(type, true));
       expect(schema.safeParse("   ").success).toBe(false);
+      expect(schema.safeParse("").success).toBe(false);
       expect(schema.safeParse(undefined).success).toBe(false);
     });
 
     it("accepts a missing value when optional", () => {
-      const schema = zodForField(descriptor("text", false));
-      expect(schema.parse(undefined)).toBeUndefined();
-    });
-  });
-
-  describe("textarea", () => {
-    it("trims and accepts a value", () => {
-      const schema = zodForField(descriptor("textarea", true));
-      expect(schema.parse("  hello  ")).toBe("hello");
-    });
-
-    it("rejects an empty value when required", () => {
-      const schema = zodForField(descriptor("textarea", true));
-      expect(schema.safeParse("").success).toBe(false);
-    });
-
-    it("accepts a missing value when optional", () => {
-      const schema = zodForField(descriptor("textarea", false));
+      const schema = zodForField(descriptor(type, false));
       expect(schema.parse(undefined)).toBeUndefined();
     });
   });
@@ -53,6 +37,11 @@ describe("zodForField", () => {
     it("accepts a valid email", () => {
       const schema = zodForField(descriptor("email", true));
       expect(schema.parse("a@example.com")).toBe("a@example.com");
+    });
+
+    it("trims before validating", () => {
+      const schema = zodForField(descriptor("email", true));
+      expect(schema.parse(" a@example.com ")).toBe("a@example.com");
     });
 
     it("rejects an invalid email", () => {
@@ -67,23 +56,6 @@ describe("zodForField", () => {
 
     it("accepts a missing value when optional", () => {
       const schema = zodForField(descriptor("email", false));
-      expect(schema.parse(undefined)).toBeUndefined();
-    });
-  });
-
-  describe("phone", () => {
-    it("trims and accepts a value", () => {
-      const schema = zodForField(descriptor("phone", true));
-      expect(schema.parse(" 0123 456 ")).toBe("0123 456");
-    });
-
-    it("rejects an empty value when required", () => {
-      const schema = zodForField(descriptor("phone", true));
-      expect(schema.safeParse("").success).toBe(false);
-    });
-
-    it("accepts a missing value when optional", () => {
-      const schema = zodForField(descriptor("phone", false));
       expect(schema.parse(undefined)).toBeUndefined();
     });
   });

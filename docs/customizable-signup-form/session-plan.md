@@ -26,6 +26,11 @@ Companion to [`design.md`](./design.md) and [`implementation-plan.md`](./impleme
 
 _(append here, newest first, prefixed with the session number)_
 
+- **S1 (review):** `ListField` reads the form metadata via Conform's `useFormMetadata()` context instead of a `formMetadata` prop, so every field view shares the `{fieldConfig, fieldMetadata}` contract and the type-erased registry can't hide a missing prop. **Session 2's route must wrap the rendered fields in `<FormProvider context={form.context}>`.**
+- **S1 (review):** `buildSubmissionSchema` now maps `required: true` on a list to `.min(1)`; previously the flag was silently ignored for lists.
+- **S1 (review):** `SignupFormSchema` pins the identity fields' types (`name`=text, `email`=email, `phone`=phone) and carries its own `MAX_FRIENDS_COUNT = 10` so raising the generic `MAX_LIST_COUNT` never loosens the signup profile.
+- **S1 (review, deferred):** `ListField`'s default layout classes (`gap-20` etc.) mirror the signup page; if a non-signup consumer ever needs different layout, expose className/slot overrides then rather than speculatively now.
+
 - **S1:** The signup route was not restored to main's literal file — main is on react-router 7, the branch on v8. Behavior, schema, action, and JSX match main exactly; only the v8 type adaptations were kept (`Route.ComponentProps` props instead of hooks, `loaderData` in meta args, no `invariant` on typed params), plus the branch's fix of main's copy-paste bug where a friend's Student checkbox displayed `alternativeMenu.errors`.
 - **S1:** The "drop the `createEventResponse` object-arg refactor" item was a no-op — `app/models/event-response.server.ts` has no diff vs main (the refactor was already reverted before this session).
 - **S1:** `zodForField` and the non-list descriptor union/views live in `app/features/forms/fields/non-list.ts` (re-exported from `fields/index.ts`) rather than in `index.ts` itself, so the `list` field's model/view can import them without an import cycle.

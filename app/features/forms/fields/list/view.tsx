@@ -1,4 +1,4 @@
-import type { FieldMetadata, FormMetadata } from "@conform-to/react";
+import { useFormMetadata, type FieldMetadata } from "@conform-to/react";
 import type z from "zod";
 
 import { getViewForNonListField } from "../non-list";
@@ -13,14 +13,16 @@ type ListItem = Record<string, unknown>;
 type ListFieldProps = {
   fieldConfig: z.infer<typeof ListFieldSchema>;
   fieldMetadata: FieldMetadata<ListItem[]>;
-  formMetadata: FormMetadata;
 };
 
+// Reads the form metadata from context so every field view shares the same
+// {fieldConfig, fieldMetadata} contract; consumers must render fields inside
+// Conform's <FormProvider context={form.context}>.
 export function ListField({
   fieldConfig: config,
   fieldMetadata: metadata,
-  formMetadata: form,
 }: ListFieldProps) {
+  const form = useFormMetadata();
   const { maxCount, addLabel, removeLabel, itemFields } = config.data;
 
   if (maxCount === 0) return null;
@@ -34,7 +36,7 @@ export function ListField({
           const itemFieldset = item.getFieldset();
 
           return (
-            <li key={item.id} className="flex gap-3">
+            <li key={item.key} className="flex gap-3">
               <fieldset className="flex w-full flex-col gap-4">
                 {itemFields.map((field) => {
                   const View = getViewForNonListField(field);
@@ -72,7 +74,7 @@ export function ListField({
         </Button>
       ) : null}
 
-      <ErrorList id={metadata.id} errors={metadata.errors} />
+      <ErrorList id={metadata.errorId} errors={metadata.errors} />
     </>
   );
 }
