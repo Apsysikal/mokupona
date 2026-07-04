@@ -1,8 +1,9 @@
 import z from "zod";
+
 import { BaseFieldData } from "../base";
 
-export const TextFieldSchema = z.object({
-  type: z.literal("text"),
+export const CheckboxFieldSchema = z.object({
+  type: z.literal("checkbox"),
   version: z.literal(1),
   data: BaseFieldData,
 });

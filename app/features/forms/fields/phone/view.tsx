@@ -1,22 +1,24 @@
 import { getInputProps, type FieldMetadata } from "@conform-to/react";
 import type z from "zod";
-import { Field } from "~/components/forms";
-import { EmailFieldSchema } from "./model";
 
-type EmailFieldProps = {
-  fieldConfig: z.infer<typeof EmailFieldSchema>;
+import type { PhoneFieldSchema } from "./model";
+
+import { Field } from "~/components/forms";
+
+type PhoneFieldProps = {
+  fieldConfig: z.infer<typeof PhoneFieldSchema>;
   fieldMetadata: FieldMetadata<string>;
 };
 
-export function EmailField({
+export function PhoneField({
   fieldConfig: config,
   fieldMetadata: metadata,
-}: EmailFieldProps) {
+}: PhoneFieldProps) {
   return (
     <Field
       labelProps={{ children: config.data.label }}
       inputProps={{
-        ...getInputProps(metadata, { type: "text" }),
+        ...getInputProps(metadata, { type: "tel" }),
       }}
       errors={metadata.errors}
     />

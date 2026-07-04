@@ -1,4 +1,5 @@
 import z from "zod";
+
 import { CheckboxFieldSchema } from "./checkbox/model";
 import { CheckboxField } from "./checkbox/view";
 import { EmailFieldSchema } from "./email/model";
@@ -11,7 +12,9 @@ import { TextareaFieldSchema } from "./textarea/model";
 import { TextareaField } from "./textarea/view";
 import type { FieldType } from "./types";
 
-const FieldDescriptorSchema = z.discriminatedUnion("type", [
+// Lives outside index.ts so the list field can depend on the non-list union
+// without an import cycle (index.ts imports the list field).
+export const NonListFieldDescriptorSchema = z.discriminatedUnion("type", [
   TextFieldSchema,
   TextareaFieldSchema,
   EmailFieldSchema,
@@ -19,11 +22,14 @@ const FieldDescriptorSchema = z.discriminatedUnion("type", [
   CheckboxFieldSchema,
 ]);
 
-export type FieldDescriptor = z.infer<typeof FieldDescriptorSchema>;
+export type NonListFieldDescriptor = z.infer<
+  typeof NonListFieldDescriptorSchema
+>;
 
-export const FormSchema = z.array(FieldDescriptorSchema).max(40);
-
-const FieldViews: Record<FieldType, React.ElementType> = {
+export const NonListFieldViews: Record<
+  Exclude<FieldType, "list">,
+  React.ElementType
+> = {
   text: TextField,
   email: EmailField,
   phone: PhoneField,
@@ -31,11 +37,11 @@ const FieldViews: Record<FieldType, React.ElementType> = {
   checkbox: CheckboxField,
 } as const;
 
-export function getViewForField(descriptor: FieldDescriptor) {
-  return FieldViews[descriptor.type];
+export function getViewForNonListField(descriptor: NonListFieldDescriptor) {
+  return NonListFieldViews[descriptor.type];
 }
 
-export function getSchemaForField(descriptor: FieldDescriptor) {
+export function zodForField(descriptor: NonListFieldDescriptor) {
   const { type, data } = descriptor;
   const { required } = data;
 
@@ -67,16 +73,16 @@ export function getSchemaForField(descriptor: FieldDescriptor) {
     case "checkbox": {
       const schema = z.boolean().default(false);
       if (!required) return schema.optional();
-      return schema.refine((data) => data === true, {
+      return schema.refine((value) => value === true, {
         error: `${data.label} is required`,
       });
     }
 
     default:
-      asserNever(type);
+      assertNever(type);
   }
 }
 
-function asserNever(t: never): never {
+function assertNever(t: never): never {
   throw new Error(`Unhandled case for type: ${t}`);
 }

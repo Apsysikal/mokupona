@@ -1,7 +1,9 @@
 import { getTextareaProps, type FieldMetadata } from "@conform-to/react";
 import type z from "zod";
+
+import type { TextareaFieldSchema } from "./model";
+
 import { TextareaField as BaseTextareaField } from "~/components/forms";
-import { TextareaFieldSchema } from "./model";
 
 type TextareaFieldProps = {
   fieldConfig: z.infer<typeof TextareaFieldSchema>;

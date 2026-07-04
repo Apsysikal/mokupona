@@ -1,77 +1,88 @@
-import { buildSignupSchema } from "./build-schema";
-import { type FieldDescriptor } from "./fields";
+import type { FieldDescriptor } from "~/features/forms/fields";
 
-export const DEFAULT_FORM_DESCRIPTORS: Array<FieldDescriptor> = [
+// Reproduces today's live form. Field names equal the legacy EventResponse
+// column names, which makes the legacy merge in the read layer an identity
+// mapping and unifies CSV columns across old and new data.
+export const DEFAULT_FORM: Array<FieldDescriptor> = [
   {
     type: "text",
     version: 1,
-    data: {
-      id: "name",
-      label: "Name",
-      required: true,
-      scope: "per-attendee",
-    },
+    data: { name: "name", label: "Name", required: true },
   },
   {
     type: "email",
     version: 1,
-    data: {
-      id: "email",
-      label: "Email",
-      required: true,
-      scope: "primary",
-    },
+    data: { name: "email", label: "Email", required: true },
   },
   {
     type: "phone",
     version: 1,
-    data: {
-      id: "phone",
-      label: "Phone number",
-      required: true,
-      scope: "primary",
-    },
+    data: { name: "phone", label: "Phone number", required: true },
   },
   {
     type: "checkbox",
     version: 1,
-    data: {
-      id: "alternate_menu",
-      label: "Vegan / Vegetarian",
-      required: false,
-      scope: "per-attendee",
-    },
+    data: { name: "vegetarian", label: "Vegan / Vegetarian", required: false },
   },
   {
     type: "checkbox",
     version: 1,
-    data: {
-      id: "studen",
-      label: "Student",
-      required: false,
-      scope: "per-attendee",
-    },
+    data: { name: "student", label: "Student", required: false },
   },
   {
     type: "text",
     version: 1,
     data: {
-      id: "diet_restrictions",
+      name: "restrictions",
       label: "Dietary restrictions",
       required: false,
-      scope: "per-attendee",
+    },
+  },
+  {
+    type: "list",
+    version: 1,
+    data: {
+      name: "friends",
+      label: "Friends",
+      required: false,
+      maxCount: 3,
+      addLabel: "Add a friend",
+      removeLabel: "Remove this person",
+      itemFields: [
+        {
+          type: "text",
+          version: 1,
+          data: { name: "name", label: "Name", required: true },
+        },
+        {
+          type: "checkbox",
+          version: 1,
+          data: {
+            name: "vegetarian",
+            label: "Vegan / Vegetarian",
+            required: false,
+          },
+        },
+        {
+          type: "checkbox",
+          version: 1,
+          data: { name: "student", label: "Student", required: false },
+        },
+        {
+          type: "text",
+          version: 1,
+          data: {
+            name: "restrictions",
+            label: "Dietary restrictions",
+            required: false,
+          },
+        },
+      ],
     },
   },
   {
     type: "textarea",
     version: 1,
-    data: {
-      id: "comment",
-      label: "Comment",
-      required: false,
-      scope: "group",
-    },
+    data: { name: "comment", label: "Comment", required: false },
   },
 ];
-
-export const DEFAULT_FORM_SCHEMA = buildSignupSchema(DEFAULT_FORM_DESCRIPTORS);

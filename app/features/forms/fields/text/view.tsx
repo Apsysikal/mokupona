@@ -1,7 +1,9 @@
 import { getInputProps, type FieldMetadata } from "@conform-to/react";
 import type z from "zod";
+
+import type { TextFieldSchema } from "./model";
+
 import { Field } from "~/components/forms";
-import { TextFieldSchema } from "./model";
 
 type TextFieldProps = {
   fieldConfig: z.infer<typeof TextFieldSchema>;

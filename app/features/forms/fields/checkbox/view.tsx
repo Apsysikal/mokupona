@@ -1,7 +1,9 @@
 import { getInputProps, type FieldMetadata } from "@conform-to/react";
 import type z from "zod";
+
+import type { CheckboxFieldSchema } from "./model";
+
 import { CheckboxField as BaseCheckboxField } from "~/components/forms";
-import { CheckboxFieldSchema } from "./model";
 
 type CheckboxFieldProps = {
   fieldConfig: z.infer<typeof CheckboxFieldSchema>;
