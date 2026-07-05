@@ -4,8 +4,8 @@ FROM node:24-bullseye-slim AS base
 # set for base and all layer that inherit from it
 ENV NODE_ENV=production
 
-# Install openssl for Prisma
-RUN apt-get update && apt-get install -y openssl sqlite3
+# Install openssl for Prisma, jemalloc for the runtime allocator
+RUN apt-get update && apt-get install -y openssl sqlite3 libjemalloc2
 
 # Install all node_modules, including dev dependencies
 FROM base AS deps
@@ -44,6 +44,9 @@ RUN npm run build
 FROM base
 
 ENV NODE_ENV="production"
+# jemalloc returns freed sharp/libvips buffers to the OS, unlike glibc arenas
+# (see docs/staging-memory-investigation/findings.md); runtime-only on purpose
+ENV LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2
 
 # add shortcut for connecting to database CLI
 RUN echo "#!/bin/sh\nset -x\nsqlite3 \$DATABASE_URL" > /usr/local/bin/database-cli && chmod +x /usr/local/bin/database-cli
