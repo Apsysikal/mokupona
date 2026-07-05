@@ -117,6 +117,26 @@ output.
 staging only and watch RSS across a batch of transform requests — it should
 plateau far lower and recede after bursts.
 
+## Results (2026-07-06, staging load tests)
+
+All fixes were applied and verified with an identical 320-request cold-cache
+burst (8-way concurrent, both source images, unique transform variants) against
+staging. Applied, in order: `sharp.cache(false)` + `sharp.concurrency(1)` and a
+2-slot transform semaphore in `app/utils/image-transform.server.ts`;
+`MALLOC_ARENA_MAX=2` in `fly.toml [env]`; jemalloc via `LD_PRELOAD` in the
+Dockerfile runtime stage (which supersedes the arena cap — kept as fallback).
+
+| Same 320-req cold burst | cache fix only | + arena cap + semaphore | + jemalloc |
+|---|---|---|---|
+| Peak RSS | 404 MB | 356 MB | 289 MB |
+| Settled RSS (3 min idle) | 347 MB, creeping | 212 MB | 164 MB (~20 MB over baseline) |
+| Process swap | 190 MB, growing | 0 | 0 |
+| Duration / worst request | 10m44s / 122s | 3m50s / 54s | 3m30s / 49s |
+
+The run-1 latency collapse (avg 15.9s/request) was swap-thrashing, not CPU. With
+all fixes, repeated bursts do not ratchet the high-water mark, and RSS returns
+to near-baseline within minutes of load ending.
+
 ## Cross-environment note
 
 Staging is 512 MB; **production (`mokupona-stack-b568`) is only 256 MB**, and it
