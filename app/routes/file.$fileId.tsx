@@ -1,5 +1,4 @@
 import type { ComponentProps } from "react";
-import sharp, { type FitEnum } from "sharp";
 import { z } from "zod";
 
 import type { Route } from "./+types/file.$fileId";
@@ -10,6 +9,7 @@ import {
   fileStorage as cache,
   getStorageKey as getCacheKey,
 } from "~/utils/file-chache-storage.server";
+import { transformToWebp } from "~/utils/image-transform.server";
 import { getImageUrl } from "~/utils/misc";
 
 const SearchParamsSchema = z.object({
@@ -120,14 +120,11 @@ export async function loader({ url, params }: Route.LoaderArgs) {
   const file = await getImageById(fileId);
   if (!file) throw new Response("Not found", { status: 404 });
 
-  const optimizedImage = await sharp(file.blob)
-    .webp()
-    .resize({
-      ...(width && { width: Number(width) }),
-      ...(height && { height: Number(height) }),
-      fit: isAllowedFit(fit) ? fit : "cover",
-    })
-    .toBuffer();
+  const optimizedImage = await transformToWebp(file.blob, {
+    width,
+    height,
+    fit,
+  });
 
   const test = new Uint8Array(optimizedImage);
   const testFile = new File([test], fileId);
@@ -141,11 +138,4 @@ export async function loader({ url, params }: Route.LoaderArgs) {
       "Transfer-Encoding": "chunked",
     },
   });
-}
-
-function isAllowedFit(s: string | null): s is FitEnum[keyof FitEnum] {
-  const allowedFits: FitEnum[keyof FitEnum][] = ["contain", "cover", "fill"];
-  if (!s) return false;
-  // @ts-ignore
-  return allowedFits.includes(s);
 }
