@@ -1,11 +1,12 @@
-import type { EventResponse } from "#prisma/generated/client";
-
 import { DEFAULT_FORM } from "./default-form";
 
 import type { parseStoredFormSchema } from "~/features/forms/serialization";
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
 import { logger } from "~/logger.server";
-import { getEventResponsesForEvent } from "~/models/event-response.server";
+import {
+  getEventResponsesForEvent,
+  type EventResponse,
+} from "~/models/event-response.server";
 import { getFormSubmissionsForEvent } from "~/models/form-submission.server";
 import { getCurrentFormVersionForEvent } from "~/models/form.server";
 

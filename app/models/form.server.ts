@@ -6,6 +6,8 @@ import { prisma } from "~/db.server";
 import { FormSchema, type FieldDescriptor } from "~/features/forms/fields";
 import { parseStoredFormSchema } from "~/features/forms/serialization";
 
+export type { FormVersion } from "#prisma/generated/client";
+
 // The single definition of "current version": max(version) among the rows
 // matching the filter.
 const currentVersionArgs = (where: Prisma.FormVersionWhereInput) =>

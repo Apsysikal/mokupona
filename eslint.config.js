@@ -92,4 +92,25 @@ export default [
       cypress: (await import("eslint-plugin-cypress")).default,
     },
   },
+  {
+    // Data-access boundary (docs/data-access-layer/design.md): only the
+    // models layer may touch Prisma. Tests are exempt — they seed the DB
+    // directly.
+    files: ["app/**/*.{js,jsx,ts,tsx}"],
+    ignores: ["app/models/**", "app/db.server.ts", "**/*.test.{js,jsx,ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["~/db.server", "#prisma/generated/*"],
+              message:
+                "Only app/models/** may import the database layer. Use or add a model function instead.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];

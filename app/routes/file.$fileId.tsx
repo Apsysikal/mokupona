@@ -4,8 +4,8 @@ import { z } from "zod";
 
 import type { Route } from "./+types/file.$fileId";
 
-import { prisma } from "~/db.server";
 import { logger } from "~/logger.server";
+import { getImageById } from "~/models/image.server";
 import {
   fileStorage as cache,
   getStorageKey as getCacheKey,
@@ -116,7 +116,7 @@ export async function loader({ url, params }: Route.LoaderArgs) {
     logger.info(`Cache miss with: ${cacheKey}`);
   }
 
-  const file = await prisma.image.findUnique({ where: { id: fileId } });
+  const file = await getImageById(fileId);
   if (!file) throw new Response("Not found", { status: 404 });
 
   const optimizedImage = await sharp(file.blob)

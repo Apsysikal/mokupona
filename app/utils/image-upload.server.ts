@@ -9,7 +9,7 @@ import {
 
 import { fileStorage, getStorageKey } from "./dinner-image-storage.server";
 
-import { prisma } from "~/db.server";
+import { createImage, fileToImageData } from "~/models/image.server";
 
 // The upload handler streams to a temp file up to 4 MB so the file is available
 // for Zod refinement. The schema enforces the real 3 MB user-facing limit and
@@ -76,12 +76,7 @@ export async function parseImageFormData(
   }
 
   async function persistImage(file: File): Promise<string> {
-    const image = await prisma.image.create({
-      data: {
-        contentType: file.type,
-        blob: Buffer.from(await file.arrayBuffer()),
-      },
-    });
+    const image = await createImage(await fileToImageData(file));
     await discardImage();
     return image.id;
   }

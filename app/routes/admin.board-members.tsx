@@ -4,14 +4,12 @@ import { Link, Outlet } from "react-router";
 import type { Route } from "./+types/admin.board-members";
 import { OptimizedImage } from "./file.$fileId";
 
-import { prisma } from "~/db.server";
+import { listBoardMembers } from "~/models/board-member.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
-  const boardMembers = await prisma.boardMember.findMany({
-    include: { image: { select: { id: true } } },
-  });
+  const boardMembers = await listBoardMembers();
   return { boardMembers };
 }
 
@@ -29,7 +27,7 @@ export default function BoardMembersIndexRoute({
       <h1 className="text-4xl">Manage board members</h1>
       <ul className="mt-8 divide-y">
         {boardMembers.map((boardMember) => {
-          const { id, name, position, image } = boardMember;
+          const { id, name, position, imageId } = boardMember;
 
           return (
             <li
@@ -37,9 +35,9 @@ export default function BoardMembersIndexRoute({
               className="relative flex justify-between gap-x-6 py-5"
             >
               <div className="flex min-w-0 gap-x-4">
-                {image?.id ? (
+                {imageId ? (
                   <OptimizedImage
-                    imageId={image.id}
+                    imageId={imageId}
                     alt={`Portrait of ${name}`}
                     width={50}
                     height={50}

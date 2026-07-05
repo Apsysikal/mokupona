@@ -14,15 +14,17 @@ export class FormVersionChangedError extends Error {
 
 export async function createFormSubmission({
   formVersionId,
-  answers,
+  answers: rawAnswers,
   expectedVersionUpdatedAt,
 }: {
   formVersionId: string;
-  answers: Prisma.InputJsonValue;
+  answers: Record<string, unknown>;
   // pass the updatedAt of the version the answers were validated against to
   // reject the write if an in-place schema update raced it
   expectedVersionUpdatedAt?: Date;
 }) {
+  const answers = rawAnswers as Prisma.InputJsonValue;
+
   if (expectedVersionUpdatedAt === undefined) {
     return prisma.formSubmission.create({
       data: { formVersionId, answers },

@@ -1,53 +1,56 @@
 import bcrypt from "bcryptjs";
 
-import type { Password, Prisma, Role, User } from "#prisma/generated/client";
+import type { Role, User } from "#prisma/generated/client";
 
 import { prisma } from "~/db.server";
 import { deleteEventsInTx } from "~/models/event.server";
+import { getRoleByName } from "~/models/role.server";
 
 export type { User } from "#prisma/generated/client";
 
-export type UserSelect = Prisma.UserSelect;
-export type UserWhere = Prisma.UserWhereInput;
-export type UserWhereUnique = Prisma.UserWhereUniqueInput;
-export type UserUpdateData = Prisma.UserUncheckedUpdateInput;
-
-type UserFindManyPayload<T extends UserSelect> = Array<
-  Prisma.UserGetPayload<{ select: T }>
->;
-
-type UserFindUniquePayload<T extends UserSelect> = Prisma.UserGetPayload<{
-  select: T;
-}>;
-
-export async function getUsers<T extends UserSelect>(
-  select: T,
-): Promise<UserFindManyPayload<T>> {
-  return prisma.user.findMany({ select });
+export async function getUserById(id: string): Promise<User | null> {
+  return prisma.user.findUnique({ where: { id } });
 }
 
-export async function getUserById<T extends UserSelect>(
-  id: User["id"],
-  select: T = {} as T,
-): Promise<UserFindUniquePayload<T> | null> {
-  return prisma.user.findUnique({ where: { id }, select });
-}
-
-export async function getUserByIdWithRole(id: User["id"]) {
+export async function getUserByIdWithRole(
+  id: string,
+): Promise<(User & { role: Role }) | null> {
   return prisma.user.findUnique({ where: { id }, include: { role: true } });
 }
 
-export async function getUserByEmail(email: User["email"]) {
+export async function getUserByEmail(email: string): Promise<User | null> {
   return prisma.user.findUnique({ where: { email } });
 }
 
+// The projection the admin user list needs.
+export async function listUsersWithRoleName(): Promise<
+  { id: string; email: string; role: { name: string } }[]
+> {
+  return prisma.user.findMany({
+    select: { id: true, email: true, role: { select: { name: true } } },
+  });
+}
+
+// The account view shared by the profile page and the admin user edit page.
+export async function getUserAccountSummary(
+  id: string,
+): Promise<{ email: string; role: { name: string; description: string } } | null> {
+  return prisma.user.findUnique({
+    where: { id },
+    select: {
+      email: true,
+      role: { select: { name: true, description: true } },
+    },
+  });
+}
+
 export async function createUser(
-  email: User["email"],
+  email: string,
   password: string,
-  roleName: Role["name"] = "user",
-) {
+  roleName = "user",
+): Promise<User> {
   const hashedPassword = await bcrypt.hash(password, 10);
-  const role = await prisma.role.findUnique({ where: { name: roleName } });
+  const role = await getRoleByName(roleName);
 
   if (!role) throw new Error(`Role "${roleName}" is not a valid role`);
 
@@ -64,37 +67,10 @@ export async function createUser(
   });
 }
 
-// The DB cascades User -> Event, which would skip the app-level form cascade
-// and orphan Form/FormVersion/FormSubmission rows — delete the user's events
-// through it first, in the same transaction.
-export async function deleteUserByEmail(email: User["email"]) {
-  return prisma.$transaction(async (tx) => {
-    await deleteEventsInTx(tx, { createdBy: { email } });
-    return tx.user.delete({ where: { email } });
-  });
-}
-
-export async function deleteUserById(id: User["id"]) {
-  return prisma.$transaction(async (tx) => {
-    await deleteEventsInTx(tx, { createdById: id });
-    return tx.user.delete({ where: { id } });
-  });
-}
-
-export async function updateUser<T extends UserWhereUnique>(
-  where: T = {} as T,
-  data: UserUpdateData,
-) {
-  return prisma.user.update({
-    where,
-    data,
-  });
-}
-
 export async function verifyLogin(
-  email: User["email"],
-  password: Password["hash"],
-) {
+  email: string,
+  password: string,
+): Promise<Omit<User, "password"> | null> {
   const userWithPassword = await prisma.user.findUnique({
     where: { email },
     include: {
@@ -118,4 +94,33 @@ export async function verifyLogin(
   const { password: _password, ...userWithoutPassword } = userWithPassword;
 
   return userWithoutPassword;
+}
+
+// Admins can't have their role changed from the admin UI — the guard is part
+// of the write itself, not a check the caller can forget.
+export async function updateNonAdminUserRole(
+  userId: string,
+  roleId: string,
+): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId, role: { NOT: { name: "admin" } } },
+    data: { roleId },
+  });
+}
+
+// The DB cascades User -> Event, which would skip the app-level form cascade
+// and orphan Form/FormVersion/FormSubmission rows — delete the user's events
+// through it first, in the same transaction.
+export async function deleteUserByEmail(email: string): Promise<User> {
+  return prisma.$transaction(async (tx) => {
+    await deleteEventsInTx(tx, { createdBy: { email } });
+    return tx.user.delete({ where: { email } });
+  });
+}
+
+export async function deleteUserById(id: string): Promise<User> {
+  return prisma.$transaction(async (tx) => {
+    await deleteEventsInTx(tx, { createdById: id });
+    return tx.user.delete({ where: { id } });
+  });
 }

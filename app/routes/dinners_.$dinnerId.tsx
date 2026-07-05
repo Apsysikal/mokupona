@@ -9,8 +9,6 @@ import { ArrowRightIcon } from "@radix-ui/react-icons";
 import { useMemo } from "react";
 import { Form, isRouteErrorResponse, Link } from "react-router";
 
-import type { Prisma } from "#prisma/generated/client";
-
 import type { Route } from "./+types/dinners_.$dinnerId";
 
 import { DinnerView } from "~/components/dinner-view";
@@ -121,7 +119,7 @@ export async function action({ params, request }: Route.ActionArgs) {
     // in-place schema update raced this request.
     await createFormSubmission({
       formVersionId: version.id,
-      answers: answers as Prisma.InputJsonValue,
+      answers,
       expectedVersionUpdatedAt: version.updatedAt,
     });
   } catch (reason) {

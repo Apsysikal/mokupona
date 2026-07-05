@@ -6,39 +6,19 @@ import {
 } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { Form, redirect, useLocation } from "react-router";
-import { z } from "zod";
 
 import type { Route } from "./+types/admin.board-members.new";
 
 import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
-import { prisma } from "~/db.server";
+import {
+  MemberSchema,
+  validImageTypes,
+} from "~/features/board-members/schema";
+import { createBoardMember } from "~/models/board-member.server";
+import { fileToImageData } from "~/models/image.server";
 import { parseImageFormData } from "~/utils/image-upload.server";
 import { requireUserWithRole } from "~/utils/session.server";
-
-const MemberSchema = z.object({
-  name: z
-    .string({ error: "You must enter a name for the board member" })
-    .trim(),
-  position: z
-    .string({
-      error: "You must enter a position for the board member",
-    })
-    .trim(),
-  image: z
-    .instanceof(File, { message: "You must select a file" })
-    .optional()
-    .refine((file) => {
-      if (!file) return true;
-      return file.size !== 0;
-    }, "You must select a file")
-    .refine((file) => {
-      if (!file) return true;
-      return file.size <= 1024 * 1024 * 3;
-    }, "File cannot be greater than 3MB"),
-});
-
-const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
 
 export async function loader({ request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
@@ -78,19 +58,10 @@ export async function action({ request }: Route.ActionArgs) {
 
   const { name, position, image } = submission.value;
 
-  await prisma.boardMember.create({
-    data: {
-      name,
-      position,
-      ...(image && {
-        image: {
-          create: {
-            contentType: image.type,
-            blob: Buffer.from(await image.arrayBuffer()),
-          },
-        },
-      }),
-    },
+  await createBoardMember({
+    name,
+    position,
+    ...(image && { image: await fileToImageData(image) }),
   });
 
   // Remove the staged file from disk now that its bytes have been read.

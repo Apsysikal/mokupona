@@ -3,24 +3,13 @@ import { Link, useFetcher } from "react-router";
 import type { Route } from "./+types/admin.users._index";
 
 import { Button } from "~/components/ui/button";
-import type { UserSelect } from "~/models/user.server";
-import { getUsers } from "~/models/user.server";
+import { listUsersWithRoleName } from "~/models/user.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["admin"]);
 
-  const select = {
-    id: true,
-    email: true,
-    role: {
-      select: {
-        name: true,
-      },
-    },
-  } satisfies UserSelect;
-
-  const users = await getUsers(select);
+  const users = await listUsersWithRoleName();
 
   return { users };
 }

@@ -1,12 +1,12 @@
-import type { Prisma } from "#prisma/generated/client";
+import type { Address } from "#prisma/generated/client";
 
 import { prisma } from "~/db.server";
 import { deleteEventsInTx } from "~/models/event.server";
 
-export async function getAddresses(filter?: Prisma.AddressWhereInput) {
-  return prisma.address.findMany({
-    where: filter,
-  });
+export type { Address } from "#prisma/generated/client";
+
+export async function getAddresses(): Promise<Address[]> {
+  return prisma.address.findMany();
 }
 
 export async function getAddressById(id: string) {

@@ -2,7 +2,7 @@ import { redirect } from "react-router";
 
 import type { Route } from "./+types/me";
 
-import { getUserById } from "~/models/user.server";
+import { getUserAccountSummary } from "~/models/user.server";
 import { logout, requireUserId } from "~/utils/session.server";
 
 export const meta: Route.MetaFunction = () => [{ title: "moku pona" }];
@@ -13,10 +13,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   if (!ENABLED) return redirect("/");
 
   const userId = await requireUserId(request);
-  const user = await getUserById(userId, {
-    email: true,
-    role: true,
-  });
+  const user = await getUserAccountSummary(userId);
 
   if (!user) throw await logout(request);
 

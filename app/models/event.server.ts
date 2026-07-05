@@ -1,25 +1,39 @@
-import type { Prisma } from "#prisma/generated/client";
+import type { Address, Event, Prisma } from "#prisma/generated/client";
 
 import { prisma } from "~/db.server";
 import { FormSchema, type FieldDescriptor } from "~/features/forms/fields";
 import { DEFAULT_FORM } from "~/features/signup-form/default-form";
 import { saveFormSchemaInTx } from "~/models/form.server";
 
-type EventsFilter = Prisma.EventWhereInput;
+export type { Event } from "#prisma/generated/client";
 
-type EventCreateInput = Omit<Prisma.EventUncheckedCreateInput, "formId">;
-type EventUpdateInput = Prisma.EventUncheckedUpdateInput;
+export interface EventCreateData {
+  title: string;
+  description: string;
+  menuDescription?: string | null;
+  donationDescription?: string | null;
+  date: Date;
+  slots: number;
+  price: number;
+  discounts?: string | null;
+  addressId: string;
+  imageId: string;
+  createdById: string;
+}
 
-export async function getEvents(filter?: EventsFilter) {
+export type EventUpdateData = Partial<EventCreateData>;
+
+export async function getEvents(): Promise<Event[]> {
   return prisma.event.findMany({
-    where: filter,
     orderBy: {
       date: "asc",
     },
   });
 }
 
-export async function getEventById(id: string) {
+export async function getEventById(
+  id: string,
+): Promise<(Event & { address: Address }) | null> {
   return prisma.event.findUnique({
     where: { id },
     include: {
@@ -33,9 +47,9 @@ export async function getEventById(id: string) {
 // through FormSchema so only valid, normalized descriptors are ever stored;
 // profile validation (SignupFormSchema) stays with the callers.
 export async function createEvent(
-  data: EventCreateInput,
+  data: EventCreateData,
   formFields: FieldDescriptor[] = DEFAULT_FORM,
-) {
+): Promise<Event> {
   const schema = FormSchema.parse(formFields);
 
   return prisma.$transaction(async (tx) => {
@@ -61,9 +75,9 @@ export async function createEvent(
 // event updated but its form unchanged.
 export async function updateEvent(
   id: string,
-  data: EventUpdateInput,
+  data: EventUpdateData,
   formFields?: FieldDescriptor[],
-) {
+): Promise<Event> {
   if (!formFields) {
     return prisma.event.update({ where: { id }, data });
   }
@@ -106,7 +120,7 @@ export async function deleteEventsInTx(
   return events;
 }
 
-export async function deleteEvent(id: string) {
+export async function deleteEvent(id: string): Promise<Event> {
   return prisma.$transaction(async (tx) => {
     // findUniqueOrThrow keeps prisma.event.delete's throw-on-missing behavior
     const event = await tx.event.findUniqueOrThrow({ where: { id } });

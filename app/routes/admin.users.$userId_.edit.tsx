@@ -7,9 +7,11 @@ import type { Route } from "./+types/admin.users.$userId_.edit";
 
 import { SelectField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
-import { prisma } from "~/db.server";
-import type { UserSelect, UserWhereUnique } from "~/models/user.server";
-import { getUserById, updateUser } from "~/models/user.server";
+import { getRoleByName } from "~/models/role.server";
+import {
+  getUserAccountSummary,
+  updateNonAdminUserRole,
+} from "~/models/user.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
 const schema = z.object({
@@ -21,16 +23,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const { userId } = params;
 
-  const select = {
-    email: true,
-    role: {
-      select: {
-        name: true,
-      },
-    },
-  } satisfies UserSelect;
-
-  const user = await getUserById(userId, select);
+  const user = await getUserAccountSummary(userId);
 
   if (!user) throw new Response("Not found", { status: 404 });
 
@@ -53,9 +46,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     schema: (intent) =>
       schema.transform(async (data, ctx) => {
         if (intent !== null) return { ...data, roleId: null };
-        const role = await prisma.role.findUnique({
-          where: { name: data.roleName },
-        });
+        const role = await getRoleByName(data.roleName);
         if (!role) {
           ctx.addIssue({
             path: ["roleName"],
@@ -80,16 +71,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   const { roleId } = submission.value;
 
-  const where = {
-    id: userId,
-    role: {
-      NOT: {
-        name: "admin",
-      },
-    },
-  } satisfies UserWhereUnique;
-
-  await updateUser(where, { roleId });
+  await updateNonAdminUserRole(userId, roleId);
 
   return redirect(`/admin/users`);
 }
