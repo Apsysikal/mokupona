@@ -224,7 +224,7 @@ export function fillSignupContact({
 }
 
 export function acceptPrivacyAndJoin() {
-  cy.findByLabelText(/agree to privacy policy/i).click();
+  cy.findByLabelText(/agree to the privacy policy/i).click();
   cy.findByRole("button", { name: /join/i }).click();
   cy.location("pathname").should("equal", "/dinners");
   cy.findByText(/signup complete/i);

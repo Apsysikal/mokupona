@@ -5,13 +5,12 @@ import {
   useForm,
 } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import { ArrowRightIcon } from "@radix-ui/react-icons";
 import { useMemo } from "react";
 import { Form, isRouteErrorResponse, Link } from "react-router";
 
 import type { Route } from "./+types/dinners_.$dinnerId";
 
-import { DinnerView } from "~/components/dinner-view";
+import { DinnerFactList, DinnerStory } from "~/components/dinner-view";
 import { CheckboxField, ErrorList } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { getViewForField, type FieldDescriptor } from "~/features/forms/fields";
@@ -190,39 +189,46 @@ export default function DinnerPage({
 
   const isPastEvent = event.date < new Date();
   // formFields is null when the stored schema failed to parse — the signup
-  // section (and the button jumping to it) is hidden rather than rendered
-  // wrong (design §11)
+  // section is hidden rather than rendered wrong (design §11)
   const signupFields = isPastEvent ? null : formFields;
 
-  const JumpToFormButton = signupFields ? (
-    <Button variant="outline" asChild>
-      <div className="flex items-center gap-4">
-        <Link to="#sign-up">Go straight to sign-up</Link>
-        <ArrowRightIcon className="size-5 rotate-90" />
-      </div>
-    </Button>
-  ) : null;
-
   return (
-    <main className="mx-auto mt-16 flex max-w-4xl grow flex-col gap-5 px-2 pt-4 pb-8">
-      <DinnerView event={event} topButton={JumpToFormButton} />
+    <main className="mx-auto w-full max-w-[1080px] grow px-6 pt-6 pb-20 md:px-10 md:pt-9">
+      <Link
+        to="/dinners"
+        className="text-fg-label hover:text-foreground mb-6 inline-flex items-center gap-2 text-[13px]"
+      >
+        ← all dinners
+      </Link>
 
-      {signupFields ? (
-        <>
-          <h2 id="sign-up" className="text-primary mt-8 text-2xl">
-            Sign Up
-          </h2>
-          {/* keyed on the schema content: an in-place update keeps the
-              version id but must still remount the form and rebuild the
-              client schema */}
-          <SignupForm
-            key={JSON.stringify(signupFields)}
-            formFields={signupFields}
-            formVersionId={formVersionId}
-            lastResult={actionData}
-          />
-        </>
-      ) : null}
+      <div className="grid items-start gap-8 md:grid-cols-[1.55fr_1fr] md:gap-11">
+        <DinnerStory event={event} />
+
+        <aside
+          id="sign-up"
+          className="border-foreground/12 bg-card flex flex-col gap-4.5 rounded-2xl border p-5.5 md:sticky md:top-6 md:p-7"
+        >
+          <DinnerFactList event={event} />
+
+          {signupFields ? (
+            <>
+              <div aria-hidden className="bg-foreground/12 h-px" />
+
+              <h2 className="text-xl font-normal">reserve your seat</h2>
+
+              {/* keyed on the schema content: an in-place update keeps the
+                  version id but must still remount the form and rebuild the
+                  client schema */}
+              <SignupForm
+                key={JSON.stringify(signupFields)}
+                formFields={signupFields}
+                formVersionId={formVersionId}
+                lastResult={actionData}
+              />
+            </>
+          ) : null}
+        </aside>
+      </div>
     </main>
   );
 }
@@ -254,7 +260,7 @@ function SignupForm({
       <Form
         method="post"
         {...getFormProps(form)}
-        className="flex flex-col gap-4"
+        className="flex flex-col gap-3.5"
       >
         {/**
          * This button is needed as hitting Enter would otherwise remove the first person.
@@ -279,12 +285,13 @@ function SignupForm({
         })}
 
         <CheckboxField
+          className="mt-0.5"
           labelProps={{
             children: (
-              <span>
-                Agree to{" "}
+              <span className="text-[13px]">
+                i agree to the{" "}
                 <Link to="/privacy" className="text-primary">
-                  Privacy Policy
+                  privacy policy
                 </Link>
               </span>
             ),
@@ -299,7 +306,13 @@ function SignupForm({
 
         <ErrorList id={form.errorId} errors={form.errors} />
 
-        <Button type="submit">Join</Button>
+        <Button type="submit" size="lg" className="w-full rounded-[9px]">
+          join this dinner
+        </Button>
+
+        <p className="text-fg-faint text-center text-xs leading-normal">
+          we&apos;ll email you to confirm if a seat is yours.
+        </p>
       </Form>
     </FormProvider>
   );

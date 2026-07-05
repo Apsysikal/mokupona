@@ -16,7 +16,10 @@ describe("smoke tests", () => {
     cy.visitAndCheck("/");
 
     cy.findByRole("link", { name: /login/i }).click();
-    cy.findByRole("link", { name: /sign up/i }).click();
+    // the auth page shows "sign up" twice (segmented toggle + footer prompt)
+    cy.findAllByRole("link", { name: /sign up/i })
+      .first()
+      .click();
 
     cy.findByRole("textbox", { name: /email/i }).type(loginForm.email);
     cy.findAllByLabelText(/password/i)
@@ -25,7 +28,7 @@ describe("smoke tests", () => {
     cy.findAllByLabelText(/password/i)
       .last()
       .type(loginForm.password);
-    cy.findByLabelText(/agree to privacy policy/i).click();
+    cy.findByLabelText(/agree to the privacy policy/i).click();
     cy.findByRole("button", { name: /create account/i }).click();
 
     // cy.findByRole("button", { name: loginForm.email }).click();
@@ -42,15 +45,13 @@ describe("smoke tests", () => {
     cy.login();
     cy.visitAndCheck("/");
 
+    // the nav CTA deep-links to the next dinner's page
     cy.findByRole("link", { name: /join a dinner/i }).click();
-    cy.location("pathname").should("equal", "/dinners");
-    cy.findAllByRole("link", { name: /read more/i })
-      .first()
-      .click();
+    cy.location("pathname").should("match", /^\/dinners\/[^/]+$/);
 
     cy.findByRole("textbox", { name: /name/i }).type(testCredentials.name);
     cy.findByRole("textbox", { name: /email/i }).type(testCredentials.email);
-    cy.findByLabelText(/agree to privacy policy/i).click();
+    cy.findByLabelText(/agree to the privacy policy/i).click();
     cy.findByRole("button", { name: /join/i }).click();
   });
 });

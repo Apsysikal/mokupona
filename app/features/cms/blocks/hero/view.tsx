@@ -11,77 +11,89 @@ type HeroBlockViewProps = React.ComponentPropsWithoutRef<"section"> & {
   blockData: HeroBlockType;
 };
 
+// editorial split hero: copy on the left, a full-height photo on the right;
+// on mobile the photo moves above the copy (design handoff §1)
 export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
   const { data } = blockData;
-  const { eyebrow, headline, description, actions = [], image } = data;
+  const {
+    eyebrow,
+    headline,
+    headlineAccent,
+    description,
+    actions = [],
+    meta,
+    image,
+  } = data;
   const { src, alt, width, height } = image;
   const srcSet = generateSrcSet(src, [432, 648, 864, 1080]);
 
   return (
-    <section className="relative isolate overflow-hidden" {...rest}>
-      <div
-        aria-hidden="true"
-        className="absolute top-20 left-[calc(20%-20rem)] -z-10 transform-gpu blur-3xl not-lg:left-[calc(20%-30rem)]"
-      >
-        <div
-          style={{
-            clipPath:
-              "polygon(73.6% 51.7%, 91.7% 11.8%, 100% 46.4%, 97.4% 82.2%, 92.5% 84.9%, 75.7% 64%, 55.3% 47.5%, 46.5% 49.4%, 45% 62.9%, 50.3% 87.2%, 21.3% 64.1%, 0.1% 100%, 5.4% 51.1%, 21.4% 63.9%, 58.9% 0.2%, 73.6% 51.7%)",
-          }}
-          className="aspect-2/1 w-200 bg-linear-to-r from-orange-400 to-red-800 opacity-40"
-        />
+    <section
+      className="mx-auto flex max-w-7xl flex-col md:min-h-130 md:flex-row"
+      {...rest}
+    >
+      <div className="flex flex-col justify-center gap-5 px-6 py-8 md:w-[47%] md:gap-6.5 md:px-14 md:py-17.5">
+        {eyebrow ? (
+          <span className="text-primary text-[13px] font-semibold">
+            {eyebrow}
+          </span>
+        ) : null}
+
+        <h1 className="text-[34px] leading-[1.06] font-light tracking-[-.02em] text-balance md:text-[52px]">
+          {headline}
+          {headlineAccent ? (
+            <>
+              {" "}
+              <span className="text-primary italic">{headlineAccent}</span>
+            </>
+          ) : null}
+        </h1>
+
+        {description ? (
+          <p className="text-fg-secondary max-w-100 text-base leading-relaxed font-light md:text-[19px]">
+            {description}
+          </p>
+        ) : null}
+
+        {actions.length > 0 ? (
+          <div className="mt-1 flex flex-col gap-5 md:flex-row md:items-center md:gap-6">
+            {actions.map((action, index) =>
+              action.variant === "secondary" ? (
+                <Link
+                  key={index}
+                  to={action.href}
+                  className="border-foreground/35 hover:border-foreground w-fit border-b pb-0.5 text-[15px] max-md:self-center"
+                >
+                  {action.label}
+                </Link>
+              ) : (
+                <Button key={index} className="h-11.5" asChild>
+                  <Link to={action.href}>{action.label}</Link>
+                </Button>
+              ),
+            )}
+          </div>
+        ) : null}
+
+        {meta ? (
+          <div className="text-fg-faint mt-2.5 text-xs tracking-[.18em] uppercase">
+            {meta}
+          </div>
+        ) : null}
       </div>
 
-      <div className="mx-auto mt-20 max-w-4xl md:flex">
-        <div className="flex shrink-0 flex-col justify-center gap-10 px-4 md:max-w-md lg:max-w-lg">
-          {eyebrow ? (
-            <p className="text-accent font-bold lowercase">{data.eyebrow}</p>
-          ) : null}
-
-          <h1 className="text-foreground -mt-5 text-5xl">{headline}</h1>
-
-          {description ? (
-            <p className="text-foreground text-2xl font-thin text-balance">
-              {description}
-            </p>
-          ) : null}
-
-          {actions.length > 0 ? (
-            <div className="flex gap-4">
-              {actions.map((action, index) => {
-                let { label, href, variant } = action;
-
-                return (
-                  <Button
-                    key={index}
-                    variant={variant == "primary" ? "default" : variant}
-                    asChild
-                  >
-                    <Link to={href} className="lowercase">
-                      {label}
-                    </Link>
-                  </Button>
-                );
-              })}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="mx-auto flex not-lg:mt-10">
-          <div className="max-w-3xl flex-none not-md:pl-4 md:max-w-3xl lg:max-w-4xl 2xl:max-w-none">
-            <picture>
-              <img
-                srcSet={srcSet}
-                src={src}
-                className="w-304 rounded-md object-center"
-                fetchPriority="high"
-                width={width}
-                height={height}
-                alt={alt}
-              />
-            </picture>
-          </div>
-        </div>
+      <div className="relative h-72.5 max-md:order-first md:h-auto md:w-[53%]">
+        <picture>
+          <img
+            srcSet={srcSet}
+            src={src}
+            className="absolute inset-0 size-full object-cover md:rounded-b-xl"
+            fetchPriority="high"
+            width={width}
+            height={height}
+            alt={alt ?? ""}
+          />
+        </picture>
       </div>
     </section>
   );

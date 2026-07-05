@@ -1,34 +1,23 @@
-import { HamburgerMenuIcon, InstagramLogoIcon } from "@radix-ui/react-icons";
-import { useRef } from "react";
 import type { LinksFunction } from "react-router";
 import {
   data,
-  Form,
   isRouteErrorResponse,
-  Link,
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
-  useSubmit,
+  useLocation,
 } from "react-router";
 
 import type { Route } from "./+types/root";
 import { Footer } from "./components/footer";
-import { Logo } from "./components/logo";
-import { Button } from "./components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuPortal,
-  DropdownMenuTrigger,
-} from "./components/ui/dropdown-menu";
+import { SiteNav } from "./components/site-nav";
 import { Toaster } from "./components/ui/sonner";
 import { useToast } from "./hooks/useToast";
+import { getNextEvent } from "./models/event.server";
 import { getClientHints } from "./utils/client-hints.server";
-import { combineHeaders, getDomainUrl, useOptionalUser } from "./utils/misc";
+import { combineHeaders, getDomainUrl } from "./utils/misc";
 import { getToast } from "./utils/toast.server";
 
 import stylesheet from "~/tailwind.css?url";
@@ -56,12 +45,22 @@ export const links: LinksFunction = () => [
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const domainUrl = getDomainUrl(request);
-  const user = await getUserWithRole(request);
+  const [user, nextEvent] = await Promise.all([
+    getUserWithRole(request),
+    getNextEvent(),
+  ]);
   const clientHints = getClientHints(request);
   const { toast, headers } = await getToast(request);
   const allowIndexing = process.env.ALLOW_INDEXING !== "false";
   return data(
-    { user, toast, domainUrl, clientHints, allowIndexing },
+    {
+      user,
+      toast,
+      domainUrl,
+      clientHints,
+      allowIndexing,
+      nextDinnerId: nextEvent?.id ?? null,
+    },
     { headers: combineHeaders(headers) },
   );
 };
@@ -80,8 +79,11 @@ export default function App({ loaderData }: Route.ComponentProps) {
         <Meta />
         <Links />
       </head>
-      <body className="dark h-full bg-gray-950 text-gray-50">
-        <Document toast={loaderData.toast} />
+      <body className="dark bg-background text-foreground h-full">
+        <Document
+          toast={loaderData.toast}
+          nextDinnerId={loaderData.nextDinnerId}
+        />
         <ScrollRestoration />
         <Scripts />
         <Toaster />
@@ -90,128 +92,34 @@ export default function App({ loaderData }: Route.ComponentProps) {
   );
 }
 
+// the auth pages are a full-height split with their own brand panel — they
+// deliberately render without the shared nav/footer (design handoff §4)
+const BARE_ROUTES = ["/login", "/join"];
+
 function Document({
   toast,
+  nextDinnerId,
 }: {
   toast: Route.ComponentProps["loaderData"]["toast"];
+  nextDinnerId: string | null;
 }) {
-  const optionalUser = useOptionalUser();
+  const location = useLocation();
   useToast(toast);
 
+  if (BARE_ROUTES.includes(location.pathname)) {
+    return <Outlet />;
+  }
+
+  const joinHref = nextDinnerId ? `/dinners/${nextDinnerId}` : "/dinners";
+
   return (
-    <>
-      <nav className="h-20 border-b border-gray-50 bg-gray-950 text-gray-50">
-        <div className="mx-auto flex h-full max-w-4xl flex-wrap items-center justify-between gap-4 px-2 sm:flex-nowrap md:gap-8">
-          <Link to="/" className="flex items-center gap-6 font-bold">
-            <Logo className="size-6" />
-            moku pona
-          </Link>
-
-          <div className="flex items-center gap-10 max-md:gap-5">
-            <Link to="/dinners" className="hover:underline max-md:hidden">
-              dinners
-            </Link>
-
-            <a
-              href="https://instagram.com/mokupona"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 hover:underline max-md:hidden"
-            >
-              <InstagramLogoIcon className="size-6" />
-            </a>
-
-            {["moderator", "admin"].includes(optionalUser?.role.name ?? "") ? (
-              <Link
-                prefetch="intent"
-                to="/admin"
-                className="hover:underline max-md:hidden"
-              >
-                admin area
-              </Link>
-            ) : null}
-
-            {optionalUser ? (
-              <Form action="/logout" method="POST" className="max-md:hidden">
-                <button className="hover:underline">logout</button>
-              </Form>
-            ) : (
-              <Link to="/login" className="hover:underline max-md:hidden">
-                login
-              </Link>
-            )}
-
-            <span className="flex items-center gap-4 md:hidden">
-              <a
-                href="https://instagram.com/mokupona"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <InstagramLogoIcon className="size-6" />
-                <span className="sr-only">instagram</span>
-              </a>
-              <GeneralDropdown />
-            </span>
-          </div>
-        </div>
-      </nav>
-      <Outlet />
+    <div className="flex min-h-full flex-col">
+      <SiteNav joinHref={joinHref} />
+      <div className="flex grow flex-col">
+        <Outlet />
+      </div>
       <Footer />
-    </>
-  );
-}
-
-function GeneralDropdown() {
-  const optionalUser = useOptionalUser();
-  const submit = useSubmit();
-  const formRef = useRef<HTMLFormElement>(null);
-
-  return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" aria-label="Menu Button">
-          <HamburgerMenuIcon />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuPortal>
-        <DropdownMenuContent sideOffset={8} align="start">
-          <DropdownMenuItem>
-            <Link to="/dinners" className="hover:underline">
-              dinners
-            </Link>
-          </DropdownMenuItem>
-
-          {["moderator", "admin"].includes(optionalUser?.role.name ?? "") ? (
-            <DropdownMenuItem asChild>
-              <Link prefetch="intent" to="/admin">
-                admin area
-              </Link>
-            </DropdownMenuItem>
-          ) : null}
-
-          {optionalUser ? (
-            <DropdownMenuItem
-              asChild
-              // this prevents the menu from closing before the form submission is completed
-              onSelect={(event) => {
-                event.preventDefault();
-                submit(formRef.current);
-              }}
-            >
-              <Form action="/logout" method="POST" ref={formRef}>
-                <button type="submit">logout</button>
-              </Form>
-            </DropdownMenuItem>
-          ) : (
-            <DropdownMenuItem asChild>
-              <Link prefetch="intent" to="/login">
-                login
-              </Link>
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenuPortal>
-    </DropdownMenu>
+    </div>
   );
 }
 

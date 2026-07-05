@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import type { Route } from "./+types/join";
 
+import { AuthShell } from "~/components/auth-layout";
 import { CheckboxField, Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -121,69 +122,78 @@ export default function Join({ actionData }: Route.ComponentProps) {
   });
 
   return (
-    <div className="flex min-h-full flex-col justify-center">
-      <div className="mx-auto w-full max-w-md px-8">
-        <Form method="post" className="space-y-6" {...getFormProps(form)}>
-          <Field
-            labelProps={{ children: "Email address" }}
-            inputProps={{ ...getInputProps(fields.email, { type: "email" }) }}
-            errors={fields.email.errors}
-          />
+    <AuthShell mode="join" search={searchParams.toString()}>
+      <h1 className="mt-1 text-[30px] font-light">sign up</h1>
 
-          <Field
-            labelProps={{ children: "Password" }}
-            inputProps={{
-              ...getInputProps(fields.password, { type: "password" }),
-            }}
-            errors={fields.password.errors}
-          />
+      <Form
+        method="post"
+        className="flex flex-col gap-4.5 [--input-surface:var(--card)]"
+        {...getFormProps(form)}
+      >
+        <Field
+          labelProps={{ children: "email address" }}
+          inputProps={{ ...getInputProps(fields.email, { type: "email" }) }}
+          errors={fields.email.errors}
+        />
 
-          <Field
-            labelProps={{ children: "Confirm Password" }}
-            inputProps={{
-              ...getInputProps(fields.confirmPassword, { type: "password" }),
-            }}
-            errors={fields.confirmPassword.errors}
-          />
+        <Field
+          labelProps={{ children: "password" }}
+          inputProps={{
+            ...getInputProps(fields.password, { type: "password" }),
+          }}
+          errors={fields.password.errors}
+        />
 
-          <CheckboxField
-            labelProps={{
-              children: (
-                <span>
-                  Agree to{" "}
-                  <Link to="/privacy" className="text-primary">
-                    Privacy Policy
-                  </Link>
-                </span>
-              ),
-            }}
-            buttonProps={{
-              ...getInputProps(fields.acceptedPrivacy, { type: "checkbox" }),
-            }}
-            errors={fields.acceptedPrivacy.errors}
-          />
+        <Field
+          labelProps={{ children: "confirm password" }}
+          inputProps={{
+            ...getInputProps(fields.confirmPassword, { type: "password" }),
+          }}
+          errors={fields.confirmPassword.errors}
+        />
 
-          <Input type="hidden" name="redirectTo" value={redirectTo} />
-
-          <Button type="submit">Create Account</Button>
-
-          <div className="flex items-center justify-center">
-            <div className="text-center text-sm text-gray-500">
-              Already have an account?{" "}
-              <Button variant="link" asChild>
-                <Link
-                  to={{
-                    pathname: "/login",
-                    search: searchParams.toString(),
-                  }}
-                >
-                  Log in
+        <CheckboxField
+          labelProps={{
+            children: (
+              <span className="text-[13px]">
+                i agree to the{" "}
+                <Link to="/privacy" className="text-primary">
+                  privacy policy
                 </Link>
-              </Button>
-            </div>
-          </div>
-        </Form>
-      </div>
-    </div>
+              </span>
+            ),
+          }}
+          buttonProps={{
+            ...getInputProps(fields.acceptedPrivacy, { type: "checkbox" }),
+          }}
+          errors={fields.acceptedPrivacy.errors}
+        />
+
+        <Input type="hidden" name="redirectTo" value={redirectTo} />
+
+        <Button type="submit" size="lg" className="mt-0.5 w-full rounded-[9px]">
+          create account
+        </Button>
+
+        <div className="flex items-center gap-3.5" aria-hidden>
+          <span className="bg-foreground/10 h-px flex-1" />
+          <span className="text-fg-faint text-xs">or</span>
+          <span className="bg-foreground/10 h-px flex-1" />
+        </div>
+
+        <p className="text-fg-muted text-center text-sm">
+          already have an account?{" "}
+          <Link
+            to={{
+              pathname: "/login",
+              search: searchParams.toString(),
+            }}
+            className="text-primary font-medium hover:underline"
+          >
+            log in
+          </Link>
+        </p>
+      </Form>
+    </AuthShell>
   );
 }

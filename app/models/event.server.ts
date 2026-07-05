@@ -5,7 +5,7 @@ import { FormSchema, type FieldDescriptor } from "~/features/forms/fields";
 import { DEFAULT_FORM } from "~/features/signup-form/default-form";
 import { saveFormSchemaInTx } from "~/models/form.server";
 
-export type { Event } from "#prisma/generated/client";
+export type { Address, Event } from "#prisma/generated/client";
 
 export interface EventCreateData {
   title: string;
@@ -28,6 +28,29 @@ export async function getEvents(): Promise<Event[]> {
     orderBy: {
       date: "asc",
     },
+  });
+}
+
+// the public dinners page shows location ("8004 zürich") on the featured card
+export async function getEventsWithAddress(): Promise<
+  (Event & { address: Address })[]
+> {
+  return prisma.event.findMany({
+    orderBy: {
+      date: "asc",
+    },
+    include: {
+      address: true,
+    },
+  });
+}
+
+// the site chrome's "join a dinner" CTA and the landing hero point at the
+// next upcoming dinner
+export async function getNextEvent(): Promise<Event | null> {
+  return prisma.event.findFirst({
+    where: { date: { gte: new Date() } },
+    orderBy: { date: "asc" },
   });
 }
 

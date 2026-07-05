@@ -8,6 +8,18 @@ import {
   TextSectionBlockView,
   type TextSectionBlockType,
 } from "~/features/cms/blocks/text-section";
+import { getNextEvent } from "~/models/event.server";
+import { formatEventDayMonth } from "~/utils/misc";
+
+export const loader = async () => {
+  const nextEvent = await getNextEvent();
+
+  return {
+    nextDinner: nextEvent
+      ? { id: nextEvent.id, date: nextEvent.date, slots: nextEvent.slots }
+      : null,
+  };
+};
 
 export const meta: Route.MetaFunction = ({ matches, location }) => {
   const metaTags = [
@@ -33,27 +45,13 @@ export const meta: Route.MetaFunction = ({ matches, location }) => {
   ];
 };
 
-const heroSectionData: HeroBlockType = {
-  type: "hero",
-  version: 1,
-  data: {
-    eyebrow: "our next event is on may 9th",
-    headline: "moku pona",
-    description:
-      "A dinner society in Zurich, bringing people together through shared meals, stories, and the joy of discovery.",
-    actions: [{ href: "/dinners", label: "join a dinner" }],
-    image: {
-      src: "/hero-image.jpg",
-    },
-  },
-};
-
 const visionSectionData: TextSectionBlockType = {
   type: "text-section",
   version: 1,
   data: {
-    headline: "our vision",
-    body: "moku pona began as a passion project by a group of friends who love cooking and wanted a creative way to explore our culinary interests. For us, food is a way to express creativity, share experiences, and connect with others. Through our dinner club, we aim to surprise our guests with unique flavors and ingredients, introducing them to diverse cuisines and the stories behind them. At its heart, moku pona is about celebrating the art of food and inspiring curiosity about global food cultures.",
+    eyebrow: "our vision",
+    headline: "food as a way to connect",
+    body: "moku pona began as a passion project by a group of friends who love cooking and wanted a creative way to explore our culinary interests. for us, food is a way to express creativity, share experiences, and connect with others. through our dinner club, we surprise our guests with unique flavors and ingredients, introducing them to diverse cuisines and the stories behind them.",
     variant: "plain",
   },
 };
@@ -63,7 +61,7 @@ const imageSectionData: ImageBlockType = {
   version: 1,
   data: {
     image: {
-      src: "/accent-image.png",
+      src: "/accent-image.jpg",
       alt: "",
     },
     variant: "full-width",
@@ -74,8 +72,9 @@ const differenceSectionData: TextSectionBlockType = {
   type: "text-section",
   version: 1,
   data: {
-    headline: "how's this different?",
-    body: "At moku pona, we believe that food is a powerful way to bring people together. Our dinner events go beyond the typical restaurant experience, creating a warm and welcoming community space where friends and strangers can forge new connections. We aim to make every gathering an opportunity not just to enjoy a wonderful meal, but also to meet new people, share stories, and build meaningful relationships. It's a place to connect, learn, and experience the magic of a shared table in a cozy, intimate setting.",
+    eyebrow: "how's this different?",
+    headline: "more than a meal out",
+    body: "our dinner events go beyond the typical restaurant experience, creating a warm and welcoming space where friends and strangers can forge new connections. every gathering is a chance not just to enjoy a wonderful meal, but to meet new people, share stories, and build meaningful relationships, the magic of a shared table in a cozy, intimate setting.",
     variant: "plain",
   },
 };
@@ -84,13 +83,42 @@ const aboutSectionData: TextSectionBlockType = {
   type: "text-section",
   version: 1,
   data: {
-    headline: "who we are",
-    body: "What started as a shared love of cooking has grown into a community of around 15 members who come together to create, host, and share meals. We see food as a way to bring people together: to exchange ideas, build friendships, and create meaningful experiences around the table. As an association, moku pona is about community, creativity, and hospitality - not just dining, but making people feel welcome.",
+    eyebrow: "who we are",
+    headline: "a community of around fifteen",
+    body: "what started as a shared love of cooking has grown into a community who come together to create, host, and share meals. as an association, moku pona is about community, creativity, and hospitality, not just dining, but making people feel welcome.",
     variant: "slanted",
   },
 };
 
-export default function Index() {
+export default function Index({ loaderData }: Route.ComponentProps) {
+  const { nextDinner } = loaderData;
+
+  const heroSectionData: HeroBlockType = {
+    type: "hero",
+    version: 1,
+    data: {
+      eyebrow: nextDinner
+        ? `next gathering · ${formatEventDayMonth(new Date(nextDinner.date))}`
+        : undefined,
+      headline: "an evening around",
+      headlineAccent: "one long table",
+      description:
+        "moku pona is a dinner society in zürich, shared meals, new stories, and the quiet joy of discovery.",
+      actions: [
+        {
+          href: nextDinner ? `/dinners/${nextDinner.id}` : "/dinners",
+          label: "reserve a seat",
+        },
+        { href: "/dinners", label: "see all dinners →", variant: "secondary" },
+      ],
+      meta: nextDinner ? `${nextDinner.slots} seats · zürich` : "zürich",
+      image: {
+        src: "/hero-image.jpg",
+        alt: "",
+      },
+    },
+  };
+
   return (
     <main>
       <HeroBlockView blockData={heroSectionData} />

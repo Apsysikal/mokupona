@@ -12,23 +12,24 @@ export function ImageBlockView({ blockData, ...rest }: ImageBlockViewProps) {
   const { src, alt, width, height } = image;
   const srcSet = generateSrcSet(src, [432, 648, 864, 1080]);
 
-  const baseClasses = "mx-auto my-20";
-  const defaultClasses = "w-4xl h-auto object-cover px-4";
-  const fullWidthClasses = "h-96 w-full object-cover";
+  // "full-width" spans the editorial column, not the viewport (design §1)
+  const imageClasses =
+    variant === "full-width"
+      ? "h-[200px] w-full rounded-xl object-cover md:h-[360px]"
+      : "h-auto w-full object-cover";
 
   return (
-    <picture>
-      <img
-        src={src}
-        srcSet={srcSet}
-        className={[
-          baseClasses,
-          variant === "full-width" ? fullWidthClasses : defaultClasses,
-        ].join(" ")}
-        alt={alt}
-        width={width}
-        height={height}
-      />
-    </picture>
+    <div className="mx-auto w-full max-w-[1040px] px-6 md:px-14">
+      <picture {...rest}>
+        <img
+          src={src}
+          srcSet={srcSet}
+          className={imageClasses}
+          alt={alt ?? ""}
+          width={width}
+          height={height}
+        />
+      </picture>
+    </div>
   );
 }

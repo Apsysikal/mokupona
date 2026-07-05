@@ -53,7 +53,7 @@ export function Field({
   const { id, errorId } = useFieldIds(inputProps.id, errors);
 
   return (
-    <div className={cn("flex flex-col gap-2", className)}>
+    <div className={cn("flex flex-col gap-1.5", className)}>
       <Label htmlFor={id} {...labelProps} />
       <Input
         id={id}
@@ -77,7 +77,7 @@ export function TextareaField({
   const { id, errorId } = useFieldIds(textareaProps.id, errors);
 
   return (
-    <div className={cn("flex flex-col gap-2", className)}>
+    <div className={cn("flex flex-col gap-1.5", className)}>
       <Label htmlFor={id} {...labelProps} />
       <Textarea
         id={id}
@@ -145,14 +145,22 @@ export function CheckboxField({
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
-      <div className="flex gap-2">
+      <div className="flex items-start gap-2.5">
         <Checkbox
           {...buttonProps}
           id={id}
           aria-invalid={errorId ? true : undefined}
           aria-describedby={errorId}
         />
-        <Label htmlFor={id} {...labelProps} />
+        {/* checkbox labels read as body copy, not as field labels */}
+        <Label
+          htmlFor={id}
+          {...labelProps}
+          className={cn(
+            "text-fg-secondary text-sm leading-snug",
+            labelProps.className,
+          )}
+        />
       </div>
       {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
     </div>

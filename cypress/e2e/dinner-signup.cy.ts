@@ -24,7 +24,7 @@ describe("dinner signup", () => {
     visitFirstDinner();
 
     fillSigner();
-    cy.findByLabelText(/agree to privacy policy/i).click();
+    cy.findByLabelText(/agree to the privacy policy/i).click();
     cy.findByRole("button", { name: /join/i }).click();
 
     cy.location("pathname").should("equal", "/dinners");
@@ -40,7 +40,7 @@ describe("dinner signup", () => {
       .should("have.length", 2)
       .last()
       .type(faker.person.fullName());
-    cy.findByLabelText(/agree to privacy policy/i).click();
+    cy.findByLabelText(/agree to the privacy policy/i).click();
     cy.findByRole("button", { name: /join/i }).click();
 
     cy.location("pathname").should("equal", "/dinners");
@@ -73,7 +73,7 @@ describe("dinner signup", () => {
           .should("have.length", 2)
           .last()
           .type(friendName);
-        cy.findByLabelText(/agree to privacy policy/i).click();
+        cy.findByLabelText(/agree to the privacy policy/i).click();
         cy.findByRole("button", { name: /join/i }).click();
         cy.location("pathname").should("equal", "/dinners");
         cy.findByText(/signup complete/i);

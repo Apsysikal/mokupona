@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import type { Route } from "./+types/login";
 
+import { AuthShell } from "~/components/auth-layout";
 import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -103,64 +104,63 @@ export default function LoginPage({ actionData }: Route.ComponentProps) {
   });
 
   return (
-    <div className="flex min-h-full flex-col justify-center">
-      <div className="mx-auto w-full max-w-md px-8">
-        <Form method="post" className="space-y-6" {...getFormProps(form)}>
-          <Field
-            labelProps={{ children: "Email address" }}
-            inputProps={{ ...getInputProps(fields.email, { type: "email" }) }}
-            errors={fields.email.errors}
-          />
+    <AuthShell mode="login" search={searchParams.toString()}>
+      <h1 className="mt-1 text-[30px] font-light">log in</h1>
 
-          <Field
-            labelProps={{ children: "Password" }}
-            inputProps={{
-              ...getInputProps(fields.password, { type: "password" }),
+      <Form
+        method="post"
+        className="flex flex-col gap-4.5 [--input-surface:var(--card)]"
+        {...getFormProps(form)}
+      >
+        <Field
+          labelProps={{ children: "email address" }}
+          inputProps={{ ...getInputProps(fields.email, { type: "email" }) }}
+          errors={fields.email.errors}
+        />
+
+        <Field
+          labelProps={{ children: "password" }}
+          inputProps={{
+            ...getInputProps(fields.password, { type: "password" }),
+          }}
+          errors={fields.password.errors}
+        />
+
+        <Input type="hidden" name="redirectTo" value={redirectTo} />
+
+        <div className="flex items-center gap-2.5">
+          <Checkbox id="remember" name="remember" />
+          <Label
+            htmlFor="remember"
+            className="text-fg-secondary text-[13px] leading-none"
+          >
+            remember me
+          </Label>
+        </div>
+
+        <Button type="submit" size="lg" className="mt-0.5 w-full rounded-[9px]">
+          log in
+        </Button>
+
+        <div className="flex items-center gap-3.5" aria-hidden>
+          <span className="bg-foreground/10 h-px flex-1" />
+          <span className="text-fg-faint text-xs">or</span>
+          <span className="bg-foreground/10 h-px flex-1" />
+        </div>
+
+        <p className="text-fg-muted text-center text-sm">
+          don&apos;t have an account?{" "}
+          <Link
+            to={{
+              pathname: "/join",
+              search: searchParams.toString(),
             }}
-            errors={fields.password.errors}
-          />
-
-          <Input type="hidden" name="redirectTo" value={redirectTo} />
-
-          <div className="flex items-center justify-between">
-            <Button type="submit">Log in</Button>
-            {/* <span className="text-sm">
-              <Button variant="link" asChild>
-                <Link
-                  to={{
-                    pathname: "/",
-                    search: searchParams.toString(),
-                  }}
-                >
-                  Forgot your password?
-                </Link>
-              </Button>
-            </span> */}
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Checkbox id="remember" name="remember" />
-              <Label htmlFor="remember" className="ml-2 block text-sm">
-                Remember me
-              </Label>
-            </div>
-            <div className="text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <Button variant="link" asChild>
-                <Link
-                  to={{
-                    pathname: "/join",
-                    search: searchParams.toString(),
-                  }}
-                >
-                  Sign up
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </Form>
-      </div>
-    </div>
+            className="text-primary font-medium hover:underline"
+          >
+            sign up
+          </Link>
+        </p>
+      </Form>
+    </AuthShell>
   );
 }

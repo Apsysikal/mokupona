@@ -140,3 +140,49 @@ export function dateFormatBuilder(preferredLocale: string) {
     timeZone: "Europe/Zurich",
   });
 }
+
+// The redesign writes all dates in a fixed, lowercase, Zurich-local shape
+// ("saturday 9 may · 19:00"); a fixed locale keeps server and client render
+// identical. Lowercasing happens here, not via CSS, so no caller can forget.
+const EVENT_TIME_ZONE = "Europe/Zurich";
+
+const eventTimeFormat = new Intl.DateTimeFormat("en-GB", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+  timeZone: EVENT_TIME_ZONE,
+});
+
+/** "saturday 9 may · 19:00" (weekday: "long") / "sat 9 may · 19:00" ("short") */
+export function formatEventDateLine(date: Date, weekday: "long" | "short") {
+  const dayLine = new Intl.DateTimeFormat("en-GB", {
+    weekday,
+    day: "numeric",
+    month: "long",
+    timeZone: EVENT_TIME_ZONE,
+  }).format(date);
+
+  return `${dayLine} · ${eventTimeFormat.format(date)}`.toLowerCase();
+}
+
+/** "apr 2026" — archive labels on past dinner cards */
+export function formatEventMonthYear(date: Date) {
+  return new Intl.DateTimeFormat("en-GB", {
+    month: "short",
+    year: "numeric",
+    timeZone: EVENT_TIME_ZONE,
+  })
+    .format(date)
+    .toLowerCase();
+}
+
+/** "9 may" — the landing hero eyebrow */
+export function formatEventDayMonth(date: Date) {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "long",
+    timeZone: EVENT_TIME_ZONE,
+  })
+    .format(date)
+    .toLowerCase();
+}
