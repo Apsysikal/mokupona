@@ -1,6 +1,5 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import type { MetaFunction } from "react-router";
 import { Form, redirect } from "react-router";
 
 import type { Route } from "./+types/admin.locations.new";
@@ -16,10 +15,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   return {};
 }
-
-export const meta: MetaFunction<typeof loader> = () => {
-  return [{ title: "Admin - Create Location" }];
-};
 
 export async function action({ request }: Route.ActionArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
@@ -42,6 +37,10 @@ export async function action({ request }: Route.ActionArgs) {
 
   return redirect("/admin/locations");
 }
+
+export const meta: Route.MetaFunction = () => {
+  return [{ title: "Admin - Create Location" }];
+};
 
 export default function DinnersPage({ actionData }: Route.ComponentProps) {
   const lastResult = actionData;

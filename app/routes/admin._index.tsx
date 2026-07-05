@@ -3,21 +3,19 @@ import { Link } from "react-router";
 import type { Route } from "./+types/admin._index";
 
 import { Button } from "~/components/ui/button";
-import { useUser } from "~/utils/misc";
 import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-  return {};
+  const user = await requireUserWithRole(request, ["moderator", "admin"]);
+  return { user };
 }
 
 export const meta: Route.MetaFunction = () => {
   return [{ title: "Admin" }];
 };
 
-export default function DinnersPage() {
-  const user = useUser();
-  const isAdmin = user.role.name === "admin";
+export default function DinnersPage({ loaderData }: Route.ComponentProps) {
+  const isAdmin = loaderData.user.role.name === "admin";
 
   return (
     <div className="flex flex-col gap-1">

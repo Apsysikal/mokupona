@@ -30,30 +30,6 @@ import { getCurrentFormVersionForEvent } from "~/models/form.server";
 import { getClientIPAddress, getImageUrl, obscureEmail } from "~/utils/misc";
 import { redirectWithToast } from "~/utils/toast.server";
 
-export const meta: Route.MetaFunction = ({ loaderData, matches, location }) => {
-  const metaTags = [
-    {
-      title: "Dinner",
-    },
-  ];
-
-  if (!loaderData) return metaTags;
-
-  const { event } = loaderData;
-  const domainUrl = matches[0].loaderData.domainUrl;
-
-  const dinnerUrl = new URL(location.pathname, domainUrl);
-  const imageUrl = new URL(getImageUrl(event.imageId), domainUrl);
-
-  return [
-    { title: `Dinner - ${event.title}` },
-    { property: "og:title", content: event.title },
-    { property: "og:type", content: "website" },
-    { property: "og:image", content: imageUrl },
-    { property: "og:url", content: dinnerUrl },
-  ];
-};
-
 export async function loader({ params }: Route.LoaderArgs) {
   const { dinnerId } = params;
 
@@ -88,7 +64,7 @@ export async function action({ params, request }: Route.ActionArgs) {
 
   if (!dinner || !version) throw new Response("Not found", { status: 404 });
   if (dinner.date < new Date()) {
-    throw new Response("Forbidden", { status: 400 });
+    throw new Response("Forbidden", { status: 403 });
   }
 
   const formFields = parseStoredFormSchemaOrLog(version);
@@ -183,6 +159,30 @@ export async function action({ params, request }: Route.ActionArgs) {
     type: "success",
   });
 }
+
+export const meta: Route.MetaFunction = ({ loaderData, matches, location }) => {
+  const metaTags = [
+    {
+      title: "Dinner",
+    },
+  ];
+
+  if (!loaderData) return metaTags;
+
+  const { event } = loaderData;
+  const domainUrl = matches[0].loaderData.domainUrl;
+
+  const dinnerUrl = new URL(location.pathname, domainUrl);
+  const imageUrl = new URL(getImageUrl(event.imageId), domainUrl);
+
+  return [
+    { title: `Dinner - ${event.title}` },
+    { property: "og:title", content: event.title },
+    { property: "og:type", content: "website" },
+    { property: "og:image", content: imageUrl },
+    { property: "og:url", content: dinnerUrl },
+  ];
+};
 
 export default function DinnerPage({
   loaderData,

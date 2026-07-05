@@ -1,4 +1,9 @@
-import { FormProvider, getFormProps, useForm } from "@conform-to/react";
+import {
+  FormProvider,
+  getFormProps,
+  useForm,
+  type SubmissionResult,
+} from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { Form, redirect } from "react-router";
 
@@ -6,7 +11,6 @@ import type { Route } from "./+types/admin.dinners.new";
 
 import {
   AdminDinnerForm,
-  splitUploadActionData,
   toAddressOptions,
 } from "~/components/admin-dinner-form";
 import {
@@ -35,10 +39,6 @@ export async function loader({ request }: Route.LoaderArgs) {
   };
 }
 
-export const meta: Route.MetaFunction = () => {
-  return [{ title: "Admin - Create Dinner" }];
-};
-
 export async function action({ request }: Route.ActionArgs) {
   const user = await requireUserWithRole(request, ["moderator", "admin"]);
   const clientHints = getClientHints(request);
@@ -46,7 +46,11 @@ export async function action({ request }: Route.ActionArgs) {
   const uploadResult = await parseImageFormData(request, "cover");
 
   if (!uploadResult.success) {
-    return { uploadHandlerError: uploadResult.uploadError };
+    // folded into the conform result so actionData has a single shape
+    return {
+      status: "error",
+      error: { cover: [uploadResult.uploadError] },
+    } satisfies SubmissionResult;
   }
 
   const submission = parseWithZod(uploadResult.formData, {
@@ -107,16 +111,19 @@ export async function action({ request }: Route.ActionArgs) {
   return redirect(`/admin/dinners/${event.id}`);
 }
 
+export const meta: Route.MetaFunction = () => {
+  return [{ title: "Admin - Create Dinner" }];
+};
+
 export default function DinnersPage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
   const { addresses, validImageTypes } = loaderData;
-  const { coverErrors, lastResult } = splitUploadActionData(actionData);
   const addressOptions = toAddressOptions(addresses);
 
   const [form, fields] = useForm({
-    lastResult,
+    lastResult: actionData,
     shouldValidate: "onBlur",
     constraint: getZodConstraint(EventSchema),
     defaultValue: {
@@ -139,7 +146,6 @@ export default function DinnersPage({
           fields={fields}
           addressOptions={addressOptions}
           validImageTypes={validImageTypes}
-          coverErrors={coverErrors}
           submitText="Create Dinner"
           pageTitle="Create a new dinner"
           cancelHref="/admin/dinners"

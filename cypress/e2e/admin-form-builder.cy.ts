@@ -232,10 +232,7 @@ describe("admin signup form builder", () => {
           .first()
           .click();
         cy.findByDisplayValue("Allergies").should("be.visible");
-        cy.findByLabelText(/max per signup/i).should(
-          "have.value",
-          "0",
-        );
+        cy.findByLabelText(/max per signup/i).should("have.value", "0");
 
         // the public page reflects it: relabeled field, no friends button
         cy.visitAndCheck(`/dinners/${dinnerId}`);

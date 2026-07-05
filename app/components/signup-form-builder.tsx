@@ -333,7 +333,9 @@ function BuilderRowView({
               <Badge variant="secondary">{typeChipLabel(type)}</Badge>
             )
           }
-          title={labelValue || (isPinnedIdentity ? initialKey : "Untitled field")}
+          title={
+            labelValue || (isPinnedIdentity ? initialKey : "Untitled field")
+          }
           meta={isPinnedIdentity ? "always required" : undefined}
           listName={listName}
           index={index}
@@ -397,7 +399,10 @@ function RowCard({
         <RowErrors id={row.errorId} errors={row.errors} />
         <CollapsibleContent forceMount className="data-[state=closed]:hidden">
           <div
-            className={cn("border-t border-white/10", small ? "p-3" : "p-3 sm:p-4")}
+            className={cn(
+              "border-t border-white/10",
+              small ? "p-3" : "p-3 sm:p-4",
+            )}
           >
             {children}
           </div>
@@ -408,13 +413,7 @@ function RowCard({
 }
 
 // Row-level errors stay visible even while the row is collapsed.
-function RowErrors({
-  id,
-  errors,
-}: {
-  id?: string;
-  errors?: string[];
-}) {
+function RowErrors({ id, errors }: { id?: string; errors?: string[] }) {
   if (!errors?.length) return null;
 
   return (
@@ -453,7 +452,12 @@ function RowHeader({
   const compactButton = small ? "h-7 w-7" : undefined;
 
   return (
-    <div className={cn("flex items-center gap-1.5", small ? "p-2" : "p-2.5 sm:p-3")}>
+    <div
+      className={cn(
+        "flex items-center gap-1.5",
+        small ? "p-2" : "p-2.5 sm:p-3",
+      )}
+    >
       {/* the chip always stacks above the title; the flex layout lives on an
           inner span because Safari mishandles buttons as flex containers */}
       <CollapsibleTrigger className="min-w-0 flex-1 cursor-pointer text-left">
@@ -533,7 +537,7 @@ function RowHeader({
         className={cn(
           buttonVariants({ variant: "ghost", size: "icon" }),
           compactButton,
-          "shrink-0 data-[state=open]:text-primary [&[data-state=open]>svg]:rotate-180",
+          "data-[state=open]:text-primary shrink-0 [&[data-state=open]>svg]:rotate-180",
         )}
       >
         <ChevronDownIcon className="transition-transform duration-200" />
@@ -561,8 +565,8 @@ function PinnedIdentityRowView({ row }: { row: RowMetadata }) {
         errors={rowFields.label.errors}
       />
       <p className="text-muted-foreground text-xs">
-        Type and field key are fixed for identity fields — only the label
-        guests see can change. Always required.
+        Type and field key are fixed for identity fields — only the label guests
+        see can change. Always required.
       </p>
     </div>
   );

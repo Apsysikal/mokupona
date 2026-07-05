@@ -4,7 +4,7 @@ import type { Route } from "./+types/admin";
 
 import { requireUserWithRole } from "~/utils/session.server";
 
-export async function loader({ request }: Route.ActionArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
   return {};
 }

@@ -80,11 +80,13 @@ Each new type = one folder (`model.ts` + `view.tsx`) + registry entry + `zodForF
 ## Cross-cutting
 
 **Tests**
+
 - Unit: `zodForField` per type; `buildSubmissionSchema` (top-level + list structure, `maxCount` incl. 0); `FormSchema` bounds (recursive count, per-scope uniqueness, cross-scope type match); `SignupFormSchema` profile; versioning policy (skip / in-place / new version); `getAttendeesForEvent` (flattening, replication rule, legacy merge).
 - Parity: `DEFAULT_FORM` ⇔ [`event-signup-validation.ts`](../../app/utils/event-signup-validation.ts).
 - E2E (cypress): default signup; add-a-friend; friends disabled (`maxCount: 0`); custom-form signup; CSV export incl. mixed legacy + new rows; builder round-trip.
 
 **Known gotchas**
+
 - Client and server must build the schema from the same persisted `FormVersion`; the action re-reads from the DB and never trusts client descriptors.
 - Never delete events outside the data-access-layer cascade helper (design §3.2).
 - Field keys and submitted-against versions are immutable; the builder must enforce both.

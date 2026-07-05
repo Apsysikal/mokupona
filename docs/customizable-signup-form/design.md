@@ -3,7 +3,7 @@
 **Status:** Approved design, ready to implement (supersedes the 2026-06-27 revision)
 **Last updated:** 2026-07-04
 
-Two layers: a **generic form abstraction** (field primitives, schema building, rendering — no signup vocabulary) and the **signup form** built on top of it as a *constrained form*: a named profile of conventions over the primitives, enforced at authoring time. Form definitions and submissions are stored in dedicated tables as `Json`; submissions are stored **one row per submission** (the party), not per attendee.
+Two layers: a **generic form abstraction** (field primitives, schema building, rendering — no signup vocabulary) and the **signup form** built on top of it as a _constrained form_: a named profile of conventions over the primitives, enforced at authoring time. Form definitions and submissions are stored in dedicated tables as `Json`; submissions are stored **one row per submission** (the party), not per attendee.
 
 ---
 
@@ -12,6 +12,7 @@ Two layers: a **generic form abstraction** (field primitives, schema building, r
 Let event creators/editors customize the attendee **signup form per event**: choose which fields appear, relabel and reorder them, mark them required, and add their own custom questions — without a developer change for each new question.
 
 ### Goals
+
 - Per-event form definition, authored in the existing dinner create/edit screens.
 - Organizers can add arbitrary questions (text, checkbox, textarea, … growing over time).
 - The "add a friend" multi-attendee flow keeps working, including disabling it per event.
@@ -19,6 +20,7 @@ Let event creators/editors customize the attendee **signup form per event**: cho
 - The form primitives are reusable for future non-signup forms (e.g. a survey).
 
 ### Non-goals (v1)
+
 - Conditional/branching logic.
 - SQL analytics on custom answers (promote a field to a column later if this becomes a hard requirement).
 - Organizer-defined repeating groups: the `list` field type exists in the schema language, but the builder does not allow adding lists (§5, §10).
@@ -158,8 +160,8 @@ export const ListFieldSchema = z.object({
   version: z.literal(1),
   data: BaseFieldData.extend({
     maxCount: z.number().int().min(0).max(MAX_LIST_COUNT), // 0 = list disabled
-    addLabel: z.string().trim().min(1),      // e.g. "Add a friend"
-    removeLabel: z.string().trim().min(1),   // e.g. "Remove this person"
+    addLabel: z.string().trim().min(1), // e.g. "Add a friend"
+    removeLabel: z.string().trim().min(1), // e.g. "Remove this person"
     itemFields: z.array(NonListFieldDescriptorSchema).min(1),
   }),
 });
@@ -175,7 +177,7 @@ Limits exist to bound the blast radius of bugs and abuse, not to police organize
 
 ```ts
 export const MAX_TOTAL_FIELDS = 40; // counts recursively: top-level + every list's itemFields
-export const MAX_LIST_COUNT = 10;   // ceiling in code; the organizer picks a value 0..MAX in data
+export const MAX_LIST_COUNT = 10; // ceiling in code; the organizer picks a value 0..MAX in data
 ```
 
 `FormSchema = z.array(FieldDescriptorSchema).superRefine(...)` enforces:
@@ -202,7 +204,7 @@ The signup form is `SignupFormSchema` = `FormSchema` + profile refinements, vali
 
 `acceptedPrivacy` (+ the Privacy Policy link) is **hardcoded** in the signup page — a legal control, never a schema field. It keeps its current live field name.
 
-Signer fields and friend item fields are **defined independently** (the signer genuinely answers more: contact info). A question asked of everyone appears in *both* scopes, deliberately duplicated, linked by sharing the same `name`. The builder nudges the organizer to keep them in sync (§10).
+Signer fields and friend item fields are **defined independently** (the signer genuinely answers more: contact info). A question asked of everyone appears in _both_ scopes, deliberately duplicated, linked by sharing the same `name`. The builder nudges the organizer to keep them in sync (§10).
 
 Contact info (`email`, `phone`) belongs to the **submission**, not to any person — friends never had their own, and nothing is copied anywhere.
 
@@ -212,12 +214,40 @@ Reproduces today's live form. Field names equal the legacy `EventResponse` colum
 
 ```ts
 export const DEFAULT_FORM: FieldDescriptor[] = [
-  { type: "text",     version: 1, data: { name: "name",         label: "Name",                 required: true  } },
-  { type: "email",    version: 1, data: { name: "email",        label: "Email",                required: true  } },
-  { type: "phone",    version: 1, data: { name: "phone",        label: "Phone number",         required: true  } },
-  { type: "checkbox", version: 1, data: { name: "vegetarian",   label: "Vegan / Vegetarian",   required: false } },
-  { type: "checkbox", version: 1, data: { name: "student",      label: "Student",              required: false } },
-  { type: "text",     version: 1, data: { name: "restrictions", label: "Dietary restrictions", required: false } },
+  {
+    type: "text",
+    version: 1,
+    data: { name: "name", label: "Name", required: true },
+  },
+  {
+    type: "email",
+    version: 1,
+    data: { name: "email", label: "Email", required: true },
+  },
+  {
+    type: "phone",
+    version: 1,
+    data: { name: "phone", label: "Phone number", required: true },
+  },
+  {
+    type: "checkbox",
+    version: 1,
+    data: { name: "vegetarian", label: "Vegan / Vegetarian", required: false },
+  },
+  {
+    type: "checkbox",
+    version: 1,
+    data: { name: "student", label: "Student", required: false },
+  },
+  {
+    type: "text",
+    version: 1,
+    data: {
+      name: "restrictions",
+      label: "Dietary restrictions",
+      required: false,
+    },
+  },
   {
     type: "list",
     version: 1,
@@ -228,14 +258,42 @@ export const DEFAULT_FORM: FieldDescriptor[] = [
       addLabel: "Add a friend",
       removeLabel: "Remove this person",
       itemFields: [
-        { type: "text",     version: 1, data: { name: "name",         label: "Name",                 required: true  } },
-        { type: "checkbox", version: 1, data: { name: "vegetarian",   label: "Vegan / Vegetarian",   required: false } },
-        { type: "checkbox", version: 1, data: { name: "student",      label: "Student",              required: false } },
-        { type: "text",     version: 1, data: { name: "restrictions", label: "Dietary restrictions", required: false } },
+        {
+          type: "text",
+          version: 1,
+          data: { name: "name", label: "Name", required: true },
+        },
+        {
+          type: "checkbox",
+          version: 1,
+          data: {
+            name: "vegetarian",
+            label: "Vegan / Vegetarian",
+            required: false,
+          },
+        },
+        {
+          type: "checkbox",
+          version: 1,
+          data: { name: "student", label: "Student", required: false },
+        },
+        {
+          type: "text",
+          version: 1,
+          data: {
+            name: "restrictions",
+            label: "Dietary restrictions",
+            required: false,
+          },
+        },
       ],
     },
   },
-  { type: "textarea", version: 1, data: { name: "comment", label: "Comment", required: false } },
+  {
+    type: "textarea",
+    version: 1,
+    data: { name: "comment", label: "Comment", required: false },
+  },
 ];
 ```
 
@@ -285,7 +343,7 @@ const { acceptedPrivacy: _, ...answers } = submission.value;
 
 await createFormSubmission({
   formVersionId: currentVersion.id, // the version the loader rendered & the action re-read
-  answers,                          // { name, email, phone, vegetarian, …, friends: [{…}], comment }
+  answers, // { name, email, phone, vegetarian, …, friends: [{…}], comment }
 });
 ```
 
@@ -302,10 +360,10 @@ No fan-out, no copy-down, no transaction juggling: the party is one record, and 
 export function getAttendeesForEvent(eventId: string): Promise<Attendee[]>;
 
 export interface Attendee {
-  submissionId: string;        // groups a party; legacy rows use the row id
-  isSigner: boolean | null;    // null = legacy row (signer-ness was never recorded)
+  submissionId: string; // groups a party; legacy rows use the row id
+  isSigner: boolean | null; // null = legacy row (signer-ness was never recorded)
   name: string;
-  email: string;               // party contact (submission-level) for new data
+  email: string; // party contact (submission-level) for new data
   phone: string;
   answers: Record<string, string | boolean>; // flattened per-person view
   createdAt: Date;
@@ -315,7 +373,7 @@ export interface Attendee {
 Flattening rules for a `FormSubmission`:
 
 - The **signer** is one `Attendee` (`isSigner: true`) built from the top-level answers; each `friends[i]` item is one `Attendee` (`isSigner: false`).
-- **Per-attendee vs submission-level is derived, not configured:** a top-level field whose `name` also exists in the friends `itemFields` is the signer's *personal* answer (merged into the shared roster column); a top-level field with no counterpart in the list (`email`, `phone`, `comment`, custom one-off questions) is **submission-level** and is replicated onto every attendee of the party — matching how the legacy CSV showed `comment` on each row.
+- **Per-attendee vs submission-level is derived, not configured:** a top-level field whose `name` also exists in the friends `itemFields` is the signer's _personal_ answer (merged into the shared roster column); a top-level field with no counterpart in the list (`email`, `phone`, `comment`, custom one-off questions) is **submission-level** and is replicated onto every attendee of the party — matching how the legacy CSV showed `comment` on each row.
 - **Legacy `EventResponse` rows** map one row → one `Attendee` with `isSigner: null`, values read from the typed columns. Because `DEFAULT_FORM` names equal the column names, this mapping is an identity function.
 
 Consumers:
@@ -354,34 +412,34 @@ Constraints, all mirrored server-side by `SignupFormSchema`:
 
 ## 11. Risks & mitigations
 
-| Risk | Mitigation |
-|---|---|
-| Malformed schema blob breaks a live signup page | Validate with `SignupFormSchema` on every write. On read, `safeParse`; a failure is a bug (we control all writers) — log and hide the signup section rather than render a wrong form against a versioned submission path. |
-| Client/server schema drift | Both sides build from the same persisted `FormVersion`; the action re-reads from the DB. One shared `buildSignupSchema`. |
-| Public endpoint write amplification | `maxCount` ceiling (`MAX_LIST_COUNT = 10`) is a code constant; submission arrays validate against stored `maxCount ≤ 10`. Field budget `MAX_TOTAL_FIELDS = 40` counts recursively. |
-| Signer/friend question drift (duplication by design) | Same-`name` merge rule + builder sync nudge; cross-scope same-`name` requires same type (authoring-time validation). |
-| Renaming/reusing field keys corrupts history | Keys immutable once submissions exist; versions with submissions immutable; submissions pin their version. |
-| Event deletion orphans form data | All event deletes go through the data-access-layer transaction (§3.2). |
-| SQL analytics on custom answers later | Answers are `Json`; SQLite JSON1 can query them, or promote a hot field to a column when a hard requirement appears. Identity queries on legacy data are unaffected. |
+| Risk                                                 | Mitigation                                                                                                                                                                                                                |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Malformed schema blob breaks a live signup page      | Validate with `SignupFormSchema` on every write. On read, `safeParse`; a failure is a bug (we control all writers) — log and hide the signup section rather than render a wrong form against a versioned submission path. |
+| Client/server schema drift                           | Both sides build from the same persisted `FormVersion`; the action re-reads from the DB. One shared `buildSignupSchema`.                                                                                                  |
+| Public endpoint write amplification                  | `maxCount` ceiling (`MAX_LIST_COUNT = 10`) is a code constant; submission arrays validate against stored `maxCount ≤ 10`. Field budget `MAX_TOTAL_FIELDS = 40` counts recursively.                                        |
+| Signer/friend question drift (duplication by design) | Same-`name` merge rule + builder sync nudge; cross-scope same-`name` requires same type (authoring-time validation).                                                                                                      |
+| Renaming/reusing field keys corrupts history         | Keys immutable once submissions exist; versions with submissions immutable; submissions pin their version.                                                                                                                |
+| Event deletion orphans form data                     | All event deletes go through the data-access-layer transaction (§3.2).                                                                                                                                                    |
+| SQL analytics on custom answers later                | Answers are `Json`; SQLite JSON1 can query them, or promote a hot field to a column when a hard requirement appears. Identity queries on legacy data are unaffected.                                                      |
 
 ---
 
 ## 12. File-by-file change map
 
-| File | Change |
-|---|---|
-| [`prisma/schema.prisma`](../../prisma/schema.prisma) | Add `Form`, `FormVersion`, `FormSubmission`; `Event.formId` (non-null, unique). `EventResponse` untouched. |
-| `prisma/migrations/<new>/` | Create tables + backfill one `Form`/`FormVersion(DEFAULT_FORM)` per existing event. |
-| `app/features/forms/**` (new) | Generic primitives: field registry (incl. `list`), `FormSchema` + bounds, `buildSubmissionSchema`, renderer, serialization. Grown out of the existing `app/features/signup-form/fields/` folders. |
-| `app/features/signup-form/**` | Profile: `SignupFormSchema`, `DEFAULT_FORM`, `buildSignupSchema`, `read.server.ts` (`getAttendeesForEvent`). Remove `scope` and the scope-based schema builder. |
-| `app/models/form.server.ts` (new) | `Form`/`FormVersion` access + versioning policy (§9). |
-| `app/models/form-submission.server.ts` (new) | `createFormSubmission`, submissions-for-event query. |
-| `app/models/event.server.ts` | Create form with event; app-level cascade delete (§3.2). |
-| [`app/routes/dinners_.$dinnerId.tsx`](../../app/routes/dinners_.$dinnerId.tsx) | Loader passes current version's descriptors; registry-driven render; action rebuilds schema from DB and writes one `FormSubmission`. |
-| [`app/routes/admin.dinners.$dinnerId_.signups.tsx`](../../app/routes/admin.dinners.$dinnerId_.signups.tsx) | Consume `getAttendeesForEvent`. |
-| [`app/routes/admin.dinners.$dinnerId.[signups.csv].tsx`](../../app/routes/admin.dinners.$dinnerId.[signups.csv].tsx) | Dynamic headers/rows from the read layer (§8). |
-| [`app/components/admin-dinner-form.tsx`](../../app/components/admin-dinner-form.tsx) | "Signup form" builder section (§10). |
-| [`app/models/event-response.server.ts`](../../app/models/event-response.server.ts) | Frozen; read-only access used by the read layer's legacy merge. |
-| [`app/utils/event-signup-validation.ts`](../../app/utils/event-signup-validation.ts) | Kept as the parity/regression anchor for `DEFAULT_FORM`. |
+| File                                                                                                                 | Change                                                                                                                                                                                            |
+| -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`prisma/schema.prisma`](../../prisma/schema.prisma)                                                                 | Add `Form`, `FormVersion`, `FormSubmission`; `Event.formId` (non-null, unique). `EventResponse` untouched.                                                                                        |
+| `prisma/migrations/<new>/`                                                                                           | Create tables + backfill one `Form`/`FormVersion(DEFAULT_FORM)` per existing event.                                                                                                               |
+| `app/features/forms/**` (new)                                                                                        | Generic primitives: field registry (incl. `list`), `FormSchema` + bounds, `buildSubmissionSchema`, renderer, serialization. Grown out of the existing `app/features/signup-form/fields/` folders. |
+| `app/features/signup-form/**`                                                                                        | Profile: `SignupFormSchema`, `DEFAULT_FORM`, `buildSignupSchema`, `read.server.ts` (`getAttendeesForEvent`). Remove `scope` and the scope-based schema builder.                                   |
+| `app/models/form.server.ts` (new)                                                                                    | `Form`/`FormVersion` access + versioning policy (§9).                                                                                                                                             |
+| `app/models/form-submission.server.ts` (new)                                                                         | `createFormSubmission`, submissions-for-event query.                                                                                                                                              |
+| `app/models/event.server.ts`                                                                                         | Create form with event; app-level cascade delete (§3.2).                                                                                                                                          |
+| [`app/routes/dinners_.$dinnerId.tsx`](../../app/routes/dinners_.$dinnerId.tsx)                                       | Loader passes current version's descriptors; registry-driven render; action rebuilds schema from DB and writes one `FormSubmission`.                                                              |
+| [`app/routes/admin.dinners.$dinnerId_.signups.tsx`](../../app/routes/admin.dinners.$dinnerId_.signups.tsx)           | Consume `getAttendeesForEvent`.                                                                                                                                                                   |
+| [`app/routes/admin.dinners.$dinnerId.[signups.csv].tsx`](../../app/routes/admin.dinners.$dinnerId.[signups.csv].tsx) | Dynamic headers/rows from the read layer (§8).                                                                                                                                                    |
+| [`app/components/admin-dinner-form.tsx`](../../app/components/admin-dinner-form.tsx)                                 | "Signup form" builder section (§10).                                                                                                                                                              |
+| [`app/models/event-response.server.ts`](../../app/models/event-response.server.ts)                                   | Frozen; read-only access used by the read layer's legacy merge.                                                                                                                                   |
+| [`app/utils/event-signup-validation.ts`](../../app/utils/event-signup-validation.ts)                                 | Kept as the parity/regression anchor for `DEFAULT_FORM`.                                                                                                                                          |
 
 See [`implementation-plan.md`](./implementation-plan.md) for the phased rollout and the cleanup of code already on this branch.

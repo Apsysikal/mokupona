@@ -1,6 +1,6 @@
 import { HamburgerMenuIcon, InstagramLogoIcon } from "@radix-ui/react-icons";
 import { useRef } from "react";
-import type { LinksFunction, LoaderFunctionArgs } from "react-router";
+import type { LinksFunction } from "react-router";
 import {
   data,
   Form,
@@ -11,7 +11,6 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLoaderData,
   useSubmit,
 } from "react-router";
 
@@ -55,7 +54,7 @@ export const links: LinksFunction = () => [
   { rel: "manifest", href: "/site.webmanifest" },
 ];
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request }: Route.LoaderArgs) => {
   const domainUrl = getDomainUrl(request);
   const user = await getUserWithRole(request);
   const clientHints = getClientHints(request);
@@ -82,7 +81,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
         <Links />
       </head>
       <body className="dark h-full bg-gray-950 text-gray-50">
-        <Document />
+        <Document toast={loaderData.toast} />
         <ScrollRestoration />
         <Scripts />
         <Toaster />
@@ -91,9 +90,12 @@ export default function App({ loaderData }: Route.ComponentProps) {
   );
 }
 
-function Document() {
+function Document({
+  toast,
+}: {
+  toast: Route.ComponentProps["loaderData"]["toast"];
+}) {
   const optionalUser = useOptionalUser();
-  const { toast } = useLoaderData<typeof loader>();
   useToast(toast);
 
   return (

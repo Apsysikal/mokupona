@@ -1,4 +1,9 @@
-import { getFormProps, getInputProps, useForm } from "@conform-to/react";
+import {
+  getFormProps,
+  getInputProps,
+  useForm,
+  type SubmissionResult,
+} from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { Form, Link, redirect, useLocation } from "react-router";
 import { z } from "zod";
@@ -59,7 +64,11 @@ export async function action({ request, params }: Route.ActionArgs) {
   const uploadResult = await parseImageFormData(request, "image");
 
   if (!uploadResult.success) {
-    return { uploadHandlerError: uploadResult.uploadError };
+    // folded into the conform result so actionData has a single shape
+    return {
+      status: "error",
+      error: { image: [uploadResult.uploadError] },
+    } satisfies SubmissionResult;
   }
 
   const submission = parseWithZod(uploadResult.formData, {
@@ -113,20 +122,26 @@ export async function action({ request, params }: Route.ActionArgs) {
   return redirect("/admin/board-members/new");
 }
 
+export const meta: Route.MetaFunction = ({ loaderData }) => {
+  return [
+    {
+      title: loaderData
+        ? `Admin - Board Member - ${loaderData.boardMember.name} - Edit`
+        : "Admin - Board Member - Edit",
+    },
+  ];
+};
+
 export default function BoardMemberEditRoute({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
   const location = useLocation();
   const { boardMember } = loaderData;
-  const lastSubmission = actionData;
   const [form, fields] = useForm({
     // This key makes sure, that when selecting another member the form updates to the new default values
     id: location.key,
-    lastResult:
-      lastSubmission && "uploadHandlerError" in lastSubmission
-        ? null
-        : lastSubmission,
+    lastResult: actionData,
     shouldValidate: "onBlur",
     constraint: getZodConstraint(MemberSchema),
     defaultValue: {
@@ -137,11 +152,6 @@ export default function BoardMemberEditRoute({
       return parseWithZod(formData, { schema: MemberSchema });
     },
   });
-
-  const fileUploadErrors =
-    lastSubmission && "uploadHandlerError" in lastSubmission
-      ? [lastSubmission.uploadHandlerError]
-      : undefined;
 
   return (
     <>
@@ -183,7 +193,7 @@ export default function BoardMemberEditRoute({
             tabIndex: 0,
             accept: validImageTypes.join(","),
           }}
-          errors={fields.image.errors ?? fileUploadErrors}
+          errors={fields.image.errors}
         />
 
         <Button type="submit">Update {boardMember.name}</Button>

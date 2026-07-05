@@ -1,4 +1,9 @@
-import { FormProvider, getFormProps, useForm } from "@conform-to/react";
+import {
+  FormProvider,
+  getFormProps,
+  useForm,
+  type SubmissionResult,
+} from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { Form, redirect } from "react-router";
 
@@ -6,7 +11,6 @@ import type { Route } from "./+types/admin.dinners.$dinnerId_.edit";
 
 import {
   AdminDinnerForm,
-  splitUploadActionData,
   toAddressOptions,
 } from "~/components/admin-dinner-form";
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
@@ -31,12 +35,6 @@ import { nullableStringUpdateValue } from "~/utils/nullable-update-field.server"
 import { requireUserWithRole } from "~/utils/session.server";
 
 const VALID_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-
-export function meta({ loaderData }: Route.MetaArgs) {
-  const { dinner } = loaderData;
-
-  return [{ title: `Admin - Dinner - ${dinner.title} - Edit` }];
-}
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
@@ -84,7 +82,11 @@ export async function action({ request, params }: Route.ActionArgs) {
   const uploadResult = await parseImageFormData(request, "cover");
 
   if (!uploadResult.success) {
-    return { uploadHandlerError: uploadResult.uploadError };
+    // folded into the conform result so actionData has a single shape
+    return {
+      status: "error",
+      error: { cover: [uploadResult.uploadError] },
+    } satisfies SubmissionResult;
   }
 
   const submission = parseWithZod(uploadResult.formData, {
@@ -159,6 +161,16 @@ export async function action({ request, params }: Route.ActionArgs) {
   return redirect(`/admin/dinners/${event.id}`);
 }
 
+export const meta: Route.MetaFunction = ({ loaderData }) => {
+  return [
+    {
+      title: loaderData
+        ? `Admin - Dinner - ${loaderData.dinner.title} - Edit`
+        : "Admin - Dinner - Edit",
+    },
+  ];
+};
+
 export default function DinnersPage({
   loaderData,
   actionData,
@@ -166,11 +178,10 @@ export default function DinnersPage({
   const schema = EventSchema.partial({ cover: true });
   const { addresses, validImageTypes, dinner, signupForm, formHasSubmissions } =
     loaderData;
-  const { coverErrors, lastResult } = splitUploadActionData(actionData);
   const addressOptions = toAddressOptions(addresses);
 
   const [form, fields] = useForm({
-    lastResult,
+    lastResult: actionData,
     shouldValidate: "onBlur",
     constraint: getZodConstraint(schema),
     defaultValue: {
@@ -194,7 +205,6 @@ export default function DinnersPage({
           fields={fields}
           addressOptions={addressOptions}
           validImageTypes={validImageTypes}
-          coverErrors={coverErrors}
           submitText="Update Dinner"
           pageTitle={`Edit ${dinner.title}`}
           cancelHref={`/admin/dinners/${dinner.id}`}

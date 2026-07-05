@@ -15,6 +15,10 @@ export async function loader({ request }: Route.LoaderArgs) {
   return { boardMembers };
 }
 
+export const meta: Route.MetaFunction = () => {
+  return [{ title: "Admin - Board Members" }];
+};
+
 export default function BoardMembersIndexRoute({
   loaderData,
 }: Route.ComponentProps) {

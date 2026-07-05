@@ -1,6 +1,5 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import type { MetaFunction } from "react-router";
 import { Form, Link, redirect, useSearchParams } from "react-router";
 import { z } from "zod";
 
@@ -105,7 +104,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   });
 };
 
-export const meta: MetaFunction = () => [{ title: "Sign Up" }];
+export const meta: Route.MetaFunction = () => [{ title: "Sign Up" }];
 
 export default function Join({ actionData }: Route.ComponentProps) {
   const [searchParams] = useSearchParams();

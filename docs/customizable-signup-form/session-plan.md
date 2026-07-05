@@ -11,15 +11,15 @@ Companion to [`design.md`](./design.md) and [`implementation-plan.md`](./impleme
 
 ## Status
 
-| #   | Session                                            | Phase        | Status |
-| --- | -------------------------------------------------- | ------------ | ------ |
-| 1   | Branch cleanup + generic forms library             | cleanup + 0a | ☑      |
-| 2   | Signup page renders via registry (old storage)     | 0b           | ☑      |
-| 3   | Storage: schema, migration, backfill, models       | 1a           | ☑      |
-| 4   | Attendee read layer + admin/CSV switch             | 1b           | ☑      |
-| 5   | Write-path switch to FormSubmission                | 1c           | ☑      |
-| 6   | Admin builder UI — core                            | 2a           | ☑      |
-| 7   | Builder guardrails + full e2e sweep                | 2b           | ☑      |
+| #   | Session                                            | Phase        | Status                                      |
+| --- | -------------------------------------------------- | ------------ | ------------------------------------------- |
+| 1   | Branch cleanup + generic forms library             | cleanup + 0a | ☑                                           |
+| 2   | Signup page renders via registry (old storage)     | 0b           | ☑                                           |
+| 3   | Storage: schema, migration, backfill, models       | 1a           | ☑                                           |
+| 4   | Attendee read layer + admin/CSV switch             | 1b           | ☑                                           |
+| 5   | Write-path switch to FormSubmission                | 1c           | ☑                                           |
+| 6   | Admin builder UI — core                            | 2a           | ☑                                           |
+| 7   | Builder guardrails + full e2e sweep                | 2b           | ☑                                           |
 | 8+  | New field types (one session each, `select` first) | 3            | ☑ `select` shipped; further types on demand |
 
 ## Deviations & discoveries

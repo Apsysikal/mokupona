@@ -1,4 +1,4 @@
-import type { MetaFunction } from "react-router";
+import type { Route } from "./+types/_index";
 
 import { HeroBlockView } from "~/features/cms/blocks/hero";
 import type { HeroBlockType } from "~/features/cms/blocks/hero/model";
@@ -8,12 +8,8 @@ import {
   TextSectionBlockView,
   type TextSectionBlockType,
 } from "~/features/cms/blocks/text-section";
-import type { RootLoaderData } from "~/root";
 
-export const meta: MetaFunction<null, { root: RootLoaderData }> = ({
-  matches,
-  location,
-}) => {
+export const meta: Route.MetaFunction = ({ matches, location }) => {
   const metaTags = [
     { title: "moku pona" },
     {
@@ -21,7 +17,7 @@ export const meta: MetaFunction<null, { root: RootLoaderData }> = ({
       content:
         "A dinner society in Zurich, bringing people together through shared meals, stories, and the joy of discovery.",
     },
-  ] satisfies ReturnType<MetaFunction>;
+  ] satisfies ReturnType<Route.MetaFunction>;
 
   const domainUrl = matches[0].loaderData.domainUrl;
 

@@ -8,7 +8,6 @@ import {
 import { Link } from "react-router";
 import type z from "zod";
 
-import type { ListOfErrors } from "./forms";
 import { Field, SelectField, TextareaField } from "./forms";
 import { SectionNav } from "./section-nav";
 import { SignupFormBuilder } from "./signup-form-builder";
@@ -34,7 +33,6 @@ type UpdatedAdminDinnerFormProps = {
   fields: FieldsetOf<typeof EventFormSchema>;
   addressOptions: Array<{ label: string; value: string }>;
   validImageTypes: string[];
-  coverErrors?: ListOfErrors;
   submitText: string;
   pageTitle: string;
   cancelHref: string;
@@ -67,20 +65,6 @@ export function toAddressOptions(
   }));
 }
 
-// Splits the dinner routes' two-shaped action data: an upload-handler failure
-// becomes cover errors, anything else is Conform's last result.
-export function splitUploadActionData<Result extends object>(
-  actionData: Result | { uploadHandlerError: string } | undefined,
-) {
-  const hasUploadError =
-    actionData !== undefined && "uploadHandlerError" in actionData;
-
-  return {
-    coverErrors: hasUploadError ? [actionData.uploadHandlerError] : undefined,
-    lastResult: hasUploadError ? undefined : actionData,
-  };
-}
-
 function SectionCard({
   id,
   title,
@@ -96,7 +80,7 @@ function SectionCard({
     <Card
       id={id}
       // scroll-mt clears the sticky chip nav when jumping via anchor links
-      className="border-white/10 scroll-mt-16 md:scroll-mt-8"
+      className="scroll-mt-16 border-white/10 md:scroll-mt-8"
     >
       <CardHeader>
         <CardTitle className="text-base font-bold md:text-lg">
@@ -123,7 +107,7 @@ function SaveBar({
   const form = useFormMetadata();
 
   return (
-    <div className="border-white/10 bg-gray-950/85 sticky bottom-0 z-10 -mx-2 border-t px-4 py-3 backdrop-blur md:mx-0 md:rounded-xl md:border">
+    <div className="sticky bottom-0 z-10 -mx-2 border-t border-white/10 bg-gray-950/85 px-4 py-3 backdrop-blur md:mx-0 md:rounded-xl md:border">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p
           className={cn(
@@ -148,7 +132,6 @@ export function AdminDinnerForm({
   fields,
   addressOptions,
   validImageTypes,
-  coverErrors,
   submitText,
   pageTitle,
   cancelHref,
@@ -262,7 +245,7 @@ export function AdminDinnerForm({
                 tabIndex: 0,
                 accept: validImageTypes.join(","),
               }}
-              errors={fields.cover.errors ?? coverErrors}
+              errors={fields.cover.errors}
             />
 
             <SelectField

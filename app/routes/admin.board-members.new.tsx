@@ -1,4 +1,9 @@
-import { getFormProps, getInputProps, useForm } from "@conform-to/react";
+import {
+  getFormProps,
+  getInputProps,
+  useForm,
+  type SubmissionResult,
+} from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { Form, redirect, useLocation } from "react-router";
 import { z } from "zod";
@@ -46,7 +51,11 @@ export async function action({ request }: Route.ActionArgs) {
   const uploadResult = await parseImageFormData(request, "image");
 
   if (!uploadResult.success) {
-    return { uploadHandlerError: uploadResult.uploadError };
+    // folded into the conform result so actionData has a single shape
+    return {
+      status: "error",
+      error: { image: [uploadResult.uploadError] },
+    } satisfies SubmissionResult;
   }
 
   const submission = parseWithZod(uploadResult.formData, {
@@ -90,29 +99,24 @@ export async function action({ request }: Route.ActionArgs) {
   return redirect("/admin/board-members/new");
 }
 
+export const meta: Route.MetaFunction = () => {
+  return [{ title: "Admin - Create Board Member" }];
+};
+
 export default function BoardMemberNewRoute({
   actionData,
 }: Route.ComponentProps) {
   const location = useLocation();
-  const lastSubmission = actionData;
   const [form, fields] = useForm({
     // This id makes sure to clear out the form when redirecting to the same page
     id: location.key,
-    lastResult:
-      lastSubmission && "uploadHandlerError" in lastSubmission
-        ? null
-        : lastSubmission,
+    lastResult: actionData,
     shouldValidate: "onBlur",
     constraint: getZodConstraint(MemberSchema),
     onValidate({ formData }) {
       return parseWithZod(formData, { schema: MemberSchema });
     },
   });
-
-  const fileUploadErros =
-    lastSubmission && "uploadHandlerError" in lastSubmission
-      ? [lastSubmission.uploadHandlerError]
-      : undefined;
 
   return (
     <>
@@ -150,7 +154,7 @@ export default function BoardMemberNewRoute({
             tabIndex: 0,
             accept: validImageTypes.join(","),
           }}
-          errors={fields.image.errors ?? fileUploadErros}
+          errors={fields.image.errors}
         />
 
         <Button type="submit">Add new board member</Button>
