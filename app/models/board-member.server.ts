@@ -11,6 +11,11 @@ export interface BoardMemberData {
   image?: ImageData;
 }
 
+// the admin tab bar shows a count pill per section
+export async function countBoardMembers(): Promise<number> {
+  return prisma.boardMember.count();
+}
+
 export async function listBoardMembers(): Promise<
   { id: string; name: string; position: string; imageId: string | null }[]
 > {
@@ -44,6 +49,11 @@ export async function createBoardMember(
       ...(image && { image: { create: image } }),
     },
   });
+}
+
+// the portrait cascades (Image.boardMemberId is onDelete: Cascade)
+export async function deleteBoardMember(id: string): Promise<BoardMember> {
+  return prisma.boardMember.delete({ where: { id } });
 }
 
 // Replaces the portrait iff a new image is provided: the old image row is

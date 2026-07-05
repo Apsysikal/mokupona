@@ -5,6 +5,11 @@ import { deleteEventsInTx } from "~/models/event.server";
 
 export type { Address } from "#prisma/generated/client";
 
+// the admin tab bar shows a count pill per section
+export async function countAddresses(): Promise<number> {
+  return prisma.address.count();
+}
+
 export async function getAddresses(): Promise<Address[]> {
   return prisma.address.findMany();
 }

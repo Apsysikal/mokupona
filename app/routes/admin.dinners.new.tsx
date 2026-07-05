@@ -146,8 +146,8 @@ export default function DinnersPage({
           fields={fields}
           addressOptions={addressOptions}
           validImageTypes={validImageTypes}
-          submitText="Create Dinner"
-          pageTitle="Create a new dinner"
+          submitText="Save dinner"
+          pageTitle="New dinner"
           cancelHref="/admin/dinners"
         />
       </Form>

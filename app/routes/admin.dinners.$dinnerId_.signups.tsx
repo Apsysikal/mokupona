@@ -1,18 +1,56 @@
+import { ChevronLeftIcon, DownloadIcon } from "@radix-ui/react-icons";
+import { Link } from "react-router";
+
 import type { Route } from "./+types/admin.dinners.$dinnerId_.signups";
 
+import { AdminPageHeader, InitialsAvatar } from "~/components/admin-ui";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { getAttendeesForEvent } from "~/features/signup-form/read.server";
+import {
+  getAttendeesForEvent,
+  type Attendee,
+} from "~/features/signup-form/read.server";
 import { getEventById } from "~/models/event.server";
+import { formatAdminTimestamp } from "~/utils/misc";
 import { requireUserWithRole } from "~/utils/session.server";
+
+// The table reads one row per party: the signer fronts the row, friends only
+// bump the party size. Legacy rows never share a submissionId, so each stays
+// its own party of one.
+function toParties(attendees: Attendee[]) {
+  const parties = new Map<
+    string,
+    { name: string; email: string; size: number; createdAt: Date }
+  >();
+
+  for (const attendee of attendees) {
+    const existing = parties.get(attendee.submissionId);
+    if (!existing) {
+      parties.set(attendee.submissionId, {
+        name: attendee.name,
+        email: attendee.email,
+        size: 1,
+        createdAt: attendee.createdAt,
+      });
+    } else {
+      existing.size += 1;
+      if (attendee.isSigner) {
+        existing.name = attendee.name;
+        existing.email = attendee.email;
+      }
+    }
+  }
+
+  return [...parties.values()];
+}
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
@@ -27,8 +65,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   if (!event) throw new Response("Not found", { status: 404 });
 
   return {
-    event,
-    attendees,
+    event: { title: event.title, slots: event.slots },
+    seatsTaken: attendees.length,
+    parties: toParties(attendees),
   };
 }
 
@@ -41,45 +80,96 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
 export default function DinnerSignupsPage({
   loaderData,
 }: Route.ComponentProps) {
-  const { event, attendees } = loaderData;
+  const { event, seatsTaken, parties } = loaderData;
 
   return (
-    <main className="flex grow flex-col gap-5">
-      <div className="bg-secondary text-secondary-foreground flex items-center justify-between gap-2 rounded-md p-4">
-        <p className="text-sm leading-none font-medium">
-          You are viewing the submissons for the {`${event.title}`} dinner.
-        </p>
+    <main className="animate-in fade-in slide-in-from-bottom-1.5 duration-300">
+      <Link
+        to="/admin/dinners"
+        prefetch="intent"
+        className="text-fg-label hover:text-foreground mb-3.5 inline-flex items-center gap-1.5 text-[13px] transition-colors"
+      >
+        <ChevronLeftIcon className="size-[15px]" />
+        Dinners
+      </Link>
 
-        <span className="flex gap-2">
-          <Button variant="ghost" asChild>
-            <a href="signups.csv">Export Responses</a>
+      <AdminPageHeader
+        eyebrow={`${parties.length} signups · ${seatsTaken} / ${event.slots} seats`}
+        title={event.title}
+        actions={
+          <Button variant="outline" asChild>
+            <a href="signups.csv">
+              <DownloadIcon className="mr-2 size-4" />
+              Export CSV
+            </a>
           </Button>
-        </span>
-      </div>
-      <Table>
-        <TableCaption>Signups for {event.title}</TableCaption>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-25">Email</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Date</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {attendees.map((attendee, index) => {
-            return (
-              // a party shares its submissionId, so the key needs the index
-              <TableRow key={`${attendee.submissionId}-${index}`}>
-                <TableCell className="font-medium">{attendee.email}</TableCell>
-                <TableCell>{attendee.name}</TableCell>
-                <TableCell>
-                  {new Date(attendee.createdAt).toLocaleString()}
+        }
+      />
+
+      <Card className="overflow-hidden rounded-[14px]">
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="text-fg-label h-auto px-4.5 py-3.25 text-xs font-semibold tracking-[.04em] uppercase">
+                Guest
+              </TableHead>
+              <TableHead className="text-fg-label h-auto px-4.5 py-3.25 text-xs font-semibold tracking-[.04em] uppercase">
+                Email
+              </TableHead>
+              <TableHead className="text-fg-label h-auto px-4.5 py-3.25 text-center text-xs font-semibold tracking-[.04em] uppercase">
+                Party
+              </TableHead>
+              <TableHead className="text-fg-label h-auto px-4.5 py-3.25 text-right text-xs font-semibold tracking-[.04em] uppercase">
+                Signed up
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {parties.map((party, index) => (
+              <TableRow
+                key={`${party.email}-${index}`}
+                className="hover:bg-foreground/3"
+              >
+                <TableCell className="px-4.5 py-3.75">
+                  <div className="flex items-center gap-3">
+                    <InitialsAvatar
+                      name={party.name}
+                      seed={index}
+                      className="size-8.5 text-xs"
+                    />
+                    <span className="font-semibold">{party.name}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-muted-foreground px-4.5 py-3.75">
+                  {party.email}
+                </TableCell>
+                <TableCell className="px-4.5 py-3.75 text-center">
+                  {party.size}
+                </TableCell>
+                <TableCell className="px-4.5 py-3.75 text-right">
+                  <time
+                    dateTime={new Date(party.createdAt).toISOString()}
+                    suppressHydrationWarning
+                    className="text-fg-label text-[13px] whitespace-nowrap"
+                  >
+                    {formatAdminTimestamp(new Date(party.createdAt))}
+                  </time>
                 </TableCell>
               </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+            ))}
+            {parties.length === 0 ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell
+                  colSpan={4}
+                  className="text-fg-label px-4.5 py-8 text-center text-sm"
+                >
+                  No signups yet.
+                </TableCell>
+              </TableRow>
+            ) : null}
+          </TableBody>
+        </Table>
+      </Card>
     </main>
   );
 }

@@ -1,9 +1,16 @@
-import { ChevronRightIcon, PersonIcon } from "@radix-ui/react-icons";
-import { Link, Outlet } from "react-router";
+import { PersonIcon, PlusIcon } from "@radix-ui/react-icons";
+import { Link, Outlet, useFetcher, useLocation } from "react-router";
 
 import type { Route } from "./+types/admin.board-members";
 import { OptimizedImage } from "./file.$fileId";
 
+import {
+  AdminEmptyState,
+  AdminPageHeader,
+  InitialsAvatar,
+} from "~/components/admin-ui";
+import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { listBoardMembers } from "~/models/board-member.server";
 import { requireUserWithRole } from "~/utils/session.server";
 
@@ -17,61 +24,109 @@ export const meta: Route.MetaFunction = () => {
   return [{ title: "Admin - Board Members" }];
 };
 
-export default function BoardMembersIndexRoute({
+export default function AdminBoardMembersPage({
   loaderData,
 }: Route.ComponentProps) {
   const { boardMembers } = loaderData;
+  const location = useLocation();
+  // the new/edit forms render below the list via the Outlet
+  const formOpen = location.pathname !== "/admin/board-members";
 
   return (
-    <main>
-      <h1 className="text-4xl">Manage board members</h1>
-      <ul className="mt-8 divide-y">
-        {boardMembers.map((boardMember) => {
-          const { id, name, position, imageId } = boardMember;
+    <div className="animate-in fade-in slide-in-from-bottom-1.5 duration-300">
+      <AdminPageHeader
+        eyebrow={`${boardMembers.length} members`}
+        title="Board members"
+        subtitle="These profiles appear publicly on the moku pona website."
+        actions={
+          <Button asChild>
+            <Link to="new">
+              <PlusIcon className="mr-2 size-[17px]" />
+              Add member
+            </Link>
+          </Button>
+        }
+      />
 
-          return (
-            <li
-              key={name}
-              className="relative flex justify-between gap-x-6 py-5"
-            >
-              <div className="flex min-w-0 gap-x-4">
-                {imageId ? (
-                  <OptimizedImage
-                    imageId={imageId}
-                    alt={`Portrait of ${name}`}
-                    width={50}
-                    height={50}
-                    className="size-12 flex-none rounded-full bg-gray-50"
-                  />
-                ) : (
-                  <div className="bg-primary flex size-12 shrink-0 items-center justify-center rounded-full">
-                    <PersonIcon className="text-primary-foreground size-8" />
-                  </div>
-                )}
-                <div className="min-w-0 flex-auto">
-                  <p className="text-sm/6 font-semibold">
-                    <Link to={`/admin/board-members/${id}/edit`}>
-                      <span className="absolute inset-x-0 -top-px bottom-0" />
-                      {name}
-                    </Link>
-                  </p>
-                  <p className="mt-1 flex text-xs/5 text-gray-300">
-                    {position}
-                  </p>
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-x-4">
-                <ChevronRightIcon
-                  aria-hidden="true"
-                  className="size-5 flex-none"
-                />
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-      <div className="mt-8" />
-      <Outlet />
-    </main>
+      {boardMembers.length > 0 ? (
+        <div className="grid gap-3.5 md:grid-cols-2">
+          {boardMembers.map((member, index) => (
+            <BoardMemberCard key={member.id} member={member} seed={index} />
+          ))}
+        </div>
+      ) : (
+        <AdminEmptyState
+          icon={<PersonIcon className="size-6.5" />}
+          title="No board members yet"
+          description="Add the people behind moku pona — they show up on the public site."
+          action={
+            <Button asChild>
+              <Link to="new">Add member</Link>
+            </Button>
+          }
+        />
+      )}
+
+      {formOpen ? (
+        <div className="border-foreground/10 mt-8 border-t pt-8">
+          <Outlet />
+        </div>
+      ) : (
+        <Outlet />
+      )}
+    </div>
+  );
+}
+
+type BoardMember = Awaited<ReturnType<typeof loader>>["boardMembers"][number];
+
+function BoardMemberCard({
+  member,
+  seed,
+}: {
+  member: BoardMember;
+  seed: number;
+}) {
+  const deleteFetcher = useFetcher();
+  const isDeleting = deleteFetcher.state !== "idle";
+  const { id, name, position, imageId } = member;
+
+  return (
+    <Card className="hover:border-primary/30 flex flex-wrap items-center gap-3.5 rounded-[14px] p-4.5 transition-colors">
+      {imageId ? (
+        <OptimizedImage
+          imageId={imageId}
+          alt={`Portrait of ${name}`}
+          width={96}
+          height={96}
+          className="size-12 shrink-0 rounded-full object-cover"
+        />
+      ) : (
+        <InitialsAvatar name={name} seed={seed} className="size-12 text-sm" />
+      )}
+      <div className="min-w-0 flex-1">
+        <h2 className="truncate text-base font-bold tracking-[-.01em]">
+          {name}
+        </h2>
+        <p className="text-muted-foreground mt-0.5 truncate text-sm">
+          {position}
+        </p>
+      </div>
+      <div className="flex shrink-0 gap-2">
+        <Button size="sm" variant="outline" asChild>
+          <Link to={`${id}/edit`}>Edit</Link>
+        </Button>
+        <deleteFetcher.Form method="POST" action={`${id}/delete`}>
+          <Button
+            type="submit"
+            size="sm"
+            variant="destructive-outline"
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Deleting…" : "Delete"}
+          </Button>
+        </deleteFetcher.Form>
+      </div>
+    </Card>
   );
 }

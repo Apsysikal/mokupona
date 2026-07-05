@@ -1,5 +1,23 @@
 // line icons the radix set is missing; stroke follows currentColor so the
 // callers control color via text-* classes
+export function UtensilsIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.6}
+      stroke="currentColor"
+      strokeLinecap="round"
+      className={className}
+    >
+      <path d="M6 3v7a2 2 0 0 0 4 0V3" />
+      <path d="M8 10v11" />
+      <path d="M18 3c-1.6 0-3 2-3 5.5S16.4 13 18 13v8" />
+    </svg>
+  );
+}
+
 export function CreditCardIcon({ className }: { className?: string }) {
   return (
     <svg

@@ -66,6 +66,20 @@ export async function eventHasSignups(eventId: string) {
   return submission !== null || legacyResponse !== null;
 }
 
+// Bulk variant for the admin lists: only the answers (for party sizing) and
+// the owning event id, across many events in one query.
+export async function getFormSubmissionAnswersByEvent(eventIds: string[]) {
+  return prisma.formSubmission.findMany({
+    where: { formVersion: { form: { event: { id: { in: eventIds } } } } },
+    select: {
+      answers: true,
+      formVersion: {
+        select: { form: { select: { event: { select: { id: true } } } } },
+      },
+    },
+  });
+}
+
 // Submissions carry no eventId; the link is Event.formId -> FormVersion.formId.
 // Each submission comes with the version it answered so stored answers are
 // interpreted against the exact schema they were written for.

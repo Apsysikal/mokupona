@@ -205,8 +205,8 @@ export default function DinnersPage({
           fields={fields}
           addressOptions={addressOptions}
           validImageTypes={validImageTypes}
-          submitText="Update Dinner"
-          pageTitle={`Edit ${dinner.title}`}
+          submitText="Save dinner"
+          pageTitle="Edit dinner"
           cancelHref={`/admin/dinners/${dinner.id}`}
           lockFieldKeys={formHasSubmissions}
         />

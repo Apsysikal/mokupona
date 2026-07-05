@@ -4,10 +4,14 @@ import type { parseStoredFormSchema } from "~/features/forms/serialization";
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
 import { logger } from "~/logger.server";
 import {
+  countEventResponsesByEvent,
   getEventResponsesForEvent,
   type EventResponse,
 } from "~/models/event-response.server";
-import { getFormSubmissionsForEvent } from "~/models/form-submission.server";
+import {
+  getFormSubmissionAnswersByEvent,
+  getFormSubmissionsForEvent,
+} from "~/models/form-submission.server";
 import { getCurrentFormVersionForEvent } from "~/models/form.server";
 
 // The one place that knows signup semantics on the read side (design §8).
@@ -36,6 +40,36 @@ export async function getAttendeesForEvent(
 ): Promise<Attendee[]> {
   const { attendees } = await loadRoster(eventId);
   return attendees;
+}
+
+// Seats taken per event for the admin lists: every attendee counts — the
+// signer plus each friends[i] item, plus one per legacy row. Counting is
+// structural (no schema parse), matching flattenSubmission's tolerance.
+export async function getAttendeeCountsForEvents(
+  eventIds: string[],
+): Promise<Record<string, number>> {
+  const counts: Record<string, number> = {};
+  if (eventIds.length === 0) return counts;
+
+  const [legacyCounts, submissions] = await Promise.all([
+    countEventResponsesByEvent(eventIds),
+    getFormSubmissionAnswersByEvent(eventIds),
+  ]);
+
+  for (const { eventId, _count } of legacyCounts) {
+    counts[eventId] = (counts[eventId] ?? 0) + _count._all;
+  }
+
+  for (const submission of submissions) {
+    const eventId = submission.formVersion.form.event?.id;
+    if (!eventId) continue;
+    const answers = asRecord(submission.answers);
+    const friends = answers?.[FRIENDS_LIST_NAME];
+    const party = 1 + (Array.isArray(friends) ? friends.length : 0);
+    counts[eventId] = (counts[eventId] ?? 0) + party;
+  }
+
+  return counts;
 }
 
 // The CSV export also needs the column union across versions; the table only

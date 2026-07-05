@@ -5,6 +5,7 @@ import {
   getTextareaProps,
   useFormMetadata,
 } from "@conform-to/react";
+import { ChevronLeftIcon } from "@radix-ui/react-icons";
 import { Link } from "react-router";
 import type z from "zod";
 
@@ -80,19 +81,21 @@ function SectionCard({
     <Card
       id={id}
       // scroll-mt clears the sticky chip nav when jumping via anchor links
-      className="scroll-mt-16 border-white/10 md:scroll-mt-8"
+      className="scroll-mt-16 rounded-[14px] md:scroll-mt-8"
     >
-      <CardHeader>
-        <CardTitle className="text-base font-bold md:text-lg">
+      <CardHeader className="p-5.5 pb-4.5">
+        <CardTitle className="text-base font-bold tracking-[-.01em]">
           {title}
         </CardTitle>
         {description ? (
-          <CardDescription className="text-foreground/50">
+          <CardDescription className="text-fg-label text-[13px]">
             {description}
           </CardDescription>
         ) : null}
       </CardHeader>
-      <CardContent className="flex flex-col gap-6">{children}</CardContent>
+      <CardContent className="flex flex-col gap-6 p-5.5 pt-0">
+        {children}
+      </CardContent>
     </Card>
   );
 }
@@ -107,11 +110,11 @@ function SaveBar({
   const form = useFormMetadata();
 
   return (
-    <div className="sticky bottom-0 z-10 -mx-2 border-t border-white/10 bg-gray-950/85 px-4 py-3 backdrop-blur md:mx-0 md:rounded-xl md:border">
+    <div className="border-foreground/10 bg-background/90 sticky bottom-0 z-10 -mx-2 border-t px-4 py-3 backdrop-blur md:bottom-2.5 md:mx-0 md:rounded-xl md:border">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p
           className={cn(
-            "text-foreground/60 order-last text-center text-sm sm:order-first sm:text-left",
+            "text-fg-label order-last text-center text-[13px] sm:order-first sm:text-left",
             !form.dirty && "invisible",
           )}
         >
@@ -139,9 +142,21 @@ export function AdminDinnerForm({
 }: UpdatedAdminDinnerFormProps) {
   return (
     <div className="flex flex-col gap-4 md:gap-6">
-      <h1 className="text-xl font-bold md:text-2xl">{pageTitle}</h1>
+      <div>
+        <Link
+          to="/admin/dinners"
+          prefetch="intent"
+          className="text-fg-label hover:text-foreground mb-3.5 inline-flex items-center gap-1.5 text-[13px] transition-colors"
+        >
+          <ChevronLeftIcon className="size-[15px]" />
+          Dinners
+        </Link>
+        <h1 className="text-[26px] font-extrabold tracking-[-.02em] md:text-[32px]">
+          {pageTitle}
+        </h1>
+      </div>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-8">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-7">
         <SectionNav sections={SECTIONS} />
 
         <div className="flex min-w-0 flex-1 flex-col gap-5">
@@ -244,6 +259,9 @@ export function AdminDinnerForm({
                 ...getInputProps(fields.cover, { type: "file" }),
                 tabIndex: 0,
                 accept: validImageTypes.join(","),
+                // reads as a dropzone (design handoff §7)
+                className:
+                  "h-auto cursor-pointer rounded-[10px] border-dashed py-6 text-center file:font-semibold",
               }}
               errors={fields.cover.errors}
             />

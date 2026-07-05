@@ -47,7 +47,8 @@ export function OptimizedImage({
   });
 
   const srcSetUrls = breakPoints.map((w) => {
-    const h = w / aspect;
+    // sharp rejects fractional dimensions, so keep derived heights integer
+    const h = Math.round(w / aspect);
     const searchParams = new URLSearchParams({
       w: `${w}`,
       h: `${h}`,

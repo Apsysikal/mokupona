@@ -23,6 +23,11 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 }
 
 // The projection the admin user list needs.
+// the admin tab bar shows a count pill per section
+export async function countUsers(): Promise<number> {
+  return prisma.user.count();
+}
+
 export async function listUsersWithRoleName(): Promise<
   { id: string; email: string; role: { name: string } }[]
 > {
@@ -34,7 +39,10 @@ export async function listUsersWithRoleName(): Promise<
 // The account view shared by the profile page and the admin user edit page.
 export async function getUserAccountSummary(
   id: string,
-): Promise<{ email: string; role: { name: string; description: string } } | null> {
+): Promise<{
+  email: string;
+  role: { name: string; description: string };
+} | null> {
   return prisma.user.findUnique({
     where: { id },
     select: {

@@ -23,6 +23,11 @@ export interface EventCreateData {
 
 export type EventUpdateData = Partial<EventCreateData>;
 
+// the admin tab bar shows a count pill per section
+export async function countEvents(): Promise<number> {
+  return prisma.event.count();
+}
+
 export async function getEvents(): Promise<Event[]> {
   return prisma.event.findMany({
     orderBy: {
