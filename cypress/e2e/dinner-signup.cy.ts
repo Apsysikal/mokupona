@@ -80,10 +80,14 @@ describe("dinner signup", () => {
 
         cy.loginAsRole("moderator");
 
-        // both party members appear in the admin table, one row per person
+        // the admin table shows one row per party: the signer fronts the
+        // row and the friend only bumps the party size
         cy.visitAndCheck(`/admin/dinners/${dinnerId}/signups`);
-        cy.findByText(signerName);
-        cy.findByText(friendName);
+        cy.findByText(signerName)
+          .closest("tr")
+          .within(() => {
+            cy.findByText("2");
+          });
 
         cy.request(`/admin/dinners/${dinnerId}/signups.csv`).then(
           (response) => {

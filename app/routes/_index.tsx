@@ -111,7 +111,7 @@ export default function Index({ loaderData }: Route.ComponentProps) {
         },
         { href: "/dinners", label: "see all dinners →", variant: "secondary" },
       ],
-      meta: nextDinner ? `${nextDinner.slots} seats · zürich` : "zürich",
+      meta: undefined,
       image: {
         src: "/hero-image.jpg",
         alt: "",

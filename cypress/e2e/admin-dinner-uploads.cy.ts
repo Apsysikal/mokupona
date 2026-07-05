@@ -41,7 +41,7 @@ describe("admin dinner uploads", () => {
     cy.visitAndCheck("/admin/dinners/new");
     fillDinnerForm(values);
     uploadDinnerCover(VALID_UPLOAD_FIXTURE_PATH);
-    cy.findByRole("button", { name: /create dinner/i }).click();
+    cy.findByRole("button", { name: /save dinner/i }).click();
 
     cy.findByRole("heading", { name: values.title }).should("be.visible");
 
@@ -68,7 +68,7 @@ describe("admin dinner uploads", () => {
     uploadDinnerCover(
       uploadFileInput(ZOD_LIMIT_BYTES + 1, { fileName: "zod-too-large.jpg" }),
     );
-    cy.findByRole("button", { name: /create dinner/i }).click();
+    cy.findByRole("button", { name: /save dinner/i }).click();
 
     cy.findByText(FILE_TOO_LARGE_ERROR).should("be.visible");
     cy.location("pathname").should("eq", "/admin/dinners/new");
@@ -110,7 +110,7 @@ describe("admin dinner uploads", () => {
       cy.findByLabelText(/^title$/i)
         .clear()
         .type(updatedTitle);
-      cy.findByRole("button", { name: /update dinner/i }).click();
+      cy.findByRole("button", { name: /save dinner/i }).click();
       cy.location("pathname").should("eq", `/admin/dinners/${dinner.id}`);
 
       runUploadDbCommand<DinnerRecord>("get-dinner", { id: dinner.id }).then(
@@ -136,7 +136,7 @@ describe("admin dinner uploads", () => {
         .clear()
         .type(updatedTitle);
       uploadDinnerCover(VALID_UPLOAD_FIXTURE_PATH);
-      cy.findByRole("button", { name: /update dinner/i }).click();
+      cy.findByRole("button", { name: /save dinner/i }).click();
       cy.location("pathname").should("eq", `/admin/dinners/${dinner.id}`);
 
       runUploadDbCommand<DinnerRecord>("get-dinner", { id: dinner.id }).then(
@@ -159,7 +159,7 @@ describe("admin dinner uploads", () => {
       uploadDinnerCover(
         uploadFileInput(ZOD_LIMIT_BYTES + 1, { fileName: "zod-too-large.jpg" }),
       );
-      cy.findByRole("button", { name: /update dinner/i }).click();
+      cy.findByRole("button", { name: /save dinner/i }).click();
 
       cy.findByText(FILE_TOO_LARGE_ERROR).should("be.visible");
       cy.location("pathname").should("eq", `/admin/dinners/${dinner.id}/edit`);

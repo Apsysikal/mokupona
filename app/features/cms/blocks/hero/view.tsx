@@ -87,7 +87,7 @@ export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
           <img
             srcSet={srcSet}
             src={src}
-            className="absolute inset-0 size-full object-cover md:rounded-b-xl"
+            className="absolute inset-0 size-full object-cover"
             fetchPriority="high"
             width={width}
             height={height}

@@ -56,7 +56,7 @@ describe("admin signup form builder", () => {
       .blur();
     cy.findByLabelText(/options \(one per line\)/i).type("Meat\nVegan");
 
-    cy.findByRole("button", { name: /create dinner/i }).click();
+    cy.findByRole("button", { name: /save dinner/i }).click();
     cy.findByRole("heading", { name: values.title }).should("be.visible");
 
     cy.location("pathname")
@@ -111,7 +111,7 @@ describe("admin signup form builder", () => {
     cy.visitAndCheck("/admin/dinners/new");
     fillDinnerForm(values);
     uploadDinnerCover(VALID_UPLOAD_FIXTURE_PATH);
-    cy.findByRole("button", { name: /create dinner/i }).click();
+    cy.findByRole("button", { name: /save dinner/i }).click();
     cy.findByRole("heading", { name: values.title }).should("be.visible");
 
     cy.location("pathname")
@@ -154,7 +154,7 @@ describe("admin signup form builder", () => {
           .first()
           .clear()
           .type("Allergies");
-        cy.findByRole("button", { name: /update dinner/i }).click();
+        cy.findByRole("button", { name: /save dinner/i }).click();
         cy.findByRole("heading", { name: values.title }).should("be.visible");
 
         // v2 signup (solo) against the renamed field
@@ -168,12 +168,16 @@ describe("admin signup form builder", () => {
           .type("pollen");
         acceptPrivacyAndJoin();
 
-        // all four people from three sources share one roster and one CSV;
-        // the header carries the latest label
+        // the roster groups each source into one party row — the v1 friend
+        // isn't named, they bump the signer's party size; the CSV below
+        // stays one row per person
         cy.visitAndCheck(`/admin/dinners/${dinnerId}/signups`);
         cy.findByText(legacyName);
-        cy.findByText(v1Signer);
-        cy.findByText(v1Friend);
+        cy.findByText(v1Signer)
+          .closest("tr")
+          .within(() => {
+            cy.findByText("2");
+          });
         cy.findByText(v2Signer);
 
         cy.request(`/admin/dinners/${dinnerId}/signups.csv`).then(
@@ -196,7 +200,7 @@ describe("admin signup form builder", () => {
     cy.visitAndCheck("/admin/dinners/new");
     fillDinnerForm(values);
     uploadDinnerCover(VALID_UPLOAD_FIXTURE_PATH);
-    cy.findByRole("button", { name: /create dinner/i }).click();
+    cy.findByRole("button", { name: /save dinner/i }).click();
     cy.findByRole("heading", { name: values.title }).should("be.visible");
 
     cy.location("pathname")
@@ -223,7 +227,7 @@ describe("admin signup form builder", () => {
         cy.findByLabelText(/max per signup/i)
           .clear()
           .type("0");
-        cy.findByRole("button", { name: /update dinner/i }).click();
+        cy.findByRole("button", { name: /save dinner/i }).click();
         cy.findByRole("heading", { name: values.title }).should("be.visible");
 
         // reload shows the edited form
