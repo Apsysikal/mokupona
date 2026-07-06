@@ -1,11 +1,10 @@
 # Design Harmonization → Claude Design — Plan
 
-Status: **⏸ HALTED at the Phase 3 boundary** (2026-07-05, by user instruction).
+Status: **✅ Phases 1–3 COMPLETE** (2026-07-06). Synced to claude.ai/design as project "mokupona design system" (`projectId: 3208dbb3-75a3-424b-80b0-a1f2a78606aa`). Remaining: the separate code-convergence effort (see "Later" below).
 
-- **Complete:** Phase 1 ([drift-inventory.md](./drift-inventory.md)) and Phase 2 ([design-system-spec.md](./design-system-spec.md)). All output is uncommitted doc files on `dev`; **no code was changed.**
-- **Not started / awaiting approval:** Phase 3 (build the preview-card bundle + sync to claude.ai/design). This is an **outward-facing publish** and was deliberately **not run** — it needs explicit user go-ahead.
-- **Blocking decisions before Phase 3:** (1) approve running the external sync at all (and whether to build the bundle locally first vs. sync straight away); (2) resolve the **6 reversible design calls** in [design-system-spec.md](./design-system-spec.md) §11 (recommended defaults are provided — the user may accept all, decide each, or override).
-- **To resume:** answer the §11 calls, then say whether to build the Phase 3 bundle locally or push straight to claude.ai/design.
+- **Complete:** Phase 1 ([drift-inventory.md](./drift-inventory.md)), Phase 2 ([design-system-spec.md](./design-system-spec.md)), **all 6 §11 calls resolved 2026-07-06** (spec §11), and a **round-2 native-token harmonization** ruled by the user on first bundle review (spec §12: native tokens only, no fractional steps, one font-light display weight, one foreground/15 hairline, text tiers as foreground opacities, red-300/sky-300 semantics, file-upload field added — net: zero new @theme tokens, five deleted).
+- **Approved flow for Phase 3:** build the bundle locally in `ds-bundle/` → **user reviews** → then sync to claude.ai/design. Do not sync before the review checkpoint.
+- **No code changed** — all output remains docs (+ bundle HTML) on `dev`.
 
 Goal: validate and extend [design-audit.md](./design-audit.md) against the codebase, distill the findings into an opinionated design system (tokens + component canon), and publish it as a browsable Claude Design project on claude.ai/design.
 
@@ -51,14 +50,16 @@ Output: [design-system-spec.md](./design-system-spec.md) (opinionated spec + pro
 - [x] Judgment calls written explicitly: **kept two registers as variants of one system** (public `font-light` / admin `font-extrabold`, comfortable/compact density); lowercase scoped to dinner/section titles
 - [x] Bonus (Phase-1-surfaced): one focus-ring recipe, three motion-duration tokens, borders-not-shadows elevation ruling
 
-**6 reversible calls flagged for the user** (spec §11): card radius 14 vs 16 · page width 1040 vs 1080 · eyebrow tracking .2 vs .24em · keep/drop `--color-tan` · lowercase scope · delete vestigial dark-mode plumbing.
+**6 reversible calls — ✅ all resolved 2026-07-06**, see spec §11 for outcomes: radius 16 · width `max-w-5xl` 1024 · tracking `tracking-widest` 0.1em · drop `--color-tan` · drop `lowercase` · keep+document dark plumbing.
 
-## Phase 3 — Build bundle & sync to Claude Design
+## Phase 3 — Build bundle & sync to Claude Design  ✅ complete (2026-07-06)
 
-- [ ] Generate self-contained preview HTML per foundation/component, each with `@dsCard` marker: tokens/colors, type ramp, spacing/radius, buttons, badges/pills, eyebrows, cards, headings, form fields
-- [ ] Bundle dir suggestion: `docs/design-harmonization/ds-bundle/` (or scratchpad; must be the `localDir` of the finalize_plan)
-- [ ] DesignSync: `list_projects` → pick existing or `create_project` ("mokupona design system") → `finalize_plan` → `write_files`
-- [ ] Record the projectId here for future incremental re-syncs: `projectId: ______`
+- [x] Generated 9 self-contained preview cards with `@dsCard` markers + README + spec copy in `docs/design-harmonization/ds-bundle/`
+- [x] User reviewed round 1 → ruled the round-2 native-token harmonization (spec §12) → bundle revised → approved
+- [x] Synced via DesignSync: created project **"mokupona design system"**, finalize_plan on `ds-bundle/`, 11 files written and verified
+- [x] projectId for future incremental re-syncs: `3208dbb3-75a3-424b-80b0-a1f2a78606aa`
+
+Re-sync flow for future updates: edit bundle files → `finalize_plan` (same projectId, `localDir: ds-bundle/`) → `write_files` with just the changed paths. Refresh `spec.md` from the parent spec first if it changed.
 
 ## Later (code convergence, separate effort)
 
