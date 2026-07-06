@@ -9,6 +9,12 @@ import { cn } from "~/lib/utils";
 
 export type ListOfErrors = (string | null | undefined)[] | null | undefined;
 
+// One dropzone treatment shared by every file-upload field (design system §9):
+// a dashed hairline over the field fill that warms to the accent on hover.
+// Pass it as a file Field's `inputProps.className`.
+export const fileFieldClassName =
+  "h-auto cursor-pointer rounded-lg border-dashed border-foreground/20 py-6 text-center transition-colors hover:border-primary/35 file:font-semibold";
+
 export type FieldProps = {
   labelProps: React.ComponentProps<"label">;
   errors?: ListOfErrors;
@@ -34,7 +40,7 @@ export function ErrorList({
   return (
     <ul id={id} className="flex flex-col gap-1">
       {errorsToRender.map((e) => (
-        <li key={e} className="text-destructive text-sm">
+        <li key={e} className="text-red-300 text-sm">
           {e}
         </li>
       ))}
@@ -53,7 +59,7 @@ export function Field({
   const { id, errorId } = useFieldIds(inputProps.id, errors);
 
   return (
-    <div className={cn("flex flex-col gap-1.5", className)}>
+    <div className={cn("flex flex-col gap-2", className)}>
       <Label htmlFor={id} {...labelProps} />
       <Input
         id={id}
@@ -77,7 +83,7 @@ export function TextareaField({
   const { id, errorId } = useFieldIds(textareaProps.id, errors);
 
   return (
-    <div className={cn("flex flex-col gap-1.5", className)}>
+    <div className={cn("flex flex-col gap-2", className)}>
       <Label htmlFor={id} {...labelProps} />
       <Textarea
         id={id}
@@ -117,7 +123,7 @@ export function SelectField({
         aria-invalid={errorId ? true : undefined}
         aria-describedby={errorId}
         className={cn(
-          "border-input bg-background placeholder:text-muted-foreground file:placeholder:text-foreground focus-visible:inset-ring-ring flex h-9 w-full appearance-none rounded-md border px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:border-0 focus-visible:inset-ring-2 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
+          "border-border bg-foreground/5 placeholder:text-foreground/40 file:placeholder:text-foreground focus-visible:inset-ring-ring flex h-11 w-full appearance-none rounded-lg border px-3 py-1 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:border-0 focus-visible:inset-ring-2 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
           selectClassName,
         )}
         {...props}
@@ -145,7 +151,7 @@ export function CheckboxField({
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
-      <div className="flex items-start gap-2.5">
+      <div className="flex items-start gap-2">
         <Checkbox
           {...buttonProps}
           id={id}
@@ -157,7 +163,7 @@ export function CheckboxField({
           htmlFor={id}
           {...labelProps}
           className={cn(
-            "text-fg-secondary text-sm leading-snug",
+            "text-foreground/80 text-sm leading-snug font-normal",
             labelProps.className,
           )}
         />

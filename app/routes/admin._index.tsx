@@ -61,7 +61,7 @@ export default function AdminOverviewPage({
   const { todayLabel, nextDinner, recentSignups } = loaderData;
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-1.5 duration-300">
+    <div className="animate-page-in">
       <AdminPageHeader
         eyebrow={todayLabel}
         title="Overview"
@@ -73,7 +73,7 @@ export default function AdminOverviewPage({
             </Button>
             <Button asChild>
               <Link to="dinners/new">
-                <PlusIcon className="mr-2 size-[17px]" />
+                <PlusIcon className="mr-2 size-4" />
                 New dinner
               </Link>
             </Button>
@@ -85,24 +85,22 @@ export default function AdminOverviewPage({
         {nextDinner ? (
           <NextDinnerCard dinner={nextDinner} />
         ) : (
-          <Card className="rounded-[14px] p-6 text-center">
-            <p className="text-[17px] font-bold">No upcoming dinner</p>
-            <p className="text-fg-label mt-1.5 text-sm">
+          <Card className="p-6 text-center">
+            <p className="text-lg font-semibold">No upcoming dinner</p>
+            <p className="text-foreground/50 mt-1 text-sm">
               Create the next dinner to see it here.
             </p>
           </Card>
         )}
 
-        <Card className="rounded-[14px] p-4.5 md:p-5.5">
+        <Card className="p-4 md:p-5">
           <div className="mb-2 flex items-center justify-between md:mb-3">
-            <h2 className="text-base font-bold tracking-[-.01em]">
-              Recent signups
-            </h2>
+            <h2 className="text-base font-semibold">Recent signups</h2>
             {nextDinner ? (
               <Link
                 to={`dinners/${nextDinner.id}/signups`}
                 prefetch="intent"
-                className="text-fg-label hover:text-foreground text-[13px] transition-colors"
+                className="text-foreground/50 hover:text-foreground text-sm transition-colors"
               >
                 View all
               </Link>
@@ -114,21 +112,21 @@ export default function AdminOverviewPage({
               {recentSignups.map((signup, index) => (
                 <div
                   key={`${signup.email}-${index}`}
-                  className="border-foreground/10 flex items-center gap-3 border-b py-2.75"
+                  className="border-border flex items-center gap-3 border-b py-3"
                 >
                   <InitialsAvatar name={signup.name} seed={index} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">
                       {signup.name}
                     </p>
-                    <p className="text-fg-label truncate text-[12.5px]">
+                    <p className="text-foreground/50 truncate text-sm">
                       {signup.email}
                     </p>
                   </div>
                   <time
                     dateTime={new Date(signup.createdAt).toISOString()}
                     suppressHydrationWarning
-                    className="text-fg-faint text-xs whitespace-nowrap"
+                    className="text-foreground/40 text-xs whitespace-nowrap"
                   >
                     {formatAdminTimestamp(new Date(signup.createdAt))}
                   </time>
@@ -136,7 +134,7 @@ export default function AdminOverviewPage({
               ))}
             </div>
           ) : (
-            <p className="text-fg-label py-2 text-sm">No signups yet.</p>
+            <p className="text-foreground/50 py-2 text-sm">No signups yet.</p>
           )}
         </Card>
       </div>
@@ -150,24 +148,24 @@ function NextDinnerCard({ dinner }: { dinner: NextDinner }) {
   const date = new Date(dinner.date);
 
   return (
-    <Card className="flex flex-wrap items-center gap-4.5 rounded-[14px] p-4.5">
+    <Card className="flex flex-wrap items-center gap-4 p-4">
       <OptimizedImage
         imageId={dinner.imageId}
         alt=""
         width={236}
         height={236}
-        className="border-foreground/10 h-[132px] w-full rounded-[10px] border object-cover md:size-[118px]"
+        className="border-border h-32 w-full rounded-lg border object-cover md:size-28"
       />
 
       <div className="flex min-w-0 flex-1 basis-56 flex-col gap-3">
         <div className="min-w-0">
-          <p className="text-fg-label text-xs font-semibold tracking-[.06em] uppercase">
+          <p className="text-foreground/50 text-xs font-semibold tracking-widest uppercase">
             Next dinner
           </p>
-          <h2 className="mt-1 truncate text-[19px] font-bold tracking-[-.01em]">
+          <h2 className="mt-1 truncate text-lg font-semibold">
             {dinner.title}
           </h2>
-          <p className="text-muted-foreground mt-1 text-[13.5px]">
+          <p className="text-muted-foreground mt-1 text-sm">
             <time dateTime={date.toISOString()} suppressHydrationWarning>
               {formatAdminDateLine(date)}
             </time>
@@ -175,9 +173,9 @@ function NextDinnerCard({ dinner }: { dinner: NextDinner }) {
             {dinner.street}
           </p>
         </div>
-        <div className="flex max-w-[420px] items-center gap-3.5">
+        <div className="flex max-w-md items-center gap-3">
           <SeatProgress taken={dinner.seatsTaken} total={dinner.slots} />
-          <span className="text-fg-label text-[12.5px] whitespace-nowrap">
+          <span className="text-foreground/50 text-sm whitespace-nowrap">
             {dinner.seatsTaken} / {dinner.slots} seats
           </span>
         </div>

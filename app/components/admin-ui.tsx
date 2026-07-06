@@ -1,10 +1,12 @@
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 
+import { chipVariants, Eyebrow } from "./section";
+
 import { cn } from "~/lib/utils";
 
-// Shared building blocks of the admin redesign: page headers, the search +
+// Shared building blocks of the admin surface: page headers, the search +
 // filter-chip toolbar, seat progress bars, initials avatars and the dashed
-// empty-state panel (design handoff tmp/design_handoff_admin_redesign).
+// empty-state panel (design system §9).
 
 export function AdminPageHeader({
   eyebrow,
@@ -20,18 +22,18 @@ export function AdminPageHeader({
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <p className="text-fg-label mb-2 text-xs font-semibold tracking-[.06em] uppercase">
+        <Eyebrow variant="tracked" tone="label" className="mb-2 block">
           {eyebrow}
-        </p>
-        <h1 className="text-[26px] font-extrabold tracking-[-.02em] md:text-[32px]">
+        </Eyebrow>
+        <h1 className="text-3xl font-light tracking-tight md:text-4xl">
           {title}
         </h1>
         {subtitle ? (
-          <p className="text-muted-foreground mt-2 text-[15px]">{subtitle}</p>
+          <p className="text-muted-foreground mt-2 text-base">{subtitle}</p>
         ) : null}
       </div>
       {actions ? (
-        <div className="flex flex-wrap items-center gap-2.5">{actions}</div>
+        <div className="flex flex-wrap items-center gap-2">{actions}</div>
       ) : null}
     </div>
   );
@@ -47,14 +49,14 @@ export function AdminSearchField({
   placeholder: string;
 }) {
   return (
-    <div className="border-input bg-foreground/3 flex h-11 items-center gap-2.5 rounded-lg border px-3.5 max-md:w-full md:w-[300px]">
-      <MagnifyingGlassIcon className="text-fg-label size-[17px] shrink-0" />
+    <div className="border-border bg-foreground/5 flex h-11 items-center gap-2 rounded-lg border px-3 max-md:w-full md:w-72">
+      <MagnifyingGlassIcon className="text-foreground/50 size-4 shrink-0" />
       <input
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="placeholder:text-fg-faint min-w-0 flex-1 bg-transparent text-sm outline-none"
+        className="placeholder:text-foreground/40 min-w-0 flex-1 bg-transparent text-sm outline-none"
       />
     </div>
   );
@@ -74,12 +76,7 @@ export function FilterChip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={cn(
-        "h-9 rounded-full border px-3.75 text-[13px] font-semibold whitespace-nowrap transition-colors",
-        active
-          ? "border-primary/35 bg-primary/12 text-accent-light"
-          : "border-border text-muted-foreground hover:text-foreground",
-      )}
+      className={chipVariants({ active })}
     >
       {children}
     </button>
@@ -95,18 +92,18 @@ export function SeatProgress({
 }: {
   taken: number;
   total: number;
-  /** past dinners fill in fg-faint instead of the accent */
+  /** past dinners fill in a faint tint instead of the accent */
   muted?: boolean;
 }) {
   const percent =
     total > 0 ? Math.min(100, Math.round((taken / total) * 100)) : 0;
 
   return (
-    <div className="bg-foreground/8 h-[7px] flex-1 overflow-hidden rounded-full">
+    <div className="bg-foreground/10 h-1.5 flex-1 overflow-hidden rounded-full">
       <div
         className={cn(
-          "h-full rounded-full transition-[width] duration-400",
-          muted ? "bg-fg-faint" : "bg-primary",
+          "h-full rounded-full transition-[width] duration-500",
+          muted ? "bg-foreground/40" : "bg-primary",
         )}
         style={{ width: `${percent}%` }}
       />
@@ -114,11 +111,11 @@ export function SeatProgress({
   );
 }
 
-// three rotating tints so neighbouring avatars read as distinct
+// two rotating tints so neighbouring avatars read as distinct (the third,
+// tan, tint was dropped in the native-token harmonization — design system §2)
 const AVATAR_TINTS = [
   "text-accent-light bg-primary/15",
-  "text-fg-secondary bg-foreground/8",
-  "text-[#E0A87F] bg-[#E0A87F]/15",
+  "text-foreground/80 bg-foreground/10",
 ];
 
 export function avatarInitials(name: string) {
@@ -164,12 +161,12 @@ export function AdminEmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="border-input bg-card flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-15 text-center">
-      <div className="bg-primary/12 text-primary mb-1 flex size-14 items-center justify-center rounded-full">
+    <div className="border-border bg-card flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-14 text-center">
+      <div className="bg-primary/10 text-primary mb-1 flex size-14 items-center justify-center rounded-full">
         {icon}
       </div>
-      <p className="text-[17px] font-bold">{title}</p>
-      <p className="text-fg-label max-w-[320px] text-sm">{description}</p>
+      <p className="text-lg font-semibold">{title}</p>
+      <p className="text-foreground/50 max-w-xs text-sm">{description}</p>
       {action ? <div className="mt-1">{action}</div> : null}
     </div>
   );

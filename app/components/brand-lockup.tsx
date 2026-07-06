@@ -22,7 +22,7 @@ export function BrandLockup({
 }: BrandLockupProps) {
   const content = (
     <>
-      <Logo className={cn("size-5.5", logoClassName)} />
+      <Logo className={cn("size-5", logoClassName)} />
       <span className={cn("font-semibold", wordmarkClassName)}>moku pona</span>
     </>
   );

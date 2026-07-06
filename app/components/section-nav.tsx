@@ -41,7 +41,7 @@ export function SectionNav({ sections }: { sections: SectionNavSection[] }) {
       aria-label="Form sections"
       // the strip matches the page body so it reads as transparent while
       // still masking content scrolling underneath
-      className="bg-background/85 sticky top-0 z-10 -mx-2 px-2 py-2 backdrop-blur md:top-8 md:z-auto md:mx-0 md:w-[196px] md:shrink-0 md:self-start md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none"
+      className="bg-background/85 sticky top-0 z-10 -mx-2 px-2 py-2 backdrop-blur md:top-8 md:z-auto md:mx-0 md:w-48 md:shrink-0 md:self-start md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none"
     >
       <ul className="flex scrollbar-none gap-2 overflow-x-auto whitespace-nowrap md:flex-col md:gap-1 md:overflow-visible md:whitespace-normal [&::-webkit-scrollbar]:hidden">
         {sections.map((section) => {
@@ -64,8 +64,8 @@ export function SectionNav({ sections }: { sections: SectionNavSection[] }) {
                 className={cn(
                   "block rounded-full border px-3 py-1.5 text-sm transition-colors md:rounded-lg md:py-2",
                   active
-                    ? "border-primary/35 bg-primary/12 text-accent-light font-semibold"
-                    : "text-muted-foreground hover:text-foreground border-foreground/10 md:hover:bg-foreground/5 md:border-transparent",
+                    ? "border-primary/35 bg-primary/10 text-accent-light font-semibold"
+                    : "text-foreground/65 hover:text-foreground border-border md:hover:bg-foreground/5 md:border-transparent",
                 )}
               >
                 {section.label}

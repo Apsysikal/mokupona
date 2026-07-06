@@ -15,11 +15,11 @@ export function ImageBlockView({ blockData, ...rest }: ImageBlockViewProps) {
   // "full-width" spans the editorial column, not the viewport (design §1)
   const imageClasses =
     variant === "full-width"
-      ? "h-[200px] w-full rounded-xl object-cover md:h-[360px]"
+      ? "h-64 w-full rounded-2xl object-cover md:h-96"
       : "h-auto w-full object-cover";
 
   return (
-    <div className="mx-auto w-full max-w-[1040px] px-6 md:px-14">
+    <div className="mx-auto w-full max-w-5xl px-5 md:px-10">
       <picture {...rest}>
         <img
           src={src}

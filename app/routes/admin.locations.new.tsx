@@ -1,11 +1,10 @@
-import { getFormProps, getInputProps, useForm } from "@conform-to/react";
+import { getFormProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { Form, redirect } from "react-router";
 
 import type { Route } from "./+types/admin.locations.new";
 
-import { Field } from "~/components/forms";
-import { Button } from "~/components/ui/button";
+import { AdminLocationForm } from "~/components/admin-location-form";
 import { createAddress } from "~/models/address.server";
 import { AddressSchema } from "~/utils/address-validation";
 import { requireUserWithRole } from "~/utils/session.server";
@@ -54,42 +53,12 @@ export default function DinnersPage({ actionData }: Route.ComponentProps) {
   });
 
   return (
-    <>
-      <div>Create a new location</div>
-      <Form
-        method="POST"
-        replace
-        className="flex flex-col gap-2"
-        {...getFormProps(form)}
-      >
-        <Field
-          labelProps={{ children: "Street Name" }}
-          inputProps={{ ...getInputProps(fields.streetName, { type: "text" }) }}
-          errors={fields.streetName.errors}
-        />
-
-        <Field
-          labelProps={{ children: "House Number" }}
-          inputProps={{
-            ...getInputProps(fields.houseNumber, { type: "text" }),
-          }}
-          errors={fields.houseNumber.errors}
-        />
-
-        <Field
-          labelProps={{ children: "Zip Code" }}
-          inputProps={{ ...getInputProps(fields.zipCode, { type: "text" }) }}
-          errors={fields.zipCode.errors}
-        />
-
-        <Field
-          labelProps={{ children: "City Name" }}
-          inputProps={{ ...getInputProps(fields.city, { type: "text" }) }}
-          errors={fields.city.errors}
-        />
-
-        <Button type="submit">Create Location</Button>
-      </Form>
-    </>
+    <Form method="POST" replace {...getFormProps(form)}>
+      <AdminLocationForm
+        fields={fields}
+        submitText="Create location"
+        pageTitle="New location"
+      />
+    </Form>
   );
 }

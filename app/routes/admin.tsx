@@ -32,7 +32,7 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
   return (
     <>
       <AdminTabs counts={loaderData.counts} />
-      <main className="mx-auto w-full max-w-[1160px] grow px-4.5 pt-5.5 pb-4 md:px-10 md:pt-9.5">
+      <main className="mx-auto w-full max-w-5xl grow px-5 pt-5 pb-4 md:px-10 md:pt-9">
         <Outlet />
       </main>
     </>

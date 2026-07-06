@@ -33,7 +33,7 @@ export default function AdminBoardMembersPage({
   const formOpen = location.pathname !== "/admin/board-members";
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-1.5 duration-300">
+    <div className="animate-page-in">
       <AdminPageHeader
         eyebrow={`${boardMembers.length} members`}
         title="Board members"
@@ -41,7 +41,7 @@ export default function AdminBoardMembersPage({
         actions={
           <Button asChild>
             <Link to="new">
-              <PlusIcon className="mr-2 size-[17px]" />
+              <PlusIcon className="mr-2 size-4" />
               Add member
             </Link>
           </Button>
@@ -49,14 +49,14 @@ export default function AdminBoardMembersPage({
       />
 
       {boardMembers.length > 0 ? (
-        <div className="grid gap-3.5 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2">
           {boardMembers.map((member, index) => (
             <BoardMemberCard key={member.id} member={member} seed={index} />
           ))}
         </div>
       ) : (
         <AdminEmptyState
-          icon={<PersonIcon className="size-6.5" />}
+          icon={<PersonIcon className="size-6" />}
           title="No board members yet"
           description="Add the people behind moku pona — they show up on the public site."
           action={
@@ -68,7 +68,7 @@ export default function AdminBoardMembersPage({
       )}
 
       {formOpen ? (
-        <div className="border-foreground/10 mt-8 border-t pt-8">
+        <div className="border-border mt-8 border-t pt-8">
           <Outlet />
         </div>
       ) : (
@@ -92,7 +92,7 @@ function BoardMemberCard({
   const { id, name, position, imageId } = member;
 
   return (
-    <Card className="hover:border-primary/30 flex flex-wrap items-center gap-3.5 rounded-[14px] p-4.5 transition-colors">
+    <Card interactive className="flex flex-wrap items-center gap-3 p-4">
       {imageId ? (
         <OptimizedImage
           imageId={imageId}
@@ -105,9 +105,7 @@ function BoardMemberCard({
         <InitialsAvatar name={name} seed={seed} className="size-12 text-sm" />
       )}
       <div className="min-w-0 flex-1">
-        <h2 className="truncate text-base font-bold tracking-[-.01em]">
-          {name}
-        </h2>
+        <h2 className="truncate text-base font-semibold">{name}</h2>
         <p className="text-muted-foreground mt-0.5 truncate text-sm">
           {position}
         </p>

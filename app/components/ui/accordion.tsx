@@ -36,7 +36,7 @@ const AccordionTrigger = ({
       {...props}
     >
       {children}
-      <ChevronDownIcon className="text-primary size-4.5 shrink-0 transition-transform duration-200" />
+      <ChevronDownIcon className="text-primary size-4 shrink-0 transition-transform duration-300" />
     </AccordionPrimitive.Trigger>
   </AccordionPrimitive.Header>
 );

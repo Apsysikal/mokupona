@@ -24,7 +24,7 @@ export function AdminTabs({ counts }: { counts: AdminTabCounts }) {
   return (
     <nav
       aria-label="Admin sections"
-      className="border-foreground/10 flex gap-5.5 overflow-x-auto border-b px-4 whitespace-nowrap md:gap-7.5 md:px-10 [&::-webkit-scrollbar]:hidden"
+      className="border-border flex gap-5 overflow-x-auto border-b px-4 whitespace-nowrap md:gap-7 md:px-10 [&::-webkit-scrollbar]:hidden"
     >
       {TABS.map((tab) => {
         const count = "countKey" in tab ? counts[tab.countKey] : null;
@@ -42,7 +42,7 @@ export function AdminTabs({ counts }: { counts: AdminTabCounts }) {
             prefetch="intent"
             className={({ isActive }) =>
               cn(
-                "-mb-px inline-flex items-center gap-1.75 border-b-2 py-4 text-[15px] font-semibold transition-colors",
+                "-mb-px inline-flex items-center gap-2 border-b-2 py-4 text-base font-semibold transition-colors",
                 isActive
                   ? "border-primary text-foreground"
                   : "text-muted-foreground hover:text-foreground border-transparent",
@@ -51,7 +51,7 @@ export function AdminTabs({ counts }: { counts: AdminTabCounts }) {
           >
             {tab.label}
             {count !== null ? (
-              <span className="text-fg-label bg-foreground/6 rounded-full px-1.75 py-px text-[11px] font-bold">
+              <span className="text-foreground/50 bg-foreground/5 rounded-full px-2 py-px text-xs font-bold">
                 {count}
               </span>
             ) : null}

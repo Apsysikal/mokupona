@@ -9,7 +9,7 @@ import { Form, Link, redirect, useLocation } from "react-router";
 
 import type { Route } from "./+types/admin.board-members.$userId.edit";
 
-import { Field } from "~/components/forms";
+import { Field, fileFieldClassName } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import {
   MemberSchema,
@@ -152,6 +152,7 @@ export default function BoardMemberEditRoute({
             ...getInputProps(fields.image, { type: "file" }),
             tabIndex: 0,
             accept: validImageTypes.join(","),
+            className: fileFieldClassName,
           }}
           errors={fields.image.errors}
         />

@@ -25,13 +25,13 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
     .reverse();
 
   return (
-    <main className="mx-auto w-full max-w-[1040px] grow px-6 pt-7 pb-20 md:px-10 md:pt-16">
-      <div className="mb-9 flex flex-col gap-3 md:mb-12 md:gap-3.5">
-        <Eyebrow className="tracking-[.28em]">gatherings</Eyebrow>
-        <h1 className="text-[34px] font-light tracking-[-.01em] md:text-[44px]">
+    <main className="mx-auto w-full max-w-5xl grow px-5 pt-7 pb-20 md:px-10 md:pt-16">
+      <div className="mb-9 flex flex-col gap-3 md:mb-12">
+        <Eyebrow>gatherings</Eyebrow>
+        <h1 className="text-3xl font-light tracking-tight md:text-4xl">
           dinners
         </h1>
-        <p className="text-fg-muted max-w-[560px] text-[15px] leading-relaxed font-light md:text-lg">
+        <p className="text-foreground/65 max-w-2xl text-base leading-relaxed font-light md:text-lg">
           {upcomingEvents.length > 0
             ? "a handful of seats open before each supper. reserve early, tables are small and fill quickly."
             : "we run a handful of intimate dinners a year. there's nothing on the calendar right now, but the next one is never far off."}
@@ -40,7 +40,7 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
 
       {upcomingEvents.length > 0 ? (
         <>
-          <SectionDivider className="mb-5.5">the next dinner</SectionDivider>
+          <SectionDivider className="mb-5">the next dinner</SectionDivider>
           <div className="mb-14 flex flex-col gap-8 md:mb-18">
             {upcomingEvents.map((event, index) => (
               <FeaturedDinnerCard
@@ -57,8 +57,8 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
 
       {pastEvents.length > 0 ? (
         <>
-          <SectionDivider className="mb-5.5">past dinners</SectionDivider>
-          <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3 md:gap-5">
+          <SectionDivider className="mb-5">past dinners</SectionDivider>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
             {pastEvents.map((event) => (
               <PastDinnerCard key={event.id} event={event} />
             ))}
@@ -73,27 +73,22 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
 // mailing-list capture here (design handoff §5)
 function EmptyState() {
   return (
-    <div className="border-foreground/12 bg-card relative mb-14 flex flex-col items-center gap-4 overflow-hidden rounded-2xl border px-6 py-9.5 text-center md:mb-18 md:gap-5.5 md:px-14 md:py-19">
+    <div className="border-border bg-card relative mb-14 flex flex-col items-center gap-4 overflow-hidden rounded-2xl border px-6 py-9 text-center md:mb-18 md:gap-5 md:px-14 md:py-19">
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-[150px] left-1/2 h-[320px] w-[460px] -translate-x-1/2 bg-[radial-gradient(circle,rgba(237,130,94,.16),transparent_70%)]"
+        className="glow-primary pointer-events-none absolute -top-36 left-1/2 h-80 w-md -translate-x-1/2"
       />
-      <span className="text-primary relative text-[13px] font-semibold">
+      <span className="text-primary relative text-sm font-semibold">
         nothing on the calendar right now
       </span>
-      <h2 className="relative max-w-[520px] text-[28px] leading-[1.1] font-light md:text-[38px]">
+      <h2 className="relative max-w-lg text-3xl font-light tracking-tight md:text-4xl">
         the table is being set
       </h2>
-      <p className="text-fg-secondary relative max-w-[460px] text-sm leading-relaxed font-light md:text-[17px]">
+      <p className="text-foreground/80 relative max-w-md text-sm leading-relaxed font-light md:text-lg">
         we&apos;re planning the next gathering. check back soon to see
         what&apos;s next, or follow along on instagram for the announcement.
       </p>
-      <Button
-        variant="outline"
-        size="lg"
-        className="relative mt-1.5 rounded-[9px]"
-        asChild
-      >
+      <Button variant="outline" size="lg" className="relative mt-1" asChild>
         <a
           href="https://instagram.com/mokupona"
           target="_blank"

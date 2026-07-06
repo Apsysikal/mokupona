@@ -30,11 +30,11 @@ export function ListField({
 
   return (
     <>
-      <div aria-hidden className="bg-foreground/12 my-1 h-px" />
+      <div aria-hidden className="bg-border my-1 h-px" />
 
       <div className="flex items-center justify-between">
-        <span className="text-fg-muted text-[13px] lowercase">{label}</span>
-        <span className="text-fg-faint text-xs">up to {maxCount}</span>
+        <span className="text-foreground/65 text-sm">{label}</span>
+        <span className="text-foreground/40 text-xs">up to {maxCount}</span>
       </div>
 
       {items.length > 0 ? (
@@ -45,12 +45,10 @@ export function ListField({
             return (
               <li
                 key={item.key}
-                // sub-cards sit on the page surface; their inputs flip to the
-                // raised surface so they stay distinguishable
-                className="border-foreground/12 bg-background flex flex-col gap-3 rounded-[10px] border p-4 [--input-surface:var(--card)]"
+                className="border-border bg-background flex flex-col gap-3 rounded-lg border p-4"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-fg-label text-xs font-semibold tracking-[.16em] lowercase">
+                  <span className="text-foreground/50 text-xs font-semibold tracking-widest">
                     {label} {index + 1}
                   </span>
                   <button
@@ -58,7 +56,7 @@ export function ListField({
                       name: metadata.name,
                       index,
                     })}
-                    className="text-primary text-xs lowercase hover:underline"
+                    className="text-primary text-xs hover:underline"
                   >
                     {removeLabel}
                   </button>
@@ -86,7 +84,7 @@ export function ListField({
       {items.length < maxCount ? (
         <button
           {...form.insert.getButtonProps({ name: metadata.name })}
-          className="text-primary flex w-fit items-center gap-1.5 text-[13px] font-medium lowercase hover:underline"
+          className="text-primary flex w-fit items-center gap-2 text-sm font-medium hover:underline"
         >
           <span aria-hidden className="text-base leading-none">
             +

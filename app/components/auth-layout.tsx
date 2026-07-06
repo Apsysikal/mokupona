@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router";
 
 import { BrandLockup } from "./brand-lockup";
+import { Eyebrow } from "./section";
 
 import { cn } from "~/lib/utils";
 
@@ -11,7 +12,7 @@ function CornerGlow({ className }: { className?: string }) {
     <div
       aria-hidden
       className={cn(
-        "pointer-events-none absolute rounded-full bg-[radial-gradient(circle,rgba(237,130,94,.16),transparent_70%)]",
+        "glow-primary pointer-events-none absolute rounded-full",
         className,
       )}
     />
@@ -33,47 +34,47 @@ export function AuthShell({ mode, search, children }: AuthShellProps) {
     <div className="flex min-h-full flex-col md:flex-row">
       {/* desktop brand panel — a solid fill, imagery is deliberately not
           allowed behind this copy */}
-      <div className="bg-card border-foreground/8 relative hidden flex-col justify-between overflow-hidden border-r p-12 md:flex md:w-[46%]">
-        <CornerGlow className="-top-30 -right-[90px] size-[340px]" />
+      <div className="bg-card border-border relative hidden flex-col justify-between overflow-hidden border-r p-12 md:flex md:w-[46%]">
+        <CornerGlow className="-top-30 -right-24 size-80" />
         <BrandLockup to="/" className="relative" />
         <div className="relative flex flex-col gap-4">
-          <span className="text-accent-light text-[13px] font-semibold">
+          <Eyebrow variant="kicker" tone="light">
             members
-          </span>
-          <h2 className="text-[38px] leading-[1.12] font-light">
+          </Eyebrow>
+          <h2 className="text-4xl leading-tight font-light tracking-tight">
             welcome back to the table
           </h2>
-          <p className="text-fg-secondary max-w-[340px] leading-relaxed font-light">
+          <p className="text-foreground/80 max-w-xs leading-relaxed font-light">
             sign in to manage your reservations, or create an account to start
             joining our dinners.
           </p>
         </div>
-        <span className="text-fg-faint relative text-xs">
+        <span className="text-foreground/40 relative text-xs">
           made with love in zürich
         </span>
       </div>
 
       {/* mobile brand header */}
-      <div className="bg-card border-foreground/8 relative flex flex-col gap-4.5 overflow-hidden border-b px-6 pt-6.5 pb-7 md:hidden">
-        <CornerGlow className="-top-[90px] -right-15 size-55" />
+      <div className="bg-card border-border relative flex flex-col gap-4 overflow-hidden border-b px-6 pt-6 pb-7 md:hidden">
+        <CornerGlow className="-top-24 -right-16 size-56" />
         <BrandLockup
           to="/"
           className="relative"
-          logoClassName="size-[19px]"
-          wordmarkClassName="text-[15px]"
+          logoClassName="size-5"
+          wordmarkClassName="text-base"
         />
         <div className="relative flex flex-col gap-2">
           <span className="text-accent-light text-xs font-semibold">
             members
           </span>
-          <h1 className="text-[28px] leading-[1.12] font-light">
+          <h1 className="text-3xl leading-tight font-light tracking-tight">
             welcome back to the table
           </h1>
         </div>
       </div>
 
-      <div className="flex flex-col px-6 py-6.5 md:w-[54%] md:justify-center md:px-18 md:py-16">
-        <div className="mx-auto flex w-full max-w-[400px] flex-col gap-4.5 md:gap-5.5">
+      <div className="flex flex-col px-6 py-6 md:w-[54%] md:justify-center md:px-18 md:py-16">
+        <div className="mx-auto flex w-full max-w-md flex-col gap-4 md:gap-5">
           <ModeToggle mode={mode} search={search} />
           {children}
         </div>
@@ -85,14 +86,14 @@ export function AuthShell({ mode, search, children }: AuthShellProps) {
 function ModeToggle({ mode, search }: Pick<AuthShellProps, "mode" | "search">) {
   const segmentClasses = (active: boolean) =>
     cn(
-      "flex h-9.5 flex-1 items-center justify-center rounded-[7px] text-sm",
+      "flex h-9 flex-1 items-center justify-center rounded-md text-sm transition-colors",
       active
         ? "bg-primary text-primary-foreground font-semibold"
-        : "text-fg-muted font-medium hover:text-foreground",
+        : "text-foreground/65 font-medium hover:text-foreground",
     );
 
   return (
-    <div className="bg-card border-foreground/12 flex rounded-[10px] border p-1">
+    <div className="bg-card border-border flex rounded-lg border p-1">
       <Link
         to={{ pathname: "/login", search }}
         className={segmentClasses(mode === "login")}

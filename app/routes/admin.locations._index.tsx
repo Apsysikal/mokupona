@@ -26,14 +26,14 @@ export default function AdminLocationsPage({
   const { addresses } = loaderData;
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-1.5 duration-300">
+    <div className="animate-page-in">
       <AdminPageHeader
         eyebrow={`${addresses.length} total`}
         title="Locations"
         actions={
           <Button asChild>
             <Link to="new">
-              <PlusIcon className="mr-2 size-[17px]" />
+              <PlusIcon className="mr-2 size-4" />
               New location
             </Link>
           </Button>
@@ -41,14 +41,14 @@ export default function AdminLocationsPage({
       />
 
       {addresses.length > 0 ? (
-        <div className="grid gap-3.5 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2">
           {addresses.map((address) => (
             <LocationCard key={address.id} address={address} />
           ))}
         </div>
       ) : (
         <AdminEmptyState
-          icon={<SewingPinIcon className="size-6.5" />}
+          icon={<SewingPinIcon className="size-6" />}
           title="No locations yet"
           description="Add the first venue address so dinners have somewhere to happen."
           action={
@@ -68,13 +68,13 @@ function LocationCard({ address }: { address: Address }) {
   const { id, streetName, houseNumber, zip, city } = address;
 
   return (
-    <Card className="hover:border-primary/30 rounded-[14px] p-4.5 transition-colors">
-      <div className="flex items-start gap-3.5">
-        <div className="bg-primary/12 flex size-10 shrink-0 items-center justify-center rounded-[10px]">
-          <SewingPinIcon className="text-primary size-[19px]" />
+    <Card interactive className="p-4">
+      <div className="flex items-start gap-3">
+        <div className="bg-primary/10 flex size-10 shrink-0 items-center justify-center rounded-lg">
+          <SewingPinIcon className="text-primary size-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-base font-bold tracking-[-.01em]">
+          <h2 className="truncate text-base font-semibold">
             {streetName} {houseNumber}
           </h2>
           <p className="text-muted-foreground mt-0.5 text-sm">
@@ -82,7 +82,7 @@ function LocationCard({ address }: { address: Address }) {
           </p>
         </div>
       </div>
-      <div className="border-foreground/10 mt-4.5 flex gap-2 border-t pt-4">
+      <div className="border-border mt-4 flex gap-2 border-t pt-4">
         <Button size="sm" variant="outline" asChild>
           <Link to={`${id}/edit`}>Edit</Link>
         </Button>

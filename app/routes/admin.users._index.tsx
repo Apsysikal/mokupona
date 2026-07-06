@@ -48,10 +48,10 @@ export default function AdminUsersPage({ loaderData }: Route.ComponentProps) {
     .filter((user) => !q || user.email.toLowerCase().includes(q));
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-1.5 duration-300">
+    <div className="animate-page-in">
       <AdminPageHeader eyebrow={`${users.length} accounts`} title="Users" />
 
-      <div className="mb-5.5 flex flex-wrap items-center gap-3">
+      <div className="mb-5 flex flex-wrap items-center gap-3">
         <AdminSearchField
           value={query}
           onChange={setQuery}
@@ -78,7 +78,7 @@ export default function AdminUsersPage({ loaderData }: Route.ComponentProps) {
         </div>
       ) : (
         <AdminEmptyState
-          icon={<PersonIcon className="size-6.5" />}
+          icon={<PersonIcon className="size-6" />}
           title="No users match"
           description="Try a different search or role filter."
         />
@@ -92,7 +92,7 @@ type User = Awaited<ReturnType<typeof loader>>["users"][number];
 const ROLE_TEXT: Record<string, { label: string; className: string }> = {
   admin: { label: "administrator", className: "text-accent-light" },
   moderator: { label: "moderator", className: "text-muted-foreground" },
-  user: { label: "user", className: "text-fg-faint" },
+  user: { label: "user", className: "text-foreground/40" },
 };
 
 function UserCard({ user, seed }: { user: User; seed: number }) {
@@ -102,19 +102,15 @@ function UserCard({ user, seed }: { user: User; seed: number }) {
   const isDeleting = deleteFetcher.state !== "idle";
   const roleText = ROLE_TEXT[role.name] ?? {
     label: role.name,
-    className: "text-fg-faint",
+    className: "text-foreground/40",
   };
 
   return (
-    <div className="border-foreground/10 bg-card hover:border-primary/30 flex items-center gap-3.5 rounded-xl border px-4 py-3.25 transition-colors">
-      <InitialsAvatar
-        name={email}
-        seed={seed}
-        className="size-10 text-[13px]"
-      />
+    <div className="border-border bg-card hover:border-primary/30 flex items-center gap-3 rounded-2xl border px-4 py-3 transition-colors">
+      <InitialsAvatar name={email} seed={seed} className="size-10 text-sm" />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[14.5px] font-semibold">{email}</p>
-        <p className={cn("mt-0.5 text-[12.5px]", roleText.className)}>
+        <p className="truncate text-base font-semibold">{email}</p>
+        <p className={cn("mt-0.5 text-sm", roleText.className)}>
           {roleText.label}
         </p>
       </div>

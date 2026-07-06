@@ -123,11 +123,11 @@ export default function Join({ actionData }: Route.ComponentProps) {
 
   return (
     <AuthShell mode="join" search={searchParams.toString()}>
-      <h1 className="mt-1 text-[30px] font-light">sign up</h1>
+      <h1 className="mt-1 text-3xl font-light">sign up</h1>
 
       <Form
         method="post"
-        className="flex flex-col gap-4.5 [--input-surface:var(--card)]"
+        className="flex flex-col gap-4"
         {...getFormProps(form)}
       >
         <Field
@@ -155,7 +155,7 @@ export default function Join({ actionData }: Route.ComponentProps) {
         <CheckboxField
           labelProps={{
             children: (
-              <span className="text-[13px]">
+              <span className="text-sm">
                 i agree to the{" "}
                 <Link to="/privacy" className="text-primary">
                   privacy policy
@@ -171,17 +171,17 @@ export default function Join({ actionData }: Route.ComponentProps) {
 
         <Input type="hidden" name="redirectTo" value={redirectTo} />
 
-        <Button type="submit" size="lg" className="mt-0.5 w-full rounded-[9px]">
+        <Button type="submit" size="lg" className="mt-0.5 w-full">
           create account
         </Button>
 
-        <div className="flex items-center gap-3.5" aria-hidden>
-          <span className="bg-foreground/10 h-px flex-1" />
-          <span className="text-fg-faint text-xs">or</span>
-          <span className="bg-foreground/10 h-px flex-1" />
+        <div className="flex items-center gap-3" aria-hidden>
+          <span className="bg-border h-px flex-1" />
+          <span className="text-foreground/40 text-xs">or</span>
+          <span className="bg-border h-px flex-1" />
         </div>
 
-        <p className="text-fg-muted text-center text-sm">
+        <p className="text-foreground/65 text-center text-sm">
           already have an account?{" "}
           <Link
             to={{

@@ -5,6 +5,7 @@ import { generateSrcSet } from "../utils";
 
 import type { HeroBlockType } from "./model";
 
+import { Eyebrow, SecondaryCTA } from "~/components/section";
 import { Button } from "~/components/ui/button";
 
 type HeroBlockViewProps = React.ComponentPropsWithoutRef<"section"> & {
@@ -32,14 +33,14 @@ export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
       className="mx-auto flex max-w-7xl flex-col md:min-h-130 md:flex-row"
       {...rest}
     >
-      <div className="flex flex-col justify-center gap-5 px-6 py-8 md:w-[47%] md:gap-6.5 md:px-14 md:py-17.5">
+      <div className="flex flex-col justify-center gap-5 px-6 py-8 md:w-[46%] md:gap-6 md:px-14 md:py-16">
         {eyebrow ? (
-          <span className="text-primary text-[13px] font-semibold">
+          <Eyebrow variant="kicker" tone="primary">
             {eyebrow}
-          </span>
+          </Eyebrow>
         ) : null}
 
-        <h1 className="text-[34px] leading-[1.06] font-light tracking-[-.02em] text-balance md:text-[52px]">
+        <h1 className="text-4xl font-light tracking-tight text-balance md:text-5xl">
           {headline}
           {headlineAccent ? (
             <>
@@ -50,7 +51,7 @@ export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
         </h1>
 
         {description ? (
-          <p className="text-fg-secondary max-w-100 text-base leading-relaxed font-light md:text-[19px]">
+          <p className="text-foreground/80 max-w-md text-base leading-relaxed font-light md:text-lg">
             {description}
           </p>
         ) : null}
@@ -59,15 +60,15 @@ export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
           <div className="mt-1 flex flex-col gap-5 md:flex-row md:items-center md:gap-6">
             {actions.map((action, index) =>
               action.variant === "secondary" ? (
-                <Link
+                <SecondaryCTA
                   key={index}
                   to={action.href}
-                  className="border-foreground/35 hover:border-foreground w-fit border-b pb-0.5 text-[15px] max-md:self-center"
+                  className="max-md:self-center"
                 >
                   {action.label}
-                </Link>
+                </SecondaryCTA>
               ) : (
-                <Button key={index} className="h-11.5" asChild>
+                <Button key={index} asChild>
                   <Link to={action.href}>{action.label}</Link>
                 </Button>
               ),
@@ -76,13 +77,13 @@ export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
         ) : null}
 
         {meta ? (
-          <div className="text-fg-faint mt-2.5 text-xs tracking-[.18em] uppercase">
+          <div className="text-foreground/40 mt-2 text-xs tracking-widest uppercase">
             {meta}
           </div>
         ) : null}
       </div>
 
-      <div className="relative h-72.5 max-md:order-first md:h-auto md:w-[53%]">
+      <div className="relative h-72 max-md:order-first md:h-auto md:w-[54%]">
         <picture>
           <img
             srcSet={srcSet}

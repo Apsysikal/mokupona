@@ -105,11 +105,11 @@ export default function LoginPage({ actionData }: Route.ComponentProps) {
 
   return (
     <AuthShell mode="login" search={searchParams.toString()}>
-      <h1 className="mt-1 text-[30px] font-light">log in</h1>
+      <h1 className="mt-1 text-3xl font-light">log in</h1>
 
       <Form
         method="post"
-        className="flex flex-col gap-4.5 [--input-surface:var(--card)]"
+        className="flex flex-col gap-4"
         {...getFormProps(form)}
       >
         <Field
@@ -128,27 +128,27 @@ export default function LoginPage({ actionData }: Route.ComponentProps) {
 
         <Input type="hidden" name="redirectTo" value={redirectTo} />
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <Checkbox id="remember" name="remember" />
           <Label
             htmlFor="remember"
-            className="text-fg-secondary text-[13px] leading-none"
+            className="text-foreground/80 text-sm leading-none font-normal"
           >
             remember me
           </Label>
         </div>
 
-        <Button type="submit" size="lg" className="mt-0.5 w-full rounded-[9px]">
+        <Button type="submit" size="lg" className="mt-0.5 w-full">
           log in
         </Button>
 
-        <div className="flex items-center gap-3.5" aria-hidden>
-          <span className="bg-foreground/10 h-px flex-1" />
-          <span className="text-fg-faint text-xs">or</span>
-          <span className="bg-foreground/10 h-px flex-1" />
+        <div className="flex items-center gap-3" aria-hidden>
+          <span className="bg-border h-px flex-1" />
+          <span className="text-foreground/40 text-xs">or</span>
+          <span className="bg-border h-px flex-1" />
         </div>
 
-        <p className="text-fg-muted text-center text-sm">
+        <p className="text-foreground/65 text-center text-sm">
           don&apos;t have an account?{" "}
           <Link
             to={{

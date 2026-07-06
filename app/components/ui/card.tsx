@@ -2,11 +2,20 @@ import React from "react";
 
 import { cn } from "~/lib/utils";
 
-const Card = ({ className, ref, ...props }: React.ComponentProps<"div">) => (
+// Surfaces are elevated with a hairline border, never a shadow (shadows are
+// reserved for floating layers). `interactive` adds the hover-border treatment
+// the admin list/grid cards share.
+const Card = ({
+  className,
+  interactive = false,
+  ref,
+  ...props
+}: React.ComponentProps<"div"> & { interactive?: boolean }) => (
   <div
     ref={ref}
     className={cn(
-      "bg-card text-card-foreground rounded-xl border shadow-sm",
+      "bg-card text-card-foreground rounded-2xl border",
+      interactive && "hover:border-primary/30 transition-colors",
       className,
     )}
     {...props}

@@ -83,21 +83,21 @@ export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
     });
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-1.5 duration-300">
+    <div className="animate-page-in">
       <AdminPageHeader
         eyebrow={`${dinners.length} total`}
         title="Dinners"
         actions={
           <Button asChild>
             <Link to="new">
-              <PlusIcon className="mr-2 size-[17px]" />
+              <PlusIcon className="mr-2 size-4" />
               New dinner
             </Link>
           </Button>
         }
       />
 
-      <div className="mb-5.5 flex flex-wrap items-center gap-3">
+      <div className="mb-5 flex flex-wrap items-center gap-3">
         <AdminSearchField
           value={query}
           onChange={setQuery}
@@ -124,7 +124,7 @@ export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
         </div>
       ) : (
         <AdminEmptyState
-          icon={<UtensilsIcon className="size-6.5" />}
+          icon={<UtensilsIcon className="size-6" />}
           title="No dinners match"
           description="Try a different search or filter — or create the next dinner for the season."
           action={
@@ -150,7 +150,7 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
   return (
     <div
       className={cn(
-        "border-foreground/10 bg-card hover:border-primary/30 flex flex-wrap items-center gap-4.5 rounded-[14px] border p-4 transition-colors",
+        "border-border bg-card hover:border-primary/30 flex flex-wrap items-center gap-4 rounded-2xl border p-4 transition-colors",
         dinner.past && "opacity-60",
       )}
     >
@@ -159,32 +159,32 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
         alt=""
         width={208}
         height={172}
-        className="border-foreground/10 h-24 w-full rounded-[9px] border object-cover md:h-[86px] md:w-[104px]"
+        className="border-border h-24 w-full rounded-lg border object-cover md:h-20 md:w-26"
       />
 
-      <div className="flex min-w-0 flex-1 basis-56 flex-col gap-2.5">
+      <div className="flex min-w-0 flex-1 basis-56 flex-col gap-2">
         <div className="min-w-0">
           <p
             className={cn(
-              "text-[12.5px] font-bold tracking-[.02em]",
-              dinner.past ? "text-fg-label" : "text-accent-light",
+              "text-xs font-bold tracking-wide",
+              dinner.past ? "text-foreground/50" : "text-accent-light",
             )}
           >
             <time dateTime={date.toISOString()} suppressHydrationWarning>
               {formatAdminDateLine(date)}
             </time>
           </p>
-          <h2 className="mt-0.5 truncate text-[17px] font-bold tracking-[-.01em]">
+          <h2 className="mt-0.5 truncate text-base font-semibold">
             {dinner.title}
           </h2>
-          <p className="text-muted-foreground mt-1 text-[13px]">
+          <p className="text-muted-foreground mt-1 text-sm">
             {dinner.location}
           </p>
         </div>
-        <div className="max-w-[340px]">
-          <div className="mb-1.5 flex justify-between text-[12.5px]">
-            <span className="text-fg-secondary">{dinner.signups} signups</span>
-            <span className="text-fg-label">
+        <div className="max-w-xs">
+          <div className="mb-1.5 flex justify-between text-xs">
+            <span className="text-foreground/80">{dinner.signups} signups</span>
+            <span className="text-foreground/50">
               {dinner.signups} / {dinner.slots}
             </span>
           </div>
@@ -197,7 +197,7 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="ghost" className="text-fg-secondary" asChild>
+        <Button size="sm" variant="ghost" className="text-foreground/80" asChild>
           <Link to={`${dinner.id}/signups`}>Signups</Link>
         </Button>
         <Button size="sm" variant="outline" asChild>

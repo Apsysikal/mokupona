@@ -70,11 +70,6 @@ const TYPE_OPTIONS = NON_LIST_FIELD_TYPES.map((type) => ({
   value: type,
 }));
 
-// the one deliberate second accent (teal, same lightness/chroma family as
-// the orange primary) — contained to the friends chip, not a design token
-const FRIENDS_CHIP_CLASSES =
-  "border-[oklch(75%_0.09_220/0.4)] bg-[oklch(75%_0.09_220/0.16)] text-[oklch(75%_0.09_220)]";
-
 const NEW_ROW: BuilderItemRow = {
   type: "text",
   name: "",
@@ -277,17 +272,13 @@ function BuilderRowView({
     return (
       <RowCard
         row={row}
-        // friends card carries the teal tint from the design reference
-        className="border-[oklch(75%_0.09_220/0.4)] bg-[oklch(75%_0.09_220/0.05)]"
+        // friends card carries the sky "info" tint (design system §2)
+        className="border-sky-300/40 bg-sky-300/5"
         isRowOpen={isRowOpen}
         toggleRow={toggleRow}
         header={
           <RowHeader
-            chip={
-              <Badge variant="outline" className={FRIENDS_CHIP_CLASSES}>
-                Friends
-              </Badge>
-            }
+            chip={<Badge variant="info">Friends</Badge>}
             title={labelValue || "Friends"}
             meta={`${itemCount} ${itemCount === 1 ? "question" : "questions"} per friend`}
             listName={listName}
@@ -318,9 +309,7 @@ function BuilderRowView({
       row={row}
       // pinned identity cards carry the design's orange tint
       className={
-        isPinnedIdentity
-          ? "border-primary/35 bg-primary/[0.04]"
-          : "border-white/10"
+        isPinnedIdentity ? "border-primary/35 bg-primary/5" : "border-border"
       }
       isRowOpen={isRowOpen}
       toggleRow={toggleRow}
@@ -384,13 +373,7 @@ function RowCard({
   const hasNestedErrors = Object.keys(row.allErrors).length > 0;
 
   return (
-    <li
-      className={cn(
-        "border",
-        small ? "rounded-lg" : "rounded-[10px]",
-        className,
-      )}
-    >
+    <li className={cn("rounded-lg border", className)}>
       <Collapsible
         open={isRowOpen(row.key) || hasNestedErrors}
         onOpenChange={() => toggleRow(row.key)}
@@ -400,7 +383,7 @@ function RowCard({
         <CollapsibleContent forceMount className="data-[state=closed]:hidden">
           <div
             className={cn(
-              "border-t border-white/10",
+              "border-border border-t",
               small ? "p-3" : "p-3 sm:p-4",
             )}
           >
@@ -449,15 +432,11 @@ function RowHeader({
   small?: boolean;
 }) {
   const form = useFormMetadata();
-  const compactButton = small ? "h-7 w-7" : undefined;
+  // nested per-friend rows use the compact icon button size
+  const iconSize = small ? "icon-sm" : "icon";
 
   return (
-    <div
-      className={cn(
-        "flex items-center gap-1.5",
-        small ? "p-2" : "p-2.5 sm:p-3",
-      )}
-    >
+    <div className={cn("flex items-center gap-1", small ? "p-2" : "p-3")}>
       {/* the chip always stacks above the title; the flex layout lives on an
           inner span because Safari mishandles buttons as flex containers */}
       <CollapsibleTrigger className="min-w-0 flex-1 cursor-pointer text-left">
@@ -483,8 +462,8 @@ function RowHeader({
 
       <Button
         variant="outline"
-        size="icon"
-        className={cn("shrink-0", compactButton)}
+        size={iconSize}
+        className="shrink-0"
         aria-label="Move up"
         disabled={index === 0}
         {...form.reorder.getButtonProps({
@@ -497,8 +476,8 @@ function RowHeader({
       </Button>
       <Button
         variant="outline"
-        size="icon"
-        className={cn("shrink-0", compactButton)}
+        size={iconSize}
+        className="shrink-0"
         aria-label="Move down"
         disabled={index === count - 1}
         {...form.reorder.getButtonProps({
@@ -512,11 +491,8 @@ function RowHeader({
       {removable ? (
         <Button
           variant="outline"
-          size="icon"
-          className={cn(
-            "border-destructive/50 bg-destructive/10 hover:bg-destructive/30 shrink-0 text-red-300 hover:text-red-200",
-            compactButton,
-          )}
+          size={iconSize}
+          className="border-destructive/50 bg-destructive/10 hover:bg-destructive/30 shrink-0 text-red-300 hover:text-red-200"
           aria-label="Remove"
           {...form.remove.getButtonProps({ name: listName, index })}
           onClick={
@@ -535,12 +511,11 @@ function RowHeader({
       <CollapsibleTrigger
         aria-label="Toggle details"
         className={cn(
-          buttonVariants({ variant: "ghost", size: "icon" }),
-          compactButton,
+          buttonVariants({ variant: "ghost", size: iconSize }),
           "data-[state=open]:text-primary shrink-0 [&[data-state=open]>svg]:rotate-180",
         )}
       >
-        <ChevronDownIcon className="transition-transform duration-200" />
+        <ChevronDownIcon className="transition-transform duration-300" />
       </CollapsibleTrigger>
     </div>
   );
@@ -754,7 +729,7 @@ function FriendsRowView({
           id={rowFields.itemFields.errorId}
           errors={rowFields.itemFields.errors}
         />
-        <ul className="flex flex-col gap-2.5">
+        <ul className="flex flex-col gap-2">
           {itemFields.map((itemRow, index) => {
             const itemLocked = lockFieldKeys && isStoredRow(itemRow.key);
             const itemRowFields = (itemRow as ItemRowMetadata).getFieldset();
@@ -765,7 +740,7 @@ function FriendsRowView({
               <RowCard
                 key={itemRow.key}
                 row={itemRow as ItemRowMetadata}
-                className="border-white/10"
+                className="border-border"
                 small
                 isRowOpen={isRowOpen}
                 toggleRow={toggleRow}

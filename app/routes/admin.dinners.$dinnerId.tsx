@@ -28,20 +28,20 @@ export default function DinnerPage({ loaderData }: Route.ComponentProps) {
 
   return (
     <main className="mx-auto flex max-w-4xl grow flex-col gap-5">
-      <div className="bg-secondary text-secondary-foreground flex items-center justify-between gap-2 rounded-md p-4">
+      <div className="bg-secondary text-secondary-foreground flex flex-col gap-3 rounded-lg p-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm leading-none font-medium">
           You are viewing the admin view of this dinner.
         </p>
 
-        <span className="flex gap-2">
-          <Button variant="ghost" asChild>
+        <span className="flex flex-wrap gap-2">
+          <Button variant="ghost" size="sm" asChild>
             <Link to="signups">View Signups</Link>
           </Button>
-          <Button variant="ghost" asChild>
+          <Button variant="ghost" size="sm" asChild>
             <Link to="edit">Edit</Link>
           </Button>
           <Form method="POST" action="delete">
-            <Button type="submit" variant="destructive">
+            <Button type="submit" variant="destructive" size="sm">
               Delete
             </Button>
           </Form>

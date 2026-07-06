@@ -193,28 +193,28 @@ export default function DinnerPage({
   const signupFields = isPastEvent ? null : formFields;
 
   return (
-    <main className="mx-auto w-full max-w-[1080px] grow px-6 pt-6 pb-20 md:px-10 md:pt-9">
+    <main className="mx-auto w-full max-w-5xl grow px-5 pt-6 pb-20 md:px-10 md:pt-9">
       <Link
         to="/dinners"
-        className="text-fg-label hover:text-foreground mb-6 inline-flex items-center gap-2 text-[13px]"
+        className="text-foreground/50 hover:text-foreground mb-6 inline-flex items-center gap-2 text-sm transition-colors"
       >
         ← all dinners
       </Link>
 
-      <div className="grid items-start gap-8 md:grid-cols-[1.55fr_1fr] md:gap-11">
+      <div className="grid items-start gap-8 md:grid-cols-[1.2fr_1fr] md:gap-11">
         <DinnerStory event={event} />
 
         <aside
           id="sign-up"
-          className="border-foreground/12 bg-card flex flex-col gap-4.5 rounded-2xl border p-5.5 md:sticky md:top-6 md:p-7"
+          className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-5 md:sticky md:top-6 md:p-7"
         >
           <DinnerFactList event={event} />
 
           {signupFields ? (
             <>
-              <div aria-hidden className="bg-foreground/12 h-px" />
+              <div aria-hidden className="bg-border h-px" />
 
-              <h2 className="text-xl font-normal">reserve your seat</h2>
+              <h2 className="text-xl font-light">reserve your seat</h2>
 
               {/* keyed on the schema content: an in-place update keeps the
                   version id but must still remount the form and rebuild the
@@ -260,7 +260,7 @@ function SignupForm({
       <Form
         method="post"
         {...getFormProps(form)}
-        className="flex flex-col gap-3.5"
+        className="flex flex-col gap-3"
       >
         {/**
          * This button is needed as hitting Enter would otherwise remove the first person.
@@ -288,7 +288,7 @@ function SignupForm({
           className="mt-0.5"
           labelProps={{
             children: (
-              <span className="text-[13px]">
+              <span className="text-sm">
                 i agree to the{" "}
                 <Link to="/privacy" className="text-primary">
                   privacy policy
@@ -306,11 +306,11 @@ function SignupForm({
 
         <ErrorList id={form.errorId} errors={form.errors} />
 
-        <Button type="submit" size="lg" className="w-full rounded-[9px]">
+        <Button type="submit" size="lg" className="w-full">
           join this dinner
         </Button>
 
-        <p className="text-fg-faint text-center text-xs leading-normal">
+        <p className="text-foreground/40 text-center text-xs leading-normal">
           we&apos;ll email you to confirm if a seat is yours.
         </p>
       </Form>

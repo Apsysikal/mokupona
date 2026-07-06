@@ -34,17 +34,17 @@ export function SiteNav({ joinHref }: SiteNavProps) {
   const sectionLinkClasses = (active: boolean) =>
     cn(
       "hover:text-foreground pb-0.5",
-      active ? "text-foreground border-b border-primary" : "text-fg-secondary",
+      active ? "text-foreground border-b border-primary" : "text-foreground/80",
     );
 
   return (
     <>
-      <nav className="border-foreground/10 border-b">
+      <nav className="border-border border-b">
         {/* desktop */}
-        <div className="flex h-18.5 items-center justify-between px-10 max-md:hidden">
+        <div className="flex h-16 items-center justify-between px-10 max-md:hidden">
           <BrandLockup to="/" />
 
-          <div className="text-fg-secondary flex items-center gap-7.5 text-sm">
+          <div className="text-foreground/80 flex items-center gap-7 text-sm">
             <Link
               to="/dinners"
               className={sectionLinkClasses(
@@ -60,7 +60,7 @@ export function SiteNav({ joinHref }: SiteNavProps) {
               rel="noopener noreferrer"
               className="hover:text-foreground"
             >
-              <InstagramLogoIcon className="size-[17px]" />
+              <InstagramLogoIcon className="size-5" />
               <span className="sr-only">instagram</span>
             </a>
 
@@ -78,7 +78,7 @@ export function SiteNav({ joinHref }: SiteNavProps) {
 
             {optionalUser ? (
               <Form action="/logout" method="POST">
-                <button className="text-fg-secondary hover:text-foreground">
+                <button className="text-foreground/80 hover:text-foreground">
                   logout
                 </button>
               </Form>
@@ -100,12 +100,8 @@ export function SiteNav({ joinHref }: SiteNavProps) {
         </div>
 
         {/* mobile */}
-        <div className="flex h-[58px] items-center justify-between px-5.5 md:hidden">
-          <BrandLockup
-            to="/"
-            logoClassName="size-[19px]"
-            wordmarkClassName="text-[15px]"
-          />
+        <div className="flex h-14 items-center justify-between px-5 md:hidden">
+          <BrandLockup to="/" logoClassName="size-5" wordmarkClassName="text-base" />
           <button
             type="button"
             aria-label="Open menu"
@@ -113,8 +109,8 @@ export function SiteNav({ joinHref }: SiteNavProps) {
             className="flex flex-col gap-1 py-2"
             onClick={() => setMenuOpen(true)}
           >
-            <span className="bg-fg-secondary h-[1.5px] w-5" />
-            <span className="bg-fg-secondary h-[1.5px] w-5" />
+            <span className="bg-foreground/80 h-0.5 w-5" />
+            <span className="bg-foreground/80 h-0.5 w-5" />
           </button>
         </div>
       </nav>
@@ -143,33 +139,29 @@ function MobileMenu({
   onClose: () => void;
 }) {
   const menuLinkClasses =
-    "flex items-center justify-between border-b border-foreground/10 py-4 text-[22px] tracking-[-.01em]";
-  const chevron = <ChevronRightIcon className="text-primary size-[17px]" />;
+    "flex items-center justify-between border-b border-border py-4 text-xl tracking-tight";
+  const chevron = <ChevronRightIcon className="text-primary size-5" />;
 
   return (
     <div className="bg-background fixed inset-0 z-50 flex flex-col overflow-hidden md:hidden">
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-10 -right-10 size-[300px] rounded-full bg-[radial-gradient(circle,rgba(237,130,94,.20),transparent_70%)]"
+        className="glow-primary-strong pointer-events-none absolute -top-10 -right-10 size-72 rounded-full"
       />
 
-      <div className="border-foreground/10 relative flex h-[58px] shrink-0 items-center justify-between border-b px-5.5">
-        <BrandLockup
-          to="/"
-          logoClassName="size-[19px]"
-          wordmarkClassName="text-[15px]"
-        />
+      <div className="border-border relative flex h-14 shrink-0 items-center justify-between border-b px-5">
+        <BrandLockup to="/" logoClassName="size-5" wordmarkClassName="text-base" />
         <button
           type="button"
           aria-label="Close menu"
           className="p-2"
           onClick={onClose}
         >
-          <Cross1Icon className="size-5.5" />
+          <Cross1Icon className="size-5" />
         </button>
       </div>
 
-      <div className="relative flex flex-1 flex-col overflow-y-auto px-7.5 pt-10 pb-8.5">
+      <div className="relative flex flex-1 flex-col overflow-y-auto px-7 pt-10 pb-8">
         <div className="flex flex-col">
           <Link to="/dinners" className={menuLinkClasses}>
             dinners
@@ -201,16 +193,12 @@ function MobileMenu({
           )}
         </div>
 
-        <Button
-          size="lg"
-          className="mt-8 h-13 rounded-[10px] text-base"
-          asChild
-        >
+        <Button size="lg" className="mt-8" asChild>
           <Link to={joinHref}>join a dinner</Link>
         </Button>
 
-        <div className="mt-auto flex flex-col gap-4.5 pt-9">
-          <div className="text-fg-secondary flex gap-6.5 text-sm">
+        <div className="mt-auto flex flex-col gap-4 pt-9">
+          <div className="text-foreground/80 flex gap-6 text-sm">
             <a
               href="https://instagram.com/mokupona"
               target="_blank"
@@ -220,7 +208,7 @@ function MobileMenu({
             </a>
             <Link to="/privacy">privacy policy</Link>
           </div>
-          <span className="text-fg-faint text-xs">
+          <span className="text-foreground/40 text-xs">
             made with love in zürich
           </span>
         </div>

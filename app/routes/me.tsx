@@ -26,7 +26,9 @@ export default function MeRoute({ loaderData }: Route.ComponentProps) {
   return (
     <main className="relative mx-auto flex max-w-4xl flex-col gap-2">
       <div className="px-2">
-        <h1 className="text-2xl font-extrabold">Welcome to your profile.</h1>
+        <h1 className="text-2xl font-light tracking-tight">
+          Welcome to your profile.
+        </h1>
       </div>
 
       <div className="flex flex-col gap-2 px-2">

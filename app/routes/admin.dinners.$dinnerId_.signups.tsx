@@ -83,13 +83,13 @@ export default function DinnerSignupsPage({
   const { event, seatsTaken, parties } = loaderData;
 
   return (
-    <main className="animate-in fade-in slide-in-from-bottom-1.5 duration-300">
+    <main className="animate-page-in">
       <Link
         to="/admin/dinners"
         prefetch="intent"
-        className="text-fg-label hover:text-foreground mb-3.5 inline-flex items-center gap-1.5 text-[13px] transition-colors"
+        className="text-foreground/50 hover:text-foreground mb-3 inline-flex items-center gap-2 text-sm transition-colors"
       >
-        <ChevronLeftIcon className="size-[15px]" />
+        <ChevronLeftIcon className="size-4" />
         Dinners
       </Link>
 
@@ -106,20 +106,20 @@ export default function DinnerSignupsPage({
         }
       />
 
-      <Card className="overflow-hidden rounded-[14px]">
+      <Card className="overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="text-fg-label h-auto px-4.5 py-3.25 text-xs font-semibold tracking-[.04em] uppercase">
+              <TableHead className="text-foreground/50 h-auto px-4 py-3 text-xs font-semibold tracking-wide uppercase">
                 Guest
               </TableHead>
-              <TableHead className="text-fg-label h-auto px-4.5 py-3.25 text-xs font-semibold tracking-[.04em] uppercase">
+              <TableHead className="text-foreground/50 h-auto px-4 py-3 text-xs font-semibold tracking-wide uppercase">
                 Email
               </TableHead>
-              <TableHead className="text-fg-label h-auto px-4.5 py-3.25 text-center text-xs font-semibold tracking-[.04em] uppercase">
+              <TableHead className="text-foreground/50 h-auto px-4 py-3 text-center text-xs font-semibold tracking-wide uppercase">
                 Party
               </TableHead>
-              <TableHead className="text-fg-label h-auto px-4.5 py-3.25 text-right text-xs font-semibold tracking-[.04em] uppercase">
+              <TableHead className="text-foreground/50 h-auto px-4 py-3 text-right text-xs font-semibold tracking-wide uppercase">
                 Signed up
               </TableHead>
             </TableRow>
@@ -128,29 +128,29 @@ export default function DinnerSignupsPage({
             {parties.map((party, index) => (
               <TableRow
                 key={`${party.email}-${index}`}
-                className="hover:bg-foreground/3"
+                className="hover:bg-foreground/5"
               >
-                <TableCell className="px-4.5 py-3.75">
+                <TableCell className="px-4 py-4">
                   <div className="flex items-center gap-3">
                     <InitialsAvatar
                       name={party.name}
                       seed={index}
-                      className="size-8.5 text-xs"
+                      className="size-8 text-xs"
                     />
                     <span className="font-semibold">{party.name}</span>
                   </div>
                 </TableCell>
-                <TableCell className="text-muted-foreground px-4.5 py-3.75">
+                <TableCell className="text-muted-foreground px-4 py-4">
                   {party.email}
                 </TableCell>
-                <TableCell className="px-4.5 py-3.75 text-center">
+                <TableCell className="px-4 py-4 text-center">
                   {party.size}
                 </TableCell>
-                <TableCell className="px-4.5 py-3.75 text-right">
+                <TableCell className="px-4 py-4 text-right">
                   <time
                     dateTime={new Date(party.createdAt).toISOString()}
                     suppressHydrationWarning
-                    className="text-fg-label text-[13px] whitespace-nowrap"
+                    className="text-foreground/50 text-sm whitespace-nowrap"
                   >
                     {formatAdminTimestamp(new Date(party.createdAt))}
                   </time>
@@ -161,7 +161,7 @@ export default function DinnerSignupsPage({
               <TableRow className="hover:bg-transparent">
                 <TableCell
                   colSpan={4}
-                  className="text-fg-label px-4.5 py-8 text-center text-sm"
+                  className="text-foreground/50 px-4 py-8 text-center text-sm"
                 >
                   No signups yet.
                 </TableCell>
