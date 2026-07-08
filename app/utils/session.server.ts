@@ -2,13 +2,13 @@ import { createCookieSessionStorage, redirect } from "react-router";
 import invariant from "tiny-invariant";
 
 import type { User } from "~/models/user.server";
-import { getUserById, getUserByIdWithRole } from "~/models/user.server";
+import { getUserByIdWithRole } from "~/models/user.server";
 
 invariant(process.env.SESSION_SECRET, "SESSION_SECRET must be set");
 
 const USER_SESSION_KEY = "userId";
 
-export const sessionStorage = createCookieSessionStorage({
+const sessionStorage = createCookieSessionStorage({
   cookie: {
     name: "__session",
     httpOnly: true,
@@ -19,7 +19,7 @@ export const sessionStorage = createCookieSessionStorage({
   },
 });
 
-export async function getSession(request: Request) {
+async function getSession(request: Request) {
   const cookie = request.headers.get("Cookie");
   return sessionStorage.getSession(cookie);
 }
@@ -30,16 +30,6 @@ export async function getUserId(
   const session = await getSession(request);
   const userId = session.get(USER_SESSION_KEY);
   return userId;
-}
-
-export async function getUser(request: Request) {
-  const userId = await getUserId(request);
-  if (userId === undefined) return null;
-
-  const user = await getUserById(userId);
-  if (user) return user;
-
-  throw await logout(request);
 }
 
 export async function getUserWithRole(request: Request) {
@@ -62,15 +52,6 @@ export async function requireUserId(
     throw redirect(`/login?${searchParams}`);
   }
   return userId;
-}
-
-export async function requireUser(request: Request) {
-  const userId = await requireUserId(request);
-
-  const user = await getUserById(userId);
-  if (user) return user;
-
-  throw await logout(request);
 }
 
 export async function requireUserWithRole(request: Request, roles: string[]) {

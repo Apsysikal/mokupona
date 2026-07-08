@@ -8,10 +8,6 @@ import { getRoleByName } from "~/models/role.server";
 
 export type { User } from "#prisma/generated/client";
 
-export async function getUserById(id: string): Promise<User | null> {
-  return prisma.user.findUnique({ where: { id } });
-}
-
 export async function getUserByIdWithRole(
   id: string,
 ): Promise<(User & { role: Role }) | null> {
@@ -119,13 +115,6 @@ export async function updateNonAdminUserRole(
 // The DB cascades User -> Event, which would skip the app-level form cascade
 // and orphan Form/FormVersion/FormSubmission rows — delete the user's events
 // through it first, in the same transaction.
-export async function deleteUserByEmail(email: string): Promise<User> {
-  return prisma.$transaction(async (tx) => {
-    await deleteEventsInTx(tx, { createdBy: { email } });
-    return tx.user.delete({ where: { email } });
-  });
-}
-
 export async function deleteUserById(id: string): Promise<User> {
   return prisma.$transaction(async (tx) => {
     await deleteEventsInTx(tx, { createdById: id });

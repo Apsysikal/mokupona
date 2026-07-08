@@ -38,9 +38,7 @@ export function safeRedirect(
  * @param {string} id The route id
  * @returns {JSON|undefined} The router data or undefined if not found
  */
-export function useMatchesData(
-  id: string,
-): Record<string, unknown> | undefined {
+function useMatchesData(id: string): Record<string, unknown> | undefined {
   const matchingRoutes = useMatches();
   const route = useMemo(
     () => matchingRoutes.find((route) => route.id === id),
@@ -69,16 +67,6 @@ export function useOptionalUser(): UserWithRole | undefined {
     return undefined;
   }
   return data.user;
-}
-
-export function useUser(): UserWithRole {
-  const maybeUser = useOptionalUser();
-  if (!maybeUser) {
-    throw new Error(
-      "No user found in root loader, but user is required by useUser. If user is optional, try useOptionalUser instead.",
-    );
-  }
-  return maybeUser;
 }
 
 export function validateEmail(email: unknown): email is string {
@@ -131,14 +119,6 @@ export function combineHeaders(
     }
   }
   return combined;
-}
-
-export function dateFormatBuilder(preferredLocale: string) {
-  return Intl.DateTimeFormat(preferredLocale, {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Europe/Zurich",
-  });
 }
 
 // The redesign writes all dates in a fixed, lowercase, Zurich-local shape

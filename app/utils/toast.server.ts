@@ -18,7 +18,7 @@ const ToastSchema = z.object({
 export type Toast = z.infer<typeof ToastSchema>;
 export type ToastInput = z.input<typeof ToastSchema>;
 
-export const toastSessionStorage = createCookieSessionStorage({
+const toastSessionStorage = createCookieSessionStorage({
   cookie: {
     name: TOAST_COOKIE_KEY,
     httpOnly: true,

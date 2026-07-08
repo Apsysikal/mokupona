@@ -118,7 +118,7 @@ const AVATAR_TINTS = [
   "text-foreground/80 bg-foreground/10",
 ];
 
-export function avatarInitials(name: string) {
+function avatarInitials(name: string) {
   const parts = name.trim().split(/\s+/);
   return (
     (parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? parts[0]?.[1] ?? "")

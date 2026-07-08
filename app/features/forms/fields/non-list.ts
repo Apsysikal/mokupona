@@ -1,4 +1,3 @@
-import type { FieldMetadata } from "@conform-to/react";
 import z from "zod";
 
 import { CheckboxFieldSchema } from "./checkbox/model";
@@ -14,8 +13,6 @@ import { TextField } from "./text/view";
 import { TextareaFieldSchema } from "./textarea/model";
 import { TextareaField } from "./textarea/view";
 
-// Lives outside index.ts so the list field can depend on the non-list union
-// without an import cycle (index.ts imports the list field).
 export const NonListFieldDescriptorSchema = z.discriminatedUnion("type", [
   TextFieldSchema,
   TextareaFieldSchema,
@@ -43,7 +40,7 @@ export const NON_LIST_FIELD_TYPES = [
 
 type AssertAllTypesListed =
   NonListFieldType extends (typeof NON_LIST_FIELD_TYPES)[number] ? true : never;
-// becomes `never` (a compile error) when a union member is missing above
+// becomes `never` (a compile error) when a union member is missing above.
 export const NON_LIST_FIELD_TYPES_COMPLETE: AssertAllTypesListed = true;
 
 // Constrains a view registry so each type maps to a view accepting exactly
