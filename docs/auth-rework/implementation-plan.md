@@ -33,8 +33,8 @@ Goal: better-auth owns identity and sessions; login/signup/logout work through i
 - [ ] Data migration for existing users: backfill `name` from email local-part; credential `Account` row per user with a random-secret scrypt hash (design §7 — old passwords intentionally dead, reset path guaranteed).
 - [ ] Catch-all handler route `app/routes/api.auth.$.ts`; `auth-client.ts` (`better-auth/react`).
 - [ ] `app/features/auth/guards.server.ts`: same-signature port of [`session.server.ts`](../../app/utils/session.server.ts) helpers onto `auth.api.getSession`; switch imports in [`root.tsx`](../../app/root.tsx), the ~21 `admin.*` routes, and remaining call sites. Delete `session.server.ts`; retire `SESSION_SECRET`.
-- [ ] Rewrite [`login.tsx`](../../app/routes/login.tsx) / [`join.tsx`](../../app/routes/join.tsx) actions onto better-auth server API; join gains required `name`; privacy checkbox → consent notice on both pages (design §5); keep Conform/Zod UX and `redirectTo` semantics.
-- [ ] New routes: `verify-email` landing, `forgot-password`, `reset-password`.
+- [ ] Rewrite [`login.tsx`](../../app/routes/login.tsx) / [`join.tsx`](../../app/routes/join.tsx) actions onto better-auth server API; join gains required `name`; privacy checkbox → consent notice on both pages (design §5); remember-me checkbox maps to better-auth `rememberMe`; login gains a "forgot password?" link; keep Conform/Zod UX and `redirectTo` semantics.
+- [ ] New routes: check-your-inbox interstitial after signup (no resend button — unverified login re-sends automatically, design §5), `verify-email` landing, `forgot-password`, `reset-password`.
 - [ ] Rewrite [`seed.ts`](../../prisma/seed.ts) via better-auth's API (roles + demo users preserved); update [`user.server.ts`](../../app/models/user.server.ts) creators/mutators that touched `Password`.
 - [ ] Update `smoke.cy.ts` + unit tests: signup now includes name + verification-link hop (via the capture provider + Phase 0 Cypress helper).
 - [ ] Deploy staging → verify signup/verify/login/logout/reset end-to-end with real mail → prod deploy + heads-up message to the <20 users.
@@ -61,7 +61,7 @@ Goal: better-auth owns identity and sessions; login/signup/logout work through i
 ## Phase 3 — Invites
 
 - [ ] `Invite` model migration (design §4) + `app/features/users/invite.server.ts`: create (ceiling `moderator` enforced server-side), validate, accept-in-transaction (role change + `acceptedAt` atomically; role changes only ever through [`updateNonAdminUserRole`](../../app/models/user.server.ts) so admins stay immutable).
-- [ ] Admin UI: "Invite" action on `/admin/users` (email + role picker without `admin`), pending-invite list with revoke; guard `["admin"]`.
+- [ ] Admin UI, inline on `/admin/users` (design §6): "Invite" header action with email + role picker (no `admin`); pending invites as a distinct card-row section on the same page, each with revoke; guard `["admin"]`.
 - [ ] Invite email: template in `users/`, sent via `sendMail()`; link `/invite/$token`.
 - [ ] Acceptance route per design §6: dead-end page (invalid/expired/used); new-user path (locked-email signup or Google, mismatch handling, `emailVerified` set on accept); existing-user upgrade path; logged-in-mismatch path.
 - [ ] Cypress: invite → new-user signup lands as moderator; invite → existing-user upgrade; expired/reused token rejected.
@@ -74,7 +74,7 @@ Goal: better-auth owns identity and sessions; login/signup/logout work through i
 
 ## Phase 4 — /me account page + cleanup
 
-- [ ] Revive [`me.tsx`](../../app/routes/me.tsx) (drop the `ENABLED = false` gate): show name/email/role; change password (current-password required); connected-accounts section (Google linked? link/unlink via auth client); "sign out other sessions" (DB session revocation).
+- [ ] Revive [`me.tsx`](../../app/routes/me.tsx) (drop the `ENABLED = false` gate): show name/email/role; change password (current-password required) — or **set password** when the account has no credential account (Google-only signups; no current-password field, and setting one makes Google unlinkable); connected-accounts section (Google linked? link/unlink via auth client); "sign out other sessions" (DB session revocation). No self-service account deletion (manual via admin).
 - [ ] Allow editing `name` (migrated users carry an email-derived placeholder).
 - [ ] Cleanup sweep: dead bcryptjs dependency, leftover `Password` references, `SESSION_SECRET` in docs/deploy config, [`.env.example`](../../.env.example) accurate.
 - [ ] Optionally move admin user-management routes' model code under `app/features/users/` (mechanical; skip if it churns phase-2 ground).

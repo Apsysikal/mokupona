@@ -1,7 +1,7 @@
 # Auth Rework — Design
 
 **Status:** Approved design, ready to implement
-**Last updated:** 2026-07-06
+**Last updated:** 2026-07-08
 
 Replace the hand-rolled cookie/bcrypt auth with **better-auth as the authentication engine only** — sessions, email+password with verification and reset, Google OAuth with account linking, all outbound mail through a **provider-agnostic mail layer** (Resend is the first provider, §3.1). Authorization stays entirely ours: the `Role` table, `requireUserWithRole()`, the admin route guards, and the admin-immutability rules are untouched. **Invite links** (email-bound, role-carrying) are a custom feature built beside better-auth, not a plugin. A later **phase 2** decomposes roles into finer global permissions — this design deliberately keeps better-auth ignorant of roles so that rebuild stays unconstrained.
 
@@ -16,7 +16,7 @@ Replace the hand-rolled cookie/bcrypt auth with **better-auth as the authenticat
 - Password signup/login keeps working; signups now require **email verification**; a **password reset** flow exists.
 - **Invite links**: admin enters email + role, an email-bound single-use link (~7-day expiry) onboards a new user directly into that role, or upgrades an existing user. Ceiling is `moderator`.
 - Open signup stays; `name` becomes a **mandatory** user field (Google supplies it; the join form asks for it).
-- Minimal `/me`: change password, show connected Google account, sign out other sessions (replaces the hard-disabled [`me.tsx`](../../app/routes/me.tsx)).
+- Minimal `/me`: change password (or **set** one, for Google-only accounts), show connected Google account, sign out other sessions (replaces the hard-disabled [`me.tsx`](../../app/routes/me.tsx)). Account deletion stays out of scope — handled manually via the existing admin delete.
 
 ### Non-goals (phase 1)
 
@@ -83,7 +83,7 @@ export interface MailProvider { send(message: MailMessage): Promise<void> }
   - `resend` — the only module that imports the Resend SDK; prod + staging default.
   - `console` — logs the message; local-dev default, no API key needed.
   - `capture` — writes each message as JSON to a well-known directory; e2e default, Cypress reads the files (`cy.readFile`) to follow verification/reset/invite links. No HTTP-level mocking of Resend's API needed.
-- **Templates live with their features** (`auth/` owns verification + reset, `users/` owns invite) and call `sendMail(message)` — the layer transports, it doesn't compose.
+- **Templates live with their features** (`auth/` owns verification + reset, `users/` owns invite) and call `sendMail(message)` — the layer transports, it doesn't compose. Copy is **neutral transactional English** (not the lowercase site brand voice); minimal text-first HTML, no designed email layout.
 - better-auth's `sendResetPassword`/`sendVerificationEmail` callbacks are the only integration points; they build a `MailMessage` and hand it to the layer.
 
 Swapping Resend later = one new provider module + a `MAIL_PROVIDER` value. Nothing else changes.
@@ -127,14 +127,14 @@ Sessions move from stateless cookies to DB rows — server-side revocation ("sig
 
 ## 5. Auth flows
 
-- **Password signup** (`/join`): name (required) + email + password + confirm; Conform + Zod as today. `requireEmailVerification: true` — login is blocked until the Resend-delivered verification link is clicked. Privacy notice text sits above the submit button (and on `/login` next to the Google button); the checkbox goes away.
-- **Login** (`/login`): email+password or "Continue with Google". `redirectTo` behavior of the current pages is preserved.
+- **Password signup** (`/join`): name (required) + email + password + confirm; Conform + Zod as today. `requireEmailVerification: true` — login is blocked until the Resend-delivered verification link is clicked. Submitting lands on a **check-your-inbox interstitial** (no resend button: an unverified login attempt makes better-auth send a fresh link, which is the recovery path for lost/expired mail). Privacy notice text sits above the submit button (and on `/login` next to the Google button); the checkbox goes away.
+- **Login** (`/login`): email+password or "Continue with Google". The **remember-me checkbox stays**, mapped to better-auth's `rememberMe` (unchecked = session cookie, checked = long-lived session). `redirectTo` behavior of the current pages is preserved. A "forgot password?" link is added.
 - **Reset**: `/forgot-password` (request) + `/reset-password` (token form), wired to better-auth's `sendResetPassword` → Resend. Completing a reset proves mailbox ownership → the `onPasswordReset` hook sets `emailVerified: true` (this is how migrated users get verified, §7).
 - **Google OAuth**: `socialProviders.google`; `accountLinking: { enabled: true, trustedProviders: ["google"] }`. First-time Google users get `name`/`image` from the profile and role `user` via the create hook. Linking is safe because password accounts are always verified (§2).
 
 ## 6. Invites
 
-Custom feature — no better-auth plugin. Creation lives in the admin UI (`/admin/users/invite`): admin enters email + role (`user` | `moderator` — `admin` is not offered and rejected server-side), a token row is written and Resend sends the link `/invite/$token`.
+Custom feature — no better-auth plugin. Creation lives **inline on `/admin/users`**: an "Invite" header action opens a form (email + role picker, `user` | `moderator` — `admin` is not offered and rejected server-side); pending invites render as a distinct card-row section on the same page, each with a revoke action. On submit, a token row is written and Resend sends the link `/invite/$token`.
 
 Acceptance at `/invite/$token`:
 
