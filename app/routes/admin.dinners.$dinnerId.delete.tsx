@@ -2,8 +2,8 @@ import { redirect } from "react-router";
 
 import type { Route } from "./+types/admin.dinners.$dinnerId.delete";
 
+import { requireUserWithRole } from "~/features/auth/guards.server";
 import { deleteEvent } from "~/models/event.server";
-import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader() {
   return redirect("/admin/dinners");

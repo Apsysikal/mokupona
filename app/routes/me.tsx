@@ -1,43 +1,524 @@
-import { redirect } from "react-router";
+import { getFormProps, getInputProps, useForm } from "@conform-to/react";
+import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
+import { CheckIcon } from "@radix-ui/react-icons";
+import { useEffect } from "react";
+import { data, useFetcher } from "react-router";
+import { toast } from "sonner";
+import { z } from "zod";
 
 import type { Route } from "./+types/me";
 
-import { getUserAccountSummary } from "~/models/user.server";
-import { logout, requireUserId } from "~/utils/session.server";
+import { InitialsAvatar } from "~/components/admin-ui";
+import { Field } from "~/components/forms";
+import { GoogleMark } from "~/components/google-button";
+import { Eyebrow } from "~/components/section";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { authClient } from "~/features/auth/auth.client";
+import { auth } from "~/features/auth/auth.server";
+import { logout, requireUserId } from "~/features/auth/guards.server";
+import { withPasswordConfirmation } from "~/features/auth/password-schema";
+import {
+  getUserAccountSummary,
+  getUserAuthOverview,
+  updateUserName,
+} from "~/models/user.server";
 
-export const meta: Route.MetaFunction = () => [{ title: "moku pona" }];
+const nameSchema = z.object({
+  intent: z.literal("update-name"),
+  name: z
+    .string({ error: "Name is required" })
+    .trim()
+    .min(1, "Name is required"),
+});
 
-const ENABLED = false;
+const changePasswordSchema = withPasswordConfirmation({
+  intent: z.literal("change-password"),
+  currentPassword: z.string({ error: "Current password is required" }),
+});
+
+const setPasswordSchema = withPasswordConfirmation({
+  intent: z.literal("set-password"),
+});
+
+export const meta: Route.MetaFunction = () => [{ title: "your account" }];
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
-  if (!ENABLED) return redirect("/");
-
   const userId = await requireUserId(request);
-  const user = await getUserAccountSummary(userId);
+  const [user, authOverview] = await Promise.all([
+    getUserAccountSummary(userId),
+    getUserAuthOverview(userId),
+  ]);
 
   if (!user) throw await logout(request);
 
-  return { user };
+  return {
+    user,
+    ...authOverview,
+    googleEnabled: Boolean(process.env.GOOGLE_CLIENT_ID),
+  };
+};
+
+export const action = async ({ request }: Route.ActionArgs) => {
+  const userId = await requireUserId(request);
+  const formData = await request.formData();
+  const intent = formData.get("intent");
+
+  if (intent === "update-name") {
+    const submission = parseWithZod(formData, { schema: nameSchema });
+    if (submission.status !== "success") {
+      return data({ result: submission.reply(), done: null });
+    }
+    await updateUserName(userId, submission.value.name);
+    return data({ result: submission.reply(), done: "name" as const });
+  }
+
+  if (intent === "change-password") {
+    const submission = parseWithZod(formData, {
+      schema: changePasswordSchema,
+    });
+    if (submission.status !== "success") {
+      return data({ result: submission.reply(), done: null });
+    }
+    try {
+      await auth.api.changePassword({
+        body: {
+          currentPassword: submission.value.currentPassword,
+          newPassword: submission.value.password,
+          revokeOtherSessions: false,
+        },
+        headers: request.headers,
+      });
+    } catch {
+      return data({
+        result: submission.reply({
+          fieldErrors: {
+            currentPassword: ["that doesn't match your current password."],
+          },
+        }),
+        done: null,
+      });
+    }
+    return data({
+      result: submission.reply({ resetForm: true }),
+      done: "password" as const,
+    });
+  }
+
+  if (intent === "set-password") {
+    const submission = parseWithZod(formData, { schema: setPasswordSchema });
+    if (submission.status !== "success") {
+      return data({ result: submission.reply(), done: null });
+    }
+    try {
+      // only valid while the account has no credential account (Google-only)
+      await auth.api.setPassword({
+        body: { newPassword: submission.value.password },
+        headers: request.headers,
+      });
+    } catch {
+      // stale UI: a credential account appeared since the page rendered
+      return data({
+        result: submission.reply({
+          fieldErrors: {
+            password: [
+              "a password is already set. reload the page to change it.",
+            ],
+          },
+        }),
+        done: null,
+      });
+    }
+    return data({
+      result: submission.reply({ resetForm: true }),
+      done: "password" as const,
+    });
+  }
+
+  if (intent === "unlink-google") {
+    try {
+      // better-auth also refuses to unlink the last remaining account —
+      // the UI disables this earlier, this is the backstop
+      await auth.api.unlinkAccount({
+        body: { providerId: "google" },
+        headers: request.headers,
+      });
+      return data({ result: null, done: "unlink" as const });
+    } catch {
+      return data({ result: null, done: null });
+    }
+  }
+
+  if (intent === "revoke-others") {
+    await auth.api.revokeOtherSessions({ headers: request.headers });
+    return data({ result: null, done: "sessions" as const });
+  }
+
+  throw new Response("Unknown intent", { status: 400 });
 };
 
 export default function MeRoute({ loaderData }: Route.ComponentProps) {
-  const { user } = loaderData;
+  const { user, hasPassword, googleLinked, sessionCount, googleEnabled } =
+    loaderData;
 
   return (
-    <main className="relative mx-auto flex max-w-4xl flex-col gap-2">
-      <div className="px-2">
-        <h1 className="text-2xl font-light tracking-tight">
-          Welcome to your profile.
+    <main className="animate-page-in mx-auto flex w-full max-w-2xl flex-col gap-5 px-6 py-10 md:py-14">
+      <div className="mb-1">
+        <Eyebrow variant="tracked" tone="label" className="mb-2 block">
+          account
+        </Eyebrow>
+        <h1 className="text-3xl font-light tracking-tight md:text-4xl">
+          your account
         </h1>
       </div>
 
-      <div className="flex flex-col gap-2 px-2">
-        <p>Email: {user.email}</p>
-        <p>
-          Role: {user.role.name}
-          {user.role.description ? `, ${user.role.description}` : null}
+      <ProfileCard user={user} />
+
+      <PasswordCard hasPassword={hasPassword} />
+
+      {googleEnabled || googleLinked ? (
+        <ConnectedAccountsCard
+          email={user.email}
+          googleLinked={googleLinked}
+          hasPassword={hasPassword}
+        />
+      ) : null}
+
+      <SessionsCard sessionCount={sessionCount} />
+    </main>
+  );
+}
+
+function SectionCard({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="border-border bg-card flex flex-col gap-5 rounded-2xl border p-6 md:p-7">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-lg font-semibold">{title}</h2>
+        {subtitle ? (
+          <p className="text-foreground/55 text-sm">{subtitle}</p>
+        ) : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function ProfileCard({
+  user,
+}: {
+  user: Route.ComponentProps["loaderData"]["user"];
+}) {
+  const fetcher = useFetcher<typeof action>();
+  const [form, fields] = useForm({
+    lastResult: fetcher.data?.result ?? null,
+    constraint: getZodConstraint(nameSchema),
+    defaultValue: { name: user.name },
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema: nameSchema });
+    },
+  });
+
+  const { data: fetcherData, state } = fetcher;
+  useEffect(() => {
+    if (fetcherData?.done === "name" && state === "idle") {
+      toast.success("name updated");
+    }
+  }, [fetcherData, state]);
+
+  return (
+    <section className="border-border bg-card flex flex-col gap-5 rounded-2xl border p-6 md:p-7">
+      <div className="flex items-center gap-4">
+        <InitialsAvatar
+          name={user.name}
+          seed={0}
+          className="size-13 text-base"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-lg font-semibold">{user.name}</p>
+        </div>
+        <span className="border-primary/35 bg-primary/10 text-accent-light rounded-full border px-3.5 py-1.5 text-[13px] font-semibold">
+          {user.role.name}
+        </span>
+      </div>
+
+      <fetcher.Form
+        method="post"
+        className="flex flex-col gap-4"
+        {...getFormProps(form)}
+      >
+        <input type="hidden" name="intent" value="update-name" />
+        <div className="flex items-end gap-2">
+          <Field
+            className="flex-1"
+            labelProps={{ children: "name" }}
+            inputProps={{ ...getInputProps(fields.name, { type: "text" }) }}
+            errors={fields.name.errors}
+          />
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={state !== "idle"}
+            // keeps the button aligned with the input when an error renders
+            className={fields.name.errors?.length ? "mb-8" : undefined}
+          >
+            save
+          </Button>
+        </div>
+      </fetcher.Form>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-sm font-medium">email</span>
+        <div className="border-border bg-foreground/3 text-foreground/70 flex h-11 items-center justify-between rounded-lg border px-3 text-sm">
+          <span className="truncate">{user.email}</span>
+          {user.emailVerified ? (
+            <Badge variant="info" pill className="ml-2 shrink-0 gap-1">
+              <CheckIcon className="size-3.5" /> verified
+            </Badge>
+          ) : null}
+        </div>
+        <p className="text-foreground/50 text-sm">
+          your email is your login and can&apos;t be changed here.
         </p>
       </div>
-    </main>
+    </section>
+  );
+}
+
+function PasswordCard({ hasPassword }: { hasPassword: boolean }) {
+  return hasPassword ? <ChangePasswordForm /> : <SetPasswordForm />;
+}
+
+function ChangePasswordForm() {
+  const fetcher = useFetcher<typeof action>();
+  const [form, fields] = useForm({
+    lastResult: fetcher.data?.result ?? null,
+    constraint: getZodConstraint(changePasswordSchema),
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema: changePasswordSchema });
+    },
+  });
+
+  const { data: fetcherData, state } = fetcher;
+  useEffect(() => {
+    if (fetcherData?.done === "password" && state === "idle") {
+      toast.success("password updated");
+    }
+  }, [fetcherData, state]);
+
+  return (
+    <SectionCard
+      title="password"
+      subtitle="change the password you use to sign in."
+    >
+      <fetcher.Form
+        method="post"
+        className="flex flex-col gap-4"
+        {...getFormProps(form)}
+      >
+        <input type="hidden" name="intent" value="change-password" />
+
+        <Field
+          labelProps={{ children: "current password" }}
+          inputProps={{
+            ...getInputProps(fields.currentPassword, { type: "password" }),
+          }}
+          errors={fields.currentPassword.errors}
+        />
+
+        <Field
+          labelProps={{ children: "new password" }}
+          inputProps={{
+            ...getInputProps(fields.password, { type: "password" }),
+          }}
+          errors={fields.password.errors}
+        />
+
+        <Field
+          labelProps={{ children: "confirm new password" }}
+          inputProps={{
+            ...getInputProps(fields.confirmPassword, { type: "password" }),
+          }}
+          errors={fields.confirmPassword.errors}
+        />
+
+        <Button
+          type="submit"
+          className="self-start"
+          disabled={state !== "idle"}
+        >
+          update password
+        </Button>
+      </fetcher.Form>
+    </SectionCard>
+  );
+}
+
+// Google-only accounts set their first password here; better-auth's
+// setPassword refuses once a credential account exists
+function SetPasswordForm() {
+  const fetcher = useFetcher<typeof action>();
+  const [form, fields] = useForm({
+    lastResult: fetcher.data?.result ?? null,
+    constraint: getZodConstraint(setPasswordSchema),
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema: setPasswordSchema });
+    },
+  });
+
+  const { data: fetcherData, state } = fetcher;
+  useEffect(() => {
+    if (fetcherData?.done === "password" && state === "idle") {
+      toast.success("password set");
+    }
+  }, [fetcherData, state]);
+
+  return (
+    <SectionCard
+      title="set a password"
+      subtitle="you signed up with google. add a password to sign in either way — no current password needed."
+    >
+      <fetcher.Form
+        method="post"
+        className="flex flex-col gap-4"
+        {...getFormProps(form)}
+      >
+        <input type="hidden" name="intent" value="set-password" />
+
+        <Field
+          labelProps={{ children: "new password" }}
+          inputProps={{
+            ...getInputProps(fields.password, { type: "password" }),
+          }}
+          errors={fields.password.errors}
+        />
+
+        <Field
+          labelProps={{ children: "confirm new password" }}
+          inputProps={{
+            ...getInputProps(fields.confirmPassword, { type: "password" }),
+          }}
+          errors={fields.confirmPassword.errors}
+        />
+
+        <Button
+          type="submit"
+          className="self-start"
+          disabled={state !== "idle"}
+        >
+          set password
+        </Button>
+      </fetcher.Form>
+    </SectionCard>
+  );
+}
+
+function ConnectedAccountsCard({
+  email,
+  googleLinked,
+  hasPassword,
+}: {
+  email: string;
+  googleLinked: boolean;
+  hasPassword: boolean;
+}) {
+  const fetcher = useFetcher<typeof action>();
+  const unlinkBlocked = googleLinked && !hasPassword;
+
+  const { data: fetcherData, state } = fetcher;
+  useEffect(() => {
+    if (fetcherData?.done === "unlink" && state === "idle") {
+      toast.success("google unlinked");
+    }
+  }, [fetcherData, state]);
+
+  return (
+    <SectionCard
+      title="connected accounts"
+      subtitle="sign in faster by linking a provider."
+    >
+      <div className="border-border flex items-center gap-3.5 rounded-xl border px-4 py-3.5">
+        <GoogleMark className="size-5.5 shrink-0" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[15px] font-semibold">google</p>
+          <p className="text-foreground/55 truncate text-[13px]">
+            {googleLinked ? `linked as ${email}` : "not linked"}
+          </p>
+        </div>
+        {googleLinked ? (
+          <fetcher.Form method="post">
+            <input type="hidden" name="intent" value="unlink-google" />
+            <Button
+              type="submit"
+              size="sm"
+              variant="destructive-outline"
+              disabled={unlinkBlocked || state !== "idle"}
+            >
+              unlink
+            </Button>
+          </fetcher.Form>
+        ) : (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              authClient.linkSocial({
+                provider: "google",
+                callbackURL: "/me",
+              })
+            }
+          >
+            link
+          </Button>
+        )}
+      </div>
+      {unlinkBlocked ? (
+        <p className="text-foreground/50 text-sm">
+          google is your only way to sign in right now. set a password first,
+          then you can unlink.
+        </p>
+      ) : null}
+    </SectionCard>
+  );
+}
+
+function SessionsCard({ sessionCount }: { sessionCount: number }) {
+  const fetcher = useFetcher<typeof action>();
+
+  const { data: fetcherData, state } = fetcher;
+  useEffect(() => {
+    if (fetcherData?.done === "sessions" && state === "idle") {
+      toast.success("signed out everywhere else");
+    }
+  }, [fetcherData, state]);
+
+  return (
+    <SectionCard title="sessions">
+      <p className="text-foreground/65 text-sm">
+        you&apos;re signed in on{" "}
+        <strong className="text-foreground font-semibold">
+          {sessionCount === 1 ? "1 device" : `${sessionCount} devices`}
+        </strong>
+        , including this one.
+      </p>
+      <fetcher.Form method="post">
+        <input type="hidden" name="intent" value="revoke-others" />
+        <Button
+          type="submit"
+          variant="outline"
+          disabled={sessionCount <= 1 || state !== "idle"}
+        >
+          sign out other sessions
+        </Button>
+      </fetcher.Form>
+    </SectionCard>
   );
 }

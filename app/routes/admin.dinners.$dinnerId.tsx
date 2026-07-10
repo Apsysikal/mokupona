@@ -4,8 +4,8 @@ import type { Route } from "./+types/admin.dinners.$dinnerId";
 
 import { DinnerView } from "~/components/dinner-view";
 import { Button } from "~/components/ui/button";
+import { requireUserWithRole } from "~/features/auth/guards.server";
 import { getEventById } from "~/models/event.server";
-import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);

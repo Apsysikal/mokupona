@@ -13,6 +13,7 @@ export async function buildEventData() {
         prisma.user.create({
           data: {
             email: `test-${faker.string.uuid()}@example.com`,
+            name: faker.person.fullName(),
             roleId: role.id,
           },
         }),

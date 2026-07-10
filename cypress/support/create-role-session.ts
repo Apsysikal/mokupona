@@ -1,7 +1,9 @@
-import { parseCookie } from "cookie";
+export {}; // keeps the script in module scope (shared const names otherwise clash)
 
-import { getUserByEmail } from "~/models/user.server";
-import { createUserSession } from "~/utils/session.server";
+// mail side effects stay out of the shared capture directory
+process.env.MAIL_PROVIDER = "console";
+
+const SESSION_COOKIE = "better-auth.session_token";
 
 const seededRoleEmails = {
   moderator: "moderator@mokupona.ch",
@@ -10,33 +12,34 @@ const seededRoleEmails = {
 
 async function createRoleSession(roleArg: string | undefined) {
   const role = roleArg === "admin" ? "admin" : "moderator";
-  const user = await getUserByEmail(seededRoleEmails[role]);
 
-  if (!user) {
+  const { auth } = await import("~/features/auth/auth.server");
+
+  let headers: Headers;
+  try {
+    ({ headers } = await auth.api.signInEmail({
+      body: { email: seededRoleEmails[role], password: "mokupona" },
+      returnHeaders: true,
+    }));
+  } catch {
     throw new Error(
-      `Seeded ${role} user not found. Run the seed script before Cypress tests.`,
+      `Seeded ${role} user could not sign in. Run the seed script before Cypress tests.`,
     );
   }
 
-  const response = await createUserSession({
-    request: new Request("test://test"),
-    userId: user.id,
-    remember: false,
-    redirectTo: "/",
-  });
+  const setCookie = headers.get("set-cookie") ?? "";
+  const match = setCookie.match(
+    new RegExp(`${SESSION_COOKIE.replace(".", "\\.")}=([^;]+)`),
+  );
 
-  const cookieValue = response.headers.get("Set-Cookie");
-
-  if (!cookieValue) {
-    throw new Error("Cookie missing from createUserSession response");
+  if (!match) {
+    throw new Error("Session cookie missing from sign-in response");
   }
-
-  const parsedCookie = parseCookie(cookieValue);
 
   console.log(
     `
 <cookie>
-  ${parsedCookie.__session}
+  ${match[1]}
 </cookie>
   `.trim(),
   );

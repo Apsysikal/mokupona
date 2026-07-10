@@ -65,7 +65,7 @@ function login({
       const cookieValue = stdout
         .replace(/.*<cookie>(?<cookieValue>.*)<\/cookie>.*/s, "$<cookieValue>")
         .trim();
-      cy.setCookie("__session", cookieValue);
+      cy.setCookie("better-auth.session_token", cookieValue);
     },
   );
   return cy.get("@user");
@@ -77,7 +77,7 @@ function loginAsRole(role: "moderator" | "admin" = "moderator") {
       const cookieValue = stdout
         .replace(/.*<cookie>(?<cookieValue>.*)<\/cookie>.*/s, "$<cookieValue>")
         .trim();
-      cy.setCookie("__session", cookieValue);
+      cy.setCookie("better-auth.session_token", cookieValue);
     },
   );
 }
@@ -93,12 +93,12 @@ function cleanupUser({ email }: { email?: string } = {}) {
       }
     });
   }
-  cy.clearCookie("__session");
+  cy.clearCookie("better-auth.session_token");
 }
 
 function deleteUserByEmail(email: string) {
   cy.exec(`npx tsx ./cypress/support/delete-user.ts "${email}"`);
-  cy.clearCookie("__session");
+  cy.clearCookie("better-auth.session_token");
 }
 
 // We're waiting a second because of this issue happen randomly

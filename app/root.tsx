@@ -7,7 +7,6 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLocation,
 } from "react-router";
 
 import type { Route } from "./+types/root";
@@ -20,8 +19,8 @@ import { getClientHints } from "./utils/client-hints.server";
 import { combineHeaders, getDomainUrl } from "./utils/misc";
 import { getToast } from "./utils/toast.server";
 
+import { getUserWithRole } from "~/features/auth/guards.server";
 import stylesheet from "~/tailwind.css?url";
-import { getUserWithRole } from "~/utils/session.server";
 
 export type RootLoaderData = typeof loader;
 
@@ -52,6 +51,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const clientHints = getClientHints(request);
   const { toast, headers } = await getToast(request);
   const allowIndexing = process.env.ALLOW_INDEXING !== "false";
+  const cypressSupport = process.env.CYPRESS_SUPPORT === "true";
   return data(
     {
       user,
@@ -59,6 +59,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       domainUrl,
       clientHints,
       allowIndexing,
+      cypressSupport,
       nextDinnerId: nextEvent?.id ?? null,
     },
     { headers: combineHeaders(headers) },
@@ -66,11 +67,20 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 };
 
 export default function App({ loaderData }: Route.ComponentProps) {
-  const { allowIndexing } = loaderData;
+  const { allowIndexing, cypressSupport } = loaderData;
 
   return (
     <html lang="en" className="h-full scroll-smooth">
       <head>
+        {/* Cypress injects its bootstrap into this marker instead of
+            prepending nodes to <head>, which would break React hydration
+            (cypress-io/cypress#27204). Only rendered when the server runs
+            with CYPRESS_SUPPORT=true (the test:e2e:* scripts). */}
+        {cypressSupport ? (
+          <script data-cy-bootstrap suppressHydrationWarning>
+            {"/* placeholder */"}
+          </script>
+        ) : null}
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         {allowIndexing ? null : (
@@ -92,10 +102,8 @@ export default function App({ loaderData }: Route.ComponentProps) {
   );
 }
 
-// the auth pages are a full-height split with their own brand panel — they
-// deliberately render without the shared nav/footer (design handoff §4)
-const BARE_ROUTES = ["/login", "/join"];
-
+// every surface — auth pages included — renders inside the shared
+// nav/footer chrome (design handoff: global chrome rework)
 function Document({
   toast,
   nextDinnerId,
@@ -103,12 +111,7 @@ function Document({
   toast: Route.ComponentProps["loaderData"]["toast"];
   nextDinnerId: string | null;
 }) {
-  const location = useLocation();
   useToast(toast);
-
-  if (BARE_ROUTES.includes(location.pathname)) {
-    return <Outlet />;
-  }
 
   const joinHref = nextDinnerId ? `/dinners/${nextDinnerId}` : "/dinners";
 

@@ -1,0 +1,44 @@
+import { auth } from "./auth.server";
+
+import { getRoleByName } from "~/models/role.server";
+import type { User } from "~/models/user.server";
+import {
+  getUserByEmail,
+  setUserEmailVerified,
+  updateNonAdminUserRole,
+} from "~/models/user.server";
+
+// Seed/test factory: creates the user through better-auth's own API so the
+// credential Account and scrypt hash are shape-correct, then applies the
+// bits better-auth doesn't know about (role, pre-verified email).
+export async function createUserViaAuth({
+  email,
+  password,
+  name,
+  roleName = "user",
+  emailVerified = true,
+}: {
+  email: string;
+  password: string;
+  name: string;
+  roleName?: string;
+  emailVerified?: boolean;
+}): Promise<User> {
+  await auth.api.signUpEmail({ body: { email, password, name } });
+
+  const created = await getUserByEmail(email.toLowerCase());
+  if (!created) {
+    throw new Error(`better-auth did not create a user for ${email}`);
+  }
+
+  if (emailVerified) await setUserEmailVerified(created.id);
+  if (roleName !== "user") {
+    const role = await getRoleByName(roleName);
+    if (!role) throw new Error(`Role "${roleName}" is not a valid role`);
+    await updateNonAdminUserRole(created.id, role.id);
+  }
+
+  const user = await getUserByEmail(created.email);
+  if (!user) throw new Error(`user ${email} vanished during provisioning`);
+  return user;
+}

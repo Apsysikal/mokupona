@@ -77,6 +77,15 @@ export function SiteNav({ joinHref }: SiteNavProps) {
             ) : null}
 
             {optionalUser ? (
+              <Link
+                to="/me"
+                className={sectionLinkClasses(location.pathname === "/me")}
+              >
+                account
+              </Link>
+            ) : null}
+
+            {optionalUser ? (
               <Form action="/logout" method="POST">
                 <button className="text-foreground/80 hover:text-foreground">
                   logout
@@ -171,6 +180,13 @@ function MobileMenu({
           {isModerator ? (
             <Link to="/admin" className={menuLinkClasses}>
               admin area
+              {chevron}
+            </Link>
+          ) : null}
+
+          {loggedIn ? (
+            <Link to="/me" className={menuLinkClasses}>
+              account
               {chevron}
             </Link>
           ) : null}

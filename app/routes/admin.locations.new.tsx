@@ -5,9 +5,9 @@ import { Form, redirect } from "react-router";
 import type { Route } from "./+types/admin.locations.new";
 
 import { AdminLocationForm } from "~/components/admin-location-form";
+import { requireUserWithRole } from "~/features/auth/guards.server";
 import { createAddress } from "~/models/address.server";
 import { AddressSchema } from "~/utils/address-validation";
-import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);

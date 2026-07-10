@@ -6,8 +6,8 @@ import type { Route } from "./+types/admin.locations._index";
 import { AdminEmptyState, AdminPageHeader } from "~/components/admin-ui";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
+import { requireUserWithRole } from "~/features/auth/guards.server";
 import { getAddresses, type Address } from "~/models/address.server";
-import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);

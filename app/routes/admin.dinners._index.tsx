@@ -14,11 +14,11 @@ import {
 } from "~/components/admin-ui";
 import { UtensilsIcon } from "~/components/icons";
 import { Button } from "~/components/ui/button";
+import { requireUserWithRole } from "~/features/auth/guards.server";
 import { getAttendeeCountsForEvents } from "~/features/signup-form/read.server";
 import { cn } from "~/lib/utils";
 import { getEventsWithAddress } from "~/models/event.server";
 import { formatAdminDateLine } from "~/utils/misc";
-import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);

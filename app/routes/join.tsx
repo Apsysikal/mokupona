@@ -6,80 +6,58 @@ import { z } from "zod";
 import type { Route } from "./+types/join";
 
 import { AuthShell } from "~/components/auth-layout";
-import { CheckboxField, Field } from "~/components/forms";
+import { Field } from "~/components/forms";
+import { GoogleButton } from "~/components/google-button";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { authClient } from "~/features/auth/auth.client";
+import { auth } from "~/features/auth/auth.server";
+import { getUserId } from "~/features/auth/guards.server";
+import { withPasswordConfirmation } from "~/features/auth/password-schema";
 import { logger } from "~/logger.server";
-import { createUser, getUserByEmail } from "~/models/user.server";
-import { getClientIPAddress, obscureEmail, safeRedirect } from "~/utils/misc";
-import { createUserSession, getUserId } from "~/utils/session.server";
+import { getUserByEmail } from "~/models/user.server";
+import { getClientIPAddress, obscureEmail } from "~/utils/misc";
 
-const schema = z
-  .object({
-    email: z.email({ error: "Email is required" }),
-    password: z
-      .string({
-        error: "Password is required",
-      })
-      .min(8, "Password must be greater than 8 characters"),
-    confirmPassword: z.string({
-      error: "Please confirm your password",
-    }),
-    acceptedPrivacy: z.boolean({
-      error: "You must agree to register",
-    }),
-    redirectTo: z.string().optional(),
-  })
-  .refine(
-    (data) => {
-      return data.password === data.confirmPassword;
-    },
-    {
-      message: "Passwords must match",
-      path: ["confirmPassword"],
-    },
-  )
-  .refine(
-    (data) => {
-      return data.acceptedPrivacy === true;
-    },
-    {
-      message: "You must agree to register",
-      path: ["acceptedPrivacy"],
-    },
-  );
+const schema = withPasswordConfirmation({
+  name: z
+    .string({ error: "Name is required" })
+    .trim()
+    .min(1, "Name is required"),
+  email: z.email({ error: "Email is required" }),
+  redirectTo: z.string().optional(),
+});
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const userId = await getUserId(request);
   if (userId) return redirect("/");
-  return {};
+  return { googleEnabled: Boolean(process.env.GOOGLE_CLIENT_ID) };
 };
 
 export const action = async ({ request }: Route.ActionArgs) => {
   const formData = await request.formData();
 
   const submission = await parseWithZod(formData, {
-    schema: (intent) =>
-      schema.check(async (ctx) => {
-        const existingUser = await getUserByEmail(ctx.value.email);
+    schema: schema.check(async (ctx) => {
+      const existingUser = await getUserByEmail(ctx.value.email);
 
-        if (existingUser) {
-          ctx.issues.push({
-            code: "custom",
-            path: ["email"],
-            message: "A user already exists with this email",
-            input: ctx.value.email,
-          });
-        }
-      }),
+      if (existingUser) {
+        ctx.issues.push({
+          code: "custom",
+          path: ["email"],
+          message:
+            "an account already exists with this email. try logging in instead.",
+          input: ctx.value.email,
+        });
+      }
+    }),
     async: true,
   });
 
   if (submission.status !== "success" || !submission.value) {
-    logger.info("Failed login request", {
+    logger.info("Failed signup request", {
       ip: getClientIPAddress(request),
       email: obscureEmail(
-        submission.payload["email"].toString() ?? "unknown@no-domain.com",
+        submission.payload["email"]?.toString() ?? "unknown@no-domain.com",
       ),
       reason: submission.status === "error" ? submission.error : null,
     });
@@ -87,32 +65,42 @@ export const action = async ({ request }: Route.ActionArgs) => {
     return submission.reply();
   }
 
-  const redirectTo = safeRedirect(submission.value.redirectTo, "/");
-  const { email, password } = submission.value;
+  const { name, email, password, redirectTo } = submission.value;
 
-  const user = await createUser(email, password);
+  // no session yet: requireEmailVerification blocks login until the mailed
+  // link is clicked; the signup response deliberately carries no token
+  await auth.api.signUpEmail({
+    body: { name, email, password },
+    headers: request.headers,
+  });
+
+  // sendOnSignUp is off (the invite flow must not mail) — this is the one
+  // place the initial verification mail goes out
+  await auth.api.sendVerificationEmail({
+    body: {
+      email,
+      callbackURL: `/verify-email?email=${encodeURIComponent(email)}`,
+    },
+    headers: request.headers,
+  });
 
   logger.info("Successful signup request", {
     ip: getClientIPAddress(request),
-    email: obscureEmail(submission.value.email),
+    email: obscureEmail(email),
   });
 
-  return createUserSession({
-    redirectTo,
-    remember: false,
-    request,
-    userId: user.id,
-  });
+  const search = new URLSearchParams({ email });
+  if (redirectTo) search.set("redirectTo", redirectTo);
+  return redirect(`/check-your-inbox?${search}`);
 };
 
 export const meta: Route.MetaFunction = () => [{ title: "Sign Up" }];
 
-export default function Join({ actionData }: Route.ComponentProps) {
+export default function Join({ loaderData, actionData }: Route.ComponentProps) {
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
-  const lastResult = actionData;
   const [form, fields] = useForm({
-    lastResult,
+    lastResult: actionData,
     shouldValidate: "onBlur",
     constraint: getZodConstraint(schema),
     defaultValue: { redirectTo },
@@ -131,8 +119,20 @@ export default function Join({ actionData }: Route.ComponentProps) {
         {...getFormProps(form)}
       >
         <Field
+          labelProps={{ children: "name" }}
+          inputProps={{
+            ...getInputProps(fields.name, { type: "text" }),
+            placeholder: "e.g. lena huber",
+          }}
+          errors={fields.name.errors}
+        />
+
+        <Field
           labelProps={{ children: "email address" }}
-          inputProps={{ ...getInputProps(fields.email, { type: "email" }) }}
+          inputProps={{
+            ...getInputProps(fields.email, { type: "email" }),
+            placeholder: "you@example.com",
+          }}
           errors={fields.email.errors}
         />
 
@@ -152,34 +152,37 @@ export default function Join({ actionData }: Route.ComponentProps) {
           errors={fields.confirmPassword.errors}
         />
 
-        <CheckboxField
-          labelProps={{
-            children: (
-              <span className="text-sm">
-                i agree to the{" "}
-                <Link to="/privacy" className="text-primary">
-                  privacy policy
-                </Link>
-              </span>
-            ),
-          }}
-          buttonProps={{
-            ...getInputProps(fields.acceptedPrivacy, { type: "checkbox" }),
-          }}
-          errors={fields.acceptedPrivacy.errors}
-        />
-
         <Input type="hidden" name="redirectTo" value={redirectTo} />
+
+        <p className="text-foreground/50 text-center text-xs">
+          by creating an account you accept the{" "}
+          <Link to="/privacy" className="text-primary hover:underline">
+            privacy policy
+          </Link>
+        </p>
 
         <Button type="submit" size="lg" className="mt-0.5 w-full">
           create account
         </Button>
 
-        <div className="flex items-center gap-3" aria-hidden>
-          <span className="bg-border h-px flex-1" />
-          <span className="text-foreground/40 text-xs">or</span>
-          <span className="bg-border h-px flex-1" />
-        </div>
+        {loaderData.googleEnabled ? (
+          <>
+            <div className="flex items-center gap-3" aria-hidden>
+              <span className="bg-border h-px flex-1" />
+              <span className="text-foreground/40 text-xs">or</span>
+              <span className="bg-border h-px flex-1" />
+            </div>
+
+            <GoogleButton
+              onClick={() =>
+                authClient.signIn.social({
+                  provider: "google",
+                  callbackURL: redirectTo ?? "/",
+                })
+              }
+            />
+          </>
+        ) : null}
 
         <p className="text-foreground/65 text-center text-sm">
           already have an account?{" "}

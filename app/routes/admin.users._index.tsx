@@ -1,6 +1,14 @@
-import { PersonIcon } from "@radix-ui/react-icons";
-import { useState } from "react";
-import { Link, useFetcher } from "react-router";
+import { getFormProps, getInputProps, useForm } from "@conform-to/react";
+import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
+import {
+  EnvelopeClosedIcon,
+  PersonIcon,
+  PlusIcon,
+} from "@radix-ui/react-icons";
+import { useEffect, useState } from "react";
+import { data, Link, useFetcher } from "react-router";
+import { toast } from "sonner";
+import { z } from "zod";
 
 import type { Route } from "./+types/admin.users._index";
 
@@ -11,17 +19,94 @@ import {
   FilterChip,
   InitialsAvatar,
 } from "~/components/admin-ui";
+import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
+import { Label } from "~/components/ui/label";
+import { requireUserWithRole } from "~/features/auth/guards.server";
+import {
+  createAndSendInvite,
+  resendInvite,
+} from "~/features/users/invite.server";
+import { INVITABLE_ROLES } from "~/features/users/invite.shared";
 import { cn } from "~/lib/utils";
+import { listPendingInvites, revokeInvite } from "~/models/invite.server";
 import { listUsersWithRoleName } from "~/models/user.server";
-import { requireUserWithRole } from "~/utils/session.server";
+import { getDomainUrl } from "~/utils/misc";
+
+const inviteSchema = z.object({
+  intent: z.literal("invite"),
+  email: z.email({ error: "Email is required" }),
+  // admin is not offered and rejected here — ceiling "moderator" (design §6)
+  role: z.enum(INVITABLE_ROLES, { error: "Pick a role" }),
+});
 
 export async function loader({ request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["admin"]);
 
-  const users = await listUsersWithRoleName();
+  const [users, invites] = await Promise.all([
+    listUsersWithRoleName(),
+    listPendingInvites(),
+  ]);
 
-  return { users };
+  return {
+    users,
+    invites: invites.map((invite) => ({
+      id: invite.id,
+      email: invite.email,
+      roleName: invite.roleName,
+      createdAt: invite.createdAt.toISOString(),
+      expiresAt: invite.expiresAt.toISOString(),
+    })),
+  };
+}
+
+export async function action({ request }: Route.ActionArgs) {
+  const admin = await requireUserWithRole(request, ["admin"]);
+  const formData = await request.formData();
+  const intent = formData.get("intent");
+
+  if (intent === "invite") {
+    const submission = parseWithZod(formData, { schema: inviteSchema });
+    if (submission.status !== "success") {
+      return data({ result: submission.reply(), sentTo: null });
+    }
+
+    const { email, role } = submission.value;
+    await createAndSendInvite({
+      email,
+      roleName: role,
+      createdById: admin.id,
+      origin: getDomainUrl(request),
+    });
+    return data({
+      result: submission.reply({ resetForm: true }),
+      sentTo: email,
+    });
+  }
+
+  if (intent === "revoke") {
+    const id = formData.get("inviteId");
+    if (typeof id === "string") await revokeInvite(id);
+    return data({ result: null, sentTo: null });
+  }
+
+  if (intent === "resend") {
+    const id = formData.get("inviteId");
+    if (typeof id === "string") {
+      await resendInvite({ id, origin: getDomainUrl(request) });
+    }
+    return data({ result: null, sentTo: null });
+  }
+
+  throw new Response(`Unknown intent`, { status: 400 });
 }
 
 export const meta: Route.MetaFunction = () => {
@@ -38,7 +123,7 @@ const ROLE_FILTERS = [
 type RoleFilter = (typeof ROLE_FILTERS)[number]["id"];
 
 export default function AdminUsersPage({ loaderData }: Route.ComponentProps) {
-  const { users } = loaderData;
+  const { users, invites } = loaderData;
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
 
@@ -49,7 +134,11 @@ export default function AdminUsersPage({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="animate-page-in">
-      <AdminPageHeader eyebrow={`${users.length} accounts`} title="Users" />
+      <AdminPageHeader
+        eyebrow={`${users.length} accounts`}
+        title="Users"
+        actions={<InviteDialog />}
+      />
 
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <AdminSearchField
@@ -70,6 +159,20 @@ export default function AdminUsersPage({ loaderData }: Route.ComponentProps) {
         </div>
       </div>
 
+      {/* pending invites read as provisional (dashed) and simply disappear
+          when there are none */}
+      {invites.length > 0 ? (
+        <>
+          <SectionDivider label="pending invites" />
+          <div className="mb-6 flex flex-col gap-3">
+            {invites.map((invite) => (
+              <PendingInviteRow key={invite.id} invite={invite} />
+            ))}
+          </div>
+          <SectionDivider label="accounts" />
+        </>
+      ) : null}
+
       {visible.length > 0 ? (
         <div className="flex flex-col gap-3">
           {visible.map((user, index) => (
@@ -83,6 +186,220 @@ export default function AdminUsersPage({ loaderData }: Route.ComponentProps) {
           description="Try a different search or role filter."
         />
       )}
+    </div>
+  );
+}
+
+function SectionDivider({ label }: { label: string }) {
+  return (
+    <div className="mb-4 flex items-center gap-3">
+      <span className="text-foreground/40 text-xs font-semibold tracking-[0.14em] uppercase">
+        {label}
+      </span>
+      <span className="bg-border h-px flex-1" aria-hidden />
+    </div>
+  );
+}
+
+function InviteDialog() {
+  const [open, setOpen] = useState(false);
+  const fetcher = useFetcher<typeof action>();
+  const [form, fields] = useForm({
+    lastResult: fetcher.data?.result ?? null,
+    constraint: getZodConstraint(inviteSchema),
+    defaultValue: { role: "user" },
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema: inviteSchema });
+    },
+  });
+
+  // fetcher.data is a fresh object per submission, so re-inviting the same
+  // address still closes the dialog
+  const { data: fetcherData, state: fetcherState } = fetcher;
+  useEffect(() => {
+    if (fetcherData?.sentTo && fetcherState === "idle") {
+      setOpen(false);
+      toast.success(`Invite sent to ${fetcherData.sentTo}`);
+    }
+  }, [fetcherData, fetcherState]);
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <PlusIcon className="mr-2 size-4" /> Invite
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <div className="flex flex-col gap-1.5">
+          <DialogTitle>Invite someone</DialogTitle>
+          <DialogDescription>
+            We&apos;ll email a single-use link that expires in 7 days.
+          </DialogDescription>
+        </div>
+
+        <fetcher.Form
+          method="post"
+          className="flex flex-col gap-4"
+          {...getFormProps(form)}
+        >
+          <input type="hidden" name="intent" value="invite" />
+
+          <Field
+            labelProps={{ children: "Email address" }}
+            inputProps={{
+              ...getInputProps(fields.email, { type: "email" }),
+              placeholder: "name@example.com",
+            }}
+            errors={fields.email.errors}
+          />
+
+          <RolePicker
+            name={fields.role.name}
+            defaultValue={fields.role.value ?? "user"}
+          />
+
+          <div className="mt-1 flex gap-2">
+            <DialogClose asChild>
+              <Button type="button" variant="outline" className="flex-1">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              type="submit"
+              className="flex-1"
+              disabled={fetcher.state !== "idle"}
+            >
+              {fetcher.state !== "idle" ? "Sending…" : "Send invite"}
+            </Button>
+          </div>
+        </fetcher.Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// segmented control per the ModeToggle pattern; radios drive it so it stays
+// keyboard-accessible. admin is deliberately not an option.
+function RolePicker({
+  name,
+  defaultValue,
+}: {
+  name: string;
+  defaultValue: string;
+}) {
+  const [selected, setSelected] = useState(defaultValue);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Label asChild>
+        <span>Role</span>
+      </Label>
+      <div className="bg-foreground/5 border-border flex rounded-lg border p-1">
+        {(["user", "moderator"] as const).map((role) => (
+          <label
+            key={role}
+            className={cn(
+              "flex h-9 flex-1 cursor-pointer items-center justify-center rounded-md text-sm transition-colors",
+              selected === role
+                ? "bg-primary text-primary-foreground font-semibold"
+                : "text-foreground/65 hover:text-foreground font-medium",
+            )}
+          >
+            <input
+              type="radio"
+              name={name}
+              value={role}
+              checked={selected === role}
+              onChange={() => setSelected(role)}
+              className="sr-only"
+            />
+            {role === "user" ? "User" : "Moderator"}
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+type InviteRow = Awaited<ReturnType<typeof loader>>["invites"][number];
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function inviteMeta(invite: InviteRow) {
+  const invitedDays = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(invite.createdAt).getTime()) / DAY_MS),
+  );
+  const invitedText =
+    invitedDays === 0
+      ? "invited today"
+      : invitedDays === 1
+        ? "invited 1 day ago"
+        : `invited ${invitedDays} days ago`;
+
+  const msLeft = new Date(invite.expiresAt).getTime() - Date.now();
+  const expired = msLeft <= 0;
+  const daysLeft = Math.ceil(msLeft / DAY_MS);
+  const expiresText = expired
+    ? "expired"
+    : daysLeft === 1
+      ? "expires in 1 day"
+      : `expires in ${daysLeft} days`;
+
+  return {
+    expired,
+    text: `${invite.roleName} · ${invitedText} · ${expiresText}`,
+  };
+}
+
+function PendingInviteRow({ invite }: { invite: InviteRow }) {
+  const fetcher = useFetcher();
+  const busy = fetcher.state !== "idle";
+  const { expired, text } = inviteMeta(invite);
+
+  return (
+    <div className="border-foreground/22 bg-foreground/2 flex items-center gap-3 rounded-2xl border border-dashed px-4 py-3">
+      <span
+        aria-hidden
+        className="bg-foreground/8 text-foreground/60 flex size-10 shrink-0 items-center justify-center rounded-full"
+      >
+        <EnvelopeClosedIcon className="size-4.5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-base font-semibold">{invite.email}</p>
+        <p
+          className={cn(
+            "mt-0.5 text-sm",
+            expired ? "text-red-300" : "text-foreground/50",
+          )}
+        >
+          {text}
+        </p>
+      </div>
+      <div className="flex shrink-0 gap-2">
+        {/* the link itself is never surfaced here — it only travels by email,
+            which is what proves the invitee controls the bound address */}
+        <fetcher.Form method="post">
+          <input type="hidden" name="intent" value="resend" />
+          <input type="hidden" name="inviteId" value={invite.id} />
+          <Button type="submit" size="sm" variant="outline" disabled={busy}>
+            {busy ? "Sending…" : "Re-send"}
+          </Button>
+        </fetcher.Form>
+        <fetcher.Form method="post">
+          <input type="hidden" name="intent" value="revoke" />
+          <input type="hidden" name="inviteId" value={invite.id} />
+          <Button
+            type="submit"
+            size="sm"
+            variant="destructive-outline"
+            disabled={busy}
+          >
+            Revoke
+          </Button>
+        </fetcher.Form>
+      </div>
     </div>
   );
 }

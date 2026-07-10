@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { combineHeaders } from "./misc";
 
-invariant(process.env.SESSION_SECRET, "SESSION_SECRET must be set");
+invariant(process.env.BETTER_AUTH_SECRET, "BETTER_AUTH_SECRET must be set");
 
 const TOAST_COOKIE_KEY = "__toast";
 const TOAST_SESSION_KEY = "toast";
@@ -24,7 +24,7 @@ const toastSessionStorage = createCookieSessionStorage({
     httpOnly: true,
     path: "/",
     sameSite: "lax",
-    secrets: [process.env.SESSION_SECRET],
+    secrets: [process.env.BETTER_AUTH_SECRET],
     secure: process.env.NODE_ENV === "production",
   },
 });
