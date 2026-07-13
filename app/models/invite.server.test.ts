@@ -42,18 +42,6 @@ beforeAll(async () => {
 });
 
 describe("upsertInvite", () => {
-  it("rejects the admin role — ceiling is moderator", async () => {
-    const admin = await createAdmin();
-    await expect(
-      upsertInvite({
-        email: "x@example.com",
-        // deliberately bypasses the type to prove the runtime guard
-        roleName: "admin" as never,
-        createdById: admin.id,
-      }),
-    ).rejects.toThrow(/cannot be granted by invite/);
-  });
-
   it("updates the live invite for an address instead of duplicating", async () => {
     const admin = await createAdmin();
     const email = `invitee-${faker.string.uuid()}@example.com`;

@@ -75,11 +75,7 @@ export default function BoardMemberNewRoute({
   actionData,
 }: Route.ComponentProps) {
   const location = useLocation();
-  // Remounting per location clears the form when the action redirects back to
-  // this page. location.key must stay a React key and never become the form
-  // id: the server renders it as "default" but ScrollRestoration's inline
-  // script re-keys history before hydration, so an id would desync the DOM
-  // from Conform's submit handler.
+
   return <BoardMemberForm key={location.key} actionData={actionData} />;
 }
 

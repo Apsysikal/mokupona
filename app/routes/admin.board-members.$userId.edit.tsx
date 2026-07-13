@@ -94,11 +94,7 @@ export default function BoardMemberEditRoute({
   actionData,
 }: Route.ComponentProps) {
   const location = useLocation();
-  // Remounting per location makes sure that when selecting another member the
-  // form picks up the new default values. location.key must stay a React key
-  // and never become the form id: the server renders it as "default" but
-  // ScrollRestoration's inline script re-keys history before hydration, so an
-  // id would desync the DOM from Conform's submit handler.
+
   return (
     <BoardMemberEditForm
       key={location.key}

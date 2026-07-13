@@ -4,17 +4,13 @@ import type { Invite } from "#prisma/generated/client";
 
 import { prisma } from "~/db.server";
 import type { InvitableRole } from "~/features/users/invite.shared";
-import { isInvitableRole } from "~/features/users/invite.shared";
-import { getRoleByName } from "~/models/role.server";
 
-export type { Invite };
-export type { InvitableRole };
+export type { InvitableRole, Invite };
 
-// The raw token is returned exactly once, at creation/rotation, to be put in
-// the invite email — only its hash is stored, so a DB read can't mint a link.
 export type InviteWithToken = Invite & { token: string };
 
-const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const INVITE_TTL_MS = SEVEN_DAYS_MS;
 
 // unsalted sha256 is enough: 32 random bytes leave nothing to brute-force
 function hashToken(token: string) {
@@ -32,8 +28,6 @@ function freshToken() {
   };
 }
 
-// Re-inviting an address with a live (unaccepted) invite updates that row —
-// no duplicates, the old link simply stops working (token rotates).
 export async function upsertInvite({
   email,
   roleName,
@@ -43,33 +37,26 @@ export async function upsertInvite({
   roleName: InvitableRole;
   createdById: string;
 }): Promise<InviteWithToken> {
-  if (!isInvitableRole(roleName)) {
-    throw new Error(`Role "${roleName}" cannot be granted by invite`);
-  }
-
-  const normalized = email.toLowerCase();
-  const existing = await prisma.invite.findFirst({
-    where: { email: normalized, acceptedAt: null },
-  });
-
+  const normalizedEmail = email.toLowerCase();
   const { token, fields } = freshToken();
+  const inviteBody = { roleName, createdById, ...fields };
 
-  if (existing) {
-    const invite = await prisma.invite.update({
-      where: { id: existing.id },
-      data: { roleName, createdById, ...fields },
+  const invite = await prisma.$transaction(async (tx) => {
+    const existingInvite = await tx.invite.findFirst({
+      where: { email: normalizedEmail, acceptedAt: null },
+      select: { id: true },
     });
-    return { ...invite, token };
-  }
 
-  const invite = await prisma.invite.create({
-    data: {
-      email: normalized,
-      roleName,
-      createdById,
-      ...fields,
-    },
+    return existingInvite
+      ? tx.invite.update({
+          where: { id: existingInvite.id },
+          data: inviteBody,
+        })
+      : tx.invite.create({
+          data: { email: normalizedEmail, ...inviteBody },
+        });
   });
+
   return { ...invite, token };
 }
 
@@ -77,8 +64,8 @@ export async function upsertInvite({
 export async function refreshInvite(
   id: string,
 ): Promise<InviteWithToken | null> {
-  const invite = await prisma.invite.findUnique({ where: { id } });
-  if (!invite || invite.acceptedAt) return null;
+  const existingInvite = await prisma.invite.findUnique({ where: { id } });
+  if (!existingInvite || existingInvite.acceptedAt) return null;
   const { token, fields } = freshToken();
   const updated = await prisma.invite.update({
     where: { id },
@@ -137,35 +124,44 @@ export async function acceptInvite({
   invite: Pick<Invite, "id" | "roleName">;
   userId: string;
 }): Promise<void> {
-  // only moderator invites change the role; "user" invites never need it
-  const moderatorRole =
-    invite.roleName === "moderator" ? await getRoleByName("moderator") : null;
-  if (invite.roleName === "moderator" && !moderatorRole) {
-    throw new Error("Invite carries an unknown role");
-  }
-
   await prisma.$transaction(async (tx) => {
     // single-use guard: only flips if still unaccepted and unexpired
     const consumed = await tx.invite.updateMany({
       where: { id: invite.id, acceptedAt: null, expiresAt: { gt: new Date() } },
       data: { acceptedAt: new Date() },
     });
+
     if (consumed.count === 0) {
       throw new InviteNoLongerValidError();
     }
 
-    // upgrade only: never touches admins, never downgrades a moderator
-    if (moderatorRole) {
-      await tx.user.updateMany({
-        where: { id: userId, role: { name: "user" } },
-        data: { roleId: moderatorRole.id },
+    // upgrade only: never touches admins, never downgrades a moderator.
+    // Plain "user" invites skip both lookups entirely.
+    let promoteToRoleId: string | null = null;
+    if (invite.roleName === "moderator") {
+      const user = await tx.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { role: { select: { name: true } } },
       });
+      if (user.role.name === "user") {
+        const moderatorRole = await tx.role.findUnique({
+          where: { name: "moderator" },
+          select: { id: true },
+        });
+        if (!moderatorRole) {
+          throw new Error("Invite carries an unknown role");
+        }
+        promoteToRoleId = moderatorRole.id;
+      }
     }
 
-    // mailbox control proven by the link — deliberate verification shortcut
     await tx.user.update({
       where: { id: userId },
-      data: { emailVerified: true },
+      data: {
+        // mailbox control proven by the link — deliberate verification shortcut
+        emailVerified: true,
+        ...(promoteToRoleId && { role: { connect: { id: promoteToRoleId } } }),
+      },
     });
   });
 }

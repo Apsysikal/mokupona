@@ -1,4 +1,3 @@
-// Deliberately minimal (no cc/attachments until needed) — design §3.1.
 export interface MailMessage {
   to: string;
   subject: string;

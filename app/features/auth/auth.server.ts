@@ -2,9 +2,8 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import invariant from "tiny-invariant";
 
-import { sendPasswordResetMail, sendVerificationMail } from "./emails.server";
-
 import { prisma } from "~/db.server";
+import { sendTemplate } from "~/features/mail/mail.server";
 import { logger } from "~/logger.server";
 import { getRoleByName } from "~/models/role.server";
 import { setUserEmailVerified } from "~/models/user.server";
@@ -46,7 +45,7 @@ export const auth = singleton("better-auth", () =>
       enabled: true,
       requireEmailVerification: true,
       sendResetPassword: async ({ user, url }) => {
-        await sendPasswordResetMail({ to: user.email, url });
+        await sendTemplate("resetPassword", user.email, { url });
       },
       // completing a reset proves mailbox ownership — this is how force-reset
       // migrated users get verified (design §7); deliberate, don't "fix" it
@@ -64,7 +63,7 @@ export const auth = singleton("better-auth", () =>
       sendOnSignIn: true,
       autoSignInAfterVerification: false,
       sendVerificationEmail: async ({ user, url }) => {
-        await sendVerificationMail({ to: user.email, url });
+        await sendTemplate("verifyEmail", user.email, { url });
       },
     },
     databaseHooks: {

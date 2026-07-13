@@ -159,8 +159,6 @@ export default function AdminUsersPage({ loaderData }: Route.ComponentProps) {
         </div>
       </div>
 
-      {/* pending invites read as provisional (dashed) and simply disappear
-          when there are none */}
       {invites.length > 0 ? (
         <>
           <SectionDivider label="pending invites" />
@@ -279,8 +277,6 @@ function InviteDialog() {
   );
 }
 
-// segmented control per the ModeToggle pattern; radios drive it so it stays
-// keyboard-accessible. admin is deliberately not an option.
 function RolePicker({
   name,
   defaultValue,
@@ -378,8 +374,6 @@ function PendingInviteRow({ invite }: { invite: InviteRow }) {
         </p>
       </div>
       <div className="flex shrink-0 gap-2">
-        {/* the link itself is never surfaced here — it only travels by email,
-            which is what proves the invitee controls the bound address */}
         <fetcher.Form method="post">
           <input type="hidden" name="intent" value="resend" />
           <input type="hidden" name="inviteId" value={invite.id} />

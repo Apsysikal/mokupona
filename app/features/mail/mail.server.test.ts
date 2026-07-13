@@ -2,19 +2,32 @@ import { mkdtemp, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { latestMailPath } from "./capture.shared";
 import { createMailProvider } from "./mail.server";
-import { consoleProvider } from "./providers/console.server";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe("createMailProvider", () => {
-  it("defaults to the console provider", () => {
-    expect(createMailProvider({})).toBe(consoleProvider);
-    expect(createMailProvider({ MAIL_PROVIDER: "console" })).toBe(
-      consoleProvider,
-    );
-  });
+  it.each([{}, { MAIL_PROVIDER: "console" }])(
+    "defaults to the console provider (%o)",
+    async (env) => {
+      const info = vi.spyOn(console, "info").mockImplementation(() => {});
+
+      await createMailProvider(env).send({
+        to: "a@example.com",
+        subject: "one",
+        text: "1",
+      });
+
+      expect(info).toHaveBeenCalledWith(
+        expect.stringContaining("console provider"),
+      );
+    },
+  );
 
   it("fails fast on an unknown MAIL_PROVIDER", () => {
     expect(() => createMailProvider({ MAIL_PROVIDER: "sendgrid" })).toThrow(

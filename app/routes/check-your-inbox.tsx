@@ -7,9 +7,6 @@ import { AuthShell } from "~/components/auth-layout";
 import { AuthStatus, AuthStatusBody } from "~/components/auth-status";
 import { Button } from "~/components/ui/button";
 
-// post-signup interstitial. Deliberately NO resend button: an unverified
-// login attempt re-sends the link (design §5), which is also the recovery
-// path for a lost or expired mail.
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const url = new URL(request.url);
   const email = url.searchParams.get("email");

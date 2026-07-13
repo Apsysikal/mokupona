@@ -67,15 +67,11 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
   const { name, email, password, redirectTo } = submission.value;
 
-  // no session yet: requireEmailVerification blocks login until the mailed
-  // link is clicked; the signup response deliberately carries no token
   await auth.api.signUpEmail({
     body: { name, email, password },
     headers: request.headers,
   });
 
-  // sendOnSignUp is off (the invite flow must not mail) — this is the one
-  // place the initial verification mail goes out
   await auth.api.sendVerificationEmail({
     body: {
       email,

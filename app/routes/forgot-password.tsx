@@ -28,8 +28,6 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
   const { email } = submission.value;
 
-  // enumeration-safe by construction: better-auth only mails existing
-  // accounts, and the confirmation below renders identically either way
   await auth.api.requestPasswordReset({
     body: { email, redirectTo: "/reset-password" },
   });

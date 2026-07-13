@@ -5,7 +5,6 @@ import { Eyebrow } from "./section";
 
 import { cn } from "~/lib/utils";
 
-// soft accent glow anchored to a corner — never behind text (design §4)
 function CornerGlow({ className }: { className?: string }) {
   return (
     <div
@@ -41,10 +40,6 @@ export interface AuthShellProps {
   children: ReactNode;
 }
 
-// split layout for the auth pages: solid warm brand panel on the left, the
-// form column with the log in / sign up toggle on the right. Rendered inside
-// the shared nav/footer chrome, which carries the brand lockup and the
-// "made with love in zürich" line — the panel only holds the page copy.
 export function AuthShell({
   mode,
   search,
@@ -53,9 +48,7 @@ export function AuthShell({
 }: AuthShellProps) {
   return (
     <div className="flex grow flex-col md:flex-row">
-      {/* desktop brand panel — a solid fill, imagery is deliberately not
-          allowed behind this copy */}
-      <div className="bg-card border-border relative hidden flex-col justify-center overflow-hidden border-r p-12 md:flex md:w-[46%]">
+      <div className="bg-card border-border relative hidden flex-col justify-center overflow-hidden border-r p-12 md:flex md:w-1/2">
         <CornerGlow className="-top-30 -right-24 size-80" />
         <div className="relative flex flex-col gap-4">
           <Eyebrow variant="kicker" tone="light">
@@ -65,7 +58,7 @@ export function AuthShell({
             {brand.heading}
           </h2>
           {brand.body ? (
-            <p className="text-foreground/80 max-w-xs leading-relaxed font-light">
+            <p className="text-foreground/80 max-w-10/12 leading-relaxed font-light">
               {brand.body}
             </p>
           ) : null}
@@ -85,7 +78,7 @@ export function AuthShell({
         </div>
       </div>
 
-      <div className="flex flex-col px-6 py-6 md:w-[54%] md:justify-center md:px-18 md:py-16">
+      <div className="flex flex-col px-6 py-6 md:w-1/2 md:justify-center md:px-18 md:py-16">
         <div className="mx-auto flex w-full max-w-md flex-col gap-4 md:gap-5">
           {mode ? <ModeToggle mode={mode} search={search} /> : null}
           {children}

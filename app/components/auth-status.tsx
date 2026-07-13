@@ -2,11 +2,6 @@ import type { ReactNode } from "react";
 
 import { cn } from "~/lib/utils";
 
-// centered single-panel status view shared by check-inbox, verify-email,
-// forgot-password confirm, reset states and the invite dead-ends /
-// confirmations (design handoff). tone picks the medallion fill: positive
-// states get primary/10, dead-ends a neutral foreground/6 — the icon is the
-// non-color cue.
 export function AuthStatus({
   tone = "positive",
   icon,
@@ -16,7 +11,6 @@ export function AuthStatus({
   tone?: "positive" | "neutral";
   icon: ReactNode;
   heading: string;
-  /** body copy, CTA button(s) and secondary links */
   children: ReactNode;
 }) {
   return (

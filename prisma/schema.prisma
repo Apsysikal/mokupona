@@ -10,7 +10,6 @@ datasource db {
 model User {
   id            String  @id @default(cuid())
   email         String  @unique
-  // mandatory; migrated users are backfilled from the email local-part
   name          String
   emailVerified Boolean @default(false)
   image         String?
@@ -83,10 +82,7 @@ model Invite {
   email      String
   // "user" | "moderator"
   roleName   String
-  // sha256 of the random 32-byte single-use token — the raw value only ever
-  // exists in the invite email, so the DB can't reproduce a usable link
   tokenHash  String    @unique
-  // createdAt + 7 days
   expiresAt  DateTime
   acceptedAt DateTime?
 

@@ -1,9 +1,7 @@
-import type { MailProvider } from "../types";
+import type { MailMessage, MailProvider } from "../types";
 
-// Local-dev default: no API key, the verification/reset/invite links land in
-// the server log instead of an inbox.
-export const consoleProvider: MailProvider = {
-  async send(message) {
+export function createConsoleProvider(): MailProvider {
+  const send = async (message: MailMessage) => {
     console.info(
       [
         "📬 mail (console provider)",
@@ -13,5 +11,9 @@ export const consoleProvider: MailProvider = {
         message.text,
       ].join("\n"),
     );
-  },
-};
+  };
+
+  return {
+    send,
+  };
+}

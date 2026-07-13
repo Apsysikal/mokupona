@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-import type { MailProvider } from "../types";
+import type { MailMessage, MailProvider } from "../types";
 
 // mail.mokupona.ch is the domain verified with Resend
 const DEFAULT_FROM = "moku pona <no-reply@mail.mokupona.ch>";
@@ -17,12 +17,16 @@ export function createResendProvider(
   const resend = new Resend(apiKey);
   const from = env.MAIL_FROM ?? DEFAULT_FROM;
 
+  const send = async (message: MailMessage) => {
+    const { error } = await resend.emails.send({ from, ...message });
+    if (error) {
+      throw new Error(
+        `Resend rejected mail to ${message.to}: ${error.message}`,
+      );
+    }
+  };
+
   return {
-    async send(message) {
-      const { error } = await resend.emails.send({ from, ...message });
-      if (error) {
-        throw new Error(`Resend rejected mail to ${message.to}: ${error.message}`);
-      }
-    },
+    send,
   };
 }
