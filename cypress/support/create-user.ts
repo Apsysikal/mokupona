@@ -21,14 +21,14 @@ async function createAndLogin(email: string) {
   }
 
   const { auth } = await import("~/features/auth/auth.server");
-  const { createUserViaAuth } = await import(
-    "~/features/auth/create-user.server"
-  );
+  const { createUserViaAuth } =
+    await import("~/features/auth/create-user.server");
 
   await createUserViaAuth({
     email,
     password: "myreallystrongpassword",
     name: "test user",
+    emailVerified: true,
   });
 
   const { headers } = await auth.api.signInEmail({

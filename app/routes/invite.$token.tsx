@@ -19,7 +19,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { authClient } from "~/features/auth/auth.client";
-import { auth } from "~/features/auth/auth.server";
+import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { getUserWithRole, logout } from "~/features/auth/guards.server";
 import { passwordSchema } from "~/features/auth/password-schema";
 import { cn } from "~/lib/utils";
@@ -61,7 +61,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
       email: invite.email,
       roleName: invite.roleName,
       inviterName: invite.createdBy.name,
-      googleEnabled: Boolean(process.env.GOOGLE_CLIENT_ID),
+      googleEnabled: googleAuthEnabled,
     };
   }
 

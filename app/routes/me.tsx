@@ -15,7 +15,7 @@ import { Eyebrow } from "~/components/section";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { authClient } from "~/features/auth/auth.client";
-import { auth } from "~/features/auth/auth.server";
+import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { logout, requireUserId } from "~/features/auth/guards.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
 import {
@@ -55,7 +55,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   return {
     user,
     ...authOverview,
-    googleEnabled: Boolean(process.env.GOOGLE_CLIENT_ID),
+    googleEnabled: googleAuthEnabled,
   };
 };
 

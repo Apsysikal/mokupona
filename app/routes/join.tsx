@@ -11,7 +11,7 @@ import { GoogleButton } from "~/components/google-button";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { authClient } from "~/features/auth/auth.client";
-import { auth } from "~/features/auth/auth.server";
+import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { getUserId } from "~/features/auth/guards.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
 import { logger } from "~/logger.server";
@@ -23,14 +23,14 @@ const schema = withPasswordConfirmation({
     .string({ error: "Name is required" })
     .trim()
     .min(1, "Name is required"),
-  email: z.email({ error: "Email is required" }).toLowerCase(),
+  email: z.email({ error: "Email is required" }),
   redirectTo: z.string().optional(),
 });
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const userId = await getUserId(request);
   if (userId) return redirect("/");
-  return { googleEnabled: Boolean(process.env.GOOGLE_CLIENT_ID) };
+  return { googleEnabled: googleAuthEnabled };
 };
 
 export const action = async ({ request }: Route.ActionArgs) => {

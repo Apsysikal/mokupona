@@ -11,6 +11,11 @@ import { singleton } from "~/utils/singleton.server";
 
 invariant(process.env.BETTER_AUTH_SECRET, "BETTER_AUTH_SECRET must be set");
 
+const googleClientId = process.env.GOOGLE_CLIENT_ID;
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+export const googleAuthEnabled = Boolean(googleClientId && googleClientSecret);
+
 export const auth = singleton("better-auth", () =>
   betterAuth({
     baseURL: process.env.BETTER_AUTH_URL,
@@ -23,17 +28,15 @@ export const auth = singleton("better-auth", () =>
         roleId: { type: "string", required: false, input: false },
       },
     },
-    // Google is the only provider at launch; the login/join buttons hide
-    // themselves while the credentials are unset (design §5)
-    socialProviders:
-      process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-        ? {
-            google: {
-              clientId: process.env.GOOGLE_CLIENT_ID,
-              clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            },
-          }
-        : undefined,
+    // @ts-expect-error
+    socialProviders: googleAuthEnabled
+      ? {
+          google: {
+            clientId: googleClientId,
+            clientSecret: googleClientSecret,
+          },
+        }
+      : undefined,
     account: {
       accountLinking: {
         enabled: true,

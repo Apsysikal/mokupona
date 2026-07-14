@@ -14,7 +14,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { authClient } from "~/features/auth/auth.client";
-import { auth } from "~/features/auth/auth.server";
+import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { getUserId } from "~/features/auth/guards.server";
 import { logger } from "~/logger.server";
 import { getClientIPAddress, obscureEmail, safeRedirect } from "~/utils/misc";
@@ -29,7 +29,7 @@ const schema = z.object({
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const userId = await getUserId(request);
   if (userId) return redirect("/");
-  return { googleEnabled: Boolean(process.env.GOOGLE_CLIENT_ID) };
+  return { googleEnabled: googleAuthEnabled };
 };
 
 export const action = async ({ request }: Route.ActionArgs) => {

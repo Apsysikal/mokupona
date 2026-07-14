@@ -38,6 +38,8 @@ export async function createUserViaAuth({
     await updateNonAdminUserRole(created.id, role.id);
   }
 
+  if (!emailVerified && roleName === "user") return created;
+
   const user = await getUserByEmail(created.email);
   if (!user) throw new Error(`user ${email} vanished during provisioning`);
   return user;

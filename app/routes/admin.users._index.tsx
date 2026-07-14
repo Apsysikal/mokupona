@@ -283,11 +283,6 @@ function InviteDialog() {
   );
 }
 
-const ROLE_LABELS: Record<InvitableRole, string> = {
-  user: "User",
-  moderator: "Moderator",
-};
-
 function RolePicker({ meta }: { meta: FieldMetadata<InvitableRole> }) {
   const labelId = `${meta.id}-label`;
 
@@ -308,19 +303,17 @@ function RolePicker({ meta }: { meta: FieldMetadata<InvitableRole> }) {
           <label
             key={key}
             className={cn(
-              "flex h-9 flex-1 cursor-pointer items-center justify-center rounded-md text-sm transition-colors",
+              "flex h-9 flex-1 cursor-pointer items-center justify-center rounded-md text-sm capitalize transition-colors",
               "text-foreground/65 hover:text-foreground font-medium",
               "has-checked:bg-primary has-checked:text-primary-foreground has-checked:font-semibold",
             )}
           >
             <input {...props} className="sr-only" />
-            {ROLE_LABELS[props.value as InvitableRole]}
+            {props.value}
           </label>
         ))}
       </div>
-      {meta.errors?.length ? (
-        <ErrorList id={meta.errorId} errors={meta.errors} />
-      ) : null}
+      <ErrorList id={meta.errorId} errors={meta.errors} />
     </div>
   );
 }
