@@ -25,14 +25,15 @@ export const auth = singleton("better-auth", () =>
     },
     // Google is the only provider at launch; the login/join buttons hide
     // themselves while the credentials are unset (design §5)
-    socialProviders: process.env.GOOGLE_CLIENT_ID
-      ? {
-          google: {
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-          },
-        }
-      : undefined,
+    socialProviders:
+      process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+        ? {
+            google: {
+              clientId: process.env.GOOGLE_CLIENT_ID,
+              clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            },
+          }
+        : undefined,
     account: {
       accountLinking: {
         enabled: true,

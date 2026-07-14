@@ -16,7 +16,7 @@ export async function createUserViaAuth({
   password,
   name,
   roleName = "user",
-  emailVerified = true,
+  emailVerified = false,
 }: {
   email: string;
   password: string;
@@ -26,7 +26,7 @@ export async function createUserViaAuth({
 }): Promise<User> {
   await auth.api.signUpEmail({ body: { email, password, name } });
 
-  const created = await getUserByEmail(email.toLowerCase());
+  const created = await getUserByEmail(email);
   if (!created) {
     throw new Error(`better-auth did not create a user for ${email}`);
   }

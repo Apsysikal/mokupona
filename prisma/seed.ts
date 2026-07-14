@@ -64,6 +64,7 @@ async function seed() {
     password: "mokupona",
     name: "demo user",
     roleName: "user",
+    emailVerified: true,
   });
 
   const moderator = await createUserViaAuth({
@@ -71,6 +72,7 @@ async function seed() {
     password: "mokupona",
     name: "demo moderator",
     roleName: "moderator",
+    emailVerified: true,
   });
 
   await createUserViaAuth({
@@ -78,6 +80,7 @@ async function seed() {
     password: "mokupona",
     name: "demo admin",
     roleName: "admin",
+    emailVerified: true,
   });
 
   const address = await prisma.address.create({

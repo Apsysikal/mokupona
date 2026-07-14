@@ -30,6 +30,7 @@ async function signedInRequest(path = "/admin/users") {
     email,
     password,
     name: "guard test",
+    emailVerified: true,
   });
 
   const { headers } = await auth.api.signInEmail({

@@ -23,7 +23,7 @@ const schema = withPasswordConfirmation({
     .string({ error: "Name is required" })
     .trim()
     .min(1, "Name is required"),
-  email: z.email({ error: "Email is required" }),
+  email: z.email({ error: "Email is required" }).toLowerCase(),
   redirectTo: z.string().optional(),
 });
 

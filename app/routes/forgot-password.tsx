@@ -30,6 +30,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
   await auth.api.requestPasswordReset({
     body: { email, redirectTo: "/reset-password" },
+    headers: request.headers,
   });
 
   logger.info("Password reset requested", {

@@ -1,4 +1,10 @@
-import { getFormProps, getInputProps, useForm } from "@conform-to/react";
+import {
+  type FieldMetadata,
+  getCollectionProps,
+  getFormProps,
+  getInputProps,
+  useForm,
+} from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import {
   EnvelopeClosedIcon,
@@ -19,7 +25,7 @@ import {
   FilterChip,
   InitialsAvatar,
 } from "~/components/admin-ui";
-import { Field } from "~/components/forms";
+import { ErrorList, Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -35,7 +41,10 @@ import {
   createAndSendInvite,
   resendInvite,
 } from "~/features/users/invite.server";
-import { INVITABLE_ROLES } from "~/features/users/invite.shared";
+import {
+  INVITABLE_ROLES,
+  type InvitableRole,
+} from "~/features/users/invite.shared";
 import { cn } from "~/lib/utils";
 import { listPendingInvites, revokeInvite } from "~/models/invite.server";
 import { listUsersWithRoleName } from "~/models/user.server";
@@ -252,10 +261,7 @@ function InviteDialog() {
             errors={fields.email.errors}
           />
 
-          <RolePicker
-            name={fields.role.name}
-            defaultValue={fields.role.value ?? "user"}
-          />
+          <RolePicker meta={fields.role} />
 
           <div className="mt-1 flex gap-2">
             <DialogClose asChild>
@@ -277,43 +283,44 @@ function InviteDialog() {
   );
 }
 
-function RolePicker({
-  name,
-  defaultValue,
-}: {
-  name: string;
-  defaultValue: string;
-}) {
-  const [selected, setSelected] = useState(defaultValue);
+const ROLE_LABELS: Record<InvitableRole, string> = {
+  user: "User",
+  moderator: "Moderator",
+};
+
+function RolePicker({ meta }: { meta: FieldMetadata<InvitableRole> }) {
+  const labelId = `${meta.id}-label`;
 
   return (
     <div className="flex flex-col gap-2">
       <Label asChild>
-        <span>Role</span>
+        <span id={labelId}>Role</span>
       </Label>
-      <div className="bg-foreground/5 border-border flex rounded-lg border p-1">
-        {(["user", "moderator"] as const).map((role) => (
+      <div
+        role="radiogroup"
+        aria-labelledby={labelId}
+        className="bg-foreground/5 border-border flex rounded-lg border p-1"
+      >
+        {getCollectionProps(meta, {
+          type: "radio",
+          options: [...INVITABLE_ROLES],
+        }).map(({ key, ...props }) => (
           <label
-            key={role}
+            key={key}
             className={cn(
               "flex h-9 flex-1 cursor-pointer items-center justify-center rounded-md text-sm transition-colors",
-              selected === role
-                ? "bg-primary text-primary-foreground font-semibold"
-                : "text-foreground/65 hover:text-foreground font-medium",
+              "text-foreground/65 hover:text-foreground font-medium",
+              "has-checked:bg-primary has-checked:text-primary-foreground has-checked:font-semibold",
             )}
           >
-            <input
-              type="radio"
-              name={name}
-              value={role}
-              checked={selected === role}
-              onChange={() => setSelected(role)}
-              className="sr-only"
-            />
-            {role === "user" ? "User" : "Moderator"}
+            <input {...props} className="sr-only" />
+            {ROLE_LABELS[props.value as InvitableRole]}
           </label>
         ))}
       </div>
+      {meta.errors?.length ? (
+        <ErrorList id={meta.errorId} errors={meta.errors} />
+      ) : null}
     </div>
   );
 }

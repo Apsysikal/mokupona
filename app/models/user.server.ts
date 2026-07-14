@@ -12,7 +12,7 @@ export async function getUserByIdWithRole(
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  return prisma.user.findUnique({ where: { email } });
+  return prisma.user.findUnique({ where: { email: email.toLowerCase() } });
 }
 
 // The projection the admin user list needs.
@@ -30,9 +30,7 @@ export async function listUsersWithRoleName(): Promise<
 }
 
 // The account view shared by the profile page and the admin user edit page.
-export async function getUserAccountSummary(
-  id: string,
-): Promise<{
+export async function getUserAccountSummary(id: string): Promise<{
   name: string;
   email: string;
   emailVerified: boolean;
