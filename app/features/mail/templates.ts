@@ -43,7 +43,7 @@ export const mailTemplates = {
     ]),
 } satisfies Record<string, (props: never) => MailBody>;
 
-export type MailTemplates = typeof mailTemplates;
+type MailTemplates = typeof mailTemplates;
 export type MailTemplateName = keyof MailTemplates;
 export type MailTemplateProps<K extends MailTemplateName> = Parameters<
   MailTemplates[K]

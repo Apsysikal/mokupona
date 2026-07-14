@@ -1,7 +1,8 @@
 import { isInvitableRole } from "./invite.shared";
+import type { InvitableRole } from "./invite.shared";
 
 import { sendTemplate } from "~/features/mail/mail.server";
-import type { InvitableRole, InviteWithToken } from "~/models/invite.server";
+import type { InviteWithToken } from "~/models/invite.server";
 import { refreshInvite, upsertInvite } from "~/models/invite.server";
 
 async function sendInviteMail({

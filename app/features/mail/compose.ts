@@ -1,6 +1,6 @@
 import type { MailMessage } from "./types";
 
-export type Block =
+type Block =
   | { kind: "paragraph"; text: string }
   | { kind: "action"; label: string; url: string }
   | { kind: "note"; text: string };

@@ -1,6 +1,6 @@
 import { latestMailPath } from "~/features/mail/capture.shared";
 
-export interface CapturedMail {
+interface CapturedMail {
   to: string;
   subject: string;
   text: string;
@@ -11,13 +11,15 @@ export interface CapturedMail {
 // The app must run with MAIL_PROVIDER=capture (the e2e default) for these to
 // find anything. cy.readFile retries until the file exists, which doubles as
 // "wait for the mail to arrive".
-export function readLatestMailTo(email: string): Cypress.Chainable<CapturedMail> {
+export function readLatestMailTo(
+  email: string,
+): Cypress.Chainable<CapturedMail> {
   return cy.readFile(latestMailPath(email), { timeout: 10_000 });
 }
 
 // First absolute link in the mail text whose path contains `pathPart`
 // (e.g. "/reset-password", "/verify-email", "/invite/").
-export function extractMailLink(mail: CapturedMail, pathPart: string): string {
+function extractMailLink(mail: CapturedMail, pathPart: string): string {
   const links = mail.text.match(/https?:\/\/[^\s"'<>)]+/g) ?? [];
   const link = links.find((url) => new URL(url).pathname.includes(pathPart));
   if (!link) {

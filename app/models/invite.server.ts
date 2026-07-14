@@ -5,8 +5,6 @@ import type { Invite } from "#prisma/generated/client";
 import { prisma } from "~/db.server";
 import type { InvitableRole } from "~/features/users/invite.shared";
 
-export type { InvitableRole, Invite };
-
 export type InviteWithToken = Invite & { token: string };
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -91,7 +89,7 @@ export async function getInviteByToken(
   });
 }
 
-export type InviteValidity = "valid" | "invalid" | "expired" | "used";
+type InviteValidity = "valid" | "invalid" | "expired" | "used";
 
 export function inviteValidity(invite: Invite | null): InviteValidity {
   if (!invite) return "invalid";

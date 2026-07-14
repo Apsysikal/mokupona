@@ -7,7 +7,7 @@ import { z } from "zod";
 import type { Route } from "./+types/reset-password";
 
 import { AuthShell } from "~/components/auth-layout";
-import { AuthStatus, AuthStatusBody } from "~/components/auth-status";
+import { AuthStatus } from "~/components/auth-status";
 import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { auth } from "~/features/auth/auth.server";
@@ -86,39 +86,32 @@ export default function ResetPassword({
 
   if (loaderData.state === "done") {
     return (
-      <main className="flex grow items-center justify-center px-6 py-16">
-        <AuthStatus
-          icon={<CheckCircledIcon className="size-7" />}
-          heading="password updated"
-        >
-          <AuthStatusBody>
-            your new password is saved and your email is confirmed. log in to
-            pick up where you left off.
-          </AuthStatusBody>
-          <Button size="lg" className="w-full" asChild>
-            <Link to="/login">continue to log in</Link>
-          </Button>
-        </AuthStatus>
-      </main>
+      <AuthStatus
+        standalone
+        icon={<CheckCircledIcon className="size-7" />}
+        heading="password updated"
+        body="your new password is saved and your email is confirmed. log in to pick up where you left off."
+      >
+        <Button size="lg" className="w-full" asChild>
+          <Link to="/login">continue to log in</Link>
+        </Button>
+      </AuthStatus>
     );
   }
 
   if (loaderData.state === "invalid") {
     return (
-      <main className="flex grow items-center justify-center px-6 py-16">
-        <AuthStatus
-          tone="neutral"
-          icon={<LinkBreak2Icon className="size-7" />}
-          heading="this reset link has expired"
-        >
-          <AuthStatusBody>
-            request a fresh one and we&apos;ll email it right over.
-          </AuthStatusBody>
-          <Button size="lg" className="w-full" asChild>
-            <Link to="/forgot-password">request a new link</Link>
-          </Button>
-        </AuthStatus>
-      </main>
+      <AuthStatus
+        standalone
+        tone="neutral"
+        icon={<LinkBreak2Icon className="size-7" />}
+        heading="this reset link has expired"
+        body="request a fresh one and we'll email it right over."
+      >
+        <Button size="lg" className="w-full" asChild>
+          <Link to="/forgot-password">request a new link</Link>
+        </Button>
+      </AuthStatus>
     );
   }
 

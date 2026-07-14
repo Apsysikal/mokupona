@@ -4,7 +4,7 @@ import { Link } from "react-router";
 import type { Route } from "./+types/verify-email";
 
 import { AuthShell } from "~/components/auth-layout";
-import { AuthStatus, AuthStatusBody } from "~/components/auth-status";
+import { AuthStatus } from "~/components/auth-status";
 import { Button } from "~/components/ui/button";
 
 // where the mailed verification link lands. better-auth's API endpoint
@@ -26,20 +26,17 @@ export default function VerifyEmail({ loaderData }: Route.ComponentProps) {
 
   if (failed) {
     return (
-      <main className="flex grow items-center justify-center px-6 py-16">
-        <AuthStatus
-          tone="neutral"
-          icon={<LinkBreak2Icon className="size-7" />}
-          heading="this link has expired"
-        >
-          <AuthStatusBody>
-            just log in and we&apos;ll send a new link to verify your email.
-          </AuthStatusBody>
-          <Button size="lg" className="w-full" asChild>
-            <Link to="/login">back to log in</Link>
-          </Button>
-        </AuthStatus>
-      </main>
+      <AuthStatus
+        standalone
+        tone="neutral"
+        icon={<LinkBreak2Icon className="size-7" />}
+        heading="this link has expired"
+        body="just log in and we'll send a new link to verify your email."
+      >
+        <Button size="lg" className="w-full" asChild>
+          <Link to="/login">back to log in</Link>
+        </Button>
+      </AuthStatus>
     );
   }
 
@@ -54,18 +51,18 @@ export default function VerifyEmail({ loaderData }: Route.ComponentProps) {
       <AuthStatus
         icon={<CheckCircledIcon className="size-7" />}
         heading="your email is verified"
-      >
-        <AuthStatusBody>
-          {email ? (
+        body={
+          email ? (
             <>
               thanks for confirming{" "}
               <strong className="text-foreground font-semibold">{email}</strong>
               . you&apos;re all set to sign in.
             </>
           ) : (
-            <>you&apos;re all set to sign in.</>
-          )}
-        </AuthStatusBody>
+            "you're all set to sign in."
+          )
+        }
+      >
         <Button size="lg" className="w-full" asChild>
           <Link to="/login">continue to log in</Link>
         </Button>

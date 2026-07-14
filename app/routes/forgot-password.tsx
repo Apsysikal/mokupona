@@ -7,7 +7,7 @@ import { z } from "zod";
 import type { Route } from "./+types/forgot-password";
 
 import { AuthShell } from "~/components/auth-layout";
-import { AuthStatus, AuthStatusBody } from "~/components/auth-status";
+import { AuthStatus } from "~/components/auth-status";
 import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { auth } from "~/features/auth/auth.server";
@@ -56,21 +56,22 @@ export default function ForgotPassword({ actionData }: Route.ComponentProps) {
 
   if (sentTo) {
     return (
-      <main className="flex grow items-center justify-center px-6 py-16">
-        <AuthStatus
-          icon={<EnvelopeClosedIcon className="size-7" />}
-          heading="check your inbox"
-        >
-          <AuthStatusBody>
+      <AuthStatus
+        standalone
+        icon={<EnvelopeClosedIcon className="size-7" />}
+        heading="check your inbox"
+        body={
+          <>
             if an account exists for{" "}
             <strong className="text-foreground font-semibold">{sentTo}</strong>,
             we&apos;ve sent a link to reset your password.
-          </AuthStatusBody>
-          <Button size="lg" className="w-full" asChild>
-            <Link to="/login">back to log in</Link>
-          </Button>
-        </AuthStatus>
-      </main>
+          </>
+        }
+      >
+        <Button size="lg" className="w-full" asChild>
+          <Link to="/login">back to log in</Link>
+        </Button>
+      </AuthStatus>
     );
   }
 

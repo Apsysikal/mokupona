@@ -17,7 +17,7 @@ function CornerGlow({ className }: { className?: string }) {
   );
 }
 
-export interface AuthShellBrandCopy {
+interface AuthShellBrandCopy {
   eyebrow: string;
   heading: ReactNode;
   /** desktop-only supporting line under the heading */
@@ -31,7 +31,7 @@ const DEFAULT_BRAND: AuthShellBrandCopy = {
   body: "sign in to manage your reservations, or create an account to start joining our dinners.",
 };
 
-export interface AuthShellProps {
+interface AuthShellProps {
   /** omit to hide the login/sign-up toggle (status + reset surfaces) */
   mode?: "login" | "join";
   /** preserved on the toggle links (e.g. redirectTo) */

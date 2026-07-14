@@ -85,7 +85,6 @@ export {
   DialogClose,
   DialogContent,
   DialogDescription,
-  DialogOverlay,
   DialogTitle,
   DialogTrigger,
 };

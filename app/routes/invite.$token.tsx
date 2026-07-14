@@ -12,13 +12,12 @@ import { z } from "zod";
 import type { Route } from "./+types/invite.$token";
 
 import { AuthShell } from "~/components/auth-layout";
-import { AuthStatus, AuthStatusBody } from "~/components/auth-status";
+import { AuthStatus } from "~/components/auth-status";
 import { ErrorList, Field } from "~/components/forms";
-import { GoogleButton } from "~/components/google-button";
+import { GoogleSignInButton } from "~/components/google-button";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { authClient } from "~/features/auth/auth.client";
 import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { getUserWithRole, logout } from "~/features/auth/guards.server";
 import { passwordSchema } from "~/features/auth/password-schema";
@@ -41,6 +40,21 @@ const signupSchema = z.object({
     .min(1, "Name is required"),
   password: passwordSchema,
 });
+
+async function acceptCurrentInvite(
+  invite: Parameters<typeof acceptInvite>[0]["invite"],
+  userId: string,
+  token: string,
+) {
+  try {
+    await acceptInvite({ invite, userId });
+  } catch (error) {
+    if (error instanceof InviteNoLongerValidError) {
+      throw redirect(`/invite/${token}`);
+    }
+    throw error;
+  }
+}
 
 // /invite/$token — email-bound, role-carrying link (design §6). Four states:
 // dead-end (invalid/expired/used), logged-out signup with locked email,
@@ -103,15 +117,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     if (!user || user.email !== invite.email) {
       return redirect(`/invite/${params.token}`);
     }
-    try {
-      await acceptInvite({ invite, userId: user.id });
-    } catch (error) {
-      if (error instanceof InviteNoLongerValidError) {
-        // lost the race with a concurrent accept — re-render the dead-end
-        return redirect(`/invite/${params.token}`);
-      }
-      throw error;
-    }
+    await acceptCurrentInvite(invite, user.id, params.token);
     logger.info("Invite accepted (existing user)", {
       ip: getClientIPAddress(request),
       email: obscureEmail(user.email),
@@ -145,15 +151,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 
     // the invite link proves mailbox control: acceptance verifies the email
     // and applies the role atomically — no verification mail hop needed
-    try {
-      await acceptInvite({ invite, userId: created.id });
-    } catch (error) {
-      if (error instanceof InviteNoLongerValidError) {
-        // lost the race with a concurrent accept — re-render the dead-end
-        return redirect(`/invite/${params.token}`);
-      }
-      throw error;
-    }
+    await acceptCurrentInvite(invite, created.id, params.token);
 
     const { headers } = await auth.api.signInEmail({
       body: { email: invite.email, password },
@@ -200,24 +198,23 @@ export default function InvitePage({
   if (loaderData.state === "dead-end") {
     const copy = DEAD_END_COPY[loaderData.reason as keyof typeof DEAD_END_COPY];
     return (
-      <main className="flex grow items-center justify-center px-6 py-16">
-        <AuthStatus
-          tone="neutral"
-          icon={<LinkBreak2Icon className="size-7" />}
-          heading={copy.heading}
+      <AuthStatus
+        standalone
+        tone="neutral"
+        icon={<LinkBreak2Icon className="size-7" />}
+        heading={copy.heading}
+        body={copy.body}
+      >
+        <Button size="lg" className="w-full" asChild>
+          <Link to="/dinners">browse dinners</Link>
+        </Button>
+        <Link
+          to="/login"
+          className="text-primary text-sm font-medium hover:underline"
         >
-          <AuthStatusBody>{copy.body}</AuthStatusBody>
-          <Button size="lg" className="w-full" asChild>
-            <Link to="/dinners">browse dinners</Link>
-          </Button>
-          <Link
-            to="/login"
-            className="text-primary text-sm font-medium hover:underline"
-          >
-            go to log in
-          </Link>
-        </AuthStatus>
-      </main>
+          go to log in
+        </Link>
+      </AuthStatus>
     );
   }
 
@@ -225,53 +222,54 @@ export default function InvitePage({
     const { email, currentRole, roleName } = loaderData;
     const upgrades = currentRole === "user" && roleName === "moderator";
     return (
-      <main className="flex grow items-center justify-center px-6 py-16">
-        <AuthStatus
-          icon={<LockClosedIcon className="size-7" />}
-          heading="accept your invite"
-        >
-          <AuthStatusBody>
+      <AuthStatus
+        standalone
+        icon={<LockClosedIcon className="size-7" />}
+        heading="accept your invite"
+        body={
+          <>
             you&apos;re signed in as{" "}
             <strong className="text-foreground font-semibold">{email}</strong>.
             {upgrades ? " accept to change your role:" : " accept to confirm."}
-          </AuthStatusBody>
-          {upgrades ? (
-            <div className="flex items-center gap-3" aria-hidden>
-              <RolePill>{currentRole}</RolePill>
-              <ArrowRightIcon className="text-foreground/50 size-4.5" />
-              <RolePill accent>
-                <LockClosedIcon className="size-3.5" />
-                {roleName}
-              </RolePill>
-            </div>
-          ) : null}
-          <Form method="post" className="w-full">
-            <input type="hidden" name="intent" value="accept" />
-            <Button type="submit" size="lg" className="w-full">
-              {upgrades ? `accept and become a ${roleName}` : "accept invite"}
-            </Button>
-          </Form>
-          <Link
-            to="/"
-            className="text-primary text-sm font-medium hover:underline"
-          >
-            not now
-          </Link>
-        </AuthStatus>
-      </main>
+          </>
+        }
+      >
+        {upgrades ? (
+          <div className="flex items-center gap-3" aria-hidden>
+            <RolePill>{currentRole}</RolePill>
+            <ArrowRightIcon className="text-foreground/50 size-4.5" />
+            <RolePill accent>
+              <LockClosedIcon className="size-3.5" />
+              {roleName}
+            </RolePill>
+          </div>
+        ) : null}
+        <Form method="post" className="w-full">
+          <input type="hidden" name="intent" value="accept" />
+          <Button type="submit" size="lg" className="w-full">
+            {upgrades ? `accept and become a ${roleName}` : "accept invite"}
+          </Button>
+        </Form>
+        <Link
+          to="/"
+          className="text-primary text-sm font-medium hover:underline"
+        >
+          not now
+        </Link>
+      </AuthStatus>
     );
   }
 
   if (loaderData.state === "mismatch") {
     const { invitedEmail, currentEmail } = loaderData;
     return (
-      <main className="flex grow items-center justify-center px-6 py-16">
-        <AuthStatus
-          tone="neutral"
-          icon={<InfoCircledIcon className="size-7" />}
-          heading="this invite is for a different account"
-        >
-          <AuthStatusBody>
+      <AuthStatus
+        standalone
+        tone="neutral"
+        icon={<InfoCircledIcon className="size-7" />}
+        heading="this invite is for a different account"
+        body={
+          <>
             it was sent to{" "}
             <strong className="text-foreground font-semibold">
               {invitedEmail}
@@ -281,21 +279,22 @@ export default function InvitePage({
               {currentEmail}
             </strong>
             . log out and open the link again to accept it.
-          </AuthStatusBody>
-          <Form method="post" className="w-full">
-            <input type="hidden" name="intent" value="logout-retry" />
-            <Button type="submit" size="lg" className="w-full">
-              log out &amp; retry
-            </Button>
-          </Form>
-          <Link
-            to="/"
-            className="text-primary text-sm font-medium hover:underline"
-          >
-            stay signed in
-          </Link>
-        </AuthStatus>
-      </main>
+          </>
+        }
+      >
+        <Form method="post" className="w-full">
+          <input type="hidden" name="intent" value="logout-retry" />
+          <Button type="submit" size="lg" className="w-full">
+            log out &amp; retry
+          </Button>
+        </Form>
+        <Link
+          to="/"
+          className="text-primary text-sm font-medium hover:underline"
+        >
+          stay signed in
+        </Link>
+      </AuthStatus>
     );
   }
 
@@ -420,22 +419,7 @@ function InviteSignup({
         </Button>
 
         {googleEnabled ? (
-          <>
-            <div className="flex items-center gap-3" aria-hidden>
-              <span className="bg-border h-px flex-1" />
-              <span className="text-foreground/40 text-xs">or</span>
-              <span className="bg-border h-px flex-1" />
-            </div>
-
-            <GoogleButton
-              onClick={() =>
-                authClient.signIn.social({
-                  provider: "google",
-                  callbackURL: `/invite/${token}`,
-                })
-              }
-            />
-          </>
+          <GoogleSignInButton callbackURL={`/invite/${token}`} />
         ) : null}
 
         <p className="text-foreground/50 text-center text-xs">

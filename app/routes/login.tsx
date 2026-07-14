@@ -7,13 +7,12 @@ import type { Route } from "./+types/login";
 
 import { AuthShell } from "~/components/auth-layout";
 import { AuthNotice } from "~/components/auth-notice";
-import { Field } from "~/components/forms";
-import { GoogleButton } from "~/components/google-button";
+import { ErrorList, Field } from "~/components/forms";
+import { GoogleSignInButton } from "~/components/google-button";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { authClient } from "~/features/auth/auth.client";
 import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { getUserId } from "~/features/auth/guards.server";
 import { logger } from "~/logger.server";
@@ -144,7 +143,10 @@ export default function LoginPage({
           labelProps={{ children: "email address" }}
           inputProps={{
             ...getInputProps(fields.email, { type: "email" }),
-            "aria-invalid": credentialsRejected || undefined,
+            "aria-invalid":
+              credentialsRejected || fields.email.errors?.length
+                ? true
+                : undefined,
           }}
           errors={fields.email.errors}
         />
@@ -161,7 +163,15 @@ export default function LoginPage({
           </div>
           <Input
             {...getInputProps(fields.password, { type: "password" })}
-            aria-invalid={credentialsRejected || undefined}
+            aria-invalid={
+              credentialsRejected || fields.password.errors?.length
+                ? true
+                : undefined
+            }
+          />
+          <ErrorList
+            id={fields.password.errorId}
+            errors={fields.password.errors}
           />
         </div>
 
@@ -182,22 +192,7 @@ export default function LoginPage({
         </Button>
 
         {loaderData.googleEnabled ? (
-          <>
-            <div className="flex items-center gap-3" aria-hidden>
-              <span className="bg-border h-px flex-1" />
-              <span className="text-foreground/40 text-xs">or</span>
-              <span className="bg-border h-px flex-1" />
-            </div>
-
-            <GoogleButton
-              onClick={() =>
-                authClient.signIn.social({
-                  provider: "google",
-                  callbackURL: redirectTo,
-                })
-              }
-            />
-          </>
+          <GoogleSignInButton callbackURL={redirectTo} />
         ) : null}
 
         <p className="text-foreground/50 text-center text-xs">

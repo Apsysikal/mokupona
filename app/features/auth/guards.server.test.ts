@@ -4,6 +4,8 @@
 import { faker } from "@faker-js/faker";
 import { beforeAll, describe, expect, it } from "vitest";
 
+import { ensureAuthRoles } from "../../../test/factories";
+
 import { auth } from "./auth.server";
 import { createUserViaAuth } from "./create-user.server";
 import {
@@ -16,11 +18,7 @@ import {
 import { prisma } from "~/db.server";
 
 beforeAll(async () => {
-  await Promise.all(
-    ["user", "moderator", "admin"].map((name) =>
-      prisma.role.upsert({ where: { name }, create: { name }, update: {} }),
-    ),
-  );
+  await ensureAuthRoles();
 });
 
 async function signedInRequest(path = "/admin/users") {

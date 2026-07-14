@@ -10,7 +10,7 @@ export {}; // top-level await needs module scope
 // factory must never clear or pollute what a running test is reading
 process.env.MAIL_PROVIDER = "console";
 
-const SESSION_COOKIE = "better-auth.session_token";
+const PASSWORD = "myreallystrongpassword";
 
 async function createAndLogin(email: string) {
   if (!email) {
@@ -20,38 +20,17 @@ async function createAndLogin(email: string) {
     throw new Error("All test emails must end in @example.com");
   }
 
-  const { auth } = await import("~/features/auth/auth.server");
   const { createUserViaAuth } =
     await import("~/features/auth/create-user.server");
+  const { printSessionCookie } = await import("./session-cookie");
 
   await createUserViaAuth({
     email,
-    password: "myreallystrongpassword",
+    password: PASSWORD,
     name: "test user",
     emailVerified: true,
   });
-
-  const { headers } = await auth.api.signInEmail({
-    body: { email, password: "myreallystrongpassword" },
-    returnHeaders: true,
-  });
-
-  const setCookie = headers.get("set-cookie") ?? "";
-  const match = setCookie.match(
-    new RegExp(`${SESSION_COOKIE.replace(".", "\\.")}=([^;]+)`),
-  );
-  if (!match) {
-    throw new Error("Session cookie missing from sign-in response");
-  }
-
-  // raw (still URL-encoded) value — cypress sets it verbatim
-  console.log(
-    `
-<cookie>
-  ${match[1]}
-</cookie>
-  `.trim(),
-  );
+  await printSessionCookie(email, PASSWORD);
 }
 
 createAndLogin(process.argv[2]);

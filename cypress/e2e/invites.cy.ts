@@ -87,7 +87,7 @@ describe("invites", () => {
 
   it("upgrades an existing logged-in user via the confirm screen", () => {
     cy.login().then((user) => {
-      const email = (user as unknown as { email: string }).email;
+      const { email } = user;
 
       createInviteToken(email, "moderator").then((token) => {
         cy.visit(`/invite/${token}`);

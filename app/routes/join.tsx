@@ -7,10 +7,9 @@ import type { Route } from "./+types/join";
 
 import { AuthShell } from "~/components/auth-layout";
 import { Field } from "~/components/forms";
-import { GoogleButton } from "~/components/google-button";
+import { GoogleSignInButton } from "~/components/google-button";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { authClient } from "~/features/auth/auth.client";
 import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { getUserId } from "~/features/auth/guards.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
@@ -162,22 +161,7 @@ export default function Join({ loaderData, actionData }: Route.ComponentProps) {
         </Button>
 
         {loaderData.googleEnabled ? (
-          <>
-            <div className="flex items-center gap-3" aria-hidden>
-              <span className="bg-border h-px flex-1" />
-              <span className="text-foreground/40 text-xs">or</span>
-              <span className="bg-border h-px flex-1" />
-            </div>
-
-            <GoogleButton
-              onClick={() =>
-                authClient.signIn.social({
-                  provider: "google",
-                  callbackURL: redirectTo ?? "/",
-                })
-              }
-            />
-          </>
+          <GoogleSignInButton callbackURL={redirectTo ?? "/"} />
         ) : null}
 
         <p className="text-foreground/65 text-center text-sm">

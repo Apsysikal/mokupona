@@ -17,4 +17,3 @@ CREATE UNIQUE INDEX "Invite_tokenHash_key" ON "Invite"("tokenHash");
 
 -- CreateIndex
 CREATE INDEX "Invite_email_idx" ON "Invite"("email");
-

@@ -1,5 +1,6 @@
-import React from "react";
+import type { ButtonHTMLAttributes } from "react";
 
+import { authClient } from "~/features/auth/auth.client";
 import { cn } from "~/lib/utils";
 
 // Google's dark-theme sign-in button per their branding guidelines, adapted
@@ -7,12 +8,12 @@ import { cn } from "~/lib/utils";
 // full-width h-12 to stack evenly with the primary button, and the brand
 // font instead of Roboto (design handoff). Label casing is Google's — the
 // one deliberately non-lowercase string on the auth pages.
-export function GoogleButton({
+function GoogleButton({
   className,
   children = "Continue with Google",
   type = "button",
   ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+}: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       type={type}
@@ -25,6 +26,23 @@ export function GoogleButton({
       <GoogleMark className="size-5" />
       {children}
     </button>
+  );
+}
+
+export function GoogleSignInButton({ callbackURL }: { callbackURL: string }) {
+  return (
+    <>
+      <div className="flex items-center gap-3" aria-hidden>
+        <span className="bg-border h-px flex-1" />
+        <span className="text-foreground/40 text-xs">or</span>
+        <span className="bg-border h-px flex-1" />
+      </div>
+      <GoogleButton
+        onClick={() =>
+          authClient.signIn.social({ provider: "google", callbackURL })
+        }
+      />
+    </>
   );
 }
 

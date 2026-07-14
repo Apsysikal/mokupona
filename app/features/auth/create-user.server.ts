@@ -24,12 +24,9 @@ export async function createUserViaAuth({
   roleName?: string;
   emailVerified?: boolean;
 }): Promise<User> {
-  await auth.api.signUpEmail({ body: { email, password, name } });
-
-  const created = await getUserByEmail(email);
-  if (!created) {
-    throw new Error(`better-auth did not create a user for ${email}`);
-  }
+  const { user: created } = await auth.api.signUpEmail({
+    body: { email, password, name },
+  });
 
   if (emailVerified) await setUserEmailVerified(created.id);
   if (roleName !== "user") {
@@ -37,8 +34,6 @@ export async function createUserViaAuth({
     if (!role) throw new Error(`Role "${roleName}" is not a valid role`);
     await updateNonAdminUserRole(created.id, role.id);
   }
-
-  if (!emailVerified && roleName === "user") return created;
 
   const user = await getUserByEmail(created.email);
   if (!user) throw new Error(`user ${email} vanished during provisioning`);

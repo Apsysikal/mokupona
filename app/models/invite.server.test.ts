@@ -1,6 +1,8 @@
 import { faker } from "@faker-js/faker";
 import { beforeAll, describe, expect, it } from "vitest";
 
+import { createTestUser, ensureAuthRoles } from "../../test/factories";
+
 import {
   acceptInvite,
   getInviteByToken,
@@ -13,49 +15,29 @@ import {
 
 import { prisma } from "~/db.server";
 
-async function ensureRole(name: string) {
-  return prisma.role.upsert({
-    where: { name },
-    create: { name },
-    update: {},
+async function createInvite(
+  overrides: Partial<Parameters<typeof upsertInvite>[0]> = {},
+) {
+  const admin = await createTestUser("admin");
+  return upsertInvite({
+    email: `invite-${faker.string.uuid()}@example.com`,
+    roleName: "user",
+    createdById: admin.id,
+    ...overrides,
   });
-}
-
-async function createUser(roleName: string) {
-  const role = await ensureRole(roleName);
-  return prisma.user.create({
-    data: {
-      email: `test-${faker.string.uuid()}@example.com`,
-      name: faker.person.fullName(),
-      roleId: role.id,
-    },
-  });
-}
-
-async function createAdmin() {
-  return createUser("admin");
 }
 
 beforeAll(async () => {
   // acceptInvite resolves invite.roleName against the real Role table
-  await Promise.all(["user", "moderator", "admin"].map(ensureRole));
+  await ensureAuthRoles();
 });
 
 describe("upsertInvite", () => {
   it("updates the live invite for an address instead of duplicating", async () => {
-    const admin = await createAdmin();
     const email = `invitee-${faker.string.uuid()}@example.com`;
 
-    const first = await upsertInvite({
-      email,
-      roleName: "user",
-      createdById: admin.id,
-    });
-    const second = await upsertInvite({
-      email,
-      roleName: "moderator",
-      createdById: admin.id,
-    });
+    const first = await createInvite({ email });
+    const second = await createInvite({ email, roleName: "moderator" });
 
     expect(second.id).toBe(first.id);
     expect(second.roleName).toBe("moderator");
@@ -67,11 +49,8 @@ describe("upsertInvite", () => {
   });
 
   it("stores only a hash — the raw token never lands in the DB", async () => {
-    const admin = await createAdmin();
-    const invite = await upsertInvite({
+    const invite = await createInvite({
       email: `h-${faker.string.uuid()}@example.com`,
-      roleName: "user",
-      createdById: admin.id,
     });
 
     const row = await prisma.invite.findUniqueOrThrow({
@@ -83,11 +62,8 @@ describe("upsertInvite", () => {
   });
 
   it("normalizes the bound address to lowercase", async () => {
-    const admin = await createAdmin();
-    const invite = await upsertInvite({
+    const invite = await createInvite({
       email: `Mixed-${faker.string.uuid()}@Example.com`,
-      roleName: "user",
-      createdById: admin.id,
     });
     expect(invite.email).toBe(invite.email.toLowerCase());
   });
@@ -95,11 +71,8 @@ describe("upsertInvite", () => {
 
 describe("inviteValidity", () => {
   it("classifies missing, expired, used and valid invites", async () => {
-    const admin = await createAdmin();
-    const invite = await upsertInvite({
+    const invite = await createInvite({
       email: `v-${faker.string.uuid()}@example.com`,
-      roleName: "user",
-      createdById: admin.id,
     });
 
     expect(inviteValidity(null)).toBe("invalid");
@@ -113,12 +86,10 @@ describe("inviteValidity", () => {
 
 describe("acceptInvite", () => {
   it("upgrades user → moderator, stamps acceptedAt and verifies the email", async () => {
-    const admin = await createAdmin();
-    const invitee = await createUser("user");
-    const invite = await upsertInvite({
+    const invitee = await createTestUser();
+    const invite = await createInvite({
       email: invitee.email,
       roleName: "moderator",
-      createdById: admin.id,
     });
 
     await acceptInvite({ invite, userId: invitee.id });
@@ -135,12 +106,10 @@ describe("acceptInvite", () => {
   });
 
   it("is single-use — a second acceptance throws", async () => {
-    const admin = await createAdmin();
-    const invitee = await createUser("user");
-    const invite = await upsertInvite({
+    const invitee = await createTestUser();
+    const invite = await createInvite({
       email: invitee.email,
       roleName: "moderator",
-      createdById: admin.id,
     });
 
     await acceptInvite({ invite, userId: invitee.id });
@@ -150,12 +119,10 @@ describe("acceptInvite", () => {
   });
 
   it("rejects expired invites", async () => {
-    const admin = await createAdmin();
-    const invitee = await createUser("user");
-    const invite = await upsertInvite({
+    const invitee = await createTestUser();
+    const invite = await createInvite({
       email: invitee.email,
       roleName: "moderator",
-      createdById: admin.id,
     });
     await prisma.invite.update({
       where: { id: invite.id },
@@ -168,12 +135,9 @@ describe("acceptInvite", () => {
   });
 
   it("never downgrades — a moderator invited as user keeps moderator", async () => {
-    const admin = await createAdmin();
-    const invitee = await createUser("moderator");
-    const invite = await upsertInvite({
+    const invitee = await createTestUser("moderator");
+    const invite = await createInvite({
       email: invitee.email,
-      roleName: "user",
-      createdById: admin.id,
     });
 
     await acceptInvite({ invite, userId: invitee.id });
@@ -186,12 +150,10 @@ describe("acceptInvite", () => {
   });
 
   it("never touches admins", async () => {
-    const admin = await createAdmin();
-    const otherAdmin = await createAdmin();
-    const invite = await upsertInvite({
+    const otherAdmin = await createTestUser("admin");
+    const invite = await createInvite({
       email: otherAdmin.email,
       roleName: "moderator",
-      createdById: admin.id,
     });
 
     await acceptInvite({ invite, userId: otherAdmin.id });
@@ -206,11 +168,8 @@ describe("acceptInvite", () => {
 
 describe("refreshInvite / revokeInvite", () => {
   it("refresh rotates the token and pushes expiry out", async () => {
-    const admin = await createAdmin();
-    const invite = await upsertInvite({
+    const invite = await createInvite({
       email: `r-${faker.string.uuid()}@example.com`,
-      roleName: "user",
-      createdById: admin.id,
     });
     await prisma.invite.update({
       where: { id: invite.id },
@@ -223,12 +182,9 @@ describe("refreshInvite / revokeInvite", () => {
   });
 
   it("refuses to refresh an accepted invite", async () => {
-    const admin = await createAdmin();
-    const invitee = await createUser("user");
-    const invite = await upsertInvite({
+    const invitee = await createTestUser();
+    const invite = await createInvite({
       email: invitee.email,
-      roleName: "user",
-      createdById: admin.id,
     });
     await acceptInvite({ invite, userId: invitee.id });
 
@@ -236,11 +192,8 @@ describe("refreshInvite / revokeInvite", () => {
   });
 
   it("revoke deletes the row so the token dies", async () => {
-    const admin = await createAdmin();
-    const invite = await upsertInvite({
+    const invite = await createInvite({
       email: `d-${faker.string.uuid()}@example.com`,
-      roleName: "user",
-      createdById: admin.id,
     });
 
     await revokeInvite(invite.id);

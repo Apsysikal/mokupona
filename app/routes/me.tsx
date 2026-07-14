@@ -32,13 +32,18 @@ const nameSchema = z.object({
     .min(1, "Name is required"),
 });
 
-const changePasswordSchema = withPasswordConfirmation({
-  intent: z.literal("change-password"),
-  currentPassword: z.string({ error: "Current password is required" }),
-});
-
-const setPasswordSchema = withPasswordConfirmation({
-  intent: z.literal("set-password"),
+const passwordActionSchema = withPasswordConfirmation({
+  intent: z.enum(["change-password", "set-password"]),
+  currentPassword: z.string().optional(),
+}).check((ctx) => {
+  if (ctx.value.intent === "change-password" && !ctx.value.currentPassword) {
+    ctx.issues.push({
+      code: "custom",
+      path: ["currentPassword"],
+      message: "Current password is required",
+      input: ctx.value.currentPassword,
+    });
+  }
 });
 
 export const meta: Route.MetaFunction = () => [{ title: "your account" }];
@@ -73,58 +78,44 @@ export const action = async ({ request }: Route.ActionArgs) => {
     return data({ result: submission.reply(), done: "name" as const });
   }
 
-  if (intent === "change-password") {
-    const submission = parseWithZod(formData, {
-      schema: changePasswordSchema,
-    });
+  if (intent === "change-password" || intent === "set-password") {
+    const submission = parseWithZod(formData, { schema: passwordActionSchema });
     if (submission.status !== "success") {
       return data({ result: submission.reply(), done: null });
     }
-    try {
-      await auth.api.changePassword({
-        body: {
-          currentPassword: submission.value.currentPassword,
-          newPassword: submission.value.password,
-          revokeOtherSessions: false,
-        },
-        headers: request.headers,
-      });
-    } catch {
-      return data({
-        result: submission.reply({
-          fieldErrors: {
-            currentPassword: ["that doesn't match your current password."],
-          },
-        }),
-        done: null,
-      });
-    }
-    return data({
-      result: submission.reply({ resetForm: true }),
-      done: "password" as const,
-    });
-  }
 
-  if (intent === "set-password") {
-    const submission = parseWithZod(formData, { schema: setPasswordSchema });
-    if (submission.status !== "success") {
-      return data({ result: submission.reply(), done: null });
-    }
     try {
-      // only valid while the account has no credential account (Google-only)
-      await auth.api.setPassword({
-        body: { newPassword: submission.value.password },
-        headers: request.headers,
-      });
+      if (intent === "change-password") {
+        await auth.api.changePassword({
+          body: {
+            currentPassword: submission.value.currentPassword!,
+            newPassword: submission.value.password,
+            revokeOtherSessions: false,
+          },
+          headers: request.headers,
+        });
+      } else {
+        // only valid while the account has no credential account (Google-only)
+        await auth.api.setPassword({
+          body: { newPassword: submission.value.password },
+          headers: request.headers,
+        });
+      }
     } catch {
-      // stale UI: a credential account appeared since the page rendered
       return data({
         result: submission.reply({
-          fieldErrors: {
-            password: [
-              "a password is already set. reload the page to change it.",
-            ],
-          },
+          fieldErrors:
+            intent === "change-password"
+              ? {
+                  currentPassword: [
+                    "that doesn't match your current password.",
+                  ],
+                }
+              : {
+                  password: [
+                    "a password is already set. reload the page to change it.",
+                  ],
+                },
         }),
         done: null,
       });
@@ -156,6 +147,17 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
   throw new Response("Unknown intent", { status: 400 });
 };
+
+function useActionToast(
+  actionData: Route.ComponentProps["actionData"],
+  state: string,
+  done: "name" | "password" | "unlink" | "sessions",
+  message: string,
+) {
+  useEffect(() => {
+    if (actionData?.done === done && state === "idle") toast.success(message);
+  }, [actionData, done, message, state]);
+}
 
 export default function MeRoute({ loaderData }: Route.ComponentProps) {
   const { user, hasPassword, googleLinked, sessionCount, googleEnabled } =
@@ -226,12 +228,8 @@ function ProfileCard({
     },
   });
 
-  const { data: fetcherData, state } = fetcher;
-  useEffect(() => {
-    if (fetcherData?.done === "name" && state === "idle") {
-      toast.success("name updated");
-    }
-  }, [fetcherData, state]);
+  const { state } = fetcher;
+  useActionToast(fetcher.data, state, "name", "name updated");
 
   return (
     <section className="border-border bg-card flex flex-col gap-5 rounded-2xl border p-6 md:p-7">
@@ -293,104 +291,52 @@ function ProfileCard({
 }
 
 function PasswordCard({ hasPassword }: { hasPassword: boolean }) {
-  return hasPassword ? <ChangePasswordForm /> : <SetPasswordForm />;
-}
-
-function ChangePasswordForm() {
   const fetcher = useFetcher<typeof action>();
   const [form, fields] = useForm({
     lastResult: fetcher.data?.result ?? null,
-    constraint: getZodConstraint(changePasswordSchema),
+    constraint: getZodConstraint(passwordActionSchema),
+    defaultValue: {
+      intent: hasPassword ? "change-password" : "set-password",
+    },
     onValidate({ formData }) {
-      return parseWithZod(formData, { schema: changePasswordSchema });
+      return parseWithZod(formData, { schema: passwordActionSchema });
     },
   });
-
-  const { data: fetcherData, state } = fetcher;
-  useEffect(() => {
-    if (fetcherData?.done === "password" && state === "idle") {
-      toast.success("password updated");
-    }
-  }, [fetcherData, state]);
-
-  return (
-    <SectionCard
-      title="password"
-      subtitle="change the password you use to sign in."
-    >
-      <fetcher.Form
-        method="post"
-        className="flex flex-col gap-4"
-        {...getFormProps(form)}
-      >
-        <input type="hidden" name="intent" value="change-password" />
-
-        <Field
-          labelProps={{ children: "current password" }}
-          inputProps={{
-            ...getInputProps(fields.currentPassword, { type: "password" }),
-          }}
-          errors={fields.currentPassword.errors}
-        />
-
-        <Field
-          labelProps={{ children: "new password" }}
-          inputProps={{
-            ...getInputProps(fields.password, { type: "password" }),
-          }}
-          errors={fields.password.errors}
-        />
-
-        <Field
-          labelProps={{ children: "confirm new password" }}
-          inputProps={{
-            ...getInputProps(fields.confirmPassword, { type: "password" }),
-          }}
-          errors={fields.confirmPassword.errors}
-        />
-
-        <Button
-          type="submit"
-          className="self-start"
-          disabled={state !== "idle"}
-        >
-          update password
-        </Button>
-      </fetcher.Form>
-    </SectionCard>
+  const intent = hasPassword ? "change-password" : "set-password";
+  const { state } = fetcher;
+  useActionToast(
+    fetcher.data,
+    state,
+    "password",
+    hasPassword ? "password updated" : "password set",
   );
-}
-
-// Google-only accounts set their first password here; better-auth's
-// setPassword refuses once a credential account exists
-function SetPasswordForm() {
-  const fetcher = useFetcher<typeof action>();
-  const [form, fields] = useForm({
-    lastResult: fetcher.data?.result ?? null,
-    constraint: getZodConstraint(setPasswordSchema),
-    onValidate({ formData }) {
-      return parseWithZod(formData, { schema: setPasswordSchema });
-    },
-  });
-
-  const { data: fetcherData, state } = fetcher;
-  useEffect(() => {
-    if (fetcherData?.done === "password" && state === "idle") {
-      toast.success("password set");
-    }
-  }, [fetcherData, state]);
 
   return (
     <SectionCard
-      title="set a password"
-      subtitle="you signed up with google. add a password to sign in either way — no current password needed."
+      title={hasPassword ? "password" : "set a password"}
+      subtitle={
+        hasPassword
+          ? "change the password you use to sign in."
+          : "you signed up with google. add a password to sign in either way — no current password needed."
+      }
     >
       <fetcher.Form
         method="post"
         className="flex flex-col gap-4"
         {...getFormProps(form)}
       >
-        <input type="hidden" name="intent" value="set-password" />
+        <input type="hidden" name="intent" value={intent} />
+
+        {hasPassword ? (
+          <Field
+            labelProps={{ children: "current password" }}
+            inputProps={{
+              ...getInputProps(fields.currentPassword, { type: "password" }),
+              required: true,
+            }}
+            errors={fields.currentPassword.errors}
+          />
+        ) : null}
 
         <Field
           labelProps={{ children: "new password" }}
@@ -413,7 +359,7 @@ function SetPasswordForm() {
           className="self-start"
           disabled={state !== "idle"}
         >
-          set password
+          {hasPassword ? "update password" : "set password"}
         </Button>
       </fetcher.Form>
     </SectionCard>
@@ -432,12 +378,8 @@ function ConnectedAccountsCard({
   const fetcher = useFetcher<typeof action>();
   const unlinkBlocked = googleLinked && !hasPassword;
 
-  const { data: fetcherData, state } = fetcher;
-  useEffect(() => {
-    if (fetcherData?.done === "unlink" && state === "idle") {
-      toast.success("google unlinked");
-    }
-  }, [fetcherData, state]);
+  const { state } = fetcher;
+  useActionToast(fetcher.data, state, "unlink", "google unlinked");
 
   return (
     <SectionCard
@@ -493,12 +435,8 @@ function ConnectedAccountsCard({
 function SessionsCard({ sessionCount }: { sessionCount: number }) {
   const fetcher = useFetcher<typeof action>();
 
-  const { data: fetcherData, state } = fetcher;
-  useEffect(() => {
-    if (fetcherData?.done === "sessions" && state === "idle") {
-      toast.success("signed out everywhere else");
-    }
-  }, [fetcherData, state]);
+  const { state } = fetcher;
+  useActionToast(fetcher.data, state, "sessions", "signed out everywhere else");
 
   return (
     <SectionCard title="sessions">

@@ -4,7 +4,7 @@ import { Link, redirect } from "react-router";
 import type { Route } from "./+types/check-your-inbox";
 
 import { AuthShell } from "~/components/auth-layout";
-import { AuthStatus, AuthStatusBody } from "~/components/auth-status";
+import { AuthStatus } from "~/components/auth-status";
 import { Button } from "~/components/ui/button";
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
@@ -34,12 +34,14 @@ export default function CheckYourInbox({ loaderData }: Route.ComponentProps) {
       <AuthStatus
         icon={<EnvelopeClosedIcon className="size-7" />}
         heading="check your inbox"
+        body={
+          <>
+            we sent a verification link to{" "}
+            <strong className="text-foreground font-semibold">{email}</strong>.
+            open it to confirm your address, then log in.
+          </>
+        }
       >
-        <AuthStatusBody>
-          we sent a verification link to{" "}
-          <strong className="text-foreground font-semibold">{email}</strong>.
-          open it to confirm your address, then log in.
-        </AuthStatusBody>
         <Button size="lg" className="w-full" asChild>
           <Link to={`/login${loginSearch}`}>back to log in</Link>
         </Button>

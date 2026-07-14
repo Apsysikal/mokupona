@@ -89,7 +89,7 @@ describe("smoke tests", () => {
     const newPassword = faker.internet.password();
 
     cy.login().then((user) => {
-      const email = (user as unknown as { email: string }).email;
+      const { email } = user;
 
       // the reset flow must work logged out — it's the recovery path
       cy.clearCookie("better-auth.session_token");

@@ -13,8 +13,12 @@ invariant(process.env.BETTER_AUTH_SECRET, "BETTER_AUTH_SECRET must be set");
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+const googleProvider =
+  googleClientId && googleClientSecret
+    ? { clientId: googleClientId, clientSecret: googleClientSecret }
+    : undefined;
 
-export const googleAuthEnabled = Boolean(googleClientId && googleClientSecret);
+export const googleAuthEnabled = Boolean(googleProvider);
 
 export const auth = singleton("better-auth", () =>
   betterAuth({
@@ -28,15 +32,7 @@ export const auth = singleton("better-auth", () =>
         roleId: { type: "string", required: false, input: false },
       },
     },
-    // @ts-expect-error
-    socialProviders: googleAuthEnabled
-      ? {
-          google: {
-            clientId: googleClientId,
-            clientSecret: googleClientSecret,
-          },
-        }
-      : undefined,
+    socialProviders: googleProvider ? { google: googleProvider } : undefined,
     account: {
       accountLinking: {
         enabled: true,
@@ -48,14 +44,11 @@ export const auth = singleton("better-auth", () =>
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: true,
-      sendResetPassword: async ({ user, url }) => {
-        await sendTemplate("resetPassword", user.email, { url });
-      },
+      sendResetPassword: ({ user, url }) =>
+        sendTemplate("resetPassword", user.email, { url }),
       // completing a reset proves mailbox ownership — this is how force-reset
       // migrated users get verified (design §7); deliberate, don't "fix" it
-      onPasswordReset: async ({ user }) => {
-        await setUserEmailVerified(user.id);
-      },
+      onPasswordReset: ({ user }) => setUserEmailVerified(user.id),
     },
     emailVerification: {
       // explicit false — unset falls back to requireEmailVerification (true).
@@ -66,9 +59,8 @@ export const auth = singleton("better-auth", () =>
       // path; the UI deliberately has no resend button (design §5)
       sendOnSignIn: true,
       autoSignInAfterVerification: false,
-      sendVerificationEmail: async ({ user, url }) => {
-        await sendTemplate("verifyEmail", user.email, { url });
-      },
+      sendVerificationEmail: ({ user, url }) =>
+        sendTemplate("verifyEmail", user.email, { url }),
     },
     databaseHooks: {
       user: {
