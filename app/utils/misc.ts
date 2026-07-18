@@ -69,10 +69,6 @@ export function useOptionalUser(): UserWithRole | undefined {
   return data.user;
 }
 
-export function validateEmail(email: unknown): email is string {
-  return typeof email === "string" && email.length > 3 && email.includes("@");
-}
-
 export function offsetDate(date: Date, minutesOffset = 0): Date {
   return new Date(date.getTime() + minutesOffset * 60 * 1000);
 }
