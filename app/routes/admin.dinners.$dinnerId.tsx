@@ -2,15 +2,18 @@ import { Form, Link } from "react-router";
 
 import type { Route } from "./+types/admin.dinners.$dinnerId";
 
-import { DinnerView } from "~/components/dinner-view";
 import { Button } from "~/components/ui/button";
+import { EventView } from "~/features/events/components/event-view";
+import { toEventDetailModel } from "~/features/events/view-models";
 import { getEventById } from "~/models/event.server";
 import { requireFound } from "~/shared/http.server";
 
 export async function loader({ params }: Route.LoaderArgs) {
   const event = requireFound(await getEventById(params.dinnerId));
 
-  return { event };
+  // the route ships the detail model, not the Prisma entity — the preview
+  // components and the meta title consume nothing else
+  return { event: toEventDetailModel(event) };
 }
 
 export const meta: Route.MetaFunction = ({ loaderData }) => {
@@ -46,7 +49,7 @@ export default function DinnerPage({ loaderData }: Route.ComponentProps) {
         </span>
       </div>
 
-      <DinnerView event={event} />
+      <EventView event={event} />
     </main>
   );
 }

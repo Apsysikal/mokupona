@@ -1,25 +1,22 @@
 import { CalendarIcon, PersonIcon, SewingPinIcon } from "@radix-ui/react-icons";
 import { Link } from "react-router";
 
-import { CreditCardIcon } from "./icons";
-import { SecondaryCTA } from "./section";
-import { Badge } from "./ui/badge";
-import { Button } from "./ui/button";
+import { formatEventDateLine, formatEventMonthYear } from "../date-format";
+import type { EventCardModel } from "../view-models";
 
-import {
-  formatEventDateLine,
-  formatEventMonthYear,
-} from "~/features/events/date-format";
-import type { Address, Event } from "~/models/event.server";
-import { OptimizedImage } from "~/routes/file.$fileId";
+import { CreditCardIcon } from "~/components/icons";
+import { OptimizedImage } from "~/components/optimized-image";
+import { SecondaryCTA } from "~/components/section";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 
 // the one upcoming dinner gets the whole spotlight: image + pill on the
 // left, date/title/stats/CTAs on the right (design handoff §2)
-export function FeaturedDinnerCard({
+export function FeaturedEventCard({
   event,
   isNext = true,
 }: {
-  event: Event & { address: Address };
+  event: EventCardModel;
   /** the "next dinner" pill belongs on the soonest dinner only */
   isNext?: boolean;
 }) {
@@ -62,7 +59,7 @@ export function FeaturedDinnerCard({
           <span className="flex items-center gap-2">
             <SewingPinIcon className="text-foreground/50 size-4" />
             <span className="sr-only">location</span>
-            {`${event.address.zip} ${event.address.city}`.toLowerCase()}
+            {event.addressLine}
           </span>
           <span className="flex items-center gap-2">
             <CreditCardIcon className="text-foreground/50 size-4" />
@@ -89,7 +86,7 @@ export function FeaturedDinnerCard({
 }
 
 // quiet archive tile: image, month label, title
-export function PastDinnerCard({ event }: { event: Event }) {
+export function PastEventCard({ event }: { event: EventCardModel }) {
   const eventDate = new Date(event.date);
 
   return (

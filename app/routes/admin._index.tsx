@@ -2,13 +2,13 @@ import { PlusIcon } from "@radix-ui/react-icons";
 import { Link } from "react-router";
 
 import type { Route } from "./+types/admin._index";
-import { OptimizedImage } from "./file.$fileId";
 
 import {
   AdminPageHeader,
   InitialsAvatar,
   SeatProgress,
 } from "~/components/admin-ui";
+import { OptimizedImage } from "~/components/optimized-image";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import {

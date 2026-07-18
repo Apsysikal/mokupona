@@ -5,29 +5,31 @@ import {
   SewingPinIcon,
 } from "@radix-ui/react-icons";
 
-import { AutoLink } from "./auto-link";
-import { CreditCardIcon } from "./icons";
+import { formatEventDateLine } from "../date-format";
+import type { EventDetailModel } from "../view-models";
+
+import { AutoLink } from "~/components/auto-link";
+import { CreditCardIcon } from "~/components/icons";
+import { OptimizedImage } from "~/components/optimized-image";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "./ui/accordion";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+} from "~/components/ui/accordion";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 
-import { formatEventDateLine } from "~/features/events/date-format";
-import type { loader } from "~/routes/admin.dinners.$dinnerId";
-import { OptimizedImage } from "~/routes/file.$fileId";
-
-type EventWithAddress = Awaited<ReturnType<typeof loader>>["event"];
-
-export interface DinnerViewProps {
-  event: EventWithAddress;
+export interface EventViewProps {
+  event: EventDetailModel;
 }
 
 // the editorial left column of the dinner detail page: photo, date, title,
 // story, and the menu/donation accordions (design handoff §3)
-export function DinnerStory({ event }: DinnerViewProps) {
+export function EventStory({ event }: EventViewProps) {
   const eventDate = new Date(event.date);
 
   const menuLines = event.menuDescription
@@ -113,7 +115,7 @@ export function DinnerStory({ event }: DinnerViewProps) {
 
 // date / location / price / seats rows used in the booking card and the
 // admin preview
-export function DinnerFactList({ event }: DinnerViewProps) {
+export function EventFactList({ event }: EventViewProps) {
   const eventDate = new Date(event.date);
 
   return (
@@ -128,7 +130,7 @@ export function DinnerFactList({ event }: DinnerViewProps) {
       <div className="flex items-center gap-2">
         <SewingPinIcon className="text-foreground/50 size-4" />
         <span className="sr-only">location</span>
-        <span>{`${event.address.zip} ${event.address.city}`}</span>
+        <span>{event.addressLine}</span>
       </div>
 
       <div className="flex items-center justify-between">
@@ -162,11 +164,11 @@ export function DinnerFactList({ event }: DinnerViewProps) {
 }
 
 // stacked story + facts, used by the admin dinner preview
-export function DinnerView({ event }: DinnerViewProps) {
+export function EventView({ event }: EventViewProps) {
   return (
     <div className="flex flex-col gap-6">
-      <DinnerFactList event={event} />
-      <DinnerStory event={event} />
+      <EventFactList event={event} />
+      <EventStory event={event} />
     </div>
   );
 }

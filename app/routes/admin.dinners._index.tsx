@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Link, useFetcher } from "react-router";
 
 import type { Route } from "./+types/admin.dinners._index";
-import { OptimizedImage } from "./file.$fileId";
 
 import {
   AdminEmptyState,
@@ -13,6 +12,7 @@ import {
   SeatProgress,
 } from "~/components/admin-ui";
 import { UtensilsIcon } from "~/components/icons";
+import { OptimizedImage } from "~/components/optimized-image";
 import { Button } from "~/components/ui/button";
 import { formatAdminDateLine } from "~/features/events/date-format";
 import { isPastEvent } from "~/features/events/event-status";

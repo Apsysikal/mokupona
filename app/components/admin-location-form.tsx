@@ -14,7 +14,7 @@ type FieldsetOf<Schema extends z.ZodType> = {
 };
 
 // Shared by the location create and edit routes so the two can't drift; mirrors
-// AdminDinnerForm's header + card shell on the compact admin density.
+// AdminEventForm's header + card shell on the compact admin density.
 export function AdminLocationForm({
   fields,
   submitText,

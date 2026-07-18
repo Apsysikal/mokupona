@@ -9,16 +9,14 @@ import { Form, redirect } from "react-router";
 
 import type { Route } from "./+types/admin.dinners.$dinnerId_.edit";
 
-import {
-  AdminDinnerForm,
-  toAddressOptions,
-} from "~/components/admin-dinner-form";
 import { userContext } from "~/features/auth/middleware.server";
+import { AdminEventForm } from "~/features/events/components/admin-event-form";
 import { EventSchema } from "~/features/events/event-schema";
 import {
   toDisplayEventDate,
   toUtcEventDate,
 } from "~/features/events/event-timezone.server";
+import { toAddressOptions } from "~/features/events/view-models";
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
 import {
   builderRowsToDescriptors,
@@ -167,7 +165,7 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
   ];
 };
 
-export default function DinnersPage({
+export default function AdminDinnerEditPage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
@@ -197,7 +195,7 @@ export default function DinnersPage({
         replace
         {...getFormProps(form)}
       >
-        <AdminDinnerForm
+        <AdminEventForm
           fields={fields}
           addressOptions={addressOptions}
           validImageTypes={validImageTypes}

@@ -1,15 +1,20 @@
 import type { Route } from "./+types/dinners._index";
 
-import { FeaturedDinnerCard, PastDinnerCard } from "~/components/dinner-card";
 import { Eyebrow, SectionDivider } from "~/components/section";
 import { Button } from "~/components/ui/button";
+import {
+  FeaturedEventCard,
+  PastEventCard,
+} from "~/features/events/components/event-card";
 import { partitionEvents } from "~/features/events/event-status";
+import { toEventCardModel } from "~/features/events/view-models";
 import { getEventsWithAddress } from "~/models/event.server";
 
 export const loader = async () => {
   const events = await getEventsWithAddress();
 
-  return { events };
+  // the route ships the card model, not the Prisma entity
+  return { events: events.map(toEventCardModel) };
 };
 
 export const meta: Route.MetaFunction = () => [{ title: "Dinners" }];
@@ -42,7 +47,7 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
           <SectionDivider className="mb-5">the next dinner</SectionDivider>
           <div className="mb-14 flex flex-col gap-8 md:mb-18">
             {upcomingEvents.map((event, index) => (
-              <FeaturedDinnerCard
+              <FeaturedEventCard
                 key={event.id}
                 event={event}
                 isNext={index === 0}
@@ -59,7 +64,7 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
           <SectionDivider className="mb-5">past dinners</SectionDivider>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
             {pastEvents.map((event) => (
-              <PastDinnerCard key={event.id} event={event} />
+              <PastEventCard key={event.id} event={event} />
             ))}
           </div>
         </>

@@ -1,8 +1,8 @@
-import type { ComponentProps } from "react";
 import { z } from "zod";
 
 import type { Route } from "./+types/file.$fileId";
 
+import { IMAGE_FITS } from "~/components/optimized-image";
 import { logger } from "~/logger.server";
 import { getImageById } from "~/models/image.server";
 import { requireFound } from "~/shared/http.server";
@@ -11,66 +11,12 @@ import {
   getStorageKey as getCacheKey,
 } from "~/utils/file-chache-storage.server";
 import { transformToWebp } from "~/utils/image-transform.server";
-import { getImageUrl } from "~/utils/misc";
 
 const SearchParamsSchema = z.object({
   width: z.coerce.number().min(0).optional(),
   height: z.coerce.number().min(0).optional(),
-  fit: z.enum(["cover", "contain", "fill"]).optional().default("cover"),
+  fit: z.enum(IMAGE_FITS).optional().default("cover"),
 });
-
-type SearchParams = z.infer<typeof SearchParamsSchema>;
-
-type ImageInputProps = {
-  imageId: string;
-  width: number;
-  height: number;
-} & Partial<Pick<SearchParams, "fit">>;
-
-type ImageProps = Omit<ComponentProps<"img">, "width" | "height" | "src"> &
-  ImageInputProps;
-
-export function OptimizedImage({
-  imageId,
-  width,
-  height,
-  fit = "cover",
-  ...props
-}: ImageProps) {
-  const breakPoints = [432, 648, 864, 1080];
-  const imageUrl = getImageUrl(imageId);
-  const aspect = width / height;
-
-  const searchParams = new URLSearchParams({
-    w: `${width}`,
-    h: `${height}`,
-    fit,
-  });
-
-  const srcSetUrls = breakPoints.map((w) => {
-    // sharp rejects fractional dimensions, so keep derived heights integer
-    const h = Math.round(w / aspect);
-    const searchParams = new URLSearchParams({
-      w: `${w}`,
-      h: `${h}`,
-      fit,
-    });
-
-    return `${imageUrl + "?" + searchParams.toString()} ${w}w`;
-  });
-
-  return (
-    <picture>
-      <img
-        srcSet={srcSetUrls.join(", ")}
-        src={imageUrl + "?" + searchParams.toString()}
-        width={width}
-        height={height}
-        {...props}
-      />
-    </picture>
-  );
-}
 
 export async function loader({ url, params }: Route.LoaderArgs) {
   const searchParams = new URL(url).searchParams;

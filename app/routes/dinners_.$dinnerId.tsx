@@ -10,10 +10,14 @@ import { Form, isRouteErrorResponse, Link } from "react-router";
 
 import type { Route } from "./+types/dinners_.$dinnerId";
 
-import { DinnerFactList, DinnerStory } from "~/components/dinner-view";
 import { CheckboxField, ErrorList } from "~/components/forms";
 import { Button } from "~/components/ui/button";
+import {
+  EventFactList,
+  EventStory,
+} from "~/features/events/components/event-view";
 import { isPastEvent } from "~/features/events/event-status";
+import { toEventDetailModel } from "~/features/events/view-models";
 import { getViewForField, type FieldDescriptor } from "~/features/forms/fields";
 import { normalizeSubmissionValues } from "~/features/forms/normalize-submission";
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
@@ -39,7 +43,9 @@ export async function loader({ params }: Route.LoaderArgs) {
   ]);
 
   return {
-    event,
+    // the route ships the detail model, not the Prisma entity; it also covers
+    // the meta tags (title, imageId) and the past check (date)
+    event: toEventDetailModel(event),
     // null when the stored schema fails to parse — the signup section is
     // hidden rather than rendered wrong (design §11)
     formFields: parseStoredFormSchemaOrLog(version),
@@ -194,7 +200,7 @@ export default function DinnerPage({
 }: Route.ComponentProps) {
   const { event, formFields, formVersionId } = loaderData;
 
-  const eventIsPast = isPastEvent(event.date, new Date());
+  const eventIsPast = isPastEvent(new Date(event.date), new Date());
   // formFields is null when the stored schema failed to parse — the signup
   // section is hidden rather than rendered wrong (design §11)
   const signupFields = eventIsPast ? null : formFields;
@@ -209,13 +215,13 @@ export default function DinnerPage({
       </Link>
 
       <div className="grid items-start gap-8 md:grid-cols-[1.2fr_1fr] md:gap-11">
-        <DinnerStory event={event} />
+        <EventStory event={event} />
 
         <aside
           id="sign-up"
           className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-5 md:sticky md:top-6 md:p-7"
         >
-          <DinnerFactList event={event} />
+          <EventFactList event={event} />
 
           {signupFields ? (
             <>

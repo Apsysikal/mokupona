@@ -2,13 +2,13 @@ import { PersonIcon, PlusIcon } from "@radix-ui/react-icons";
 import { Link, Outlet, useFetcher, useLocation } from "react-router";
 
 import type { Route } from "./+types/admin.board-members";
-import { OptimizedImage } from "./file.$fileId";
 
 import {
   AdminEmptyState,
   AdminPageHeader,
   InitialsAvatar,
 } from "~/components/admin-ui";
+import { OptimizedImage } from "~/components/optimized-image";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { listBoardMembers } from "~/models/board-member.server";

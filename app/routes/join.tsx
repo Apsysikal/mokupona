@@ -7,10 +7,10 @@ import type { Route } from "./+types/join";
 
 import { AuthShell } from "~/components/auth-layout";
 import { Field } from "~/components/forms";
-import { GoogleSignInButton } from "~/components/google-button";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
+import { GoogleSignInButton } from "~/features/auth/components/google-button";
 import { getUserId } from "~/features/auth/guards.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
 import { logger } from "~/logger.server";

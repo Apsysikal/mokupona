@@ -10,12 +10,12 @@ import type { Route } from "./+types/me";
 
 import { InitialsAvatar } from "~/components/admin-ui";
 import { Field } from "~/components/forms";
-import { GoogleMark } from "~/components/google-button";
 import { Eyebrow } from "~/components/section";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { authClient } from "~/features/auth/auth.client";
 import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
+import { GoogleMark } from "~/features/auth/components/google-button";
 import { logout, requireUserId } from "~/features/auth/guards.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
 import {
