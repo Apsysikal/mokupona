@@ -12,10 +12,10 @@ import type { Route } from "./+types/admin.board-members.new";
 import { Field, fileFieldClassName } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { MemberSchema } from "~/features/board-members/schema";
+import { parseImageFormData } from "~/features/uploads/image-upload.server";
 import { createBoardMember } from "~/models/board-member.server";
 import { fileToImageData } from "~/models/image.server";
 import { VALID_IMAGE_TYPES } from "~/shared/image";
-import { parseImageFormData } from "~/utils/image-upload.server";
 
 export async function action({ request }: Route.ActionArgs) {
   const uploadResult = await parseImageFormData(request, "image");
@@ -28,36 +28,30 @@ export async function action({ request }: Route.ActionArgs) {
     } satisfies SubmissionResult;
   }
 
-  const submission = parseWithZod(uploadResult.formData, {
-    schema: MemberSchema,
-  });
+  // Every exit below — validation failure (the file is sent again on
+  // resubmit), success, or a thrown error — is done with the staged temp
+  // file, so one idempotent discard in `finally` covers them all.
+  try {
+    const submission = parseWithZod(uploadResult.formData, {
+      schema: MemberSchema,
+    });
 
-  if (
-    submission.status !== "success" &&
-    submission.payload &&
-    submission.payload.image
-  ) {
-    // Remove the uploaded file from disk.
-    // It will be sent again when submitting.
+    if (submission.status !== "success" || !submission.value) {
+      return submission.reply();
+    }
+
+    const { name, position, image } = submission.value;
+
+    await createBoardMember({
+      name,
+      position,
+      ...(image && { image: await fileToImageData(image) }),
+    });
+
+    return redirect("/admin/board-members/new");
+  } finally {
     await uploadResult.discardImage();
   }
-
-  if (submission.status !== "success" || !submission.value) {
-    return submission.reply();
-  }
-
-  const { name, position, image } = submission.value;
-
-  await createBoardMember({
-    name,
-    position,
-    ...(image && { image: await fileToImageData(image) }),
-  });
-
-  // Remove the staged file from disk now that its bytes have been read.
-  await uploadResult.discardImage();
-
-  return redirect("/admin/board-members/new");
 }
 
 export const meta: Route.MetaFunction = () => {

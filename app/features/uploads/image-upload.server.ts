@@ -7,9 +7,10 @@ import {
   parseFormData,
 } from "@remix-run/form-data-parser";
 
-import { fileStorage, getStorageKey } from "./dinner-image-storage.server";
-
-import { createImage, fileToImageData } from "~/models/image.server";
+import {
+  fileStorage,
+  getStorageKey,
+} from "~/utils/dinner-image-storage.server";
 
 // The upload handler streams to a temp file up to 4 MB so the file is available
 // for Zod refinement. The schema enforces the real 3 MB user-facing limit and
@@ -23,13 +24,10 @@ export type ImageUploadSuccess = {
   success: true;
   formData: FormData;
   /**
-   * Persist the uploaded image as a standalone Image record and clean up the
-   * temp file. Returns the new image ID.
-   */
-  persistImage(file: File): Promise<string>;
-  /**
    * Remove the temp file from disk without persisting it.
-   * Safe to call when no file was uploaded (no-op in that case).
+   * Safe to call when no file was uploaded (no-op in that case), and
+   * idempotent — call it from a `finally` so the staged file is removed on
+   * success and on any thrown error alike.
    */
   discardImage(): Promise<void>;
 };
@@ -48,8 +46,10 @@ export type ImageUploadResult = ImageUploadSuccess | ImageUploadError;
  *   collide on the filesystem.
  * - Handles file-size and file-count errors internally, returning a typed
  *   result instead of throwing.
- * - Returns bound `persistImage` and `discardImage` helpers pre-wired to the
- *   request's unique temp file, so callers never manage storage keys directly.
+ * - Returns a bound `discardImage` helper pre-wired to the request's unique
+ *   temp file, so callers never manage storage keys directly. Persisting the
+ *   bytes is the model layer's job (`fileToImageData` into the owning
+ *   transaction), never this module's.
  *
  * @param fieldName The multipart field name that carries the file (e.g. "cover", "image").
  */
@@ -75,19 +75,13 @@ export async function parseImageFormData(
     }
   }
 
-  async function persistImage(file: File): Promise<string> {
-    const image = await createImage(await fileToImageData(file));
-    await discardImage();
-    return image.id;
-  }
-
   try {
     const formData = await parseFormData(
       request,
       { maxFileSize: MAX_FILE_SIZE, maxFiles: MAX_FILES },
       uploadHandler,
     );
-    return { success: true, formData, persistImage, discardImage };
+    return { success: true, formData, discardImage };
   } catch (error) {
     // Clean up any partial write before returning an error result.
     await discardImage();

@@ -93,28 +93,16 @@ async function seed() {
   });
 
   const defaultImage = await readFile(path.join(__dirname, "default.jpg"));
-  const image = await prisma.image.create({
-    data: {
-      contentType: "image/jpg",
-      blob: Buffer.from(defaultImage.buffer),
-    },
-  });
-  const image2 = await prisma.image.create({
-    data: {
-      contentType: "image/jpg",
-      blob: Buffer.from(defaultImage.buffer),
-    },
-  });
 
   // createEvent (not prisma.event.create) so every seeded event gets its
-  // form + first version, like production writes
+  // form + first version and its own cover image row, like production writes
   const event = await createEvent({
     title: faker.lorem.sentence({ min: 3, max: 7 }),
     description: faker.lorem.paragraphs({ min: 3, max: 7 }),
     date: faker.date.soon({ days: 3 }),
     slots: faker.number.int({ min: 10, max: 20 }),
     price: faker.number.int({ min: 15, max: 30 }),
-    imageId: image.id,
+    image: { contentType: "image/jpg", blob: Buffer.from(defaultImage) },
     addressId: address.id,
     createdById: moderator.id,
   });
@@ -125,7 +113,7 @@ async function seed() {
     date: faker.date.soon({ days: 3 }),
     slots: faker.number.int({ min: 10, max: 20 }),
     price: faker.number.int({ min: 15, max: 30 }),
-    imageId: image2.id,
+    image: { contentType: "image/jpg", blob: Buffer.from(defaultImage) },
     addressId: address.id,
     createdById: moderator.id,
   });

@@ -4,6 +4,11 @@ import { prisma } from "~/db.server";
 import { FormSchema, type FieldDescriptor } from "~/features/forms/fields";
 import { DEFAULT_FORM } from "~/features/signup-form/default-form";
 import { saveFormSchemaInTx } from "~/models/form.server";
+import {
+  createImageInTx,
+  deleteImageInTx,
+  type ImageData,
+} from "~/models/image.server";
 
 export type { Address, Event } from "#prisma/generated/client";
 
@@ -17,7 +22,7 @@ export interface EventCreateData {
   price: number;
   discounts?: string | null;
   addressId: string;
-  imageId: string;
+  image: ImageData;
   createdById: string;
 }
 
@@ -62,17 +67,22 @@ export async function getEventById(
   });
 }
 
-// Every event owns a form (Event.formId is non-nullable), so the form and its
-// first version are created in the same transaction. The fields re-parse
-// through FormSchema so only valid, normalized descriptors are ever stored;
-// profile validation (SignupFormSchema) stays with the callers.
+// Every event owns a form (Event.formId is non-nullable) and a cover image,
+// so the image, the form and its first version are created in the same
+// transaction — a failed event write must not leave an orphan image row. The
+// fields re-parse through FormSchema so only valid, normalized descriptors
+// are ever stored; profile validation (SignupFormSchema) stays with the
+// callers.
 export async function createEvent(
   data: EventCreateData,
   formFields: FieldDescriptor[] = DEFAULT_FORM,
 ): Promise<Event> {
   const schema = FormSchema.parse(formFields);
+  const { image, ...eventData } = data;
 
   return prisma.$transaction(async (tx) => {
+    const { id: imageId } = await createImageInTx(tx, image);
+
     const form = await tx.form.create({
       data: {
         versions: {
@@ -85,44 +95,75 @@ export async function createEvent(
     });
 
     return tx.event.create({
-      data: { ...data, formId: form.id },
+      data: { ...eventData, imageId, formId: form.id },
     });
   });
 }
 
-// When formFields are provided, event data and form schema persist in ONE
-// transaction (the create path is atomic too) — a failure must not leave the
-// event updated but its form unchanged.
+// When formFields or a new cover image are provided, everything persists in
+// ONE transaction (the create path is atomic too) — a failure must not leave
+// the event updated but its form unchanged, nor leak an image row. A cover
+// swap runs strictly as create new image -> repoint event -> delete old
+// image: the DB cascade Image -> Event means deleting an image the event
+// still points at would delete the event itself.
 export async function updateEvent(
   id: string,
   data: EventUpdateData,
   formFields?: FieldDescriptor[],
 ): Promise<Event> {
-  if (!formFields) {
-    return prisma.event.update({ where: { id }, data });
+  const { image, ...eventData } = data;
+
+  if (!image && !formFields) {
+    return prisma.event.update({ where: { id }, data: eventData });
   }
 
   return prisma.$transaction(async (tx) => {
-    const event = await tx.event.update({ where: { id }, data });
-    await saveFormSchemaInTx(tx, event.formId, formFields);
+    let oldImageId: string | undefined;
+    let newImageId: string | undefined;
+
+    if (image) {
+      const current = await tx.event.findUniqueOrThrow({
+        where: { id },
+        select: { imageId: true },
+      });
+      oldImageId = current.imageId;
+      newImageId = (await createImageInTx(tx, image)).id;
+    }
+
+    const event = await tx.event.update({
+      where: { id },
+      data: { ...eventData, ...(newImageId && { imageId: newImageId }) },
+    });
+
+    if (formFields) {
+      await saveFormSchemaInTx(tx, event.formId, formFields);
+    }
+
+    // last, once the event no longer points at it (see cascade note above)
+    if (oldImageId) {
+      await deleteImageInTx(tx, oldImageId);
+    }
+
     return event;
   });
 }
 
 // The FK points Event -> Form (Restrict), so deleting an event does not
-// cascade to its form data. All event deletes must go through here (design
+// cascade to its form data, and Image -> Event points the wrong way for the
+// cover to go with the event. All event deletes must go through here (design
 // §3.2): submissions and versions first, then the events, then the forms —
-// the Restrict FKs force the event rows to go before their forms. Callers
-// that delete rows Event itself cascades from at the DB level (User, Address,
-// Image) must run this first, in the same transaction, or the DB cascade
-// skips it and orphans the form rows.
+// the Restrict FKs force the event rows to go before their forms — and last
+// the now-unreferenced cover images. Callers that delete rows Event itself
+// cascades from at the DB level (User, Address, Image) must run this first,
+// in the same transaction, or the DB cascade skips it and orphans the form
+// and image rows.
 export async function deleteEventsInTx(
   tx: Prisma.TransactionClient,
   where: Prisma.EventWhereInput,
 ) {
   const events = await tx.event.findMany({
     where,
-    select: { id: true, formId: true },
+    select: { id: true, formId: true, imageId: true },
   });
   if (events.length === 0) return [];
 
@@ -136,6 +177,9 @@ export async function deleteEventsInTx(
     where: { id: { in: events.map((event) => event.id) } },
   });
   await tx.form.deleteMany({ where: { id: { in: formIds } } });
+  await tx.image.deleteMany({
+    where: { id: { in: events.map((event) => event.imageId) } },
+  });
 
   return events;
 }

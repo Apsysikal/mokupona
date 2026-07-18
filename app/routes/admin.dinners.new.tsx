@@ -18,14 +18,15 @@ import {
   builderRowsToDescriptors,
   defaultBuilderRows,
 } from "~/features/signup-form/builder";
+import { parseImageFormData } from "~/features/uploads/image-upload.server";
 import { logger } from "~/logger.server";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
+import { fileToImageData } from "~/models/image.server";
 import { VALID_IMAGE_TYPES } from "~/shared/image";
 import { getClientHints } from "~/utils/client-hints.server";
 import { toUtcEventDate } from "~/utils/event-timezone.server";
 import { EventSchema } from "~/utils/event-validation";
-import { parseImageFormData } from "~/utils/image-upload.server";
 
 export async function loader() {
   const addresses = await getAddresses();
@@ -50,62 +51,59 @@ export async function action({ request, context }: Route.ActionArgs) {
     } satisfies SubmissionResult;
   }
 
-  const submission = parseWithZod(uploadResult.formData, {
-    schema: EventSchema,
-  });
+  // Every exit below — validation failure (the file is sent again on
+  // resubmit), success, or a thrown error — is done with the staged temp
+  // file, so one idempotent discard in `finally` covers them all.
+  try {
+    const submission = parseWithZod(uploadResult.formData, {
+      schema: EventSchema,
+    });
 
-  if (
-    submission.status !== "success" &&
-    submission.payload &&
-    submission.payload.cover
-  ) {
-    // Remove the uploaded file from disk.
-    // It will be sent again when submitting.
-    await uploadResult.discardImage();
-  }
+    if (submission.status !== "success" || !submission.value) {
+      return submission.reply();
+    }
 
-  if (submission.status !== "success" || !submission.value) {
-    return submission.reply();
-  }
-
-  const {
-    title,
-    description,
-    menuDescription,
-    donationDescription,
-    date,
-    slots,
-    price,
-    discounts,
-    cover,
-    addressId,
-    signupForm,
-  } = submission.value;
-
-  logger.info(`Client zone offset: ${clientHints.userTimezoneOffset}`);
-  logger.info(`Client zone: ${clientHints.userTimezone}`);
-
-  const imageId = await uploadResult.persistImage(cover);
-
-  const event = await createEvent(
-    {
+    const {
       title,
       description,
       menuDescription,
       donationDescription,
-      date: toUtcEventDate(date, clientHints),
+      date,
       slots,
       price,
       discounts,
+      cover,
       addressId,
-      imageId,
-      createdById: user.id,
-    },
-    // validated by SignupFormSchema inside EventSchema's signupForm field
-    builderRowsToDescriptors(signupForm),
-  );
+      signupForm,
+    } = submission.value;
 
-  return redirect(`/admin/dinners/${event.id}`);
+    logger.info(`Client zone offset: ${clientHints.userTimezoneOffset}`);
+    logger.info(`Client zone: ${clientHints.userTimezone}`);
+
+    const event = await createEvent(
+      {
+        title,
+        description,
+        menuDescription,
+        donationDescription,
+        date: toUtcEventDate(date, clientHints),
+        slots,
+        price,
+        discounts,
+        addressId,
+        // the image row is created inside createEvent's transaction, so a
+        // failed event write can no longer leak it
+        image: await fileToImageData(cover),
+        createdById: user.id,
+      },
+      // validated by SignupFormSchema inside EventSchema's signupForm field
+      builderRowsToDescriptors(signupForm),
+    );
+
+    return redirect(`/admin/dinners/${event.id}`);
+  } finally {
+    await uploadResult.discardImage();
+  }
 }
 
 export const meta: Route.MetaFunction = () => {

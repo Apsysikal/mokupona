@@ -141,11 +141,8 @@ async function createDinner(
     getDefaultImageInput(),
   ]);
 
-  const image = await prisma.image.create({
-    data: imageData,
-  });
-
-  // createEvent (not prisma.event.create) so the event gets its form
+  // createEvent (not prisma.event.create) so the event gets its form and its
+  // cover image row in one transaction
   const event = await createEvent({
     title: payload.payload.title,
     description:
@@ -164,7 +161,7 @@ async function createDinner(
       payload.payload.discounts ?? `${payload.payload.title} discounts`,
     addressId,
     createdById: moderatorId,
-    imageId: image.id,
+    image: imageData,
   });
 
   return outputJson<DinnerResult>({
@@ -222,10 +219,12 @@ async function deleteDinner(
   ].filter((imageId): imageId is string => Boolean(imageId));
 
   if (event) {
-    // deleteEvent (not prisma.event.delete) so the form data goes with it
+    // deleteEvent (not prisma.event.delete) so the form data and the cover
+    // image go with it
     await deleteEvent(event.id);
   }
 
+  // the event's own cover is already gone; this catches extraImageIds
   if (imageIds.length > 0) {
     await prisma.image.deleteMany({
       where: { id: { in: imageIds } },
