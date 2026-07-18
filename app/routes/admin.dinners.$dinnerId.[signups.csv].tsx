@@ -5,9 +5,9 @@ import {
   type Attendee,
   type RosterColumn,
 } from "~/features/signup-form/read.server";
-import { contentDispositionAttachment } from "~/lib/content-disposition.server";
-import { buildCSVObject } from "~/lib/csv-builder.server";
 import { getEventById } from "~/models/event.server";
+import { contentDispositionAttachment } from "~/shared/content-disposition.server";
+import { buildCSVObject } from "~/shared/csv-builder.server";
 import { requireFound } from "~/shared/http.server";
 
 export async function loader({ params }: Route.LoaderArgs) {

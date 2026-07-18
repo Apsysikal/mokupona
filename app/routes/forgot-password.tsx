@@ -12,7 +12,7 @@ import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { auth } from "~/features/auth/auth.server";
 import { logger } from "~/logger.server";
-import { getClientIPAddress, obscureEmail } from "~/utils/misc";
+import { getClientIPAddress, obscureEmail } from "~/shared/http.server";
 
 const schema = z.object({
   email: z.email({ error: "Email is required" }),

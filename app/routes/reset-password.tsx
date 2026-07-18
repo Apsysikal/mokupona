@@ -14,7 +14,7 @@ import { auth } from "~/features/auth/auth.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
 import { logger } from "~/logger.server";
 import { getPasswordResetEmail } from "~/models/password-reset.server";
-import { getClientIPAddress } from "~/utils/misc";
+import { getClientIPAddress } from "~/shared/http.server";
 
 const schema = withPasswordConfirmation({
   token: z.string(),

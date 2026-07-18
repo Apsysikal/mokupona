@@ -7,10 +7,19 @@ import {
   parseFormData,
 } from "@remix-run/form-data-parser";
 
-import {
-  fileStorage,
-  getStorageKey,
-} from "./dinner-image-storage.server";
+import { createFsTempStorage } from "~/shared/fs-file-storage.server";
+
+// Staged-upload storage: IMAGE_UPLOAD_FOLDER when configured (production),
+// otherwise a per-process temp directory.
+const fileStorage = createFsTempStorage({
+  dir: process.env.IMAGE_UPLOAD_FOLDER,
+});
+
+// The event-specific key prefix lives here, at the uploads/event boundary —
+// the storage primitive itself is key-agnostic.
+function getStorageKey(id: string) {
+  return `dinner-${id}-cover`;
+}
 
 // The upload handler streams to a temp file up to 4 MB so the file is available
 // for Zod refinement. The schema enforces the real 3 MB user-facing limit and

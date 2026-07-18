@@ -16,5 +16,4 @@ const prisma = singleton("prisma", () => {
   return client;
 });
 
-export * from "#prisma/generated/client";
 export { prisma };

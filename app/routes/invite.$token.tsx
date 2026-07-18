@@ -32,7 +32,7 @@ import {
   inviteValidity,
 } from "~/models/invite.server";
 import { getUserByEmail } from "~/models/user.server";
-import { getClientIPAddress, obscureEmail } from "~/utils/misc";
+import { getClientIPAddress, obscureEmail } from "~/shared/http.server";
 
 const signupSchema = z.object({
   intent: z.literal("signup"),

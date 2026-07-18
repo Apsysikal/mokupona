@@ -3,11 +3,6 @@ import { EVENT_TIMEZONE } from "./timezone";
 // re-exported so the timezone stays importable next to the converters
 export { EVENT_TIMEZONE };
 
-export type ClientHints = {
-  userTimezone: string;
-  userTimezoneOffset: number;
-};
-
 function offsetDate(date: Date, minutesOffset = 0): Date {
   return new Date(date.getTime() + minutesOffset * 60 * 1000);
 }
@@ -58,9 +53,7 @@ function getTimezoneOffsetMinutes(date: Date, timeZone: string): number {
  * Convert a `datetime-local` value into UTC for storage in the database while
  * treating the wall-clock value as being in `EVENT_TIMEZONE`.
  */
-export function toUtcEventDate(date: Date, clientHints: ClientHints): Date {
-  void clientHints;
-
+export function toUtcEventDate(date: Date): Date {
   // `datetime-local` inputs encode a wall-clock date/time without timezone
   // information. By the time it reaches the server, `z.coerce.date()` has
   // already interpreted that value in the server's local timezone. Recover the
@@ -106,10 +99,7 @@ export function toUtcEventDate(date: Date, clientHints: ClientHints): Date {
  * string (YYYY-MM-DDTHH:mm) that a browser `<input type="datetime-local">`
  * can display in the user's timezone.
  */
-export function toDisplayEventDate(
-  date: Date,
-  clientHints: ClientHints,
-): string {
+export function toDisplayEventDate(date: Date): string {
   const eventOffset = getTimezoneOffsetMinutes(date, EVENT_TIMEZONE);
   return offsetDate(date, eventOffset).toISOString().substring(0, 16);
 }

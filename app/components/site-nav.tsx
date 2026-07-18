@@ -15,8 +15,8 @@ import { BrandLockup } from "./brand-lockup";
 import { Button } from "./ui/button";
 
 import { ADMIN_ROLE_NAMES } from "~/features/auth/roles";
+import { useOptionalUser } from "~/hooks/useOptionalUser";
 import { cn } from "~/lib/utils";
-import { useOptionalUser } from "~/utils/misc";
 
 export function SiteNav({ joinHref }: { joinHref: string }) {
   const optionalUser = useOptionalUser();

@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+/**
+ * Client-safe: builds the resource-route URL serving an image; used from
+ * client components (`OptimizedImage`) and `meta` functions, which also run
+ * in the browser.
+ */
+export function getImageUrl(imageId: string) {
+  return `/file/${imageId}`;
+}
+
 // Client-safe: the accepted types back every image input's `accept`
 // attribute; they are advertisory only — the schema deliberately validates
 // size, not MIME type.

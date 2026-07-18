@@ -3,13 +3,13 @@ import { z } from "zod";
 import type { Route } from "./+types/file.$fileId";
 
 import { IMAGE_FITS } from "~/components/optimized-image";
-import { logger } from "~/logger.server";
-import { getImageById } from "~/models/image.server";
-import { requireFound } from "~/shared/http.server";
 import {
   fileStorage as cache,
   getStorageKey as getCacheKey,
-} from "~/utils/file-chache-storage.server";
+} from "~/features/uploads/file-cache-storage.server";
+import { logger } from "~/logger.server";
+import { getImageById } from "~/models/image.server";
+import { requireFound } from "~/shared/http.server";
 import { transformToWebp } from "~/utils/image-transform.server";
 
 const SearchParamsSchema = z.object({

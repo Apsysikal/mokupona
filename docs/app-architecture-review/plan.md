@@ -206,9 +206,14 @@ signup-form internals and design-system harmonization.
 5. Drop the generated-client wildcard re-export from `db.server.ts`.
 6. Move roster/CSV shaping only if doing so does not require reorganizing signup-form
    internals. Otherwise record it as follow-up debt beside the forms deferral.
+   (2026-07-18: deferred — both routes consume signup-form's public read API only;
+   moving the shaping would not reduce coupling without reorganizing signup-form
+   internals, which is out of scope.)
 7. Fold event-facing visual primitives into `docs/design-harmonization` as separate UI
    work: `PageTitle`, `BackLink`, `FactRow`, `EventDateLine`, `Glow`, and destructive
    color tokens. Defer forms-field recipes, builder buttons, and `FieldsetOf` cleanup.
+   (2026-07-18: candidate list recorded in `docs/design-harmonization/plan.md` under
+   "Candidates from the events extraction"; no components built.)
 
 ## Phase 6 — Independent structural decisions
 

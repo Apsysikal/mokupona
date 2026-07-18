@@ -15,7 +15,7 @@ import { getUserId } from "~/features/auth/guards.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
 import { logger } from "~/logger.server";
 import { getUserByEmail } from "~/models/user.server";
-import { getClientIPAddress, obscureEmail } from "~/utils/misc";
+import { getClientIPAddress, obscureEmail } from "~/shared/http.server";
 
 const schema = withPasswordConfirmation({
   name: z

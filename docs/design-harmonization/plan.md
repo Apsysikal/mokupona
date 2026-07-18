@@ -64,3 +64,10 @@ Re-sync flow for future updates: edit bundle files → `finalize_plan` (same pro
 ## Later (code convergence, separate effort)
 
 Apply the spec back to the codebase (replace arbitrary values with tokens, adopt canon components), re-syncing the Claude Design project incrementally as components land. Priority order per the audit §6: radius → type scale → eyebrow → color tokens → layout → spacing → buttons/badges.
+
+### Candidates from the events extraction (2026-07-18)
+
+The app-architecture rework's event UI extraction surfaced repeated visual primitives that
+belong to this effort, not to `features/events`: `PageTitle`, `BackLink`, `FactRow`,
+`EventDateLine`, `Glow`, and destructive-color tokens. Fold them into the component canon
+when code convergence starts; none have been built as shared components yet.

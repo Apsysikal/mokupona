@@ -19,12 +19,10 @@ import {
   defaultBuilderRows,
 } from "~/features/signup-form/builder";
 import { parseImageFormData } from "~/features/uploads/image-upload.server";
-import { logger } from "~/logger.server";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
 import { fileToImageData } from "~/models/image.server";
 import { VALID_IMAGE_TYPES } from "~/shared/image";
-import { getClientHints } from "~/utils/client-hints.server";
 
 export async function loader() {
   const addresses = await getAddresses();
@@ -37,7 +35,6 @@ export async function loader() {
 
 export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext);
-  const clientHints = getClientHints(request);
 
   const uploadResult = await parseImageFormData(request, "cover");
 
@@ -75,16 +72,13 @@ export async function action({ request, context }: Route.ActionArgs) {
       signupForm,
     } = submission.value;
 
-    logger.info(`Client zone offset: ${clientHints.userTimezoneOffset}`);
-    logger.info(`Client zone: ${clientHints.userTimezone}`);
-
     const event = await createEvent(
       {
         title,
         description,
         menuDescription,
         donationDescription,
-        date: toUtcEventDate(date, clientHints),
+        date: toUtcEventDate(date),
         slots,
         price,
         discounts,

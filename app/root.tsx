@@ -15,8 +15,7 @@ import { SiteNav } from "./components/site-nav";
 import { Toaster } from "./components/ui/sonner";
 import { useToast } from "./hooks/useToast";
 import { getNextEvent } from "./models/event.server";
-import { getClientHints } from "./utils/client-hints.server";
-import { combineHeaders, getDomainUrl } from "./utils/misc";
+import { combineHeaders, getDomainUrl } from "./shared/http.server";
 import { getToast } from "./utils/toast.server";
 
 import { getUserWithRole } from "~/features/auth/guards.server";
@@ -48,7 +47,6 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     getUserWithRole(request),
     getNextEvent(),
   ]);
-  const clientHints = getClientHints(request);
   const { toast, headers } = await getToast(request);
   const allowIndexing = process.env.ALLOW_INDEXING !== "false";
   const cypressSupport = process.env.CYPRESS_SUPPORT === "true";
@@ -57,7 +55,6 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       user,
       toast,
       domainUrl,
-      clientHints,
       allowIndexing,
       cypressSupport,
       nextDinnerId: nextEvent?.id ?? null,

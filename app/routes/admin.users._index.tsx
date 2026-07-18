@@ -48,7 +48,7 @@ import {
 import { cn } from "~/lib/utils";
 import { listPendingInvites, revokeInvite } from "~/models/invite.server";
 import { listUsersWithRoleName } from "~/models/user.server";
-import { getDomainUrl } from "~/utils/misc";
+import { getDomainUrl } from "~/shared/http.server";
 
 const inviteSchema = z.object({
   intent: z.literal("invite"),

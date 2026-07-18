@@ -16,7 +16,11 @@ import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { GoogleSignInButton } from "~/features/auth/components/google-button";
 import { getUserId } from "~/features/auth/guards.server";
 import { logger } from "~/logger.server";
-import { getClientIPAddress, obscureEmail, safeRedirect } from "~/utils/misc";
+import {
+  getClientIPAddress,
+  obscureEmail,
+  safeRedirect,
+} from "~/shared/http.server";
 
 const schema = z.object({
   email: z.email({ error: "Email is required" }),

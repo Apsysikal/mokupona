@@ -29,9 +29,13 @@ import {
   FormVersionChangedError,
 } from "~/models/form-submission.server";
 import { getCurrentFormVersionForEvent } from "~/models/form.server";
-import { requireFound } from "~/shared/http.server";
+import {
+  getClientIPAddress,
+  obscureEmail,
+  requireFound,
+} from "~/shared/http.server";
+import { getImageUrl } from "~/shared/image";
 import { getRootLoaderData } from "~/shared/root-data";
-import { getClientIPAddress, getImageUrl, obscureEmail } from "~/utils/misc";
 import { redirectWithToast } from "~/utils/toast.server";
 
 export async function loader({ params }: Route.LoaderArgs) {

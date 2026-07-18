@@ -24,7 +24,6 @@ import {
   descriptorsToBuilderRows,
 } from "~/features/signup-form/builder";
 import { parseImageFormData } from "~/features/uploads/image-upload.server";
-import { logger } from "~/logger.server";
 import { getAddresses } from "~/models/address.server";
 import { getEventById, updateEvent } from "~/models/event.server";
 import { eventHasSignups } from "~/models/form-submission.server";
@@ -32,12 +31,9 @@ import { getCurrentFormVersionForEvent } from "~/models/form.server";
 import { fileToImageData } from "~/models/image.server";
 import { requireFound } from "~/shared/http.server";
 import { VALID_IMAGE_TYPES } from "~/shared/image";
-import { getClientHints } from "~/utils/client-hints.server";
 import { nullableStringUpdateValue } from "~/utils/nullable-update-field.server";
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  const clientHints = getClientHints(request);
-
+export async function loader({ params }: Route.LoaderArgs) {
   const { dinnerId } = params;
 
   const [addresses, event, version, formHasSubmissions] = await Promise.all([
@@ -46,9 +42,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     getCurrentFormVersionForEvent(dinnerId).then(requireFound),
     eventHasSignups(dinnerId),
   ]);
-
-  logger.info(`Client zone offset: ${clientHints.userTimezoneOffset}`);
-  logger.info(`Client zone: ${clientHints.userTimezone}`);
 
   // an unparseable stored schema (a bug state) surfaces as the default form;
   // saving then repairs the event's form
@@ -63,7 +56,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       : defaultBuilderRows(),
     dinner: {
       ...event,
-      date: toDisplayEventDate(event.date, clientHints),
+      date: toDisplayEventDate(event.date),
     },
   };
 }
@@ -71,7 +64,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 export async function action({ request, params, context }: Route.ActionArgs) {
   const schema = EventSchema.partial({ cover: true });
   const user = context.get(userContext);
-  const clientHints = getClientHints(request);
 
   const { dinnerId } = params;
 
@@ -109,9 +101,6 @@ export async function action({ request, params, context }: Route.ActionArgs) {
       signupForm,
     } = submission.value;
 
-    logger.info(`Client zone offset: ${clientHints.userTimezoneOffset}`);
-    logger.info(`Client zone: ${clientHints.userTimezone}`);
-
     const menuDescriptionUpdateValue = nullableStringUpdateValue({
       formData: uploadResult.formData,
       fieldName: "menuDescription",
@@ -138,7 +127,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
         ...(donationDescriptionUpdateValue !== undefined && {
           donationDescription: donationDescriptionUpdateValue,
         }),
-        date: toUtcEventDate(date, clientHints),
+        date: toUtcEventDate(date),
         slots,
         price,
         discounts,

@@ -2,7 +2,7 @@ import { createCookieSessionStorage, redirect } from "react-router";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
-import { combineHeaders } from "./misc";
+import { combineHeaders } from "~/shared/http.server";
 
 invariant(process.env.BETTER_AUTH_SECRET, "BETTER_AUTH_SECRET must be set");
 

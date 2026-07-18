@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 
-import { getImageUrl } from "~/utils/misc";
+import { getImageUrl } from "~/shared/image";
 
 // Single source of truth for the resize fit vocabulary: the file.$fileId
 // resource route builds its search-param schema from this list.
