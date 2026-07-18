@@ -14,13 +14,13 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
+import { formatAdminTimestamp } from "~/features/events/date-format";
 import {
   getAttendeesForEvent,
   type Attendee,
 } from "~/features/signup-form/read.server";
 import { getEventById } from "~/models/event.server";
 import { requireFound } from "~/shared/http.server";
-import { formatAdminTimestamp } from "~/utils/misc";
 
 // The table reads one row per party: the signer fronts the row, friends only
 // bump the party size. Legacy rows never share a submissionId, so each stays

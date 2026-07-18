@@ -48,7 +48,10 @@ export async function getEventsWithAddress(): Promise<
 }
 
 // the site chrome's "join a dinner" CTA and the landing hero point at the
-// next upcoming dinner
+// next upcoming dinner. `date: { gte: new Date() }` is the DB-side twin of
+// app/features/events/event-status.ts#isPastEvent: `date >= now` is upcoming,
+// an event on `now` exactly included. Models cannot import features, so this
+// comment is the link — keep the two rules in sync.
 export async function getNextEvent(): Promise<Event | null> {
   return prisma.event.findFirst({
     where: { date: { gte: new Date() } },

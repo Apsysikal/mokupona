@@ -1,6 +1,4 @@
-import { offsetDate } from "./misc";
-
-import { EVENT_TIMEZONE } from "~/features/events/timezone";
+import { EVENT_TIMEZONE } from "./timezone";
 
 // re-exported so the timezone stays importable next to the converters
 export { EVENT_TIMEZONE };
@@ -9,6 +7,10 @@ export type ClientHints = {
   userTimezone: string;
   userTimezoneOffset: number;
 };
+
+function offsetDate(date: Date, minutesOffset = 0): Date {
+  return new Date(date.getTime() + minutesOffset * 60 * 1000);
+}
 
 /**
  * Return timezone offset in minutes for `timeZone` at the provided instant.

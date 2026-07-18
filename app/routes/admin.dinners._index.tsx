@@ -14,10 +14,11 @@ import {
 } from "~/components/admin-ui";
 import { UtensilsIcon } from "~/components/icons";
 import { Button } from "~/components/ui/button";
+import { formatAdminDateLine } from "~/features/events/date-format";
+import { isPastEvent } from "~/features/events/event-status";
 import { getAttendeeCountsForEvents } from "~/features/signup-form/read.server";
 import { cn } from "~/lib/utils";
 import { getEventsWithAddress } from "~/models/event.server";
-import { formatAdminDateLine } from "~/utils/misc";
 
 export async function loader() {
   const events = await getEventsWithAddress();
@@ -55,13 +56,13 @@ export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
 
-  const now = Date.now();
+  const now = new Date();
   const q = query.trim().toLowerCase();
 
   const visible = dinners
     .map((dinner) => ({
       ...dinner,
-      past: new Date(dinner.date).getTime() < now,
+      past: isPastEvent(new Date(dinner.date), now),
     }))
     .filter((dinner) =>
       filter === "all" ? true : filter === "past" ? dinner.past : !dinner.past,

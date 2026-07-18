@@ -6,9 +6,12 @@ import { SecondaryCTA } from "./section";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 
+import {
+  formatEventDateLine,
+  formatEventMonthYear,
+} from "~/features/events/date-format";
 import type { Address, Event } from "~/models/event.server";
 import { OptimizedImage } from "~/routes/file.$fileId";
-import { formatEventDateLine, formatEventMonthYear } from "~/utils/misc";
 
 // the one upcoming dinner gets the whole spotlight: image + pill on the
 // left, date/title/stats/CTAs on the right (design handoff §2)

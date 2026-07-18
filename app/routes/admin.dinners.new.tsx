@@ -14,6 +14,8 @@ import {
   toAddressOptions,
 } from "~/components/admin-dinner-form";
 import { userContext } from "~/features/auth/middleware.server";
+import { EventSchema } from "~/features/events/event-schema";
+import { toUtcEventDate } from "~/features/events/event-timezone.server";
 import {
   builderRowsToDescriptors,
   defaultBuilderRows,
@@ -25,8 +27,6 @@ import { createEvent } from "~/models/event.server";
 import { fileToImageData } from "~/models/image.server";
 import { VALID_IMAGE_TYPES } from "~/shared/image";
 import { getClientHints } from "~/utils/client-hints.server";
-import { toUtcEventDate } from "~/utils/event-timezone.server";
-import { EventSchema } from "~/utils/event-validation";
 
 export async function loader() {
   const addresses = await getAddresses();

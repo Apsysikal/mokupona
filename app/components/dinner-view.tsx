@@ -15,9 +15,9 @@ import {
 } from "./ui/accordion";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
+import { formatEventDateLine } from "~/features/events/date-format";
 import type { loader } from "~/routes/admin.dinners.$dinnerId";
 import { OptimizedImage } from "~/routes/file.$fileId";
-import { formatEventDateLine } from "~/utils/misc";
 
 type EventWithAddress = Awaited<ReturnType<typeof loader>>["event"];
 

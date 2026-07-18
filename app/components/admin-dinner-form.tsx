@@ -21,8 +21,8 @@ import {
   CardTitle,
 } from "./ui/card";
 
+import { EventSchema } from "~/features/events/event-schema";
 import { cn } from "~/lib/utils";
-import { EventSchema } from "~/utils/event-validation";
 
 const EventFormSchema = EventSchema.partial({ cover: true });
 

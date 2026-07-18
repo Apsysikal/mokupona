@@ -3,6 +3,7 @@ import type { Route } from "./+types/dinners._index";
 import { FeaturedDinnerCard, PastDinnerCard } from "~/components/dinner-card";
 import { Eyebrow, SectionDivider } from "~/components/section";
 import { Button } from "~/components/ui/button";
+import { partitionEvents } from "~/features/events/event-status";
 import { getEventsWithAddress } from "~/models/event.server";
 
 export const loader = async () => {
@@ -18,11 +19,9 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
 
   const now = new Date();
   // events arrive sorted ascending, so the first upcoming one is the next
-  const upcomingEvents = events.filter((event) => new Date(event.date) >= now);
+  const { upcoming: upcomingEvents, past } = partitionEvents(events, now);
   // the archive reads newest-first
-  const pastEvents = events
-    .filter((event) => new Date(event.date) < now)
-    .reverse();
+  const pastEvents = past.reverse();
 
   return (
     <main className="mx-auto w-full max-w-5xl grow px-5 pt-7 pb-20 md:px-10 md:pt-16">

@@ -13,6 +13,7 @@ import type { Route } from "./+types/dinners_.$dinnerId";
 import { DinnerFactList, DinnerStory } from "~/components/dinner-view";
 import { CheckboxField, ErrorList } from "~/components/forms";
 import { Button } from "~/components/ui/button";
+import { isPastEvent } from "~/features/events/event-status";
 import { getViewForField, type FieldDescriptor } from "~/features/forms/fields";
 import { normalizeSubmissionValues } from "~/features/forms/normalize-submission";
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
@@ -59,7 +60,7 @@ export async function action({ params, request }: Route.ActionArgs) {
     getCurrentFormVersionForEvent(dinnerId).then(requireFound),
   ]);
 
-  if (dinner.date < new Date()) {
+  if (isPastEvent(dinner.date, new Date())) {
     throw new Response("Forbidden", { status: 403 });
   }
 
@@ -193,10 +194,10 @@ export default function DinnerPage({
 }: Route.ComponentProps) {
   const { event, formFields, formVersionId } = loaderData;
 
-  const isPastEvent = event.date < new Date();
+  const eventIsPast = isPastEvent(event.date, new Date());
   // formFields is null when the stored schema failed to parse — the signup
   // section is hidden rather than rendered wrong (design §11)
-  const signupFields = isPastEvent ? null : formFields;
+  const signupFields = eventIsPast ? null : formFields;
 
   return (
     <main className="mx-auto w-full max-w-5xl grow px-5 pt-6 pb-20 md:px-10 md:pt-9">

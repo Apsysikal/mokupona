@@ -8,9 +8,9 @@ import {
   TextSectionBlockView,
   type TextSectionBlockType,
 } from "~/features/cms/blocks/text-section";
+import { formatEventDayMonth } from "~/features/events/date-format";
 import { getNextEvent } from "~/models/event.server";
 import { getRootLoaderData } from "~/shared/root-data";
-import { formatEventDayMonth } from "~/utils/misc";
 
 export const loader = async () => {
   const nextEvent = await getNextEvent();

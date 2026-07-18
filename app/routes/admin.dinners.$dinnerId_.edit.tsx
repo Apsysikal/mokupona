@@ -14,6 +14,11 @@ import {
   toAddressOptions,
 } from "~/components/admin-dinner-form";
 import { userContext } from "~/features/auth/middleware.server";
+import { EventSchema } from "~/features/events/event-schema";
+import {
+  toDisplayEventDate,
+  toUtcEventDate,
+} from "~/features/events/event-timezone.server";
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
 import {
   builderRowsToDescriptors,
@@ -30,11 +35,6 @@ import { fileToImageData } from "~/models/image.server";
 import { requireFound } from "~/shared/http.server";
 import { VALID_IMAGE_TYPES } from "~/shared/image";
 import { getClientHints } from "~/utils/client-hints.server";
-import {
-  toDisplayEventDate,
-  toUtcEventDate,
-} from "~/utils/event-timezone.server";
-import { EventSchema } from "~/utils/event-validation";
 import { nullableStringUpdateValue } from "~/utils/nullable-update-field.server";
 
 export async function loader({ request, params }: Route.LoaderArgs) {

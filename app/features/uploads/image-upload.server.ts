@@ -10,7 +10,7 @@ import {
 import {
   fileStorage,
   getStorageKey,
-} from "~/utils/dinner-image-storage.server";
+} from "./dinner-image-storage.server";
 
 // The upload handler streams to a temp file up to 4 MB so the file is available
 // for Zod refinement. The schema enforces the real 3 MB user-facing limit and
