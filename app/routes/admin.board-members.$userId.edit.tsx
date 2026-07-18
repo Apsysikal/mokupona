@@ -76,7 +76,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   // Remove the staged file from disk now that its bytes have been read.
   await uploadResult.discardImage();
 
-  return redirect("/admin/board-members/new");
+  return redirect("/admin/board-members");
 }
 
 export const meta: Route.MetaFunction = ({ loaderData }) => {

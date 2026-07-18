@@ -72,9 +72,13 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export const meta: Route.MetaFunction = ({ loaderData }) => {
-  const { event } = loaderData;
-
-  return [{ title: `Admin - Dinner - ${event.title} - Signups` }];
+  return [
+    {
+      title: loaderData
+        ? `Admin - Dinner - ${loaderData.event.title} - Signups`
+        : "Admin - Dinner - Signups",
+    },
+  ];
 };
 
 export default function DinnerSignupsPage({

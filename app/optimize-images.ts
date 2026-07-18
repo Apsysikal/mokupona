@@ -26,7 +26,7 @@ async function optimize() {
     { size: "432", width: 432 },
   ];
 
-  variants.forEach(async ({ size, width }) => {
+  for (const { size, width } of variants) {
     const optimizedPath = path.join(
       __dirname,
       "..",
@@ -38,14 +38,14 @@ async function optimize() {
       .resize({ width })
       .webp({ quality: 60 })
       .toFile(optimizedPath);
-  });
+  }
 
   await sharp(landingPageImagePath)
     .resize({ width: 432 })
     .jpeg()
     .toFile(path.join(__dirname, "..", "public", "hero-image.jpg"));
 
-  variants.forEach(async ({ size, width }) => {
+  for (const { size, width } of variants) {
     const optimizedPath = path.join(
       __dirname,
       "..",
@@ -57,7 +57,7 @@ async function optimize() {
       .resize({ width })
       .webp({ quality: 60 })
       .toFile(optimizedPath);
-  });
+  }
 
   await sharp(accentImagePath)
     .resize({ width: 432 })
