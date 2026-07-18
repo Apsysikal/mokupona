@@ -8,18 +8,103 @@ datasource db {
 }
 
 model User {
-  id    String @id @default(cuid())
-  email String @unique
+  id            String  @id @default(cuid())
+  email         String  @unique
+  name          String
+  emailVerified Boolean @default(false)
+  image         String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  password Password?
+  sessions Session[]
+  accounts Account[]
+
+  invitesCreated Invite[]
 
   events Event[]
 
   role   Role   @relation(fields: [roleId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   roleId String
+}
+
+// Session / Account / Verification are owned by better-auth (1.6 field set,
+// hand-merged — the CLI must never rewrite this file; our User carries the
+// roleId relation and events).
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId String
+
+  @@index([userId])
+}
+
+model Account {
+  id String @id @default(cuid())
+
+  // provider user id ("credential" accounts reuse the user id)
+  accountId  String
+  providerId String
+
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  // scrypt hash for providerId = "credential"
+  password              String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId String
+
+  @@index([userId])
+}
+
+// Email-bound, single-use, role-carrying invite links — a custom feature
+// beside better-auth, NOT a plugin (design §6). Ceiling "moderator" is
+// enforced in code; "admin" stays a seed/DB-level role.
+model Invite {
+  id         String    @id @default(cuid())
+  // bound address — must match at acceptance
+  email      String
+  // "user" | "moderator"
+  roleName   String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  acceptedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdById String
+
+  @@index([email])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([identifier])
 }
 
 model Role {
@@ -32,13 +117,6 @@ model Role {
   updatedAt DateTime @updatedAt
 
   users User[]
-}
-
-model Password {
-  hash String
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId String @unique
 }
 
 model Event {

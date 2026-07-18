@@ -2,7 +2,7 @@ import { redirect } from "react-router";
 
 import type { Route } from "./+types/logout";
 
-import { logout } from "~/utils/session.server";
+import { logout } from "~/features/auth/guards.server";
 
 export const action = async ({ request }: Route.ActionArgs) => logout(request);
 

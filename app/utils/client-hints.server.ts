@@ -6,7 +6,7 @@ export function getClientHints(request: Request) {
   };
 }
 
-export function getTimezoneOffset(request: Request): number {
+function getTimezoneOffset(request: Request): number {
   const cookies = request.headers.get("Cookie")?.split("; ");
 
   if (!cookies) return 0;
@@ -23,7 +23,7 @@ export function getTimezoneOffset(request: Request): number {
   return Number(offset);
 }
 
-export function getTimezone(request: Request): string {
+function getTimezone(request: Request): string {
   const cookies = request.headers.get("Cookie")?.split("; ");
 
   if (!cookies) return "UTC";
@@ -40,7 +40,7 @@ export function getTimezone(request: Request): string {
   return String(timeZone);
 }
 
-export function getLocale(request: Request): string {
+function getLocale(request: Request): string {
   const cookies = request.headers.get("Cookie")?.split("; ");
 
   if (!cookies) return "de-DE";

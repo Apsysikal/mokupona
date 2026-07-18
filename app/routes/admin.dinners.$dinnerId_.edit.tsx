@@ -13,6 +13,7 @@ import {
   AdminDinnerForm,
   toAddressOptions,
 } from "~/components/admin-dinner-form";
+import { requireUserWithRole } from "~/features/auth/guards.server";
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
 import {
   builderRowsToDescriptors,
@@ -32,7 +33,6 @@ import {
 import { EventSchema } from "~/utils/event-validation";
 import { parseImageFormData } from "~/utils/image-upload.server";
 import { nullableStringUpdateValue } from "~/utils/nullable-update-field.server";
-import { requireUserWithRole } from "~/utils/session.server";
 
 const VALID_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 

@@ -2,6 +2,31 @@ import { faker } from "@faker-js/faker";
 
 import { prisma } from "~/db.server";
 
+const AUTH_ROLE_NAMES = ["user", "moderator", "admin"] as const;
+
+function ensureRole(name: string) {
+  return prisma.role.upsert({
+    where: { name },
+    create: { name },
+    update: {},
+  });
+}
+
+export function ensureAuthRoles() {
+  return Promise.all(AUTH_ROLE_NAMES.map(ensureRole));
+}
+
+export async function createTestUser(roleName = "user") {
+  const role = await ensureRole(roleName);
+  return prisma.user.create({
+    data: {
+      email: `test-${faker.string.uuid()}@example.com`,
+      name: faker.person.fullName(),
+      roleId: role.id,
+    },
+  });
+}
+
 // Builds the row graph an Event needs (role -> user, address, image) and
 // returns ready-to-use event create data. Every call creates fresh rows with
 // unique keys, so the tests sharing one database never contend on fixtures.
@@ -13,6 +38,7 @@ export async function buildEventData() {
         prisma.user.create({
           data: {
             email: `test-${faker.string.uuid()}@example.com`,
+            name: faker.person.fullName(),
             roleId: role.id,
           },
         }),

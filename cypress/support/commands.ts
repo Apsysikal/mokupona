@@ -1,5 +1,16 @@
 import { faker } from "@faker-js/faker";
 
+type TestUser = { email: string };
+
+function setSessionCookie(command: string) {
+  return cy.exec(command).then(({ stdout }) => {
+    const value = stdout
+      .replace(/.*<cookie>(?<cookieValue>.*)<\/cookie>.*/s, "$<cookieValue>")
+      .trim();
+    cy.setCookie("better-auth.session_token", value);
+  });
+}
+
 declare global {
   namespace Cypress {
     interface Chainable {
@@ -59,26 +70,14 @@ function login({
 }: {
   email?: string;
 } = {}) {
-  cy.then(() => ({ email })).as("user");
-  cy.exec(`npx tsx ./cypress/support/create-user.ts "${email}"`).then(
-    ({ stdout }) => {
-      const cookieValue = stdout
-        .replace(/.*<cookie>(?<cookieValue>.*)<\/cookie>.*/s, "$<cookieValue>")
-        .trim();
-      cy.setCookie("__session", cookieValue);
-    },
-  );
-  return cy.get("@user");
+  cy.then((): TestUser => ({ email })).as("user");
+  setSessionCookie(`npx tsx ./cypress/support/create-user.ts "${email}"`);
+  return cy.get<TestUser>("@user");
 }
 
 function loginAsRole(role: "moderator" | "admin" = "moderator") {
-  cy.exec(`npx tsx ./cypress/support/create-role-session.ts "${role}"`).then(
-    ({ stdout }) => {
-      const cookieValue = stdout
-        .replace(/.*<cookie>(?<cookieValue>.*)<\/cookie>.*/s, "$<cookieValue>")
-        .trim();
-      cy.setCookie("__session", cookieValue);
-    },
+  setSessionCookie(
+    `npx tsx ./cypress/support/create-role-session.ts "${role}"`,
   );
 }
 
@@ -86,19 +85,16 @@ function cleanupUser({ email }: { email?: string } = {}) {
   if (email) {
     deleteUserByEmail(email);
   } else {
-    cy.get("@user").then((user) => {
-      const email = (user as { email?: string }).email;
-      if (email) {
-        deleteUserByEmail(email);
-      }
+    cy.get<TestUser>("@user").then(({ email }) => {
+      deleteUserByEmail(email);
     });
   }
-  cy.clearCookie("__session");
+  cy.clearCookie("better-auth.session_token");
 }
 
 function deleteUserByEmail(email: string) {
   cy.exec(`npx tsx ./cypress/support/delete-user.ts "${email}"`);
-  cy.clearCookie("__session");
+  cy.clearCookie("better-auth.session_token");
 }
 
 // We're waiting a second because of this issue happen randomly

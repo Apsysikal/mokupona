@@ -2,8 +2,8 @@ import { redirect } from "react-router";
 
 import type { Route } from "./+types/admin.locations.$locationId.delete";
 
+import { requireUserWithRole } from "~/features/auth/guards.server";
 import { deleteAddress } from "~/models/address.server";
-import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader() {
   return redirect("/admin/locations");

@@ -3,11 +3,11 @@ import { Outlet } from "react-router";
 import type { Route } from "./+types/admin";
 
 import { AdminTabs } from "~/components/admin-tabs";
+import { requireUserWithRole } from "~/features/auth/guards.server";
 import { countAddresses } from "~/models/address.server";
 import { countBoardMembers } from "~/models/board-member.server";
 import { countEvents } from "~/models/event.server";
 import { countUsers } from "~/models/user.server";
-import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireUserWithRole(request, ["moderator", "admin"]);

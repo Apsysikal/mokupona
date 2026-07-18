@@ -7,12 +7,12 @@ import type { Route } from "./+types/admin.users.$userId_.edit";
 
 import { SelectField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
+import { requireUserWithRole } from "~/features/auth/guards.server";
 import { getRoleByName } from "~/models/role.server";
 import {
   getUserAccountSummary,
   updateNonAdminUserRole,
 } from "~/models/user.server";
-import { requireUserWithRole } from "~/utils/session.server";
 
 const schema = z.object({
   roleName: z.union([z.literal("user"), z.literal("moderator")]),

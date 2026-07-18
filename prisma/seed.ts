@@ -5,9 +5,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { faker } from "@faker-js/faker";
-import bcrypt from "bcryptjs";
 
 import { prisma } from "~/db.server";
+import { createUserViaAuth } from "~/features/auth/create-user.server";
 import { createEvent } from "~/models/event.server";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -51,54 +51,36 @@ async function seed() {
     /** */
   });
 
-  const hashedPassword = await bcrypt.hash("mokupona", 10);
-
   const roleNames = ["user", "moderator", "admin"];
 
-  const roles = await Promise.all(
-    roleNames.map((role) => {
-      return prisma.role.create({
-        data: {
-          name: role,
-        },
-      });
-    }),
-  );
+  for (const role of roleNames) {
+    await prisma.role.create({ data: { name: role } });
+  }
 
-  await prisma.user.create({
-    data: {
-      email: userEmail,
-      roleId: roles[0].id,
-      password: {
-        create: {
-          hash: hashedPassword,
-        },
-      },
-    },
+  // through better-auth's API so hashes/accounts are shape-correct; the demo
+  // accounts are pre-verified so they can log in straight away
+  await createUserViaAuth({
+    email: userEmail,
+    password: "mokupona",
+    name: "demo user",
+    roleName: "user",
+    emailVerified: true,
   });
 
-  const moderator = await prisma.user.create({
-    data: {
-      email: moderatorEmail,
-      roleId: roles[1].id,
-      password: {
-        create: {
-          hash: hashedPassword,
-        },
-      },
-    },
+  const moderator = await createUserViaAuth({
+    email: moderatorEmail,
+    password: "mokupona",
+    name: "demo moderator",
+    roleName: "moderator",
+    emailVerified: true,
   });
 
-  await prisma.user.create({
-    data: {
-      email: adminEmail,
-      roleId: roles[2].id,
-      password: {
-        create: {
-          hash: hashedPassword,
-        },
-      },
-    },
+  await createUserViaAuth({
+    email: adminEmail,
+    password: "mokupona",
+    name: "demo admin",
+    roleName: "admin",
+    emailVerified: true,
   });
 
   const address = await prisma.address.create({

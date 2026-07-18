@@ -13,6 +13,7 @@ import {
   AdminDinnerForm,
   toAddressOptions,
 } from "~/components/admin-dinner-form";
+import { requireUserWithRole } from "~/features/auth/guards.server";
 import {
   builderRowsToDescriptors,
   defaultBuilderRows,
@@ -24,7 +25,6 @@ import { getClientHints } from "~/utils/client-hints.server";
 import { toUtcEventDate } from "~/utils/event-timezone.server";
 import { EventSchema } from "~/utils/event-validation";
 import { parseImageFormData } from "~/utils/image-upload.server";
-import { requireUserWithRole } from "~/utils/session.server";
 
 const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
 

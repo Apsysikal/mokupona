@@ -1,5 +1,6 @@
 import type { Route } from "./+types/admin.dinners.$dinnerId.[signups.csv]";
 
+import { requireUserWithRole } from "~/features/auth/guards.server";
 import {
   getAttendeeRosterForEvent,
   type Attendee,
@@ -8,7 +9,6 @@ import {
 import { contentDispositionAttachment } from "~/lib/content-disposition.server";
 import { buildCSVObject } from "~/lib/csv-builder.server";
 import { getEventById } from "~/models/event.server";
-import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);

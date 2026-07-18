@@ -10,6 +10,7 @@ IMAGE_UPLOAD_FOLDER = "/data/uploads/images"
 # glibc arena cap: without it, freed sharp/libvips buffers stay resident and
 # RSS ratchets up (see docs/staging-memory-investigation/findings.md)
 MALLOC_ARENA_MAX = "2"
+MAIL_PROVIDER = "resend"
 PORT = "8080"
 
 [experimental]

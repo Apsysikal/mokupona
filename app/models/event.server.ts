@@ -28,14 +28,6 @@ export async function countEvents(): Promise<number> {
   return prisma.event.count();
 }
 
-export async function getEvents(): Promise<Event[]> {
-  return prisma.event.findMany({
-    orderBy: {
-      date: "asc",
-    },
-  });
-}
-
 // the public dinners page shows location ("8004 zürich") on the featured card
 export async function getEventsWithAddress(): Promise<
   (Event & { address: Address })[]

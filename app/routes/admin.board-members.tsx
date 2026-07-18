@@ -11,8 +11,8 @@ import {
 } from "~/components/admin-ui";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
+import { requireUserWithRole } from "~/features/auth/guards.server";
 import { listBoardMembers } from "~/models/board-member.server";
-import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);

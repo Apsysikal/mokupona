@@ -1,7 +1,7 @@
-import { parseCookie } from "cookie";
+export {}; // keeps the script in module scope (shared const names otherwise clash)
 
-import { getUserByEmail } from "~/models/user.server";
-import { createUserSession } from "~/utils/session.server";
+// mail side effects stay out of the shared capture directory
+process.env.MAIL_PROVIDER = "console";
 
 const seededRoleEmails = {
   moderator: "moderator@mokupona.ch",
@@ -10,36 +10,16 @@ const seededRoleEmails = {
 
 async function createRoleSession(roleArg: string | undefined) {
   const role = roleArg === "admin" ? "admin" : "moderator";
-  const user = await getUserByEmail(seededRoleEmails[role]);
 
-  if (!user) {
+  const { printSessionCookie } = await import("./session-cookie");
+
+  try {
+    await printSessionCookie(seededRoleEmails[role], "mokupona");
+  } catch {
     throw new Error(
-      `Seeded ${role} user not found. Run the seed script before Cypress tests.`,
+      `Seeded ${role} user could not sign in. Run the seed script before Cypress tests.`,
     );
   }
-
-  const response = await createUserSession({
-    request: new Request("test://test"),
-    userId: user.id,
-    remember: false,
-    redirectTo: "/",
-  });
-
-  const cookieValue = response.headers.get("Set-Cookie");
-
-  if (!cookieValue) {
-    throw new Error("Cookie missing from createUserSession response");
-  }
-
-  const parsedCookie = parseCookie(cookieValue);
-
-  console.log(
-    `
-<cookie>
-  ${parsedCookie.__session}
-</cookie>
-  `.trim(),
-  );
 }
 
 createRoleSession(process.argv[2]);

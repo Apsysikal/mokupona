@@ -11,14 +11,11 @@ import type { Route } from "./+types/admin.board-members.new";
 
 import { Field, fileFieldClassName } from "~/components/forms";
 import { Button } from "~/components/ui/button";
-import {
-  MemberSchema,
-  validImageTypes,
-} from "~/features/board-members/schema";
+import { requireUserWithRole } from "~/features/auth/guards.server";
+import { MemberSchema, validImageTypes } from "~/features/board-members/schema";
 import { createBoardMember } from "~/models/board-member.server";
 import { fileToImageData } from "~/models/image.server";
 import { parseImageFormData } from "~/utils/image-upload.server";
-import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
@@ -78,9 +75,16 @@ export default function BoardMemberNewRoute({
   actionData,
 }: Route.ComponentProps) {
   const location = useLocation();
+
+  return <BoardMemberForm key={location.key} actionData={actionData} />;
+}
+
+function BoardMemberForm({
+  actionData,
+}: {
+  actionData: Route.ComponentProps["actionData"];
+}) {
   const [form, fields] = useForm({
-    // This id makes sure to clear out the form when redirecting to the same page
-    id: location.key,
     lastResult: actionData,
     shouldValidate: "onBlur",
     constraint: getZodConstraint(MemberSchema),

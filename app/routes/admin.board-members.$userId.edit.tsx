@@ -11,17 +11,14 @@ import type { Route } from "./+types/admin.board-members.$userId.edit";
 
 import { Field, fileFieldClassName } from "~/components/forms";
 import { Button } from "~/components/ui/button";
-import {
-  MemberSchema,
-  validImageTypes,
-} from "~/features/board-members/schema";
+import { requireUserWithRole } from "~/features/auth/guards.server";
+import { MemberSchema, validImageTypes } from "~/features/board-members/schema";
 import {
   getBoardMemberById,
   updateBoardMember,
 } from "~/models/board-member.server";
 import { fileToImageData } from "~/models/image.server";
 import { parseImageFormData } from "~/utils/image-upload.server";
-import { requireUserWithRole } from "~/utils/session.server";
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
@@ -97,10 +94,25 @@ export default function BoardMemberEditRoute({
   actionData,
 }: Route.ComponentProps) {
   const location = useLocation();
+
+  return (
+    <BoardMemberEditForm
+      key={location.key}
+      loaderData={loaderData}
+      actionData={actionData}
+    />
+  );
+}
+
+function BoardMemberEditForm({
+  loaderData,
+  actionData,
+}: {
+  loaderData: Route.ComponentProps["loaderData"];
+  actionData: Route.ComponentProps["actionData"];
+}) {
   const { boardMember } = loaderData;
   const [form, fields] = useForm({
-    // This key makes sure, that when selecting another member the form updates to the new default values
-    id: location.key,
     lastResult: actionData,
     shouldValidate: "onBlur",
     constraint: getZodConstraint(MemberSchema),

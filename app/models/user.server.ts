@@ -1,16 +1,9 @@
-import bcrypt from "bcryptjs";
-
 import type { Role, User } from "#prisma/generated/client";
 
 import { prisma } from "~/db.server";
 import { deleteEventsInTx } from "~/models/event.server";
-import { getRoleByName } from "~/models/role.server";
 
 export type { User } from "#prisma/generated/client";
-
-export async function getUserById(id: string): Promise<User | null> {
-  return prisma.user.findUnique({ where: { id } });
-}
 
 export async function getUserByIdWithRole(
   id: string,
@@ -19,7 +12,7 @@ export async function getUserByIdWithRole(
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  return prisma.user.findUnique({ where: { email } });
+  return prisma.user.findUnique({ where: { email: email.toLowerCase() } });
 }
 
 // The projection the admin user list needs.
@@ -37,71 +30,59 @@ export async function listUsersWithRoleName(): Promise<
 }
 
 // The account view shared by the profile page and the admin user edit page.
-export async function getUserAccountSummary(
-  id: string,
-): Promise<{
+export async function getUserAccountSummary(id: string): Promise<{
+  name: string;
   email: string;
+  emailVerified: boolean;
   role: { name: string; description: string };
 } | null> {
   return prisma.user.findUnique({
     where: { id },
     select: {
+      name: true,
       email: true,
+      emailVerified: true,
       role: { select: { name: true, description: true } },
     },
   });
 }
 
-export async function createUser(
-  email: string,
-  password: string,
-  roleName = "user",
-): Promise<User> {
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const role = await getRoleByName(roleName);
+// What /me needs to render its password / connected-accounts / sessions
+// sections: which auth providers back this user, and how many live sessions
+// they have.
+export async function getUserAuthOverview(id: string): Promise<{
+  hasPassword: boolean;
+  googleLinked: boolean;
+  sessionCount: number;
+}> {
+  const [accounts, sessionCount] = await Promise.all([
+    prisma.account.findMany({
+      where: { userId: id },
+      select: { providerId: true },
+    }),
+    prisma.session.count({
+      where: { userId: id, expiresAt: { gt: new Date() } },
+    }),
+  ]);
 
-  if (!role) throw new Error(`Role "${roleName}" is not a valid role`);
-
-  return prisma.user.create({
-    data: {
-      email,
-      roleId: role.id,
-      password: {
-        create: {
-          hash: hashedPassword,
-        },
-      },
-    },
-  });
+  return {
+    hasPassword: accounts.some((a) => a.providerId === "credential"),
+    googleLinked: accounts.some((a) => a.providerId === "google"),
+    sessionCount,
+  };
 }
 
-export async function verifyLogin(
-  email: string,
-  password: string,
-): Promise<Omit<User, "password"> | null> {
-  const userWithPassword = await prisma.user.findUnique({
-    where: { email },
-    include: {
-      password: true,
-    },
+export async function updateUserName(id: string, name: string): Promise<void> {
+  await prisma.user.update({ where: { id }, data: { name } });
+}
+
+// Mailbox ownership was proven out-of-band (password reset completion,
+// invite-link acceptance) — deliberate shortcuts per the auth design.
+export async function setUserEmailVerified(id: string): Promise<void> {
+  await prisma.user.update({
+    where: { id },
+    data: { emailVerified: true },
   });
-
-  if (!userWithPassword || !userWithPassword.password) {
-    return null;
-  }
-
-  const isValid = await bcrypt.compare(
-    password,
-    userWithPassword.password.hash,
-  );
-
-  if (!isValid) {
-    return null;
-  }
-
-  const { password: _password, ...userWithoutPassword } = userWithPassword;
-
-  return userWithoutPassword;
 }
 
 // Admins can't have their role changed from the admin UI — the guard is part
@@ -119,13 +100,6 @@ export async function updateNonAdminUserRole(
 // The DB cascades User -> Event, which would skip the app-level form cascade
 // and orphan Form/FormVersion/FormSubmission rows — delete the user's events
 // through it first, in the same transaction.
-export async function deleteUserByEmail(email: string): Promise<User> {
-  return prisma.$transaction(async (tx) => {
-    await deleteEventsInTx(tx, { createdBy: { email } });
-    return tx.user.delete({ where: { email } });
-  });
-}
-
 export async function deleteUserById(id: string): Promise<User> {
   return prisma.$transaction(async (tx) => {
     await deleteEventsInTx(tx, { createdById: id });

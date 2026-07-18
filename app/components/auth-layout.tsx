@@ -1,12 +1,10 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
 
-import { BrandLockup } from "./brand-lockup";
 import { Eyebrow } from "./section";
 
 import { cn } from "~/lib/utils";
 
-// soft accent glow anchored to a corner — never behind text (design §4)
 function CornerGlow({ className }: { className?: string }) {
   return (
     <div
@@ -19,63 +17,70 @@ function CornerGlow({ className }: { className?: string }) {
   );
 }
 
-export interface AuthShellProps {
-  mode: "login" | "join";
+interface AuthShellBrandCopy {
+  eyebrow: string;
+  heading: ReactNode;
+  /** desktop-only supporting line under the heading */
+  body?: ReactNode;
+}
+
+// the login/join default; status surfaces pass their own (design handoff §3–7)
+const DEFAULT_BRAND: AuthShellBrandCopy = {
+  eyebrow: "members",
+  heading: "welcome back to the table",
+  body: "sign in to manage your reservations, or create an account to start joining our dinners.",
+};
+
+interface AuthShellProps {
+  /** omit to hide the login/sign-up toggle (status + reset surfaces) */
+  mode?: "login" | "join";
   /** preserved on the toggle links (e.g. redirectTo) */
   search?: string;
+  brand?: AuthShellBrandCopy;
   children: ReactNode;
 }
 
-// full-height split for the auth pages: solid warm brand panel on the left,
-// the form column with the log in / sign up toggle on the right. Rendered
-// without the shared nav/footer.
-export function AuthShell({ mode, search, children }: AuthShellProps) {
+export function AuthShell({
+  mode,
+  search,
+  brand = DEFAULT_BRAND,
+  children,
+}: AuthShellProps) {
   return (
-    <div className="flex min-h-full flex-col md:flex-row">
-      {/* desktop brand panel — a solid fill, imagery is deliberately not
-          allowed behind this copy */}
-      <div className="bg-card border-border relative hidden flex-col justify-between overflow-hidden border-r p-12 md:flex md:w-[46%]">
+    <div className="flex grow flex-col md:flex-row">
+      <div className="bg-card border-border relative hidden flex-col justify-center overflow-hidden border-r p-12 md:flex md:w-1/2">
         <CornerGlow className="-top-30 -right-24 size-80" />
-        <BrandLockup to="/" className="relative" />
         <div className="relative flex flex-col gap-4">
           <Eyebrow variant="kicker" tone="light">
-            members
+            {brand.eyebrow}
           </Eyebrow>
           <h2 className="text-4xl leading-tight font-light tracking-tight">
-            welcome back to the table
+            {brand.heading}
           </h2>
-          <p className="text-foreground/80 max-w-xs leading-relaxed font-light">
-            sign in to manage your reservations, or create an account to start
-            joining our dinners.
-          </p>
+          {brand.body ? (
+            <p className="text-foreground/80 max-w-10/12 leading-relaxed font-light">
+              {brand.body}
+            </p>
+          ) : null}
         </div>
-        <span className="text-foreground/40 relative text-xs">
-          made with love in zürich
-        </span>
       </div>
 
       {/* mobile brand header */}
-      <div className="bg-card border-border relative flex flex-col gap-4 overflow-hidden border-b px-6 pt-6 pb-7 md:hidden">
+      <div className="bg-card border-border relative flex flex-col overflow-hidden border-b px-6 pt-6 pb-7 md:hidden">
         <CornerGlow className="-top-24 -right-16 size-56" />
-        <BrandLockup
-          to="/"
-          className="relative"
-          logoClassName="size-5"
-          wordmarkClassName="text-base"
-        />
         <div className="relative flex flex-col gap-2">
           <span className="text-accent-light text-xs font-semibold">
-            members
+            {brand.eyebrow}
           </span>
           <h1 className="text-3xl leading-tight font-light tracking-tight">
-            welcome back to the table
+            {brand.heading}
           </h1>
         </div>
       </div>
 
-      <div className="flex flex-col px-6 py-6 md:w-[54%] md:justify-center md:px-18 md:py-16">
+      <div className="flex flex-col px-6 py-6 md:w-1/2 md:justify-center md:px-18 md:py-16">
         <div className="mx-auto flex w-full max-w-md flex-col gap-4 md:gap-5">
-          <ModeToggle mode={mode} search={search} />
+          {mode ? <ModeToggle mode={mode} search={search} /> : null}
           {children}
         </div>
       </div>
