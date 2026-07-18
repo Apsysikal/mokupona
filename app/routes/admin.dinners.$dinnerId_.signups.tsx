@@ -20,6 +20,7 @@ import {
   type Attendee,
 } from "~/features/signup-form/read.server";
 import { getEventById } from "~/models/event.server";
+import { requireFound } from "~/shared/http.server";
 import { formatAdminTimestamp } from "~/utils/misc";
 
 // The table reads one row per party: the signer fronts the row, friends only
@@ -58,11 +59,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const { dinnerId } = params;
 
   const [event, attendees] = await Promise.all([
-    getEventById(dinnerId),
+    getEventById(dinnerId).then(requireFound),
     getAttendeesForEvent(dinnerId),
   ]);
-
-  if (!event) throw new Response("Not found", { status: 404 });
 
   return {
     event: { title: event.title, slots: event.slots },

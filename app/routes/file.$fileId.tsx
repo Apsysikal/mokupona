@@ -5,6 +5,7 @@ import type { Route } from "./+types/file.$fileId";
 
 import { logger } from "~/logger.server";
 import { getImageById } from "~/models/image.server";
+import { requireFound } from "~/shared/http.server";
 import {
   fileStorage as cache,
   getStorageKey as getCacheKey,
@@ -117,8 +118,7 @@ export async function loader({ url, params }: Route.LoaderArgs) {
     logger.info(`Cache miss with: ${cacheKey}`);
   }
 
-  const file = await getImageById(fileId);
-  if (!file) throw new Response("Not found", { status: 404 });
+  const file = requireFound(await getImageById(fileId));
 
   const optimizedImage = await transformToWebp(file.blob, {
     width,

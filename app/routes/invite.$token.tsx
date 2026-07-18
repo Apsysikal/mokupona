@@ -21,6 +21,8 @@ import { Label } from "~/components/ui/label";
 import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { getUserWithRole, logout } from "~/features/auth/guards.server";
 import { passwordSchema } from "~/features/auth/password-schema";
+import { landingPathForRole } from "~/features/auth/roles";
+import { isInvitableRole } from "~/features/users/invite.shared";
 import { cn } from "~/lib/utils";
 import { logger } from "~/logger.server";
 import {
@@ -112,6 +114,12 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     return redirect(`/invite/${params.token}`);
   }
 
+  // Prisma types roleName as string; invites only ever carry an invitable
+  // role, so fall back the way the invite mailer does.
+  const landingPath = landingPathForRole(
+    isInvitableRole(invite.roleName) ? invite.roleName : "user",
+  );
+
   if (intent === "accept") {
     const user = await getUserWithRole(request);
     if (!user || user.email !== invite.email) {
@@ -123,7 +131,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       email: obscureEmail(user.email),
       role: invite.roleName,
     });
-    return redirect(invite.roleName === "moderator" ? "/admin" : "/");
+    return redirect(landingPath);
   }
 
   if (intent === "signup") {
@@ -165,9 +173,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       role: invite.roleName,
     });
 
-    return redirect(invite.roleName === "moderator" ? "/admin" : "/", {
-      headers,
-    });
+    return redirect(landingPath, { headers });
   }
 
   throw new Response("Unknown intent", { status: 400 });

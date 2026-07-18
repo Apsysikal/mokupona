@@ -9,6 +9,7 @@ import {
   type TextSectionBlockType,
 } from "~/features/cms/blocks/text-section";
 import { getNextEvent } from "~/models/event.server";
+import { getRootLoaderData } from "~/shared/root-data";
 import { formatEventDayMonth } from "~/utils/misc";
 
 export const loader = async () => {
@@ -31,15 +32,22 @@ export const meta: Route.MetaFunction = ({ matches, location }) => {
     },
   ] satisfies ReturnType<Route.MetaFunction>;
 
-  const domainUrl = matches[0].loaderData.domainUrl;
+  const tags = [
+    ...metaTags,
+    { property: "og:title", content: metaTags[0].title },
+    { property: "og:type", content: "website" },
+  ];
+
+  // without the root loader's domainUrl the absolute og:image/og:url tags
+  // cannot be built — keep the rest
+  const domainUrl = getRootLoaderData(matches)?.domainUrl;
+  if (!domainUrl) return tags;
 
   const imageUrl = new URL("/landing-page-default.jpg", domainUrl);
   const currentUrl = new URL(location.pathname, domainUrl);
 
   return [
-    ...metaTags,
-    { property: "og:title", content: metaTags[0].title },
-    { property: "og:type", content: "website" },
+    ...tags,
     { property: "og:image", content: imageUrl },
     { property: "og:url", content: currentUrl },
   ];

@@ -12,12 +12,14 @@ import type { Route } from "./+types/admin.board-members.$userId.edit";
 import { Field, fileFieldClassName } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { requireUserWithRole } from "~/features/auth/guards.server";
-import { MemberSchema, validImageTypes } from "~/features/board-members/schema";
+import { MemberSchema } from "~/features/board-members/schema";
 import {
   getBoardMemberById,
   updateBoardMember,
 } from "~/models/board-member.server";
 import { fileToImageData } from "~/models/image.server";
+import { requireFound } from "~/shared/http.server";
+import { VALID_IMAGE_TYPES } from "~/shared/image";
 import { parseImageFormData } from "~/utils/image-upload.server";
 
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -25,9 +27,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const { userId } = params;
 
-  const boardMember = await getBoardMemberById(userId);
-
-  if (!boardMember) throw new Response("Not found", { status: 404 });
+  const boardMember = requireFound(await getBoardMemberById(userId));
 
   return { boardMember };
 }
@@ -163,7 +163,7 @@ function BoardMemberEditForm({
           inputProps={{
             ...getInputProps(fields.image, { type: "file" }),
             tabIndex: 0,
-            accept: validImageTypes.join(","),
+            accept: VALID_IMAGE_TYPES.join(","),
             className: fileFieldClassName,
           }}
           errors={fields.image.errors}

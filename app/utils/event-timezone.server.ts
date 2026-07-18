@@ -1,7 +1,9 @@
 import { offsetDate } from "./misc";
 
-/** The canonical timezone used for all event dates displayed to users. */
-export const EVENT_TIMEZONE = "Europe/Zurich";
+import { EVENT_TIMEZONE } from "~/features/events/timezone";
+
+// re-exported so the timezone stays importable next to the converters
+export { EVENT_TIMEZONE };
 
 export type ClientHints = {
   userTimezone: string;

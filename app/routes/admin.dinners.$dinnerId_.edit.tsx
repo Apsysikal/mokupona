@@ -25,6 +25,8 @@ import { getAddresses } from "~/models/address.server";
 import { getEventById, updateEvent } from "~/models/event.server";
 import { eventHasSignups } from "~/models/form-submission.server";
 import { getCurrentFormVersionForEvent } from "~/models/form.server";
+import { requireFound } from "~/shared/http.server";
+import { VALID_IMAGE_TYPES } from "~/shared/image";
 import { getClientHints } from "~/utils/client-hints.server";
 import {
   toDisplayEventDate,
@@ -34,8 +36,6 @@ import { EventSchema } from "~/utils/event-validation";
 import { parseImageFormData } from "~/utils/image-upload.server";
 import { nullableStringUpdateValue } from "~/utils/nullable-update-field.server";
 
-const VALID_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-
 export async function loader({ request, params }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
   const clientHints = getClientHints(request);
@@ -44,12 +44,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const [addresses, event, version, formHasSubmissions] = await Promise.all([
     getAddresses(),
-    getEventById(dinnerId),
-    getCurrentFormVersionForEvent(dinnerId),
+    getEventById(dinnerId).then(requireFound),
+    getCurrentFormVersionForEvent(dinnerId).then(requireFound),
     eventHasSignups(dinnerId),
   ]);
-
-  if (!event || !version) throw new Response("Not found", { status: 404 });
 
   logger.info(`Client zone offset: ${clientHints.userTimezoneOffset}`);
   logger.info(`Client zone: ${clientHints.userTimezone}`);

@@ -1,8 +1,7 @@
 import { faker } from "@faker-js/faker";
 
 import { prisma } from "~/db.server";
-
-const AUTH_ROLE_NAMES = ["user", "moderator", "admin"] as const;
+import { ROLE_NAMES } from "~/features/auth/roles";
 
 function ensureRole(name: string) {
   return prisma.role.upsert({
@@ -13,7 +12,7 @@ function ensureRole(name: string) {
 }
 
 export function ensureAuthRoles() {
-  return Promise.all(AUTH_ROLE_NAMES.map(ensureRole));
+  return Promise.all(ROLE_NAMES.map(ensureRole));
 }
 
 export async function createTestUser(roleName = "user") {

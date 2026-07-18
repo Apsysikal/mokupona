@@ -12,6 +12,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { requireUserWithRole } from "~/features/auth/guards.server";
+import { EVENT_TIMEZONE } from "~/features/events/timezone";
 import { getAttendeesForEvent } from "~/features/signup-form/read.server";
 import { getEventById, getNextEvent } from "~/models/event.server";
 import { formatAdminDateLine, formatAdminTimestamp } from "~/utils/misc";
@@ -27,7 +28,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     weekday: "long",
     day: "numeric",
     month: "long",
-    timeZone: "Europe/Zurich",
+    timeZone: EVENT_TIMEZONE,
   }).format(new Date());
 
   return {

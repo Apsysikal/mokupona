@@ -7,6 +7,7 @@ import type { Route } from "./+types/admin.locations.$locationId_.edit";
 import { AdminLocationForm } from "~/components/admin-location-form";
 import { requireUserWithRole } from "~/features/auth/guards.server";
 import { getAddressById, updateAddress } from "~/models/address.server";
+import { requireFound } from "~/shared/http.server";
 import { AddressSchema } from "~/utils/address-validation";
 
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -14,9 +15,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const { locationId } = params;
 
-  const address = await getAddressById(locationId);
-
-  if (!address) throw new Response("Not found", { status: 404 });
+  const address = requireFound(await getAddressById(locationId));
 
   return {
     location: address,

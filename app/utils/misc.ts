@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useMatches } from "react-router";
 
+import { EVENT_TIMEZONE } from "~/features/events/timezone";
 import type { Role } from "~/models/role.server";
 import type { User } from "~/models/user.server";
 
@@ -120,13 +121,11 @@ export function combineHeaders(
 // The redesign writes all dates in a fixed, lowercase, Zurich-local shape
 // ("saturday 9 may · 19:00"); a fixed locale keeps server and client render
 // identical. Lowercasing happens here, not via CSS, so no caller can forget.
-const EVENT_TIME_ZONE = "Europe/Zurich";
-
 const eventTimeFormat = new Intl.DateTimeFormat("en-GB", {
   hour: "2-digit",
   minute: "2-digit",
   hourCycle: "h23",
-  timeZone: EVENT_TIME_ZONE,
+  timeZone: EVENT_TIMEZONE,
 });
 
 /** "saturday 9 may · 19:00" (weekday: "long") / "sat 9 may · 19:00" ("short") */
@@ -135,7 +134,7 @@ export function formatEventDateLine(date: Date, weekday: "long" | "short") {
     weekday,
     day: "numeric",
     month: "long",
-    timeZone: EVENT_TIME_ZONE,
+    timeZone: EVENT_TIMEZONE,
   }).format(date);
 
   return `${dayLine} · ${eventTimeFormat.format(date)}`.toLowerCase();
@@ -148,7 +147,7 @@ export function formatAdminDateLine(date: Date) {
     day: "numeric",
     month: "short",
     year: "numeric",
-    timeZone: EVENT_TIME_ZONE,
+    timeZone: EVENT_TIMEZONE,
   }).format(date);
 
   return `${dayLine} · ${eventTimeFormat.format(date)}`;
@@ -159,7 +158,7 @@ export function formatAdminTimestamp(date: Date) {
   const dayMonth = new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
     month: "short",
-    timeZone: EVENT_TIME_ZONE,
+    timeZone: EVENT_TIMEZONE,
   }).format(date);
 
   return `${dayMonth}, ${eventTimeFormat.format(date)}`;
@@ -170,7 +169,7 @@ export function formatEventMonthYear(date: Date) {
   return new Intl.DateTimeFormat("en-GB", {
     month: "short",
     year: "numeric",
-    timeZone: EVENT_TIME_ZONE,
+    timeZone: EVENT_TIMEZONE,
   })
     .format(date)
     .toLowerCase();
@@ -181,7 +180,7 @@ export function formatEventDayMonth(date: Date) {
   return new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
     month: "long",
-    timeZone: EVENT_TIME_ZONE,
+    timeZone: EVENT_TIMEZONE,
   })
     .format(date)
     .toLowerCase();

@@ -24,6 +24,8 @@ import {
   FormVersionChangedError,
 } from "~/models/form-submission.server";
 import { getCurrentFormVersionForEvent } from "~/models/form.server";
+import { requireFound } from "~/shared/http.server";
+import { getRootLoaderData } from "~/shared/root-data";
 import { getClientIPAddress, getImageUrl, obscureEmail } from "~/utils/misc";
 import { redirectWithToast } from "~/utils/toast.server";
 
@@ -31,11 +33,9 @@ export async function loader({ params }: Route.LoaderArgs) {
   const { dinnerId } = params;
 
   const [event, version] = await Promise.all([
-    getEventById(dinnerId),
-    getCurrentFormVersionForEvent(dinnerId),
+    getEventById(dinnerId).then(requireFound),
+    getCurrentFormVersionForEvent(dinnerId).then(requireFound),
   ]);
-
-  if (!event || !version) throw new Response("Not found", { status: 404 });
 
   return {
     event,
@@ -55,11 +55,10 @@ export async function action({ params, request }: Route.ActionArgs) {
   // the action never trusts client descriptors: re-read the current version
   // from the DB and rebuild the identical schema server-side (design §6.1)
   const [dinner, version] = await Promise.all([
-    getEventById(dinnerId),
-    getCurrentFormVersionForEvent(dinnerId),
+    getEventById(dinnerId).then(requireFound),
+    getCurrentFormVersionForEvent(dinnerId).then(requireFound),
   ]);
 
-  if (!dinner || !version) throw new Response("Not found", { status: 404 });
   if (dinner.date < new Date()) {
     throw new Response("Forbidden", { status: 403 });
   }
@@ -167,15 +166,22 @@ export const meta: Route.MetaFunction = ({ loaderData, matches, location }) => {
   if (!loaderData) return metaTags;
 
   const { event } = loaderData;
-  const domainUrl = matches[0].loaderData.domainUrl;
+  const tags = [
+    { title: `Dinner - ${event.title}` },
+    { property: "og:title", content: event.title },
+    { property: "og:type", content: "website" },
+  ];
+
+  // without the root loader's domainUrl the absolute og:image/og:url tags
+  // cannot be built — keep the rest
+  const domainUrl = getRootLoaderData(matches)?.domainUrl;
+  if (!domainUrl) return tags;
 
   const dinnerUrl = new URL(location.pathname, domainUrl);
   const imageUrl = new URL(getImageUrl(event.imageId), domainUrl);
 
   return [
-    { title: `Dinner - ${event.title}` },
-    { property: "og:title", content: event.title },
-    { property: "og:type", content: "website" },
+    ...tags,
     { property: "og:image", content: imageUrl },
     { property: "og:url", content: dinnerUrl },
   ];

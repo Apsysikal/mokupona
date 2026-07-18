@@ -6,13 +6,12 @@ import { DinnerView } from "~/components/dinner-view";
 import { Button } from "~/components/ui/button";
 import { requireUserWithRole } from "~/features/auth/guards.server";
 import { getEventById } from "~/models/event.server";
+import { requireFound } from "~/shared/http.server";
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
 
-  const event = await getEventById(params.dinnerId);
-
-  if (!event) throw new Response("Not found", { status: 404 });
+  const event = requireFound(await getEventById(params.dinnerId));
 
   return { event };
 }

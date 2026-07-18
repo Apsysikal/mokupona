@@ -57,12 +57,10 @@ describe("signup via better-auth", () => {
 });
 
 describe("guard shim", () => {
-  it("getUserId resolves the session user, or undefined without one", async () => {
+  it("getUserId resolves the session user, or null without one", async () => {
     const { user, request } = await signedInRequest();
     expect(await getUserId(request)).toBe(user.id);
-    expect(
-      await getUserId(new Request("http://localhost:3000/")),
-    ).toBeUndefined();
+    expect(await getUserId(new Request("http://localhost:3000/"))).toBeNull();
   });
 
   it("getUserWithRole returns the user with its role", async () => {

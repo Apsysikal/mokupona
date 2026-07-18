@@ -14,6 +14,7 @@ import { Form, Link, useLocation } from "react-router";
 import { BrandLockup } from "./brand-lockup";
 import { Button } from "./ui/button";
 
+import { ADMIN_ROLE_NAMES } from "~/features/auth/roles";
 import { cn } from "~/lib/utils";
 import { useOptionalUser } from "~/utils/misc";
 
@@ -23,7 +24,7 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const isModerator = ["moderator", "admin"].includes(
+  const isModerator = (ADMIN_ROLE_NAMES as readonly string[]).includes(
     optionalUser?.role.name ?? "",
   );
 

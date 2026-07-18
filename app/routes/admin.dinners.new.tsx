@@ -21,12 +21,11 @@ import {
 import { logger } from "~/logger.server";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
+import { VALID_IMAGE_TYPES } from "~/shared/image";
 import { getClientHints } from "~/utils/client-hints.server";
 import { toUtcEventDate } from "~/utils/event-timezone.server";
 import { EventSchema } from "~/utils/event-validation";
 import { parseImageFormData } from "~/utils/image-upload.server";
-
-const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
 
 export async function loader({ request }: Route.LoaderArgs) {
   await requireUserWithRole(request, ["moderator", "admin"]);
@@ -34,7 +33,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const addresses = await getAddresses();
 
   return {
-    validImageTypes,
+    validImageTypes: VALID_IMAGE_TYPES,
     addresses,
   };
 }

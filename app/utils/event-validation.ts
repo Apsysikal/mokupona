@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { SignupFormBuilderSchema } from "~/features/signup-form/builder";
+import { imageFileSchema } from "~/shared/image";
 
 export const EventSchema = z.object({
   signupForm: SignupFormBuilderSchema,
@@ -18,13 +19,6 @@ export const EventSchema = z.object({
     .min(0, "Price cannot be less than 0")
     .int(),
   discounts: z.string().trim().optional(),
-  cover: z
-    .instanceof(File, { message: "You must select a file" })
-    .refine((file) => {
-      return file.size !== 0;
-    }, "You must select a file")
-    .refine((file) => {
-      return file.size <= 1024 * 1024 * 3;
-    }, "File cannot be greater than 3MB"),
+  cover: imageFileSchema(1024 * 1024 * 3),
   addressId: z.string({ error: "Address is required" }).trim(),
 });
