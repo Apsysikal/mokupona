@@ -1,6 +1,5 @@
 import type { Route } from "./+types/admin.dinners.$dinnerId.[signups.csv]";
 
-import { requireUserWithRole } from "~/features/auth/guards.server";
 import {
   getAttendeeRosterForEvent,
   type Attendee,
@@ -11,9 +10,7 @@ import { buildCSVObject } from "~/lib/csv-builder.server";
 import { getEventById } from "~/models/event.server";
 import { requireFound } from "~/shared/http.server";
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
+export async function loader({ params }: Route.LoaderArgs) {
   const { dinnerId } = params;
 
   // one line per attendee; columns are the field-name union across all

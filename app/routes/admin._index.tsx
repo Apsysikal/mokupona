@@ -11,15 +11,12 @@ import {
 } from "~/components/admin-ui";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import { requireUserWithRole } from "~/features/auth/guards.server";
 import { EVENT_TIMEZONE } from "~/features/events/timezone";
 import { getAttendeesForEvent } from "~/features/signup-form/read.server";
 import { getEventById, getNextEvent } from "~/models/event.server";
 import { formatAdminDateLine, formatAdminTimestamp } from "~/utils/misc";
 
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
+export async function loader() {
   const next = await getNextEvent();
   const nextDinner = next ? await getEventById(next.id) : null;
   const attendees = nextDinner ? await getAttendeesForEvent(nextDinner.id) : [];

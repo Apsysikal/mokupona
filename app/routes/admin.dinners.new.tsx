@@ -13,7 +13,7 @@ import {
   AdminDinnerForm,
   toAddressOptions,
 } from "~/components/admin-dinner-form";
-import { requireUserWithRole } from "~/features/auth/guards.server";
+import { userContext } from "~/features/auth/middleware.server";
 import {
   builderRowsToDescriptors,
   defaultBuilderRows,
@@ -27,9 +27,7 @@ import { toUtcEventDate } from "~/utils/event-timezone.server";
 import { EventSchema } from "~/utils/event-validation";
 import { parseImageFormData } from "~/utils/image-upload.server";
 
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
+export async function loader() {
   const addresses = await getAddresses();
 
   return {
@@ -38,8 +36,8 @@ export async function loader({ request }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ request }: Route.ActionArgs) {
-  const user = await requireUserWithRole(request, ["moderator", "admin"]);
+export async function action({ request, context }: Route.ActionArgs) {
+  const user = context.get(userContext);
   const clientHints = getClientHints(request);
 
   const uploadResult = await parseImageFormData(request, "cover");

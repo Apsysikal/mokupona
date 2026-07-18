@@ -36,7 +36,7 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
-import { requireUserWithRole } from "~/features/auth/guards.server";
+import { userContext } from "~/features/auth/middleware.server";
 import {
   createAndSendInvite,
   resendInvite,
@@ -57,9 +57,7 @@ const inviteSchema = z.object({
   role: z.enum(INVITABLE_ROLES, { error: "Pick a role" }),
 });
 
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["admin"]);
-
+export async function loader() {
   const [users, invites] = await Promise.all([
     listUsersWithRoleName(),
     listPendingInvites(),
@@ -77,8 +75,8 @@ export async function loader({ request }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ request }: Route.ActionArgs) {
-  const admin = await requireUserWithRole(request, ["admin"]);
+export async function action({ request, context }: Route.ActionArgs) {
+  const admin = context.get(userContext);
   const formData = await request.formData();
   const intent = formData.get("intent");
 

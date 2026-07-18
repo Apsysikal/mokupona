@@ -5,14 +5,11 @@ import { Form, redirect } from "react-router";
 import type { Route } from "./+types/admin.locations.$locationId_.edit";
 
 import { AdminLocationForm } from "~/components/admin-location-form";
-import { requireUserWithRole } from "~/features/auth/guards.server";
 import { getAddressById, updateAddress } from "~/models/address.server";
 import { requireFound } from "~/shared/http.server";
 import { AddressSchema } from "~/utils/address-validation";
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
+export async function loader({ params }: Route.LoaderArgs) {
   const { locationId } = params;
 
   const address = requireFound(await getAddressById(locationId));
@@ -27,8 +24,6 @@ export const meta: Route.MetaFunction = () => {
 };
 
 export async function action({ request, params }: Route.ActionArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
   const { locationId } = params;
 
   const formData = await request.formData();

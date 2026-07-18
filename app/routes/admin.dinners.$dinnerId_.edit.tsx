@@ -13,7 +13,7 @@ import {
   AdminDinnerForm,
   toAddressOptions,
 } from "~/components/admin-dinner-form";
-import { requireUserWithRole } from "~/features/auth/guards.server";
+import { userContext } from "~/features/auth/middleware.server";
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
 import {
   builderRowsToDescriptors,
@@ -37,7 +37,6 @@ import { parseImageFormData } from "~/utils/image-upload.server";
 import { nullableStringUpdateValue } from "~/utils/nullable-update-field.server";
 
 export async function loader({ request, params }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
   const clientHints = getClientHints(request);
 
   const { dinnerId } = params;
@@ -70,9 +69,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ request, params }: Route.ActionArgs) {
+export async function action({ request, params, context }: Route.ActionArgs) {
   const schema = EventSchema.partial({ cover: true });
-  const user = await requireUserWithRole(request, ["moderator", "admin"]);
+  const user = context.get(userContext);
   const clientHints = getClientHints(request);
 
   const { dinnerId } = params;

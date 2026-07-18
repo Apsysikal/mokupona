@@ -11,7 +11,6 @@ import type { Route } from "./+types/admin.board-members.$userId.edit";
 
 import { Field, fileFieldClassName } from "~/components/forms";
 import { Button } from "~/components/ui/button";
-import { requireUserWithRole } from "~/features/auth/guards.server";
 import { MemberSchema } from "~/features/board-members/schema";
 import {
   getBoardMemberById,
@@ -22,9 +21,7 @@ import { requireFound } from "~/shared/http.server";
 import { VALID_IMAGE_TYPES } from "~/shared/image";
 import { parseImageFormData } from "~/utils/image-upload.server";
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
+export async function loader({ params }: Route.LoaderArgs) {
   const { userId } = params;
 
   const boardMember = requireFound(await getBoardMemberById(userId));
@@ -33,8 +30,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
   const { userId } = params;
 
   const uploadResult = await parseImageFormData(request, "image");

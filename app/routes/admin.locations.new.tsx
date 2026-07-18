@@ -5,19 +5,10 @@ import { Form, redirect } from "react-router";
 import type { Route } from "./+types/admin.locations.new";
 
 import { AdminLocationForm } from "~/components/admin-location-form";
-import { requireUserWithRole } from "~/features/auth/guards.server";
 import { createAddress } from "~/models/address.server";
 import { AddressSchema } from "~/utils/address-validation";
 
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
-  return {};
-}
-
 export async function action({ request }: Route.ActionArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
   const formData = await request.formData();
   const submission = parseWithZod(formData, { schema: AddressSchema });
 

@@ -99,7 +99,7 @@ describe("admin board member uploads", () => {
       cy.visitAndCheck(`/admin/board-members/${boardMember.id}/edit`);
       cy.findByLabelText(/name/i).clear().type(updatedName);
       cy.findByRole("button", { name: /update /i }).click();
-      cy.location("pathname").should("eq", "/admin/board-members/new");
+      cy.location("pathname").should("eq", "/admin/board-members");
 
       runUploadDbCommand<BoardMemberRecord>("get-board-member", {
         id: boardMember.id,
@@ -127,7 +127,7 @@ describe("admin board member uploads", () => {
         force: true,
       });
       cy.findByRole("button", { name: /update /i }).click();
-      cy.location("pathname").should("eq", "/admin/board-members/new");
+      cy.location("pathname").should("eq", "/admin/board-members");
 
       runUploadDbCommand<BoardMemberRecord>("get-board-member", {
         id: boardMember.id,

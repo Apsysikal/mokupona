@@ -1,16 +1,26 @@
-import { Outlet } from "react-router";
+import { isRouteErrorResponse, Outlet } from "react-router";
 
 import type { Route } from "./+types/admin";
 
 import { AdminTabs } from "~/components/admin-tabs";
-import { requireUserWithRole } from "~/features/auth/guards.server";
+import {
+  requireRoleMiddleware,
+  userContext,
+} from "~/features/auth/middleware.server";
+import { ADMIN_ROLE_NAMES } from "~/features/auth/roles";
 import { countAddresses } from "~/models/address.server";
 import { countBoardMembers } from "~/models/board-member.server";
 import { countEvents } from "~/models/event.server";
 import { countUsers } from "~/models/user.server";
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const user = await requireUserWithRole(request, ["moderator", "admin"]);
+// Authenticates the whole admin segment — child routes rely on this instead
+// of per-loader/action guards (plan phase 2). admin.users narrows further.
+export const middleware: Route.MiddlewareFunction[] = [
+  requireRoleMiddleware(ADMIN_ROLE_NAMES),
+];
+
+export async function loader({ context }: Route.LoaderArgs) {
+  const user = context.get(userContext);
   const isAdmin = user.role.name === "admin";
 
   const [dinners, locations, board, users] = await Promise.all([
@@ -37,4 +47,38 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
       </main>
     </>
   );
+}
+
+// The middleware's 403 (and child 404s) land here instead of the root
+// boundary, so denied users see a styled page inside the site chrome.
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  if (isRouteErrorResponse(error)) {
+    return (
+      <main className="mx-auto w-full max-w-5xl grow px-5 pt-5 pb-4 md:px-10 md:pt-9">
+        <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
+          <h1 className="font-semibold">
+            {error.status} {error.statusText}
+          </h1>
+          <p>{error.data}</p>
+        </div>
+      </main>
+    );
+  } else if (error instanceof Error) {
+    return (
+      <main className="mx-auto w-full max-w-5xl grow px-5 pt-5 pb-4 md:px-10 md:pt-9">
+        <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
+          <h1 className="font-semibold">Error</h1>
+          <p>{error.message}</p>
+        </div>
+      </main>
+    );
+  } else {
+    return (
+      <main className="mx-auto w-full max-w-5xl grow px-5 pt-5 pb-4 md:px-10 md:pt-9">
+        <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
+          <h1 className="font-semibold">Unknown Error</h1>
+        </div>
+      </main>
+    );
+  }
 }

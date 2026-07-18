@@ -14,7 +14,6 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { requireUserWithRole } from "~/features/auth/guards.server";
 import {
   getAttendeesForEvent,
   type Attendee,
@@ -53,9 +52,7 @@ function toParties(attendees: Attendee[]) {
   return [...parties.values()];
 }
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
+export async function loader({ params }: Route.LoaderArgs) {
   const { dinnerId } = params;
 
   const [event, attendees] = await Promise.all([

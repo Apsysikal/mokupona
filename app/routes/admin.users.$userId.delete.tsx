@@ -2,7 +2,6 @@ import { redirect } from "react-router";
 
 import type { Route } from "./+types/admin.users.$userId.delete";
 
-import { requireUserWithRole } from "~/features/auth/guards.server";
 import { getRoleNameForUser } from "~/models/role.server";
 import { deleteUserById } from "~/models/user.server";
 
@@ -10,9 +9,7 @@ export async function loader() {
   return redirect("/admin/users");
 }
 
-export async function action({ request, params }: Route.ActionArgs) {
-  await requireUserWithRole(request, ["admin"]);
-
+export async function action({ params }: Route.ActionArgs) {
   const { userId } = params;
 
   const roleName = await getRoleNameForUser(userId);

@@ -7,7 +7,6 @@ import type { Route } from "./+types/admin.users.$userId_.edit";
 
 import { SelectField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
-import { requireUserWithRole } from "~/features/auth/guards.server";
 import { INVITABLE_ROLES } from "~/features/users/invite.shared";
 import { getRoleByName } from "~/models/role.server";
 import {
@@ -20,9 +19,7 @@ const schema = z.object({
   roleName: z.enum(INVITABLE_ROLES),
 });
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["admin"]);
-
+export async function loader({ params }: Route.LoaderArgs) {
   const { userId } = params;
 
   const user = requireFound(await getUserAccountSummary(userId));
@@ -37,8 +34,6 @@ export const meta: Route.MetaFunction = () => {
 };
 
 export async function action({ request, params }: Route.ActionArgs) {
-  await requireUserWithRole(request, ["admin"]);
-
   const { userId } = params;
 
   const formData = await request.formData();

@@ -14,15 +14,12 @@ import {
 } from "~/components/admin-ui";
 import { UtensilsIcon } from "~/components/icons";
 import { Button } from "~/components/ui/button";
-import { requireUserWithRole } from "~/features/auth/guards.server";
 import { getAttendeeCountsForEvents } from "~/features/signup-form/read.server";
 import { cn } from "~/lib/utils";
 import { getEventsWithAddress } from "~/models/event.server";
 import { formatAdminDateLine } from "~/utils/misc";
 
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
+export async function loader() {
   const events = await getEventsWithAddress();
   const seatCounts = await getAttendeeCountsForEvents(
     events.map((event) => event.id),

@@ -11,18 +11,19 @@ import { getUserByIdWithRole } from "~/models/user.server";
 // better-auth — the admin routes and root.tsx only change an import path
 // (design §3). Role checks stay here; better-auth knows nothing about them.
 
-type UserWithRoleName = User & { role: Role & { name: RoleName } };
+/** A user whose persisted role name passed the vocabulary check. */
+export type ValidatedUser = User & { role: Role & { name: RoleName } };
 
 // Prisma types Role.name as string; the guards are where persisted roles
 // enter the app, so validate against the vocabulary here (plan phase 1). A
 // stored name outside it is corrupt data, not a request error.
-function validateRoleName(user: User & { role: Role }): UserWithRoleName {
+function validateRoleName(user: User & { role: Role }): ValidatedUser {
   if (!isRoleName(user.role.name)) {
     throw new Error(
       `User ${user.id} has role "${user.role.name}" outside the role vocabulary`,
     );
   }
-  return user as UserWithRoleName;
+  return user as ValidatedUser;
 }
 
 /** Resolve the session's user id, or null for anonymous requests. */
