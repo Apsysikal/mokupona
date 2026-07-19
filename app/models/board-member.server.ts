@@ -3,7 +3,7 @@ import type { BoardMember } from "#prisma/generated/client";
 import { prisma } from "~/db.server";
 import {
   IMAGE_METADATA_SELECT,
-  type ImageData,
+  type ImageCreateData,
   type ImageMetadata,
 } from "~/models/image.server";
 
@@ -12,7 +12,7 @@ export type { BoardMember };
 export interface BoardMemberData {
   name: string;
   position: string;
-  image?: ImageData;
+  image?: ImageCreateData;
 }
 
 // the admin tab bar shows a count pill per section

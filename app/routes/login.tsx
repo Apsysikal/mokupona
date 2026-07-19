@@ -14,10 +14,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { auth } from "~/features/auth/auth.server";
 import { GoogleSignInButton } from "~/features/auth/components/google-button";
-import {
-  emailSchema,
-  parseRequestForm,
-} from "~/features/auth/form-schemas";
+import { emailSchema, parseRequestForm } from "~/features/auth/form-schemas";
 import { anonymousAuthPageLoader } from "~/features/auth/middleware.server";
 import { logger } from "~/logger.server";
 import {

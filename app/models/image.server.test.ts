@@ -19,7 +19,7 @@ describe("orphan image sweep", () => {
       position: "Test Position",
       image: {
         contentType: "image/jpeg",
-        blob: Buffer.from("board-member-image"),
+        storageKey: "test/board-members/sweep-keeper",
       },
     });
 

@@ -9,6 +9,7 @@ import { faker } from "@faker-js/faker";
 import { prisma } from "~/db.server";
 import { createUserViaAuth } from "~/features/auth/create-user.server";
 import { ROLE_NAMES } from "~/features/auth/roles";
+import { storeImage } from "~/features/images/image-storage.server";
 import { createEvent } from "~/models/event.server";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -94,16 +95,24 @@ async function seed() {
   const defaultImage = await readFile(path.join(__dirname, "default.jpg"));
 
   // createEvent (not prisma.event.create) so every seeded event gets its
-  // form + first version and its own cover image row, like production writes;
-  // Buffer.from copies the bytes, so each event owns fresh image bytes
-  const seedEvent = () =>
+  // form + first version and its own cover image row, like production
+  // writes; each event's cover is stored through the image provider (the
+  // local one under dev/e2e — offline), one stored file per event so a
+  // cover replacement can never orphan a sibling's file
+  const seedEvent = async () =>
     createEvent({
       title: faker.lorem.sentence({ min: 3, max: 7 }),
       description: faker.lorem.paragraphs({ min: 3, max: 7 }),
       date: faker.date.soon({ days: 3 }),
       slots: faker.number.int({ min: 10, max: 20 }),
       price: faker.number.int({ min: 15, max: 30 }),
-      image: { contentType: "image/jpg", blob: Buffer.from(defaultImage) },
+      image: {
+        contentType: "image/jpeg",
+        ...(await storeImage(
+          new File([defaultImage], "default.jpg", { type: "image/jpeg" }),
+          "dinners",
+        )),
+      },
       addressId: address.id,
       createdById: moderator.id,
     });

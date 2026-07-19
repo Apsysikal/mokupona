@@ -22,8 +22,8 @@ import { transformToWebp } from "~/utils/image-transform.server";
 // srcset heights — plus a few spacers up to a 2048 ceiling; a changed call
 // site serves a near-identical crop until its geometry is added here.
 const DIMENSION_LADDER = [
-  96, 172, 208, 236, 324, 357, 432, 480, 486, 536, 640, 648, 714, 810, 864,
-  893, 1080, 1296, 1536, 2048,
+  96, 172, 208, 236, 324, 357, 432, 480, 486, 536, 640, 648, 714, 810, 864, 893,
+  1080, 1296, 1536, 2048,
 ];
 
 function snapToDimensionLadder(value: number): number {

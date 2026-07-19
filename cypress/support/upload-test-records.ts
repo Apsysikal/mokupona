@@ -2,6 +2,10 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { prisma } from "~/db.server";
+import {
+  storeImage,
+  type ImageFolder,
+} from "~/features/images/image-storage.server";
 import { createEvent, deleteEvent } from "~/models/event.server";
 import { getUserByEmail } from "~/models/user.server";
 
@@ -146,12 +150,15 @@ function toBoardMemberResult(
   };
 }
 
-async function getDefaultImageInput() {
-  const blob = await readFile(defaultImagePath);
+async function getDefaultImageInput(folder: ImageFolder) {
+  const bytes = await readFile(defaultImagePath);
+  const file = new File([bytes], "default.jpg", { type: "image/jpeg" });
 
+  // through the (local) image provider, like production writes — the dev
+  // server serves the stored file back via /file/:fileId
   return {
     contentType: "image/jpeg",
-    blob: Buffer.from(blob),
+    ...(await storeImage(file, folder)),
   };
 }
 
@@ -187,7 +194,7 @@ async function createDinner(
   const [moderatorId, addressId, imageData] = await Promise.all([
     requireModeratorId(),
     requireAddressId(),
-    getDefaultImageInput(),
+    getDefaultImageInput("dinners"),
   ]);
 
   // createEvent (not prisma.event.create) so the event gets its form and its
@@ -303,7 +310,7 @@ async function createLegacyResponse(
 async function createBoardMember(
   payload: Extract<CommandInput, { action: "create-board-member" }>,
 ) {
-  const imageData = await getDefaultImageInput();
+  const imageData = await getDefaultImageInput("board-members");
 
   const boardMember = await prisma.boardMember.create({
     data: {

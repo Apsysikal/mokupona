@@ -29,18 +29,18 @@ export const IMAGE_METADATA_SELECT = {
   blurDataUrl: true,
 } satisfies Prisma.ImageSelect;
 
-export interface ImageData {
+/**
+ * What owning models persist for a provider-stored image: the upload's MIME
+ * type plus the `StoredImage` scalars the provider returned. Bytes no longer
+ * cross this boundary — `Image.blob` is legacy and is not written anymore.
+ */
+export interface ImageCreateData {
   contentType: string;
-  // Buffer's bare form is Buffer<ArrayBufferLike>, which Prisma's Bytes input rejects
-  blob: Buffer<ArrayBuffer>;
-}
-
-// The one place upload bytes become persistable ImageData.
-export async function fileToImageData(file: File): Promise<ImageData> {
-  return {
-    contentType: file.type,
-    blob: Buffer.from(await file.arrayBuffer()),
-  };
+  storageKey: string;
+  version?: number | null;
+  width?: number | null;
+  height?: number | null;
+  blurDataUrl?: string | null;
 }
 
 export async function getImageById(id: string): Promise<Image | null> {

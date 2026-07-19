@@ -6,11 +6,17 @@ import {
   updateBoardMember,
 } from "./board-member.server";
 
-import { prisma } from "~/db.server";
-import type { ImageData } from "~/models/image.server";
+import { faker } from "@faker-js/faker";
 
-function portrait(marker: string): ImageData {
-  return { contentType: "image/jpeg", blob: Buffer.from(marker) };
+import { prisma } from "~/db.server";
+import type { ImageCreateData } from "~/models/image.server";
+
+function portrait(marker: string): ImageCreateData {
+  // unique per call — the tests share one database
+  return {
+    contentType: "image/jpeg",
+    storageKey: `test/board-members/${marker}-${faker.string.uuid()}`,
+  };
 }
 
 describe("board member image lifecycle", () => {

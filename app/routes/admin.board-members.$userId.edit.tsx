@@ -4,12 +4,12 @@ import type { Route } from "./+types/admin.board-members.$userId.edit";
 
 import { AdminBoardMemberForm } from "~/features/board-members/admin-board-member-form";
 import { MemberSchema } from "~/features/board-members/schema";
+import { storeImage } from "~/features/images/image-storage.server";
 import { withParsedImageForm } from "~/features/uploads/image-form-action.server";
 import {
   getBoardMemberById,
   updateBoardMember,
 } from "~/models/board-member.server";
-import { fileToImageData } from "~/models/image.server";
 import { requireFound } from "~/shared/http.server";
 
 export async function loader({ params }: Route.LoaderArgs) {
@@ -32,7 +32,12 @@ export async function action({ request, params }: Route.ActionArgs) {
       await updateBoardMember(userId, {
         name,
         position,
-        ...(image && { image: await fileToImageData(image) }),
+        ...(image && {
+          image: {
+            contentType: image.type,
+            ...(await storeImage(image, "board-members")),
+          },
+        }),
       });
 
       return redirect("/admin/board-members");

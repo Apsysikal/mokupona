@@ -16,6 +16,7 @@ import {
   defaultBuilderRows,
   descriptorsToBuilderRows,
 } from "~/features/signup-form/builder";
+import { storeImage } from "~/features/images/image-storage.server";
 import { withParsedImageForm } from "~/features/uploads/image-form-action.server";
 import { getAddresses } from "~/models/address.server";
 import {
@@ -23,7 +24,6 @@ import {
   updateEvent,
 } from "~/models/event.server";
 import { eventHasSignups } from "~/models/form-submission.server";
-import { fileToImageData } from "~/models/image.server";
 import { requireFound } from "~/shared/http.server";
 import { nullableStringUpdateValue } from "~/utils/nullable-update-field.server";
 
@@ -106,7 +106,12 @@ export async function action({ request, params, context }: Route.ActionArgs) {
           price,
           discounts,
           addressId,
-          ...(cover && { image: await fileToImageData(cover) }),
+          ...(cover && {
+            image: {
+              contentType: cover.type,
+              ...(await storeImage(cover, "dinners")),
+            },
+          }),
           createdById: user.id,
         },
         builderRowsToDescriptors(signupForm),
@@ -131,8 +136,7 @@ export default function AdminDinnerEditPage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const { addresses, dinner, signupForm, formHasSubmissions } =
-    loaderData;
+  const { addresses, dinner, signupForm, formHasSubmissions } = loaderData;
   const addressOptions = toAddressOptions(addresses);
 
   return (

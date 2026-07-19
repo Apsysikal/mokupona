@@ -84,7 +84,9 @@ describe("image resource route", () => {
 
     await loadImage(query);
 
-    expect(mocks.cacheGet).toHaveBeenCalledWith(`file-image-id-${w}-${h}-cover`);
+    expect(mocks.cacheGet).toHaveBeenCalledWith(
+      `file-image-id-${w}-${h}-cover`,
+    );
     expect(mocks.transformToWebp).toHaveBeenCalledWith(expect.anything(), {
       width: w,
       height: h,

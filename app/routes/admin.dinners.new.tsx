@@ -11,10 +11,10 @@ import {
   builderRowsToDescriptors,
   defaultBuilderRows,
 } from "~/features/signup-form/builder";
+import { storeImage } from "~/features/images/image-storage.server";
 import { withParsedImageForm } from "~/features/uploads/image-form-action.server";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
-import { fileToImageData } from "~/models/image.server";
 
 export async function loader() {
   const addresses = await getAddresses();
@@ -54,9 +54,13 @@ export async function action({ request, context }: Route.ActionArgs) {
           price,
           discounts,
           addressId,
-          // the image row is created inside createEvent's transaction, so a
-          // failed event write can no longer leak it
-          image: await fileToImageData(cover),
+          // the provider stores the bytes first; the row created inside
+          // createEvent's transaction persists only the returned scalars (a
+          // failed write leaks at most a provider asset, never a row)
+          image: {
+            contentType: cover.type,
+            ...(await storeImage(cover, "dinners")),
+          },
           createdById: user.id,
         },
         // validated by SignupFormSchema inside EventSchema's signupForm field

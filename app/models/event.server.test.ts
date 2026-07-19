@@ -166,7 +166,9 @@ describe("event image lifecycle", () => {
       where: { eventId: event.id },
     });
     expect(image.contentType).toBe(data.image.contentType);
-    expect(image.blob && Buffer.from(image.blob)).toEqual(data.image.blob);
+    expect(image.storageKey).toBe(data.image.storageKey);
+    // provider scalars only — the legacy blob column is no longer written
+    expect(image.blob).toBeNull();
   });
 
   it("leaves no image row when the create transaction fails after the image write", async () => {
@@ -178,9 +180,9 @@ describe("event image lifecycle", () => {
       createEvent({ ...data, addressId: "does-not-exist" }),
     ).rejects.toThrow();
 
-    // the factory blob is unique per call, so it identifies the leaked row
+    // the factory storageKey is unique per call, so it identifies the leaked row
     await expect(
-      prisma.image.count({ where: { blob: data.image.blob } }),
+      prisma.image.count({ where: { storageKey: data.image.storageKey } }),
     ).resolves.toBe(0);
   });
 
@@ -191,7 +193,7 @@ describe("event image lifecycle", () => {
     });
     const newImage = {
       contentType: "image/png",
-      blob: Buffer.from("swapped-cover"),
+      storageKey: "test/dinners/swapped-cover",
     };
 
     await updateEvent(event.id, { image: newImage });
@@ -214,7 +216,7 @@ describe("event image lifecycle", () => {
     const event = await createEvent(await buildEventData());
     const newImage = {
       contentType: "image/png",
-      blob: Buffer.from("never-persisted-cover"),
+      storageKey: "test/dinners/never-persisted-cover",
     };
     // the schema failure inside saveFormSchemaInTx happens AFTER the new
     // image was created and the event repointed, so the whole swap must
@@ -230,7 +232,7 @@ describe("event image lifecycle", () => {
     const after = await findCover(event.id);
     expect(after?.id).toBe(before.id);
     await expect(
-      prisma.image.count({ where: { blob: newImage.blob } }),
+      prisma.image.count({ where: { storageKey: newImage.storageKey } }),
     ).resolves.toBe(0);
   });
 

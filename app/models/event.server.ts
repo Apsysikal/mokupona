@@ -9,7 +9,7 @@ import {
 } from "~/models/form.server";
 import {
   IMAGE_METADATA_SELECT,
-  type ImageData,
+  type ImageCreateData,
   type ImageMetadata,
 } from "~/models/image.server";
 
@@ -35,7 +35,7 @@ export interface EventCreateData {
   price: number;
   discounts?: string | null;
   addressId: string;
-  image: ImageData;
+  image: ImageCreateData;
   createdById: string;
 }
 
