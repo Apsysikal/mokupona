@@ -82,8 +82,11 @@ export async function loader({ url, params }: Route.LoaderArgs) {
   }
 
   const file = requireFound(await getImageById(fileId));
+  // blob is nullable since the Cloudinary migration; provider-backed serving
+  // arrives with the route rework — until then a blob-less row is a miss
+  const blob = requireFound(file.blob);
 
-  const optimizedImage = await transformToWebp(file.blob, {
+  const optimizedImage = await transformToWebp(blob, {
     width,
     height,
     fit,

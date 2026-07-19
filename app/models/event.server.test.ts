@@ -169,7 +169,7 @@ describe("event image lifecycle", () => {
       where: { eventId: event.id },
     });
     expect(image.contentType).toBe(data.image.contentType);
-    expect(Buffer.from(image.blob)).toEqual(data.image.blob);
+    expect(image.blob && Buffer.from(image.blob)).toEqual(data.image.blob);
   });
 
   it("leaves no image row when the create transaction fails after the image write", async () => {
