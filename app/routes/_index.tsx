@@ -9,16 +9,30 @@ import {
   type TextSectionBlockType,
 } from "~/features/cms/blocks/text-section";
 import { formatEventDayMonth } from "~/features/events/date-format";
+import { getBlurDataUrl } from "~/features/images/blur-placeholder.server";
 import { getNextEvent } from "~/models/event.server";
 import { withOpenGraphUrls } from "~/shared/meta";
 
+// fixed public_ids in the shared, non-env-prefixed static/ folder — the
+// originals stay in the repo (public/*-original.*) as source of truth
+const HERO_IMAGE_ID = "static/hero-image";
+const ACCENT_IMAGE_ID = "static/accent-image";
+
 export const loader = async () => {
-  const nextEvent = await getNextEvent();
+  // the blur placeholders are module-cached — one Cloudinary fetch per
+  // server boot per asset, never a per-request cost (design §3.3)
+  const [nextEvent, heroBlurDataUrl, accentBlurDataUrl] = await Promise.all([
+    getNextEvent(),
+    getBlurDataUrl(HERO_IMAGE_ID),
+    getBlurDataUrl(ACCENT_IMAGE_ID),
+  ]);
 
   return {
     nextDinner: nextEvent
       ? { id: nextEvent.id, date: nextEvent.date, slots: nextEvent.slots }
       : null,
+    heroBlurDataUrl,
+    accentBlurDataUrl,
   };
 };
 
@@ -56,17 +70,21 @@ const visionSectionData: TextSectionBlockType = {
   },
 };
 
-const imageSectionData: ImageBlockType = {
+// 2792×988 original — keep its aspect so c_fill never crops surprisingly
+const accentSectionData = (blurDataUrl: string | null): ImageBlockType => ({
   type: "image",
   version: 1,
   data: {
     image: {
-      src: "/accent-image.jpg",
+      src: ACCENT_IMAGE_ID,
       alt: "",
+      width: 1080,
+      height: 382,
+      blurDataUrl,
     },
     variant: "full-width",
   },
-};
+});
 
 const differenceSectionData: TextSectionBlockType = {
   type: "text-section",
@@ -91,7 +109,7 @@ const aboutSectionData: TextSectionBlockType = {
 };
 
 export default function Index({ loaderData }: Route.ComponentProps) {
-  const { nextDinner } = loaderData;
+  const { nextDinner, heroBlurDataUrl, accentBlurDataUrl } = loaderData;
 
   const heroSectionData: HeroBlockType = {
     type: "hero",
@@ -112,9 +130,13 @@ export default function Index({ loaderData }: Route.ComponentProps) {
         { href: "/dinners", label: "see all dinners →", variant: "secondary" },
       ],
       meta: undefined,
+      // 6240×3304 original — keep its aspect so c_fill never crops surprisingly
       image: {
-        src: "/hero-image.jpg",
+        src: HERO_IMAGE_ID,
         alt: "",
+        width: 1080,
+        height: 572,
+        blurDataUrl: heroBlurDataUrl,
       },
     },
   };
@@ -125,7 +147,7 @@ export default function Index({ loaderData }: Route.ComponentProps) {
 
       <TextSectionBlockView blockData={visionSectionData} />
 
-      <ImageBlockView blockData={imageSectionData} />
+      <ImageBlockView blockData={accentSectionData(accentBlurDataUrl)} />
 
       <TextSectionBlockView blockData={differenceSectionData} />
 

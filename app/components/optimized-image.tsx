@@ -55,6 +55,10 @@ export function OptimizedImage({
 
   const aspect = width / height;
 
+  // empty for a static (public_id-only) asset without a configured cloud
+  // name — offline dev renders the placeholder frame alone
+  const src = getImageUrl(image, config, { width, height, fit });
+
   const srcSet = RESPONSIVE_IMAGE_WIDTHS.map((w) => {
     // keep derived heights integer so URL variants stay cache-friendly
     const h = Math.round(w / aspect);
@@ -88,20 +92,22 @@ export function OptimizedImage({
       ) : (
         <div aria-hidden className="bg-primary/10 absolute inset-0" />
       )}
-      <img
-        ref={imgRef}
-        srcSet={srcSet}
-        src={getImageUrl(image, config, { width, height, fit })}
-        width={width}
-        height={height}
-        alt={alt}
-        onLoad={() => setLoaded(true)}
-        className={cn(
-          "absolute inset-0 size-full object-cover transition-opacity duration-300",
-          loaded ? "opacity-100" : "opacity-0",
-        )}
-        {...props}
-      />
+      {src ? (
+        <img
+          ref={imgRef}
+          srcSet={srcSet}
+          src={src}
+          width={width}
+          height={height}
+          alt={alt}
+          onLoad={() => setLoaded(true)}
+          className={cn(
+            "absolute inset-0 size-full object-cover transition-opacity duration-300",
+            loaded ? "opacity-100" : "opacity-0",
+          )}
+          {...props}
+        />
+      ) : null}
     </div>
   );
 }
