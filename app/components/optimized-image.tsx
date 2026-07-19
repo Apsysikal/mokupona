@@ -1,10 +1,11 @@
 import type { ComponentProps } from "react";
 
 import {
-  buildImageTransformUrl,
+  getImageUrl,
   RESPONSIVE_IMAGE_WIDTHS,
   type ImageFit,
 } from "~/shared/image";
+import { useImageConfig } from "~/shared/root-data";
 
 type ImageInputProps = {
   imageId: string;
@@ -29,19 +30,20 @@ export function OptimizedImage({
   fit = "cover",
   ...props
 }: ImageProps) {
+  const config = useImageConfig();
   const aspect = width / height;
 
   const srcSet = RESPONSIVE_IMAGE_WIDTHS.map((w) => {
-    // sharp rejects fractional dimensions, so keep derived heights integer
+    // keep derived heights integer so URL variants stay cache-friendly
     const h = Math.round(w / aspect);
-    return `${buildImageTransformUrl(imageId, { width: w, height: h, fit })} ${w}w`;
+    return `${getImageUrl({ id: imageId }, config, { width: w, height: h, fit })} ${w}w`;
   }).join(", ");
 
   return (
     <picture>
       <img
         srcSet={srcSet}
-        src={buildImageTransformUrl(imageId, { width, height, fit })}
+        src={getImageUrl({ id: imageId }, config, { width, height, fit })}
         width={width}
         height={height}
         {...props}

@@ -1,33 +1,86 @@
 import { z } from "zod";
 
-/**
- * Client-safe: builds the resource-route URL serving an image; used from
- * client components (`OptimizedImage`) and `meta` functions, which also run
- * in the browser.
- */
-export function getImageUrl(imageId: string) {
-  return `/file/${imageId}`;
-}
-
 export const IMAGE_FITS = ["cover", "contain", "fill"] as const;
 export type ImageFit = (typeof IMAGE_FITS)[number];
 
 /**
- * Client-safe: builds the resource-route URL including the transform query
- * understood by the image route; shared by `src` and `srcSet` construction
- * so both request identical parameters.
+ * What URL building needs to know about an image. DB-backed images carry an
+ * `id` (their `/file/:fileId` fallback identity); static marketing assets are
+ * public_id-only (`storageKey`, no `id`).
  */
-export function buildImageTransformUrl(
-  imageId: string,
-  { width, height, fit }: { width: number; height: number; fit: ImageFit },
-) {
-  const searchParams = new URLSearchParams({
-    w: `${width}`,
-    h: `${height}`,
-    fit,
-  });
+export interface ImageUrlSource {
+  id?: string | null;
+  /** Cloudinary public_id / local file key; null until a row is backfilled. */
+  storageKey?: string | null;
+  /** Cloudinary asset version — versioned URLs make CDN invalidation moot. */
+  version?: number | null;
+}
 
-  return `${getImageUrl(imageId)}?${searchParams.toString()}`;
+/** The root loader's public image-delivery fields (never the API secret). */
+export interface ImageProviderConfig {
+  imageProvider: "local" | "cloudinary";
+  cloudinaryCloudName: string | null;
+}
+
+export interface ImageTransformOptions {
+  width?: number;
+  height?: number;
+  fit?: ImageFit;
+}
+
+// c_fill,g_auto replaces the old sharp fit=cover; the CSS-ish contain/fill
+// map to Cloudinary's fit/scale crops
+const CLOUDINARY_CROPS: Record<ImageFit, string> = {
+  cover: "c_fill,g_auto",
+  contain: "c_fit",
+  fill: "c_scale",
+};
+
+function cloudinaryTransform({
+  width,
+  height,
+  fit = "cover",
+}: ImageTransformOptions) {
+  // f_auto,q_auto: per-browser format (avif/webp) and quality on the CDN
+  const parts = ["f_auto", "q_auto"];
+  if (width !== undefined || height !== undefined) {
+    parts.push(CLOUDINARY_CROPS[fit]);
+    if (width !== undefined) parts.push(`w_${width}`);
+    if (height !== undefined) parts.push(`h_${height}`);
+  }
+  return parts.join(",");
+}
+
+/**
+ * Client-safe, isomorphic delivery-URL builder (design §3.2).
+ *
+ * - Cloudinary: a plain `res.cloudinary.com` URL — the app is not in the
+ *   serving path. Static assets (no `id`) use it whenever a cloud name is
+ *   configured, independent of `imageProvider` (delivery needs no secrets).
+ * - Local provider, no storage key yet (pre-backfill row), or no cloud name:
+ *   the `/file/:fileId` resource route. Transforms are dropped — dev and the
+ *   interim blob path serve original bytes.
+ * - A static asset without a cloud name renders nothing (offline dev hero).
+ */
+export function getImageUrl(
+  image: ImageUrlSource,
+  config: ImageProviderConfig,
+  options: ImageTransformOptions = {},
+): string {
+  const { storageKey, version, id } = image;
+  const { imageProvider, cloudinaryCloudName } = config;
+
+  const cloudinaryEligible =
+    storageKey &&
+    cloudinaryCloudName &&
+    (imageProvider === "cloudinary" || !id);
+
+  if (cloudinaryEligible) {
+    const versionSegment = version == null ? "" : `v${version}/`;
+    return `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${cloudinaryTransform(options)}/${versionSegment}${storageKey}`;
+  }
+
+  return id ? `/file/${id}` : "";
 }
 
 export function isImageFit(value: unknown): value is ImageFit {
