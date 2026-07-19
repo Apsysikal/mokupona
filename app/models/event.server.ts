@@ -3,7 +3,10 @@ import type { Address, Event, Prisma } from "#prisma/generated/client";
 import { prisma } from "~/db.server";
 import { FormSchema, type FieldDescriptor } from "~/features/forms/fields";
 import { DEFAULT_FORM } from "~/features/signup-form/default-form";
-import { saveFormSchemaInTx } from "~/models/form.server";
+import {
+  CURRENT_FORM_VERSION_ORDER_BY,
+  saveFormSchemaInTx,
+} from "~/models/form.server";
 import {
   createImageInTx,
   deleteImageInTx,
@@ -52,10 +55,19 @@ export async function getEventsWithAddress(): Promise<
 // app/features/events/event-status.ts#isPastEvent: `date >= now` is upcoming,
 // an event on `now` exactly included. Models cannot import features, so this
 // comment is the link — keep the two rules in sync.
-export async function getNextEvent(): Promise<Event | null> {
-  return prisma.event.findFirst({
-    where: { date: { gte: new Date() } },
+function nextEventArgs(now: Date) {
+  return {
+    where: { date: { gte: now } },
     orderBy: { date: "asc" },
+  } satisfies Prisma.EventFindFirstArgs;
+}
+
+export async function getNextEvent(
+  now = new Date(),
+): Promise<(Event & { address: Address }) | null> {
+  return prisma.event.findFirst({
+    ...nextEventArgs(now),
+    include: { address: true },
   });
 }
 
@@ -68,6 +80,34 @@ export async function getEventById(
       address: true,
     },
   });
+}
+
+/**
+ * Read the event detail and the latest version of its owned signup form as a
+ * single model operation. Returning null for either missing row preserves the
+ * routes' one consistent not-found outcome; every valid event has at least one
+ * version by construction.
+ */
+export async function getEventWithCurrentFormVersion(id: string) {
+  const record = await prisma.event.findUnique({
+    where: { id },
+    include: {
+      address: true,
+      form: {
+        select: {
+          versions: { orderBy: CURRENT_FORM_VERSION_ORDER_BY, take: 1 },
+        },
+      },
+    },
+  });
+
+  if (!record) return null;
+
+  const [version] = record.form.versions;
+  if (!version) return null;
+
+  const { form: _form, ...event } = record;
+  return { event, version };
 }
 
 // Every event owns a form (Event.formId is non-nullable) and a cover image,

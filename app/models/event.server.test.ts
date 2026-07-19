@@ -3,7 +3,13 @@ import { describe, expect, it } from "vitest";
 import { buildEventData } from "../../test/factories";
 
 import { deleteAddress } from "./address.server";
-import { createEvent, deleteEvent, updateEvent } from "./event.server";
+import {
+  createEvent,
+  deleteEvent,
+  getEventWithCurrentFormVersion,
+  getNextEvent,
+  updateEvent,
+} from "./event.server";
 import {
   createFormSubmission,
   FormVersionChangedError,
@@ -61,6 +67,62 @@ describe("createEvent", () => {
     await expect(
       createEvent(await buildEventData(), duplicateNames),
     ).rejects.toThrow();
+  });
+});
+
+describe("event read projections", () => {
+  it("returns the event address with its latest form version", async () => {
+    const event = await createEvent(await buildEventData());
+    const firstVersion = await getCurrentFormVersion(event.formId);
+    await createFormSubmission({
+      formVersionId: firstVersion.id,
+      answers: { name: "Versioned signer" },
+    });
+    const editedFields: FieldDescriptor[] = DEFAULT_FORM.map((field) =>
+      field.type === "textarea" && field.data.name === "comment"
+        ? { ...field, data: { ...field.data, label: "Updated comment" } }
+        : field,
+    );
+    await updateEvent(event.id, {}, editedFields);
+
+    const result = await getEventWithCurrentFormVersion(event.id);
+
+    expect(result?.event).toMatchObject({
+      id: event.id,
+      formId: event.formId,
+      address: { id: event.addressId },
+    });
+    expect(result?.version).toMatchObject({
+      formId: event.formId,
+      version: 2,
+      schema: editedFields,
+    });
+  });
+
+  it("returns one not-found result for an unknown event", async () => {
+    await expect(
+      getEventWithCurrentFormVersion("does-not-exist"),
+    ).resolves.toBeNull();
+  });
+
+  it("includes an event exactly on the upcoming boundary with its address", async () => {
+    const boundary = new Date("2200-01-01T12:00:00.000Z");
+    const event = await createEvent({
+      ...(await buildEventData()),
+      date: boundary,
+    });
+    await createEvent({
+      ...(await buildEventData()),
+      date: new Date(boundary.getTime() + 60_000),
+    });
+
+    const next = await getNextEvent(boundary);
+
+    expect(next).toMatchObject({
+      id: event.id,
+      date: boundary,
+      address: { id: event.addressId },
+    });
   });
 });
 

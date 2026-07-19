@@ -17,11 +17,10 @@ import {
 } from "~/features/events/date-format";
 import { EVENT_TIMEZONE } from "~/features/events/timezone";
 import { getAttendeesForEvent } from "~/features/signup-form/read.server";
-import { getEventById, getNextEvent } from "~/models/event.server";
+import { getNextEvent } from "~/models/event.server";
 
 export async function loader() {
-  const next = await getNextEvent();
-  const nextDinner = next ? await getEventById(next.id) : null;
+  const nextDinner = await getNextEvent();
   const attendees = nextDinner ? await getAttendeesForEvent(nextDinner.id) : [];
 
   const todayLabel = new Intl.DateTimeFormat("en-GB", {

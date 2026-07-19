@@ -23,12 +23,11 @@ import { normalizeSubmissionValues } from "~/features/forms/normalize-submission
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
 import { buildSignupSchema } from "~/features/signup-form/build-schema";
 import { logger } from "~/logger.server";
-import { getEventById } from "~/models/event.server";
+import { getEventWithCurrentFormVersion } from "~/models/event.server";
 import {
   createFormSubmission,
   FormVersionChangedError,
 } from "~/models/form-submission.server";
-import { getCurrentFormVersionForEvent } from "~/models/form.server";
 import {
   getClientIPAddress,
   obscureEmail,
@@ -41,10 +40,9 @@ import { redirectWithToast } from "~/utils/toast.server";
 export async function loader({ params }: Route.LoaderArgs) {
   const { dinnerId } = params;
 
-  const [event, version] = await Promise.all([
-    getEventById(dinnerId).then(requireFound),
-    getCurrentFormVersionForEvent(dinnerId).then(requireFound),
-  ]);
+  const { event, version } = requireFound(
+    await getEventWithCurrentFormVersion(dinnerId),
+  );
 
   return {
     // the route ships the detail model, not the Prisma entity; it also covers
@@ -65,10 +63,9 @@ export async function action({ params, request }: Route.ActionArgs) {
 
   // the action never trusts client descriptors: re-read the current version
   // from the DB and rebuild the identical schema server-side (design §6.1)
-  const [dinner, version] = await Promise.all([
-    getEventById(dinnerId).then(requireFound),
-    getCurrentFormVersionForEvent(dinnerId).then(requireFound),
-  ]);
+  const { event: dinner, version } = requireFound(
+    await getEventWithCurrentFormVersion(dinnerId),
+  );
 
   if (isPastEvent(dinner.date, new Date())) {
     throw new Response("Forbidden", { status: 403 });

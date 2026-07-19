@@ -20,9 +20,11 @@ import {
 } from "~/features/signup-form/builder";
 import { withParsedImageForm } from "~/features/uploads/image-form-action.server";
 import { getAddresses } from "~/models/address.server";
-import { getEventById, updateEvent } from "~/models/event.server";
+import {
+  getEventWithCurrentFormVersion,
+  updateEvent,
+} from "~/models/event.server";
 import { eventHasSignups } from "~/models/form-submission.server";
-import { getCurrentFormVersionForEvent } from "~/models/form.server";
 import { fileToImageData } from "~/models/image.server";
 import { requireFound } from "~/shared/http.server";
 import { VALID_IMAGE_TYPES } from "~/shared/image";
@@ -31,12 +33,12 @@ import { nullableStringUpdateValue } from "~/utils/nullable-update-field.server"
 export async function loader({ params }: Route.LoaderArgs) {
   const { dinnerId } = params;
 
-  const [addresses, event, version, formHasSubmissions] = await Promise.all([
+  const [addresses, eventWithVersion, formHasSubmissions] = await Promise.all([
     getAddresses(),
-    getEventById(dinnerId).then(requireFound),
-    getCurrentFormVersionForEvent(dinnerId).then(requireFound),
+    getEventWithCurrentFormVersion(dinnerId).then(requireFound),
     eventHasSignups(dinnerId),
   ]);
+  const { event, version } = eventWithVersion;
 
   // an unparseable stored schema (a bug state) surfaces as the default form;
   // saving then repairs the event's form
