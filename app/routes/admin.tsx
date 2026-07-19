@@ -7,7 +7,7 @@ import {
   requireResolvedUserRoleMiddleware,
   userContext,
 } from "~/features/auth/middleware.server";
-import { ADMIN_ROLE_NAMES } from "~/features/auth/roles";
+import { ADMIN_ROLE_NAMES, isAdminRole } from "~/features/auth/roles";
 import { countAddresses } from "~/models/address.server";
 import { countBoardMembers } from "~/models/board-member.server";
 import { countEvents } from "~/models/event.server";
@@ -22,7 +22,7 @@ export const middleware: Route.MiddlewareFunction[] = [
 
 export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext);
-  const isAdmin = user.role.name === "admin";
+  const isAdmin = isAdminRole(user.role.name);
 
   const [dinners, locations, board, users] = await Promise.all([
     countEvents(),

@@ -1,13 +1,12 @@
-import { getFormProps, useForm } from "@conform-to/react";
-import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import { Form, redirect } from "react-router";
+import { parseWithZod } from "@conform-to/zod/v4";
+import { redirect } from "react-router";
 
 import type { Route } from "./+types/admin.locations.$locationId_.edit";
 
-import { AdminLocationForm } from "~/components/admin-location-form";
+import { AdminLocationRouteForm } from "~/components/admin-location-route-form";
 import { getAddressById, updateAddress } from "~/models/address.server";
 import { requireFound } from "~/shared/http.server";
-import { AddressSchema } from "~/utils/address-validation";
+import { AddressSchema, toAddressData } from "~/utils/address-validation";
 
 export async function loader({ params }: Route.LoaderArgs) {
   const { locationId } = params;
@@ -33,46 +32,27 @@ export async function action({ request, params }: Route.ActionArgs) {
     return submission.reply();
   }
 
-  const { streetName, houseNumber, zipCode, city } = submission.value;
-
-  await updateAddress(locationId, {
-    streetName,
-    houseNumber,
-    zip: zipCode,
-    city,
-  });
+  await updateAddress(locationId, toAddressData(submission.value));
 
   return redirect(`/admin/locations`);
 }
 
-export default function DinnersPage({
+export default function AdminLocationEditPage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
   const { location } = loaderData;
-  const lastResult = actionData;
-  const [form, fields] = useForm({
-    lastResult,
-    shouldValidate: "onBlur",
-    constraint: getZodConstraint(AddressSchema),
-    defaultValue: {
-      streetName: location.streetName,
-      houseNumber: location.houseNumber,
-      zipCode: location.zip,
-      city: location.city,
-    },
-    onValidate({ formData }) {
-      return parseWithZod(formData, { schema: AddressSchema });
-    },
-  });
-
   return (
-    <Form method="POST" replace {...getFormProps(form)}>
-      <AdminLocationForm
-        fields={fields}
-        submitText="Save location"
-        pageTitle="Edit location"
-      />
-    </Form>
+    <AdminLocationRouteForm
+      lastResult={actionData}
+      defaultValue={{
+        streetName: location.streetName,
+        houseNumber: location.houseNumber,
+        zipCode: location.zip,
+        city: location.city,
+      }}
+      submitText="Save location"
+      pageTitle="Edit location"
+    />
   );
 }

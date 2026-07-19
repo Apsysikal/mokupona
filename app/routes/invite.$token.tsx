@@ -19,11 +19,12 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { GoogleSignInButton } from "~/features/auth/components/google-button";
+import { displayNameSchema } from "~/features/auth/form-schemas";
 import { logout } from "~/features/auth/guards.server";
 import { optionalUserContext } from "~/features/auth/middleware.server";
 import { passwordSchema } from "~/features/auth/password-schema";
 import { landingPathForRole } from "~/features/auth/roles";
-import { isInvitableRole } from "~/features/users/invite.shared";
+import { normalizeInvitableRole } from "~/features/users/invite.shared";
 import { cn } from "~/lib/utils";
 import { logger } from "~/logger.server";
 import {
@@ -37,10 +38,7 @@ import { getClientIPAddress, obscureEmail } from "~/shared/http.server";
 
 const signupSchema = z.object({
   intent: z.literal("signup"),
-  name: z
-    .string({ error: "Name is required" })
-    .trim()
-    .min(1, "Name is required"),
+  name: displayNameSchema,
   password: passwordSchema,
 });
 
@@ -98,7 +96,11 @@ export const loader = async ({ params, context }: Route.LoaderArgs) => {
   };
 };
 
-export const action = async ({ request, params, context }: Route.ActionArgs) => {
+export const action = async ({
+  request,
+  params,
+  context,
+}: Route.ActionArgs) => {
   const formData = await request.formData();
   const intent = formData.get("intent");
 
@@ -118,7 +120,7 @@ export const action = async ({ request, params, context }: Route.ActionArgs) => 
   // Prisma types roleName as string; invites only ever carry an invitable
   // role, so fall back the way the invite mailer does.
   const landingPath = landingPathForRole(
-    isInvitableRole(invite.roleName) ? invite.roleName : "user",
+    normalizeInvitableRole(invite.roleName),
   );
 
   if (intent === "accept") {

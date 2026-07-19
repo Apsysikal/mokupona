@@ -1,8 +1,9 @@
 import { PersonIcon, PlusIcon } from "@radix-ui/react-icons";
-import { Link, Outlet, useFetcher, useLocation } from "react-router";
+import { Link, Outlet, useLocation } from "react-router";
 
 import type { Route } from "./+types/admin.board-members";
 
+import { AdminDeleteButton } from "~/components/admin-delete-button";
 import {
   AdminEmptyState,
   AdminPageHeader,
@@ -85,8 +86,6 @@ function BoardMemberCard({
   member: BoardMember;
   seed: number;
 }) {
-  const deleteFetcher = useFetcher();
-  const isDeleting = deleteFetcher.state !== "idle";
   const { id, name, position, imageId } = member;
 
   return (
@@ -112,16 +111,7 @@ function BoardMemberCard({
         <Button size="sm" variant="outline" asChild>
           <Link to={`${id}/edit`}>Edit</Link>
         </Button>
-        <deleteFetcher.Form method="POST" action={`${id}/delete`}>
-          <Button
-            type="submit"
-            size="sm"
-            variant="destructive-outline"
-            disabled={isDeleting}
-          >
-            {isDeleting ? "Deleting…" : "Delete"}
-          </Button>
-        </deleteFetcher.Form>
+        <AdminDeleteButton action={`${id}/delete`} />
       </div>
     </Card>
   );

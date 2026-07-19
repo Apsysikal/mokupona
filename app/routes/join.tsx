@@ -11,6 +11,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { GoogleSignInButton } from "~/features/auth/components/google-button";
+import { displayNameSchema, emailSchema } from "~/features/auth/form-schemas";
 import { getUserId } from "~/features/auth/guards.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
 import { logger } from "~/logger.server";
@@ -18,11 +19,8 @@ import { getUserByEmail } from "~/models/user.server";
 import { getClientIPAddress, obscureEmail } from "~/shared/http.server";
 
 const schema = withPasswordConfirmation({
-  name: z
-    .string({ error: "Name is required" })
-    .trim()
-    .min(1, "Name is required"),
-  email: z.email({ error: "Email is required" }),
+  name: displayNameSchema,
+  email: emailSchema,
   redirectTo: z.string().optional(),
 });
 

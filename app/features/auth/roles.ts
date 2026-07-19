@@ -10,13 +10,33 @@ export const ADMIN_ROLE_NAMES = [
   "admin",
 ] as const satisfies readonly RoleName[];
 
+export const ROLE_LABELS = {
+  user: "user",
+  moderator: "moderator",
+  admin: "administrator",
+} as const satisfies Record<RoleName, string>;
+
+export const ROLE_FILTER_OPTIONS = [
+  { label: "Admin", value: "admin" },
+  { label: "Moderator", value: "moderator" },
+  { label: "User", value: "user" },
+] as const satisfies ReadonlyArray<{ label: string; value: RoleName }>;
+
 export function isRoleName(value: string): value is RoleName {
-  return (ROLE_NAMES as readonly string[]).includes(value);
+  return ROLE_NAMES.some((role) => role === value);
+}
+
+export function roleLabel(value: string): string {
+  return isRoleName(value) ? ROLE_LABELS[value] : value;
+}
+
+export function isAdminRole(value: string): boolean {
+  return value === "admin";
 }
 
 /** Where a user lands after login or invite acceptance, by role. */
 export function landingPathForRole(role: RoleName): string {
-  return (ADMIN_ROLE_NAMES as readonly string[]).includes(role)
+  return ADMIN_ROLE_NAMES.some((adminRole) => adminRole === role)
     ? "/admin"
     : "/";
 }

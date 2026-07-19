@@ -18,6 +18,7 @@ import { z } from "zod";
 
 import type { Route } from "./+types/admin.users._index";
 
+import { AdminDeleteButton } from "~/components/admin-delete-button";
 import {
   AdminEmptyState,
   AdminPageHeader,
@@ -36,7 +37,14 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
+import { emailSchema } from "~/features/auth/form-schemas";
 import { userContext } from "~/features/auth/middleware.server";
+import {
+  isAdminRole,
+  ROLE_FILTER_OPTIONS,
+  roleLabel,
+  type RoleName,
+} from "~/features/auth/roles";
 import {
   createAndSendInvite,
   resendInvite,
@@ -52,7 +60,7 @@ import { getDomainUrl } from "~/shared/http.server";
 
 const inviteSchema = z.object({
   intent: z.literal("invite"),
-  email: z.email({ error: "Email is required" }),
+  email: emailSchema,
   // admin is not offered and rejected here — ceiling "moderator" (design §6)
   role: z.enum(INVITABLE_ROLES, { error: "Pick a role" }),
 });
@@ -122,12 +130,10 @@ export const meta: Route.MetaFunction = () => {
 
 const ROLE_FILTERS = [
   { id: "all", label: "All" },
-  { id: "admin", label: "Admin" },
-  { id: "moderator", label: "Moderator" },
-  { id: "user", label: "User" },
-] as const;
+  ...ROLE_FILTER_OPTIONS.map(({ label, value }) => ({ id: value, label })),
+] satisfies ReadonlyArray<{ id: "all" | RoleName; label: string }>;
 
-type RoleFilter = (typeof ROLE_FILTERS)[number]["id"];
+type RoleFilter = "all" | RoleName;
 
 export default function AdminUsersPage({ loaderData }: Route.ComponentProps) {
   const { users, invites } = loaderData;
@@ -398,46 +404,31 @@ function PendingInviteRow({ invite }: { invite: InviteRow }) {
 
 type User = Awaited<ReturnType<typeof loader>>["users"][number];
 
-const ROLE_TEXT: Record<string, { label: string; className: string }> = {
-  admin: { label: "administrator", className: "text-accent-light" },
-  moderator: { label: "moderator", className: "text-muted-foreground" },
-  user: { label: "user", className: "text-foreground/40" },
+const ROLE_CLASS_NAMES: Record<string, string> = {
+  admin: "text-accent-light",
+  moderator: "text-muted-foreground",
+  user: "text-foreground/40",
 };
 
 function UserCard({ user, seed }: { user: User; seed: number }) {
-  const deleteFetcher = useFetcher();
   const { id, email, role } = user;
-  const isAdmin = role.name === "admin";
-  const isDeleting = deleteFetcher.state !== "idle";
-  const roleText = ROLE_TEXT[role.name] ?? {
-    label: role.name,
-    className: "text-foreground/40",
-  };
+  const isAdmin = isAdminRole(role.name);
+  const roleClassName = ROLE_CLASS_NAMES[role.name] ?? "text-foreground/40";
 
   return (
     <div className="border-border bg-card hover:border-primary/30 flex items-center gap-3 rounded-2xl border px-4 py-3 transition-colors">
       <InitialsAvatar name={email} seed={seed} className="size-10 text-sm" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-base font-semibold">{email}</p>
-        <p className={cn("mt-0.5 text-sm", roleText.className)}>
-          {roleText.label}
+        <p className={cn("mt-0.5 text-sm", roleClassName)}>
+          {roleLabel(role.name)}
         </p>
       </div>
       <div className="flex shrink-0 gap-2">
         <Button size="sm" variant="outline" asChild>
           <Link to={`${id}/edit`}>Edit</Link>
         </Button>
-        <deleteFetcher.Form method="POST" action={`${id}/delete`}>
-          <Button
-            type="submit"
-            size="sm"
-            variant="destructive-outline"
-            // admin accounts can't be deleted
-            disabled={isAdmin || isDeleting}
-          >
-            {isDeleting ? "Deleting…" : "Delete"}
-          </Button>
-        </deleteFetcher.Form>
+        <AdminDeleteButton action={`${id}/delete`} disabled={isAdmin} />
       </div>
     </div>
   );

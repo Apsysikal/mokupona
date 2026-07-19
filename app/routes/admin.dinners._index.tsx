@@ -1,9 +1,10 @@
 import { PlusIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
-import { Link, useFetcher } from "react-router";
+import { Link } from "react-router";
 
 import type { Route } from "./+types/admin.dinners._index";
 
+import { AdminDeleteButton } from "~/components/admin-delete-button";
 import {
   AdminEmptyState,
   AdminPageHeader,
@@ -140,8 +141,6 @@ type Dinner = Awaited<ReturnType<typeof loader>>["dinners"][number] & {
 };
 
 function DinnerCard({ dinner }: { dinner: Dinner }) {
-  const deleteFetcher = useFetcher();
-  const isDeleting = deleteFetcher.state !== "idle";
   const date = new Date(dinner.date);
 
   return (
@@ -205,16 +204,7 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
         <Button size="sm" variant="outline" asChild>
           <Link to={`${dinner.id}/edit`}>Edit</Link>
         </Button>
-        <deleteFetcher.Form method="POST" action={`${dinner.id}/delete`}>
-          <Button
-            type="submit"
-            size="sm"
-            variant="destructive-outline"
-            disabled={isDeleting}
-          >
-            {isDeleting ? "Deleting…" : "Delete"}
-          </Button>
-        </deleteFetcher.Form>
+        <AdminDeleteButton action={`${dinner.id}/delete`} />
       </div>
     </div>
   );

@@ -1,12 +1,11 @@
-import { getFormProps, useForm } from "@conform-to/react";
-import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import { Form, redirect } from "react-router";
+import { parseWithZod } from "@conform-to/zod/v4";
+import { redirect } from "react-router";
 
 import type { Route } from "./+types/admin.locations.new";
 
-import { AdminLocationForm } from "~/components/admin-location-form";
+import { AdminLocationRouteForm } from "~/components/admin-location-route-form";
 import { createAddress } from "~/models/address.server";
-import { AddressSchema } from "~/utils/address-validation";
+import { AddressSchema, toAddressData } from "~/utils/address-validation";
 
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
@@ -16,14 +15,7 @@ export async function action({ request }: Route.ActionArgs) {
     return submission.reply();
   }
 
-  const { streetName, houseNumber, zipCode, city } = submission.value;
-
-  await createAddress({
-    streetName,
-    houseNumber,
-    zip: zipCode,
-    city,
-  });
+  await createAddress(toAddressData(submission.value));
 
   return redirect("/admin/locations");
 }
@@ -32,24 +24,14 @@ export const meta: Route.MetaFunction = () => {
   return [{ title: "Admin - Create Location" }];
 };
 
-export default function DinnersPage({ actionData }: Route.ComponentProps) {
-  const lastResult = actionData;
-  const [form, fields] = useForm({
-    lastResult,
-    shouldValidate: "onBlur",
-    constraint: getZodConstraint(AddressSchema),
-    onValidate({ formData }) {
-      return parseWithZod(formData, { schema: AddressSchema });
-    },
-  });
-
+export default function AdminLocationNewPage({
+  actionData,
+}: Route.ComponentProps) {
   return (
-    <Form method="POST" replace {...getFormProps(form)}>
-      <AdminLocationForm
-        fields={fields}
-        submitText="Create location"
-        pageTitle="New location"
-      />
-    </Form>
+    <AdminLocationRouteForm
+      lastResult={actionData}
+      submitText="Create location"
+      pageTitle="New location"
+    />
   );
 }

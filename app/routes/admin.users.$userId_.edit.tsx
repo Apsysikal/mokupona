@@ -7,7 +7,11 @@ import type { Route } from "./+types/admin.users.$userId_.edit";
 
 import { SelectField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
-import { INVITABLE_ROLES } from "~/features/users/invite.shared";
+import { isAdminRole } from "~/features/auth/roles";
+import {
+  INVITABLE_ROLE_OPTIONS,
+  INVITABLE_ROLES,
+} from "~/features/users/invite.shared";
 import { getRoleByName } from "~/models/role.server";
 import {
   getUserAccountSummary,
@@ -89,12 +93,7 @@ export default function DinnersPage({
     },
   });
 
-  const isAdmin = user.role.name === "admin";
-  const options = [
-    { label: "User", value: "user" },
-    { label: "Moderator", value: "moderator" },
-  ];
-
+  const isAdmin = isAdminRole(user.role.name);
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-col gap-4">
@@ -115,7 +114,7 @@ export default function DinnersPage({
           selectProps={{
             ...getSelectProps(fields.roleName),
             disabled: isAdmin,
-            options,
+            options: [...INVITABLE_ROLE_OPTIONS],
           }}
           errors={fields.roleName.errors}
         />

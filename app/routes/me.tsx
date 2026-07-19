@@ -16,6 +16,7 @@ import { Button } from "~/components/ui/button";
 import { authClient } from "~/features/auth/auth.client";
 import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { GoogleMark } from "~/features/auth/components/google-button";
+import { displayNameSchema } from "~/features/auth/form-schemas";
 import { logout, requireUserId } from "~/features/auth/guards.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
 import {
@@ -26,10 +27,7 @@ import {
 
 const nameSchema = z.object({
   intent: z.literal("update-name"),
-  name: z
-    .string({ error: "Name is required" })
-    .trim()
-    .min(1, "Name is required"),
+  name: displayNameSchema,
 });
 
 const passwordActionSchema = withPasswordConfirmation({

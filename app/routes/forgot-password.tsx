@@ -11,11 +11,12 @@ import { AuthStatus } from "~/components/auth-status";
 import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { auth } from "~/features/auth/auth.server";
+import { emailSchema } from "~/features/auth/form-schemas";
 import { logger } from "~/logger.server";
 import { getClientIPAddress, obscureEmail } from "~/shared/http.server";
 
 const schema = z.object({
-  email: z.email({ error: "Email is required" }),
+  email: emailSchema,
 });
 
 export const action = async ({ request }: Route.ActionArgs) => {

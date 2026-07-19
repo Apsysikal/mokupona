@@ -1,4 +1,4 @@
-import type { Role, User } from "#prisma/generated/client";
+import type { Prisma, Role, User } from "#prisma/generated/client";
 
 import { prisma } from "~/db.server";
 import { deleteEventsInTx } from "~/models/event.server";
@@ -100,9 +100,25 @@ export async function updateNonAdminUserRole(
 // The DB cascades User -> Event, which would skip the app-level form cascade
 // and orphan Form/FormVersion/FormSubmission rows — delete the user's events
 // through it first, in the same transaction.
+async function deleteUserInTx(tx: Prisma.TransactionClient, id: string) {
+  await deleteEventsInTx(tx, { createdById: id });
+  return tx.user.delete({ where: { id } });
+}
+
 export async function deleteUserById(id: string): Promise<User> {
+  return prisma.$transaction((tx) => deleteUserInTx(tx, id));
+}
+
+// Admin deletion policy belongs to the write, not only its route/UI. Missing
+// and protected admin users are both no-ops for the idempotent admin action.
+export async function deleteNonAdminUserById(id: string): Promise<User | null> {
   return prisma.$transaction(async (tx) => {
-    await deleteEventsInTx(tx, { createdById: id });
-    return tx.user.delete({ where: { id } });
+    const user = await tx.user.findUnique({
+      where: { id },
+      include: { role: true },
+    });
+    if (!user || user.role.name === "admin") return null;
+
+    return deleteUserInTx(tx, id);
   });
 }

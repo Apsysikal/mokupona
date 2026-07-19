@@ -1,4 +1,4 @@
-import { isInvitableRole } from "./invite.shared";
+import { normalizeInvitableRole } from "./invite.shared";
 import type { InvitableRole } from "./invite.shared";
 
 import { sendTemplate } from "~/features/mail/mail.server";
@@ -12,7 +12,7 @@ async function sendInviteMail({
   invite: InviteWithToken;
   origin: string;
 }) {
-  const roleName = isInvitableRole(invite.roleName) ? invite.roleName : "user";
+  const roleName = normalizeInvitableRole(invite.roleName);
 
   await sendTemplate("invite", invite.email, {
     url: `${origin}/invite/${invite.token}`,

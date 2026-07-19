@@ -14,6 +14,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { GoogleSignInButton } from "~/features/auth/components/google-button";
+import { emailSchema } from "~/features/auth/form-schemas";
 import { getUserId } from "~/features/auth/guards.server";
 import { logger } from "~/logger.server";
 import {
@@ -23,7 +24,7 @@ import {
 } from "~/shared/http.server";
 
 const schema = z.object({
-  email: z.email({ error: "Email is required" }),
+  email: emailSchema,
   password: z.string({ error: "Password is required" }),
   redirectTo: z.string().optional(),
   remember: z.boolean().optional().default(false),
