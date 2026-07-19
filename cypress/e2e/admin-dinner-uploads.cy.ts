@@ -11,15 +11,11 @@ import {
   uploadDinnerCover,
   VALID_UPLOAD_FIXTURE_PATH,
   type DinnerRecord,
+  type ImageRecord,
 } from "../support/upload-test-utils";
 
-type DinnerCleanup = {
-  id: string;
-  extraImageIds?: string[];
-};
-
 describe("admin dinner uploads", () => {
-  let dinnersToCleanup: DinnerCleanup[];
+  let dinnerIdsToCleanup: string[];
 
   function createDinnerAndOpenEdit(record: {
     title: string;
@@ -27,11 +23,10 @@ describe("admin dinner uploads", () => {
   }) {
     return runUploadDbCommand<DinnerRecord>("create-dinner", record).then(
       (dinner) => {
-        const cleanup: DinnerCleanup = { id: dinner.id };
-        dinnersToCleanup.push(cleanup);
+        dinnerIdsToCleanup.push(dinner.id);
 
         cy.visitAndCheck(`/admin/dinners/${dinner.id}/edit`);
-        return cy.wrap({ dinner, cleanup });
+        return cy.wrap(dinner);
       },
     );
   }
@@ -52,14 +47,14 @@ describe("admin dinner uploads", () => {
   }
 
   beforeEach(() => {
-    dinnersToCleanup = [];
+    dinnerIdsToCleanup = [];
     cy.loginAsRole("moderator");
   });
 
   afterEach(() => {
     cy.then(() => {
-      dinnersToCleanup.forEach(({ id, extraImageIds }) => {
-        runUploadDbCommand("delete-dinner", { id, extraImageIds });
+      dinnerIdsToCleanup.forEach((id) => {
+        runUploadDbCommand("delete-dinner", { id });
       });
     });
   });
@@ -69,12 +64,18 @@ describe("admin dinner uploads", () => {
 
     createDinnerViaAdminForm(values);
     saveDinnerAndCaptureId(values.title).then((dinnerId) => {
-      dinnersToCleanup.push({ id: dinnerId });
+      dinnerIdsToCleanup.push(dinnerId);
 
       runUploadDbCommand<DinnerRecord>("get-dinner", { id: dinnerId }).then(
         (dinner) => {
           expect(dinner.title).to.equal(values.title);
           expect(dinner.imageId).to.be.a("string").and.not.be.empty;
+          // uploads persist provider scalars now, never blob bytes
+          expect(dinner.imageStorageKey).to.be.a("string").and.not.be.empty;
+          // the stored file must be servable back by the app — this pins the
+          // cross-process IMAGE_UPLOAD_FOLDER contract between the db helper
+          // and the server
+          cy.request(`/file/${dinner.imageId}`).its("status").should("eq", 200);
         },
       );
     });
@@ -108,7 +109,7 @@ describe("admin dinner uploads", () => {
     createDinnerAndOpenEdit({
       title: "Dinner edit keep image",
       description: "Original dinner description",
-    }).then(({ dinner }) => {
+    }).then((dinner) => {
       const updatedTitle = "Dinner edit keep image updated";
 
       cy.findByLabelText(/^title$/i)
@@ -125,7 +126,7 @@ describe("admin dinner uploads", () => {
     createDinnerAndOpenEdit({
       title: "Dinner edit replace image",
       description: "Original dinner description",
-    }).then(({ dinner, cleanup }) => {
+    }).then((dinner) => {
       const updatedTitle = "Dinner edit replace image updated";
 
       cy.findByLabelText(/^title$/i)
@@ -135,14 +136,20 @@ describe("admin dinner uploads", () => {
       saveEditAndFetch(dinner.id).then((updatedDinner) => {
         expect(updatedDinner.title).to.equal(updatedTitle);
         expect(updatedDinner.imageId).to.not.equal(dinner.imageId);
-        cleanup.extraImageIds = [dinner.imageId];
+        // updateEvent deletes the replaced cover row in-transaction — no
+        // orphan row survives, so no defensive extra-image cleanup either
+        runUploadDbCommand<ImageRecord | null>("get-image", {
+          id: dinner.imageId,
+        }).then((oldImage) => {
+          expect(oldImage).to.equal(null);
+        });
       });
     });
   });
 
   it("shows a validation error on dinner edit when the uploaded cover is larger than the Zod limit", () => {
     createDinnerAndOpenEdit({ title: "Dinner edit zod error" }).then(
-      ({ dinner }) => {
+      (dinner) => {
         submitOversizedCoverExpectingError(`/admin/dinners/${dinner.id}/edit`);
       },
     );
@@ -150,7 +157,7 @@ describe("admin dinner uploads", () => {
 
   it("returns a server-side error on dinner edit when the uploaded cover exceeds the upload handler limit", () => {
     createDinnerAndOpenEdit({ title: "Dinner edit handler error" }).then(
-      ({ dinner }) => {
+      (dinner) => {
         expectHandlerLimitRejection({
           action: `/admin/dinners/${dinner.id}/edit`,
           fields: {

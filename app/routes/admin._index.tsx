@@ -8,7 +8,7 @@ import {
   InitialsAvatar,
   SeatProgress,
 } from "~/components/admin-ui";
-import { OptimizedImage } from "~/components/optimized-image";
+import { CoverImage } from "~/components/cover-image";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import {
@@ -32,7 +32,7 @@ export async function loader() {
           id: nextDinner.id,
           title: nextDinner.title,
           date: nextDinner.date,
-          imageId: nextDinner.imageId,
+          image: nextDinner.image,
           slots: nextDinner.slots,
           street: `${nextDinner.address.streetName} ${nextDinner.address.houseNumber}`,
           seatsTaken: attendees.length,
@@ -144,8 +144,8 @@ function NextDinnerCard({ dinner }: { dinner: NextDinner }) {
 
   return (
     <Card className="flex flex-wrap items-center gap-4 p-4">
-      <OptimizedImage
-        imageId={dinner.imageId}
+      <CoverImage
+        image={dinner.image}
         alt=""
         width={236}
         height={236}

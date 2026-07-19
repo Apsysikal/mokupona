@@ -1,13 +1,11 @@
 import type React from "react";
 import { Link } from "react-router";
 
-import { generateSrcSet } from "../utils";
-
 import type { HeroBlockType } from "./model";
 
+import { OptimizedImage } from "~/components/optimized-image";
 import { Eyebrow, SecondaryCTA } from "~/components/section";
 import { Button } from "~/components/ui/button";
-import { RESPONSIVE_IMAGE_WIDTHS } from "~/shared/image";
 
 type HeroBlockViewProps = React.ComponentPropsWithoutRef<"section"> & {
   blockData: HeroBlockType;
@@ -26,8 +24,7 @@ export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
     meta,
     image,
   } = data;
-  const { src, alt, width, height } = image;
-  const srcSet = generateSrcSet(src, RESPONSIVE_IMAGE_WIDTHS);
+  const { src, alt, width, height, blurDataUrl } = image;
 
   return (
     <section
@@ -85,17 +82,15 @@ export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
       </div>
 
       <div className="relative h-72 max-md:order-first md:h-auto md:w-[54%]">
-        <picture>
-          <img
-            srcSet={srcSet}
-            src={src}
-            className="absolute inset-0 size-full object-cover"
-            fetchPriority="high"
-            width={width}
-            height={height}
-            alt={alt ?? ""}
-          />
-        </picture>
+        {/* the LCP element — blur-up matters most here (design §3.3) */}
+        <OptimizedImage
+          image={{ storageKey: src, blurDataUrl }}
+          width={width ?? 1080}
+          height={height ?? 572}
+          alt={alt ?? ""}
+          className="absolute inset-0 size-full"
+          fetchPriority="high"
+        />
       </div>
     </section>
   );

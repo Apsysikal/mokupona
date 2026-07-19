@@ -6,14 +6,25 @@ import { DEFAULT_FORM } from "~/features/signup-form/default-form";
 import {
   CURRENT_FORM_VERSION_ORDER_BY,
   saveFormSchemaInTx,
+  type FormVersion,
 } from "~/models/form.server";
 import {
-  createImageInTx,
-  deleteImageInTx,
-  type ImageData,
+  IMAGE_METADATA_SELECT,
+  type ImageCreateData,
+  type ImageMetadata,
 } from "~/models/image.server";
 
 export type { Address, Event } from "#prisma/generated/client";
+
+// The cover FK lives on Image (eventId), so routes can't read a scalar
+// imageId off Event anymore — getters join the relation and project the
+// metadata components need for URLs and blur-up (null renders the UI
+// fallback artwork).
+export type EventWithImage = Event & { image: ImageMetadata | null };
+
+const EVENT_IMAGE_INCLUDE = {
+  image: { select: IMAGE_METADATA_SELECT },
+} satisfies Prisma.EventInclude;
 
 export interface EventCreateData {
   title: string;
@@ -25,7 +36,7 @@ export interface EventCreateData {
   price: number;
   discounts?: string | null;
   addressId: string;
-  image: ImageData;
+  image: ImageCreateData;
   createdById: string;
 }
 
@@ -38,7 +49,7 @@ export async function countEvents(): Promise<number> {
 
 // the public dinners page shows location ("8004 zürich") on the featured card
 export async function getEventsWithAddress(): Promise<
-  (Event & { address: Address })[]
+  (EventWithImage & { address: Address })[]
 > {
   return prisma.event.findMany({
     orderBy: {
@@ -46,6 +57,7 @@ export async function getEventsWithAddress(): Promise<
     },
     include: {
       address: true,
+      ...EVENT_IMAGE_INCLUDE,
     },
   });
 }
@@ -64,20 +76,21 @@ function nextEventArgs(now: Date) {
 
 export async function getNextEvent(
   now = new Date(),
-): Promise<(Event & { address: Address }) | null> {
+): Promise<(EventWithImage & { address: Address }) | null> {
   return prisma.event.findFirst({
     ...nextEventArgs(now),
-    include: { address: true },
+    include: { address: true, ...EVENT_IMAGE_INCLUDE },
   });
 }
 
 export async function getEventById(
   id: string,
-): Promise<(Event & { address: Address }) | null> {
+): Promise<(EventWithImage & { address: Address }) | null> {
   return prisma.event.findUnique({
     where: { id },
     include: {
       address: true,
+      ...EVENT_IMAGE_INCLUDE,
     },
   });
 }
@@ -88,11 +101,15 @@ export async function getEventById(
  * routes' one consistent not-found outcome; every valid event has at least one
  * version by construction.
  */
-export async function getEventWithCurrentFormVersion(id: string) {
+export async function getEventWithCurrentFormVersion(id: string): Promise<{
+  event: EventWithImage & { address: Address };
+  version: FormVersion;
+} | null> {
   const record = await prisma.event.findUnique({
     where: { id },
     include: {
       address: true,
+      ...EVENT_IMAGE_INCLUDE,
       form: {
         select: {
           versions: { orderBy: CURRENT_FORM_VERSION_ORDER_BY, take: 1 },
@@ -124,8 +141,6 @@ export async function createEvent(
   const { image, ...eventData } = data;
 
   return prisma.$transaction(async (tx) => {
-    const { id: imageId } = await createImageInTx(tx, image);
-
     const form = await tx.form.create({
       data: {
         versions: {
@@ -138,7 +153,7 @@ export async function createEvent(
     });
 
     return tx.event.create({
-      data: { ...eventData, imageId, formId: form.id },
+      data: { ...eventData, formId: form.id, image: { create: image } },
     });
   });
 }
@@ -146,73 +161,74 @@ export async function createEvent(
 // When formFields or a new cover image are provided, everything persists in
 // ONE transaction (the create path is atomic too) — a failure must not leave
 // the event updated but its form unchanged, nor leak an image row. A cover
-// swap runs strictly as create new image -> repoint event -> delete old
-// image: the DB cascade Image -> Event means deleting an image the event
-// still points at would delete the event itself.
+// swap deletes the old image row and creates the new one in the same
+// transaction (the updateBoardMember pattern).
+//
+// Capture-and-destroy (design §3.4): the replaced cover's storageKey is read
+// inside the transaction — the delete would otherwise erase it unseen — and
+// returned as a scalar; the CALLER destroys the provider asset strictly
+// after this commit. Null when no cover was replaced.
 export async function updateEvent(
   id: string,
   data: EventUpdateData,
   formFields?: FieldDescriptor[],
-): Promise<Event> {
+): Promise<{ event: Event; replacedImageKey: string | null }> {
   const { image, ...eventData } = data;
 
   if (!image && !formFields) {
-    return prisma.event.update({ where: { id }, data: eventData });
+    const event = await prisma.event.update({ where: { id }, data: eventData });
+    return { event, replacedImageKey: null };
   }
 
   return prisma.$transaction(async (tx) => {
-    let oldImageId: string | undefined;
-    let newImageId: string | undefined;
+    let replacedImageKey: string | null = null;
 
     if (image) {
-      const current = await tx.event.findUniqueOrThrow({
-        where: { id },
-        select: { imageId: true },
+      const replaced = await tx.image.findUnique({
+        where: { eventId: id },
+        select: { storageKey: true },
       });
-      oldImageId = current.imageId;
-      newImageId = (await createImageInTx(tx, image)).id;
+      replacedImageKey = replaced?.storageKey ?? null;
+      await tx.image.deleteMany({ where: { eventId: id } });
     }
 
     const event = await tx.event.update({
       where: { id },
-      data: { ...eventData, ...(newImageId && { imageId: newImageId }) },
+      data: { ...eventData, ...(image && { image: { create: image } }) },
     });
 
     if (formFields) {
       await saveFormSchemaInTx(tx, event.formId, formFields);
     }
 
-    // last, once the event no longer points at it (see cascade note above)
-    if (oldImageId) {
-      await deleteImageInTx(tx, oldImageId);
-    }
-
-    return event;
+    return { event, replacedImageKey };
   });
 }
 
 // The FK points Event -> Form (Restrict), so deleting an event does not
-// cascade to its form data, and Image -> Event points the wrong way for the
-// cover to go with the event. All event deletes must go through here (design
-// §3.2): submissions and versions first, then the events, then the forms —
-// the Restrict FKs force the event rows to go before their forms — and last
-// the now-unreferenced cover images. Callers that delete rows Event itself
-// cascades from at the DB level (User, Address, Image) must run this first,
-// in the same transaction, or the DB cascade skips it and orphans the form
-// and image rows.
+// cascade to its form data — the cover does cascade (Image.eventId). All
+// event deletes must go through here (design §3.2): submissions and versions
+// first, then the events, then the forms — the Restrict FKs force the event
+// rows to go before their forms.
+//
+// Each returned entry carries the doomed cover's storageKey (or null),
+// captured before the cascade erases it — capture-and-destroy, design §3.4.
 export async function deleteEventsInTx(
   tx: Prisma.TransactionClient,
   where: Prisma.EventWhereInput,
-) {
+): Promise<{ id: string; formId: string; imageKey: string | null }[]> {
   const events = await tx.event.findMany({
     where,
-    select: { id: true, formId: true, imageId: true },
+    select: {
+      id: true,
+      formId: true,
+      image: { select: { storageKey: true } },
+    },
   });
   if (events.length === 0) return [];
 
   const eventIds = events.map((event) => event.id);
   const formIds = events.map((event) => event.formId);
-  const imageIds = events.map((event) => event.imageId);
 
   await tx.formSubmission.deleteMany({
     where: { formVersion: { formId: { in: formIds } } },
@@ -220,17 +236,24 @@ export async function deleteEventsInTx(
   await tx.formVersion.deleteMany({ where: { formId: { in: formIds } } });
   await tx.event.deleteMany({ where: { id: { in: eventIds } } });
   await tx.form.deleteMany({ where: { id: { in: formIds } } });
-  await tx.image.deleteMany({ where: { id: { in: imageIds } } });
 
-  return events;
+  return events.map(({ image, ...event }) => ({
+    ...event,
+    imageKey: image?.storageKey ?? null,
+  }));
 }
 
-export async function deleteEvent(id: string): Promise<Event> {
+// The caller destroys the returned imageKey's provider asset AFTER this
+// transaction committed (a leaked asset on crash is acceptable, a dangling
+// DB reference is not).
+export async function deleteEvent(
+  id: string,
+): Promise<{ event: Event; imageKey: string | null }> {
   return prisma.$transaction(async (tx) => {
     // findUniqueOrThrow keeps prisma.event.delete's throw-on-missing behavior
     const event = await tx.event.findUniqueOrThrow({ where: { id } });
-    await deleteEventsInTx(tx, { id });
+    const [deleted] = await deleteEventsInTx(tx, { id });
 
-    return event;
+    return { event, imageKey: deleted?.imageKey ?? null };
   });
 }

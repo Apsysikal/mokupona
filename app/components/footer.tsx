@@ -2,7 +2,8 @@ import { Link } from "react-router";
 
 import { BrandLockup } from "./brand-lockup";
 
-const groupLabelClasses = "text-xs uppercase tracking-widest text-foreground/40";
+const groupLabelClasses =
+  "text-xs uppercase tracking-widest text-foreground/40";
 const linkClasses = "text-sm text-foreground/80 hover:text-foreground";
 
 export function Footer() {

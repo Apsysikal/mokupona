@@ -1,7 +1,6 @@
 import type { Address } from "#prisma/generated/client";
 
 import { prisma } from "~/db.server";
-import { deleteEventsInTx } from "~/models/event.server";
 
 export type { Address } from "#prisma/generated/client";
 
@@ -12,6 +11,21 @@ export async function countAddresses(): Promise<number> {
 
 export async function getAddresses(): Promise<Address[]> {
   return prisma.address.findMany();
+}
+
+// The admin locations list disables Delete for addresses that still host
+// events (deleteAddress would refuse anyway — Event.addressId is Restrict).
+export async function getAddressesWithEventCount(): Promise<
+  (Address & { eventCount: number })[]
+> {
+  const addresses = await prisma.address.findMany({
+    include: { _count: { select: { events: true } } },
+  });
+
+  return addresses.map(({ _count, ...address }) => ({
+    ...address,
+    eventCount: _count.events,
+  }));
 }
 
 export async function getAddressById(id: string) {
@@ -64,12 +78,14 @@ export async function updateAddress(
   });
 }
 
-// The DB cascades Address -> Event, which would skip the app-level form
-// cascade and orphan Form/FormVersion/FormSubmission rows — delete the
-// address's events through it first, in the same transaction.
-export async function deleteAddress(id: string) {
+// Event.addressId is onDelete: Restrict — an address in use can't be deleted
+// out from under its events. The guard lives in the write (null = blocked,
+// like deleteNonAdminUserById), not only in the UI's disabled button.
+export async function deleteAddress(id: string): Promise<Address | null> {
   return prisma.$transaction(async (tx) => {
-    await deleteEventsInTx(tx, { addressId: id });
+    const inUse = await tx.event.count({ where: { addressId: id } });
+    if (inUse > 0) return null;
+
     return tx.address.delete({ where: { id } });
   });
 }

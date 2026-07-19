@@ -4,50 +4,56 @@ import { prisma } from "~/db.server";
 
 export type { Image };
 
-export interface ImageData {
+/**
+ * The read projection components need to render an image: enough for URL
+ * building (storageKey/version), layout (intrinsic width/height) and the
+ * blur-up placeholder. All-scalar and serialization-safe by construction.
+ */
+export interface ImageMetadata {
+  id: string;
+  storageKey: string | null;
+  version: number | null;
+  width: number | null;
+  height: number | null;
+  blurDataUrl: string | null;
+}
+
+// Models-internal plumbing: the select the owning models' includes share so
+// their `image` projections cannot drift from ImageMetadata.
+export const IMAGE_METADATA_SELECT = {
+  id: true,
+  storageKey: true,
+  version: true,
+  width: true,
+  height: true,
+  blurDataUrl: true,
+} satisfies Prisma.ImageSelect;
+
+/**
+ * What owning models persist for a provider-stored image: the upload's MIME
+ * type plus the `StoredImage` scalars the provider returned. Bytes no longer
+ * cross this boundary — `Image.blob` is legacy and is not written anymore.
+ */
+export interface ImageCreateData {
   contentType: string;
-  // Buffer's bare form is Buffer<ArrayBufferLike>, which Prisma's Bytes input rejects
-  blob: Buffer<ArrayBuffer>;
-}
-
-// The one place upload bytes become persistable ImageData.
-export async function fileToImageData(file: File): Promise<ImageData> {
-  return {
-    contentType: file.type,
-    blob: Buffer.from(await file.arrayBuffer()),
-  };
-}
-
-// Image rows are only ever created inside their owner's transaction (event
-// create/update) so bytes and ownership commit or roll back together — a
-// standalone create would leave an orphan row if the owner write failed.
-export async function createImageInTx(
-  tx: Prisma.TransactionClient,
-  data: ImageData,
-): Promise<{ id: string }> {
-  return tx.image.create({ data, select: { id: true } });
-}
-
-// The DB cascades Image -> Event: deleting an image an event still points at
-// deletes the event (skipping the app-level form cleanup). Callers must
-// repoint or delete the event first, in the same transaction.
-export async function deleteImageInTx(
-  tx: Prisma.TransactionClient,
-  id: string,
-): Promise<void> {
-  await tx.image.delete({ where: { id } });
+  storageKey: string;
+  version?: number | null;
+  width?: number | null;
+  height?: number | null;
+  blurDataUrl?: string | null;
 }
 
 export async function getImageById(id: string): Promise<Image | null> {
   return prisma.image.findUnique({ where: { id } });
 }
 
-// An image is an orphan iff neither owner relation holds: no board member
-// (boardMemberId null) and no event pointing at it. Owned images are never
-// touched — deleting an event-owned image would cascade-delete its event.
+// An image is an orphan iff neither owner FK holds: no board member and no
+// event. Both FKs live on Image, so deleting an image row — owned or not —
+// can never touch its owner; owned images are still skipped because covers
+// and portraits are current, not garbage.
 const ORPHAN_IMAGE_WHERE = {
   boardMemberId: null,
-  event: null,
+  eventId: null,
 } satisfies Prisma.ImageWhereInput;
 
 export async function countOrphanImages(): Promise<number> {

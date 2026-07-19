@@ -62,5 +62,10 @@ COPY --from=build /myapp/package.json /myapp/package.json
 COPY --from=build /myapp/start.sh /myapp/start.sh
 COPY --from=build /myapp/prisma /myapp/prisma
 COPY --from=build /myapp/prisma.config.ts /myapp/prisma.config.ts
+# ops scripts run on the VM via `fly ssh console` + tsx (a runtime dep for
+# this reason); they import app/ sources through the tsconfig path alias
+COPY --from=build /myapp/scripts /myapp/scripts
+COPY --from=build /myapp/app /myapp/app
+COPY --from=build /myapp/tsconfig.json /myapp/tsconfig.json
 
 ENTRYPOINT [ "./start.sh" ]

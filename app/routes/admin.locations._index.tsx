@@ -7,10 +7,10 @@ import { AdminDeleteButton } from "~/components/admin-delete-button";
 import { AdminEmptyState, AdminPageHeader } from "~/components/admin-ui";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import { getAddresses, type Address } from "~/models/address.server";
+import { getAddressesWithEventCount } from "~/models/address.server";
 
 export async function loader() {
-  const addresses = await getAddresses();
+  const addresses = await getAddressesWithEventCount();
 
   return { addresses };
 }
@@ -61,8 +61,13 @@ export default function AdminLocationsPage({
   );
 }
 
-function LocationCard({ address }: { address: Address }) {
-  const { id, streetName, houseNumber, zip, city } = address;
+type AddressWithEventCount = Awaited<
+  ReturnType<typeof loader>
+>["addresses"][number];
+
+function LocationCard({ address }: { address: AddressWithEventCount }) {
+  const { id, streetName, houseNumber, zip, city, eventCount } = address;
+  const inUse = eventCount > 0;
 
   return (
     <Card interactive className="p-4">
@@ -83,7 +88,12 @@ function LocationCard({ address }: { address: Address }) {
         <Button size="sm" variant="outline" asChild>
           <Link to={`${id}/edit`}>Edit</Link>
         </Button>
-        <AdminDeleteButton action={`${id}/delete`} />
+        <AdminDeleteButton action={`${id}/delete`} disabled={inUse} />
+        {inUse ? (
+          <span className="text-muted-foreground self-center text-xs">
+            hosts {eventCount} {eventCount === 1 ? "dinner" : "dinners"}
+          </span>
+        ) : null}
       </div>
     </Card>
   );

@@ -28,20 +28,22 @@ describe("deleteNonAdminUserById", () => {
     ).resolves.not.toBeNull();
   });
 
-  it("cleans up an owned event's form and image before deleting the user", async () => {
-    const event = await createEvent(await buildEventData());
+  it("keeps an owned event, clearing authorship (SetNull)", async () => {
+    const data = await buildEventData();
+    const event = await createEvent(data);
 
-    await deleteNonAdminUserById(event.createdById);
+    await deleteNonAdminUserById(data.createdById);
 
-    await expect(
-      prisma.event.findUnique({ where: { id: event.id } }),
-    ).resolves.toBeNull();
+    const after = await prisma.event.findUniqueOrThrow({
+      where: { id: event.id },
+    });
+    expect(after.createdById).toBeNull();
     await expect(
       prisma.form.findUnique({ where: { id: event.formId } }),
-    ).resolves.toBeNull();
+    ).resolves.not.toBeNull();
     await expect(
-      prisma.image.findUnique({ where: { id: event.imageId } }),
-    ).resolves.toBeNull();
+      prisma.image.findUnique({ where: { eventId: event.id } }),
+    ).resolves.not.toBeNull();
   });
 
   it("treats a missing user as an idempotent no-op", async () => {

@@ -86,13 +86,13 @@ function BoardMemberCard({
   member: BoardMember;
   seed: number;
 }) {
-  const { id, name, position, imageId } = member;
+  const { id, name, position, image } = member;
 
   return (
     <Card interactive className="flex flex-wrap items-center gap-3 p-4">
-      {imageId ? (
+      {image ? (
         <OptimizedImage
-          imageId={imageId}
+          image={image}
           alt={`Portrait of ${name}`}
           width={96}
           height={96}

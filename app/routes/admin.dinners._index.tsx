@@ -12,8 +12,8 @@ import {
   FilterChip,
   SeatProgress,
 } from "~/components/admin-ui";
+import { CoverImage } from "~/components/cover-image";
 import { UtensilsIcon } from "~/components/icons";
-import { OptimizedImage } from "~/components/optimized-image";
 import { Button } from "~/components/ui/button";
 import { formatAdminDateLine } from "~/features/events/date-format";
 import {
@@ -35,7 +35,7 @@ export async function loader() {
       id: event.id,
       title: event.title,
       date: event.date,
-      imageId: event.imageId,
+      image: event.image,
       slots: event.slots,
       location: `${event.address.streetName} ${event.address.houseNumber}`,
       signups: seatCounts[event.id] ?? 0,
@@ -150,8 +150,8 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
         dinner.past && "opacity-60",
       )}
     >
-      <OptimizedImage
-        imageId={dinner.imageId}
+      <CoverImage
+        image={dinner.image}
         alt=""
         width={208}
         height={172}

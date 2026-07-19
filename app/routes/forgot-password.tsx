@@ -11,10 +11,7 @@ import { AuthStatus } from "~/components/auth-status";
 import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { auth } from "~/features/auth/auth.server";
-import {
-  emailSchema,
-  parseRequestForm,
-} from "~/features/auth/form-schemas";
+import { emailSchema, parseRequestForm } from "~/features/auth/form-schemas";
 import { logger } from "~/logger.server";
 import { getClientIPAddress, obscureEmail } from "~/shared/http.server";
 

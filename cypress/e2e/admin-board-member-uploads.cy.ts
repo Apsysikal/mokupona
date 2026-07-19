@@ -11,10 +11,7 @@ import {
 describe("admin board member uploads", () => {
   let boardMemberIdsToCleanup: string[];
 
-  function fillNewBoardMemberForm(values: {
-    name: string;
-    position: string;
-  }) {
+  function fillNewBoardMemberForm(values: { name: string; position: string }) {
     cy.visitAndCheck("/admin/board-members/new");
     cy.findByLabelText(/name/i).type(values.name);
     cy.findByLabelText(/position/i).type(values.position);
@@ -41,10 +38,7 @@ describe("admin board member uploads", () => {
     return runUploadDbCommand<BoardMemberRecord>("get-board-member", { id });
   }
 
-  function submitExpectingZodLimitError(
-    buttonName: RegExp,
-    pathname: string,
-  ) {
+  function submitExpectingZodLimitError(buttonName: RegExp, pathname: string) {
     selectPhoto(oversizedZodUpload());
     cy.findByRole("button", { name: buttonName }).click();
 

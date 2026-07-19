@@ -33,8 +33,9 @@ export async function createTestUser(roleName = "user") {
 // Builds the row graph an Event needs (role -> user, address) and returns
 // ready-to-use event create data. Every call creates fresh rows with unique
 // keys, so the tests sharing one database never contend on fixtures. The
-// cover image travels as ImageData (createEvent persists it inside its
-// transaction); the unique blob lets tests find the row it became.
+// cover image travels as ImageCreateData scalars (createEvent persists them
+// inside its transaction); the unique storageKey lets tests find the row it
+// became.
 export async function buildEventData() {
   const [user, address] = await Promise.all([
     prisma.role
@@ -60,7 +61,7 @@ export async function buildEventData() {
     price: 20,
     image: {
       contentType: "image/jpeg",
-      blob: Buffer.from(`test-image-${faker.string.uuid()}`),
+      storageKey: `test/dinners/${faker.string.uuid()}`,
     },
     addressId: address.id,
     createdById: user.id,

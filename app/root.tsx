@@ -53,6 +53,10 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const { toast, headers } = await getToast(request);
   const allowIndexing = process.env.ALLOW_INDEXING !== "false";
   const cypressSupport = process.env.CYPRESS_SUPPORT === "true";
+  // public image-delivery config (no bulk ENV mechanism — named fields);
+  // the cloud name is public by nature, it is in every delivery URL
+  const imageProvider: "local" | "cloudinary" =
+    process.env.IMAGE_PROVIDER === "cloudinary" ? "cloudinary" : "local";
   return data(
     {
       user,
@@ -61,6 +65,8 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
       allowIndexing,
       cypressSupport,
       nextDinnerId: nextEvent?.id ?? null,
+      imageProvider,
+      cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME ?? null,
     },
     { headers: headers ?? undefined },
   );

@@ -3,35 +3,33 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { loader } from "~/routes/file.$fileId";
 
-// The fs storage returns LazyFiles, not Files — the mocks must too, or they
-// mask Response-body incompatibilities (lazy-file >= 5 stopped implementing
+// The fs storage returns LazyFiles, not Files — the mock must too, or it
+// masks Response-body incompatibilities (lazy-file >= 5 stopped implementing
 // File, which undici rejects as a body).
 function lazyFile(content: string) {
-  return new LazyFile([content], "image-id", { type: "image/webp" });
+  return new LazyFile([content], "image-id", { type: "image/jpeg" });
 }
 
 const mocks = vi.hoisted(() => ({
-  cacheGet: vi.fn(),
-  cachePut: vi.fn(),
   getImageById: vi.fn(),
-  transformToWebp: vi.fn(),
-}));
-
-vi.mock("~/features/uploads/file-cache-storage.server", () => ({
-  fileStorage: {
-    get: mocks.cacheGet,
-    put: mocks.cachePut,
-  },
-  getStorageKey: (id: string) => `file-${id}`,
+  getLocalImageFile: vi.fn(),
 }));
 
 vi.mock("~/models/image.server", () => ({
   getImageById: mocks.getImageById,
 }));
 
-vi.mock("~/utils/image-transform.server", () => ({
-  transformToWebp: mocks.transformToWebp,
+vi.mock("~/features/images/providers/local.server", () => ({
+  getLocalImageFile: mocks.getLocalImageFile,
 }));
+
+const storedImage = {
+  id: "image-id",
+  contentType: "image/jpeg",
+  storageKey: "dinners/uuid",
+  version: 12,
+  blob: null,
+};
 
 function loadImage(query = "") {
   return loader({
@@ -40,8 +38,8 @@ function loadImage(query = "") {
   } as unknown as Parameters<typeof loader>[0]);
 }
 
-function expectImageHeaders(response: Response) {
-  expect(response.headers.get("Content-Type")).toBe("image/webp");
+function expectImageHeaders(response: Response, contentType: string) {
+  expect(response.headers.get("Content-Type")).toBe(contentType);
   expect(response.headers.get("Content-Disposition")).toBe(
     'inline; filename="image-id"',
   );
@@ -49,88 +47,98 @@ function expectImageHeaders(response: Response) {
     "public, max-age=31536000, immutable",
   );
   expect(response.headers.get("Content-Length")).not.toBeNull();
-  expect(response.headers.get("Transfer-Encoding")).toBeNull();
 }
 
 afterEach(() => {
   vi.clearAllMocks();
+  vi.unstubAllEnvs();
 });
 
 describe("image resource route", () => {
-  it.each(["?w=abc", "?h=12px", "?fit=stretch"])(
-    "rejects malformed params in %s before consulting the cache",
-    async (query) => {
-      await expect(loadImage(query)).rejects.toMatchObject({ status: 400 });
+  it("404s for an unknown image", async () => {
+    mocks.getImageById.mockResolvedValue(null);
 
-      expect(mocks.cacheGet).not.toHaveBeenCalled();
-      expect(mocks.transformToWebp).not.toHaveBeenCalled();
-    },
-  );
-
-  it.each([
-    // numeric dimensions snap to the nearest ladder rung so previously
-    // published URLs keep serving while the cache keyspace stays bounded
-    ["?w=2400&h=1600", 2048, 1536],
-    ["?w=433&h=242", 432, 236],
-    ["?w=0&h=2049", 96, 2048],
-  ])("normalizes dimensions in %s to the ladder", async (query, w, h) => {
-    mocks.cacheGet.mockResolvedValue(null);
-    mocks.getImageById.mockResolvedValue({
-      id: "image-id",
-      blob: new Uint8Array([1, 2, 3]),
-    });
-    mocks.transformToWebp.mockResolvedValue(Buffer.from("optimized-image"));
-    mocks.cachePut.mockResolvedValue(lazyFile("optimized-image"));
-
-    await loadImage(query);
-
-    expect(mocks.cacheGet).toHaveBeenCalledWith(`file-image-id-${w}-${h}-cover`);
-    expect(mocks.transformToWebp).toHaveBeenCalledWith(expect.anything(), {
-      width: w,
-      height: h,
-      fit: "cover",
-    });
+    await expect(loadImage()).rejects.toMatchObject({ status: 404 });
   });
 
-  it("serves a cache hit after one lookup with the shared response headers", async () => {
-    mocks.cacheGet.mockResolvedValue(lazyFile("cached-image"));
+  it("302s a provider-stored row to the versioned delivery URL under cloudinary", async () => {
+    vi.stubEnv("IMAGE_PROVIDER", "cloudinary");
+    vi.stubEnv("CLOUDINARY_CLOUD_NAME", "test-cloud");
+    mocks.getImageById.mockResolvedValue(storedImage);
 
     const response = await loadImage();
 
-    expect(mocks.cacheGet).toHaveBeenCalledOnce();
-    expect(mocks.cacheGet).toHaveBeenCalledWith(
-      "file-image-id-undefined-undefined-cover",
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe(
+      "https://res.cloudinary.com/test-cloud/image/upload/f_auto,q_auto/v12/dinners/uuid",
     );
-    expect(mocks.getImageById).not.toHaveBeenCalled();
-    expect(mocks.transformToWebp).not.toHaveBeenCalled();
-    expectImageHeaders(response);
-    await expect(response.text()).resolves.toBe("cached-image");
+    expect(mocks.getLocalImageFile).not.toHaveBeenCalled();
   });
 
-  it("bounds a cache miss, stores it, and uses the same response builder", async () => {
-    const storedFile = lazyFile("optimized-image");
-    mocks.cacheGet.mockResolvedValue(null);
+  it("streams the stored file under the local provider, ignoring legacy transform params", async () => {
+    mocks.getImageById.mockResolvedValue(storedImage);
+    mocks.getLocalImageFile.mockResolvedValue(lazyFile("stored-bytes"));
+
+    // old published URLs still carry w/h/fit — they must keep serving
+    const response = await loadImage("?w=432&h=324&fit=cover");
+
+    expect(mocks.getLocalImageFile).toHaveBeenCalledWith("dinners/uuid");
+    expectImageHeaders(response, "image/jpeg");
+    await expect(response.text()).resolves.toBe("stored-bytes");
+  });
+
+  it("streams the original blob of a not-yet-backfilled row, sharp-free", async () => {
     mocks.getImageById.mockResolvedValue({
       id: "image-id",
-      blob: new Uint8Array([1, 2, 3]),
+      contentType: "image/png",
+      storageKey: null,
+      version: null,
+      blob: new TextEncoder().encode("legacy-blob"),
     });
-    mocks.transformToWebp.mockResolvedValue(Buffer.from("optimized-image"));
-    mocks.cachePut.mockResolvedValue(storedFile);
 
-    const response = await loadImage("?w=2048&h=1080&fit=contain");
+    const response = await loadImage();
 
-    expect(mocks.cacheGet).toHaveBeenCalledOnce();
-    expect(mocks.getImageById).toHaveBeenCalledWith("image-id");
-    expect(mocks.transformToWebp).toHaveBeenCalledWith(
-      new Uint8Array([1, 2, 3]),
-      { width: 2048, height: 1080, fit: "contain" },
-    );
-    expect(mocks.cachePut).toHaveBeenCalledOnce();
-    expect(mocks.cachePut).toHaveBeenCalledWith(
-      "file-image-id-2048-1080-contain",
-      expect.objectContaining({ name: "image-id", type: "image/webp" }),
-    );
-    expectImageHeaders(response);
-    await expect(response.text()).resolves.toBe("optimized-image");
+    expect(mocks.getLocalImageFile).not.toHaveBeenCalled();
+    expectImageHeaders(response, "image/png");
+    expect(response.headers.get("Content-Length")).toBe("11");
+    await expect(response.text()).resolves.toBe("legacy-blob");
+  });
+
+  it("falls back to the blob when the storage key has no local file (provider rollback)", async () => {
+    mocks.getImageById.mockResolvedValue({
+      ...storedImage,
+      storageKey: "prod/cloudinary-key",
+      blob: new TextEncoder().encode("rollback-blob"),
+    });
+    mocks.getLocalImageFile.mockResolvedValue(null);
+
+    const response = await loadImage();
+
+    expectImageHeaders(response, "image/jpeg");
+    await expect(response.text()).resolves.toBe("rollback-blob");
+  });
+
+  it("404s a keyless, blobless row instead of serving an empty body", async () => {
+    mocks.getImageById.mockResolvedValue({
+      id: "image-id",
+      contentType: "image/jpeg",
+      storageKey: null,
+      version: null,
+      blob: null,
+    });
+
+    await expect(loadImage()).rejects.toMatchObject({ status: 404 });
+  });
+
+  it("does not redirect to cloudinary without a cloud name", async () => {
+    vi.stubEnv("IMAGE_PROVIDER", "cloudinary");
+    vi.stubEnv("CLOUDINARY_CLOUD_NAME", "");
+    mocks.getImageById.mockResolvedValue(storedImage);
+    mocks.getLocalImageFile.mockResolvedValue(lazyFile("local-fallback"));
+
+    const response = await loadImage();
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe("local-fallback");
   });
 });

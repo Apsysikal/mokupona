@@ -12,6 +12,10 @@ import {
 import { toAddressOptions } from "~/features/events/view-models";
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
 import {
+  destroyImages,
+  storeImage,
+} from "~/features/images/image-storage.server";
+import {
   builderRowsToDescriptors,
   defaultBuilderRows,
   descriptorsToBuilderRows,
@@ -23,7 +27,6 @@ import {
   updateEvent,
 } from "~/models/event.server";
 import { eventHasSignups } from "~/models/form-submission.server";
-import { fileToImageData } from "~/models/image.server";
 import { requireFound } from "~/shared/http.server";
 import { nullableStringUpdateValue } from "~/utils/nullable-update-field.server";
 
@@ -90,7 +93,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
       // versioning policy (deep-equal skip / in-place while unsubmitted / new
       // version), validated by SignupFormSchema inside EventSchema's signupForm
       // field
-      const event = await updateEvent(
+      const { event, replacedImageKey } = await updateEvent(
         dinnerId,
         {
           title,
@@ -106,11 +109,20 @@ export async function action({ request, params, context }: Route.ActionArgs) {
           price,
           discounts,
           addressId,
-          ...(cover && { image: await fileToImageData(cover) }),
+          ...(cover && {
+            image: {
+              contentType: cover.type,
+              ...(await storeImage(cover, "dinners")),
+            },
+          }),
           createdById: user.id,
         },
         builderRowsToDescriptors(signupForm),
       );
+
+      // a replaced cover's provider asset goes strictly after the commit
+      // (capture-and-destroy, design §3.4)
+      await destroyImages([replacedImageKey]);
 
       return redirect(`/admin/dinners/${event.id}`);
     },
@@ -131,8 +143,7 @@ export default function AdminDinnerEditPage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const { addresses, dinner, signupForm, formHasSubmissions } =
-    loaderData;
+  const { addresses, dinner, signupForm, formHasSubmissions } = loaderData;
   const addressOptions = toAddressOptions(addresses);
 
   return (

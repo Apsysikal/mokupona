@@ -17,6 +17,7 @@ export interface DinnerRecord {
   discounts: string | null;
   addressId: string;
   imageId: string;
+  imageStorageKey: string | null;
 }
 
 export interface BoardMemberRecord {
@@ -24,13 +25,21 @@ export interface BoardMemberRecord {
   name: string;
   position: string;
   imageId: string | null;
+  imageStorageKey: string | null;
   imageCount: number;
+}
+
+export interface ImageRecord {
+  id: string;
+  contentType: string;
+  storageKey: string | null;
 }
 
 type UploadDbAction =
   | "create-dinner"
   | "get-dinner"
   | "delete-dinner"
+  | "get-image"
   | "delete-image"
   | "create-legacy-response"
   | "create-board-member"
@@ -82,7 +91,9 @@ export function uploadFileInput(
 
 /** A file just over the Zod schema limit — rejected client-side with a form error. */
 export function oversizedZodUpload() {
-  return uploadFileInput(ZOD_LIMIT_BYTES + 1, { fileName: "zod-too-large.jpg" });
+  return uploadFileInput(ZOD_LIMIT_BYTES + 1, {
+    fileName: "zod-too-large.jpg",
+  });
 }
 
 export function runUploadDbCommand<T>(

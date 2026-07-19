@@ -30,8 +30,8 @@ export type ImageUploadResult = ImageUploadSuccess | ImageUploadError;
  * - Handles file-size and file-count errors internally, returning a typed
  *   result instead of throwing.
  * - The upload stays an in-memory `FileUpload` on the returned FormData;
- *   persisting the bytes is the model layer's job (`fileToImageData` into
- *   the owning transaction), never this module's.
+ *   persisting it is the caller's job (the image provider stores the file,
+ *   the owning model persists the returned scalars), never this module's.
  *
  * @param fieldName The multipart field name that carries the file (e.g. "cover", "image").
  */

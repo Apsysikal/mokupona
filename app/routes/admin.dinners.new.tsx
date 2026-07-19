@@ -7,6 +7,7 @@ import { AdminEventRouteForm } from "~/features/events/components/admin-event-ro
 import { EventSchema } from "~/features/events/event-schema";
 import { toUtcEventDate } from "~/features/events/event-timezone.server";
 import { toAddressOptions } from "~/features/events/view-models";
+import { storeImage } from "~/features/images/image-storage.server";
 import {
   builderRowsToDescriptors,
   defaultBuilderRows,
@@ -14,7 +15,6 @@ import {
 import { withParsedImageForm } from "~/features/uploads/image-form-action.server";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
-import { fileToImageData } from "~/models/image.server";
 
 export async function loader() {
   const addresses = await getAddresses();
@@ -54,9 +54,13 @@ export async function action({ request, context }: Route.ActionArgs) {
           price,
           discounts,
           addressId,
-          // the image row is created inside createEvent's transaction, so a
-          // failed event write can no longer leak it
-          image: await fileToImageData(cover),
+          // the provider stores the bytes first; the row created inside
+          // createEvent's transaction persists only the returned scalars (a
+          // failed write leaks at most a provider asset, never a row)
+          image: {
+            contentType: cover.type,
+            ...(await storeImage(cover, "dinners")),
+          },
           createdById: user.id,
         },
         // validated by SignupFormSchema inside EventSchema's signupForm field

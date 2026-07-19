@@ -1,0 +1,86 @@
+# Cloudinary Migration — Implementation Plan
+
+Companion to [design.md](design.md). Phases are shippable increments; phases 1 and 3 are separate releases by design (two-phase cutover). Aligned 2026-07-19 with the post-architecture-rework codebase — new code must respect the DAL boundary (only `app/models/**` imports Prisma; ESLint-enforced) and the `app/features/` / `app/shared/` conventions.
+
+## Phase 0 — Account & config setup (manual, no code)
+
+- [ ] Create the Cloudinary account (free plan). Note the **cloud name**; the account will be in *dynamic folder mode*.
+- [ ] Generate API key + secret (console → Settings → Access Keys).
+- [ ] Set a usage alert at ~50% of the 25 monthly credits.
+- [ ] Fly secrets on **both** apps (staging + prod, remember `-a` for staging):
+  `fly secrets set CLOUDINARY_API_KEY=… CLOUDINARY_API_SECRET=… [-a <staging-app>]`
+- [ ] `fly.toml [env]`: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_FOLDER_PREFIX` (`prod`; staging override `staging`), leave `IMAGE_PROVIDER` **unset/`local`-equivalent until Phase 2 flip** — Phase 1 code must default safely.
+- [ ] `.env` / `.env.example`: document `IMAGE_PROVIDER`, `CLOUDINARY_*` group ("only needed when `IMAGE_PROVIDER=cloudinary`").
+
+## Phase 1 — Provider layer + schema + app rewiring (release 1)
+
+**Schema**
+
+- [ ] Prisma migration: `Image.blob` → `Bytes?`, `contentType` stays, add `storageKey String?`, `version Int?`, `width Int?`, `height Int?`, `blurDataUrl String?`. (The owner FKs `eventId`/`boardMemberId` already live on `Image` since the FK rework — no relation changes.)
+
+**New feature module `app/features/images/`** (design §2 "Module placement": `features/uploads` is folded in later, Phase 3)
+
+- [ ] `types.ts` — `StoredImage`, `ImageStorageProvider` (design §3.1).
+- [ ] `providers/cloudinary.server.ts` — `cloudinary` npm **≥ 2.10**; `upload_stream` with `asset_folder: "${CLOUDINARY_FOLDER_PREFIX}/${folder}"`; `destroy(publicId, { invalidate: true })`.
+- [ ] `providers/local.server.ts` — fs storage under `IMAGE_UPLOAD_FOLDER`, key = image id. Extend [`app/shared/fs-file-storage.server.ts`](../../app/shared/fs-file-storage.server.ts) with a persistent-folder factory (today it only exports `createFsTempStorage`).
+- [ ] `image-storage.server.ts` — provider pick by `IMAGE_PROVIDER` (default `local`), `tiny-invariant` the `CLOUDINARY_*` vars when `cloudinary`, wrapped in `singleton()` — mirror [`createMailProvider`](../../app/features/mail/mail.server.ts).
+- [ ] `blur-placeholder.server.ts` — fetch `w_100,q_auto,f_webp,e_blur:1000` variant → base64 data URL (design §3.3); used by the cloudinary provider's `store()`, the backfill script, and a module-level-cached `getBlurDataUrl(publicId)` for static assets.
+
+**Shared URL builder & components** (stay in `app/shared/` / `app/components/` per convention)
+
+- [ ] Rework [`app/shared/image.ts`](../../app/shared/image.ts): replace `getImageUrl(id)` + `buildImageTransformUrl(id, opts)` with the isomorphic `getImageUrl(image, { width, height, fit })` (design §3.2). `RESPONSIVE_IMAGE_WIDTHS` and `imageFileSchema` stay here. Update the OG meta usage in [`dinners_.$dinnerId.tsx`](../../app/routes/dinners_.$dinnerId.tsx) (absolute Cloudinary URL, no `domainUrl` prefixing under the cloudinary provider).
+- [ ] Rework [`optimized-image.tsx`](../../app/components/optimized-image.tsx) + [`cover-image.tsx`](../../app/components/cover-image.tsx) **in place** (already extracted from the route — no move needed): same breakpoints, Cloudinary/local URLs, plus the blur-up layers (design §3.3): aspect-ratio container, base64 placeholder `<img>` + backdrop-blur overlay, full image `opacity` fade on load (handle `img.complete` for cached images), neutral background when `blurDataUrl` is null. Consumers to update: `CoverImage` in [`event-card.tsx`](../../app/features/events/components/event-card.tsx), [`event-view.tsx`](../../app/features/events/components/event-view.tsx), `admin._index`, `admin.dinners._index`; direct `OptimizedImage` in `admin.board-members`.
+- [ ] Root loader ([`app/root.tsx`](../../app/root.tsx)) gains explicit `imageProvider` / `cloudinaryCloudName` fields, surfaced via [`app/shared/root-data.ts`](../../app/shared/root-data.ts) (there is no bulk `ENV` mechanism — named fields only).
+- [ ] Model read projections (`EVENT_IMAGE_INCLUDE`/`flattenImageId` in [`event.server.ts`](../../app/models/event.server.ts), `listBoardMembers` in [`board-member.server.ts`](../../app/models/board-member.server.ts)) grow the new metadata columns (`storageKey`, `version`, `width`, `height`, `blurDataUrl`) with explicit return types.
+
+**Upload flows**
+
+- [ ] Rework the [`withParsedImageForm`](../../app/features/uploads/image-form-action.server.ts) `onSuccess` seam: call `provider.store(file, { folder })` in the feature layer, then pass the returned `StoredImage` scalars into the model `create`/`update` (no blob write). Retire [`fileToImageData`](../../app/models/image.server.ts) and the `ImageData` `{ contentType, blob }` shape. Touched routes: [`admin.dinners.new.tsx`](../../app/routes/admin.dinners.new.tsx), [`admin.dinners.$dinnerId_.edit.tsx`](../../app/routes/admin.dinners.$dinnerId_.edit.tsx), [`admin.board-members.new.tsx`](../../app/routes/admin.board-members.new.tsx), [`admin.board-members.$userId.edit.tsx`](../../app/routes/admin.board-members.$userId.edit.tsx).
+- [ ] Add the MIME allowlist (`jpeg/png/webp`) **server-side** to [`imageFileSchema`](../../app/shared/image.ts) — one change covers events + board members. Note: this reverses the recorded size-only decision in that file's comments (design §2); update the comment accordingly.
+
+**Deletion — capture-and-destroy (design §3.4)**
+
+- [ ] [`event.server.ts`](../../app/models/event.server.ts): `deleteEvent` / `deleteEventsInTx` — `findUnique` the owned image's `storageKey` inside the transaction before the (cascade) delete; return it as a scalar. `updateEvent` replace path — capture the old key before the existing `tx.image.deleteMany`, return it.
+- [ ] [`board-member.server.ts`](../../app/models/board-member.server.ts): same for `deleteBoardMember` (currently a plain cascade-reliant `delete` — needs the capture added) and `updateBoardMember`.
+- [ ] Callers (route actions / `features/images` orchestration): `provider.destroy(key)` for each returned key **after** the model call returns. Ordering invariant: commit first.
+
+**Serving route**
+
+- [ ] Slim [`file.$fileId.tsx`](../../app/routes/file.$fileId.tsx) (rewritten to streaming during the rework — re-anchor accordingly): `storageKey` + cloudinary → `302` to delivery URL; `storageKey` + local → stream file; legacy `blob`-only row → stream original bytes (**no sharp**). Delete the transform internals: `DIMENSION_LADDER`/`snapToDimensionLadder`/`w`/`h`/`fit` param handling, the semaphore usage from [`image-transform.server.ts`](../../app/utils/image-transform.server.ts), the webp cache usage from [`file-cache-storage.server.ts`](../../app/features/uploads/file-cache-storage.server.ts); rework/retire [`image-route.server.ts`](../../app/features/uploads/image-route.server.ts) + its test. Keep the route off the lazy user context (no auth cost — already true).
+
+**Static images**
+
+- [ ] Swap hero/accent `src` in [`_index.tsx`](../../app/routes/_index.tsx) to `static/hero-image` / `static/accent-image` public_ids; the CMS hero/image block views ([`hero/view.tsx`](../../app/features/cms/blocks/hero/view.tsx), [`image/view.tsx`](../../app/features/cms/blocks/image/view.tsx)) build srcset via `getImageUrl`; delete [`generateSrcSet`](../../app/features/cms/blocks/utils.ts). Landing loader supplies hero/accent `blurDataUrl` via `getBlurDataUrl` (LCP element — blur-up matters most here).
+
+**Backfill script**
+
+- [ ] `scripts/backfill-images-to-cloudinary.ts` (tsx): rows `WHERE storageKey IS NULL` → `upload_stream(blob)` into `${PREFIX}/dinners|board-members` (folder from whichever owner FK — `eventId`/`boardMemberId` — is set), write back key/version/width/height/blurDataUrl; idempotent; also uploads `static/` assets with `overwrite: false`.
+
+**Tests & seed**
+
+- [ ] Cypress suites under `IMAGE_PROVIDER=local`. In [`admin-dinner-uploads.cy.ts`](../../cypress/e2e/admin-dinner-uploads.cy.ts): add a replace-flow assertion that the old image row is gone, then drop the defensive `extraImageIds` capture in the `afterEach` cleanup (the in-transaction delete makes it redundant); update [`upload-test-records.ts`](../../cypress/support/upload-test-records.ts) for the new columns.
+- [ ] Update existing unit tests touching reworked code: [`image.server.test.ts`](../../app/models/image.server.test.ts), [`image-route.server.test.ts`](../../app/features/uploads/image-route.server.test.ts), [`image-form-action.server.test.ts`](../../app/features/uploads/image-form-action.server.test.ts).
+- [ ] New unit tests: `getImageUrl` (both providers, all options), provider selection invariants, server-side MIME/size validation, capture-and-destroy return values, `OptimizedImage` blur-up behavior (placeholder render, null `blurDataUrl` fallback, fade incl. cached-image path).
+- [ ] [`prisma/seed.ts`](../../prisma/seed.ts) `seedEvent` (~L94): replace the `{ contentType, blob }` literal with `provider.store(default.jpg)` + `StoredImage` scalars.
+
+## Phase 2 — Backfill & cutover (config only)
+
+- [ ] Deploy release 1 to staging; run backfill via `fly ssh console -a <staging-app>` → `npx tsx scripts/backfill-images-to-cloudinary.ts`.
+- [ ] Flip staging `IMAGE_PROVIDER=cloudinary`. Verify: pages render CDN images, srcset variants + OG image resolve, upload/replace/delete round-trips (asset disappears in the Cloudinary console), memory graphs flat during an image-heavy crawl.
+- [ ] Repeat on prod (backfill → flip → verify). Watch credit usage after the one-time transform generation.
+
+## Phase 3 — Cleanup (release 2, after verification window)
+
+- [ ] Prisma migration: drop `Image.blob`; run `VACUUM` (via script or `fly ssh` sqlite3) to reclaim the file space.
+- [ ] Delete: [`image-transform.server.ts`](../../app/utils/image-transform.server.ts), [`file-cache-storage.server.ts`](../../app/features/uploads/file-cache-storage.server.ts), [`image-route.server.ts`](../../app/features/uploads/image-route.server.ts) + tests, the legacy blob-serving branch, `sharp` dependency, [`optimize-images.ts`](../../app/optimize-images.ts) + `optimize:images` script + generated `public/hero-image-*`/accent artifacts.
+- [ ] Fold the surviving `app/features/uploads/` files (`image-upload.server.ts`, `image-form-action.server.ts`) into `app/features/images/`; delete the `uploads` feature directory.
+- [ ] Retire the historical orphan-sweep if its job is done: check `sweep:orphan-images` (script + npm entry) — post-FK-rework, no new DB orphans can accrue.
+- [ ] Remove the memory mitigations: jemalloc `LD_PRELOAD` ([Dockerfile:49](../../Dockerfile)), `MALLOC_ARENA_MAX` ([fly.toml](../../fly.toml)). Note the change in [staging-memory-investigation/findings.md](../staging-memory-investigation/findings.md).
+- [ ] Keep `/file/:fileId` as the local-provider route + legacy 302 redirect.
+
+## Cross-cutting
+
+- **Rollback:** phases 1–2 → flip `IMAGE_PROVIDER` back / redeploy previous release (blobs intact). Phase 3 onward → volume snapshot.
+- **Ordering invariant:** DB commit before `provider.destroy`; a leaked Cloudinary asset on crash is acceptable, a dangling DB reference is not.
+- **Layering invariant:** only `app/models/**` touches Prisma (ESLint-enforced); models exchange scalars/domain types and never import features; the Cloudinary SDK stays inside `app/features/images/providers/`.
+- **CI:** no new secrets; `IMAGE_PROVIDER=local` in the workflow env if not already the default.

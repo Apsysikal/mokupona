@@ -4,9 +4,9 @@ import type { Route } from "./+types/admin.board-members.new";
 
 import { AdminBoardMemberForm } from "~/features/board-members/admin-board-member-form";
 import { MemberSchema } from "~/features/board-members/schema";
+import { storeImage } from "~/features/images/image-storage.server";
 import { withParsedImageForm } from "~/features/uploads/image-form-action.server";
 import { createBoardMember } from "~/models/board-member.server";
-import { fileToImageData } from "~/models/image.server";
 
 export async function action({ request }: Route.ActionArgs) {
   return withParsedImageForm(request, {
@@ -18,7 +18,12 @@ export async function action({ request }: Route.ActionArgs) {
       await createBoardMember({
         name,
         position,
-        ...(image && { image: await fileToImageData(image) }),
+        ...(image && {
+          image: {
+            contentType: image.type,
+            ...(await storeImage(image, "board-members")),
+          },
+        }),
       });
 
       return redirect("/admin/board-members/new");

@@ -36,6 +36,7 @@ import {
 } from "~/shared/http.server";
 import { getImageUrl } from "~/shared/image";
 import { withOpenGraphUrls } from "~/shared/meta";
+import { getImageConfig } from "~/shared/root-data";
 import { redirectWithToast } from "~/utils/toast.server";
 
 export async function loader({ params }: Route.LoaderArgs) {
@@ -183,7 +184,9 @@ export const meta: Route.MetaFunction = ({ loaderData, matches, location }) => {
 
   return withOpenGraphUrls(tags, {
     matches,
-    imagePath: getImageUrl(event.imageId),
+    imagePath: event.image
+      ? getImageUrl(event.image, getImageConfig(matches))
+      : undefined,
     pagePath: location.pathname,
   });
 };

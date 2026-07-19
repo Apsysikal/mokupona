@@ -11,8 +11,7 @@ type RootLoaderData = RootRoute.ComponentProps["loaderData"];
  * duck-typing of the loader payload.
  */
 export function useOptionalUser():
-  | NonNullable<RootLoaderData["user"]>
-  | undefined {
+  NonNullable<RootLoaderData["user"]> | undefined {
   const data = useRouteLoaderData("root") as RootLoaderData | undefined;
   return data?.user ?? undefined;
 }
