@@ -261,6 +261,51 @@ describe("event image lifecycle", () => {
     ).resolves.toBeNull();
   });
 
+  // capture-and-destroy (design §3.4): the models must hand the doomed
+  // storageKey out of their transactions so callers can destroy the provider
+  // asset after commit — the cascade would otherwise erase it unseen
+
+  it("deleteEvent returns the captured cover storageKey", async () => {
+    const data = await buildEventData();
+    const event = await createEvent(data);
+
+    const result = await deleteEvent(event.id);
+
+    expect(result.event.id).toBe(event.id);
+    expect(result.imageKey).toBe(data.image.storageKey);
+  });
+
+  it("deleteEvent returns a null key for a coverless event", async () => {
+    const event = await createEvent(await buildEventData());
+    await prisma.image.deleteMany({ where: { eventId: event.id } });
+
+    const result = await deleteEvent(event.id);
+
+    expect(result.imageKey).toBeNull();
+  });
+
+  it("updateEvent returns the replaced cover's storageKey on a swap", async () => {
+    const data = await buildEventData();
+    const event = await createEvent(data);
+
+    const result = await updateEvent(event.id, {
+      image: {
+        contentType: "image/png",
+        storageKey: "test/dinners/replacement",
+      },
+    });
+
+    expect(result.replacedImageKey).toBe(data.image.storageKey);
+  });
+
+  it("updateEvent returns a null key when the cover is untouched", async () => {
+    const event = await createEvent(await buildEventData());
+
+    const result = await updateEvent(event.id, { title: "Same Cover" });
+
+    expect(result.replacedImageKey).toBeNull();
+  });
+
   it("deleting an image never deletes the event", async () => {
     const event = await createEvent(await buildEventData());
     const cover = await prisma.image.findUniqueOrThrow({
@@ -288,7 +333,7 @@ describe("updateEvent", () => {
 
     const updated = await updateEvent(event.id, { title: "New Title" }, edited);
 
-    expect(updated.title).toBe("New Title");
+    expect(updated.event.title).toBe("New Title");
     const version = await getCurrentFormVersion(event.formId);
     expect(version.schema).toEqual(edited);
   });

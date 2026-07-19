@@ -89,4 +89,65 @@ describe("board member image lifecycle", () => {
       prisma.image.count({ where: { boardMemberId: member.id } }),
     ).resolves.toBe(0);
   });
+
+  // capture-and-destroy (design §3.4): the doomed portrait's storageKey is
+  // captured inside the transaction and returned for the caller's
+  // post-commit provider destroy
+
+  it("deleteBoardMember returns the captured portrait storageKey", async () => {
+    const image = portrait("captured-on-delete");
+    const member = await createBoardMember({
+      name: "Capture Delete",
+      position: "Test Position",
+      image,
+    });
+
+    const result = await deleteBoardMember(member.id);
+
+    expect(result.boardMember.id).toBe(member.id);
+    expect(result.imageKey).toBe(image.storageKey);
+  });
+
+  it("deleteBoardMember returns a null key for a portraitless member", async () => {
+    const member = await createBoardMember({
+      name: "No Portrait",
+      position: "Test Position",
+    });
+
+    const result = await deleteBoardMember(member.id);
+
+    expect(result.imageKey).toBeNull();
+  });
+
+  it("updateBoardMember returns the replaced portrait's storageKey on a swap", async () => {
+    const oldImage = portrait("captured-on-swap");
+    const member = await createBoardMember({
+      name: "Capture Swap",
+      position: "Test Position",
+      image: oldImage,
+    });
+
+    const result = await updateBoardMember(member.id, {
+      name: member.name,
+      position: member.position,
+      image: portrait("swap-replacement"),
+    });
+
+    expect(result.replacedImageKey).toBe(oldImage.storageKey);
+  });
+
+  it("updateBoardMember returns a null key when the portrait is untouched", async () => {
+    const member = await createBoardMember({
+      name: "Keep On Update",
+      position: "Test Position",
+      image: portrait("kept-on-update"),
+    });
+
+    const result = await updateBoardMember(member.id, {
+      name: "Renamed Again",
+      position: member.position,
+    });
+
+    expect(result.replacedImageKey).toBeNull();
+  });
 });

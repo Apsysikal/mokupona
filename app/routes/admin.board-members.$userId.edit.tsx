@@ -4,7 +4,10 @@ import type { Route } from "./+types/admin.board-members.$userId.edit";
 
 import { AdminBoardMemberForm } from "~/features/board-members/admin-board-member-form";
 import { MemberSchema } from "~/features/board-members/schema";
-import { storeImage } from "~/features/images/image-storage.server";
+import {
+  destroyImages,
+  storeImage,
+} from "~/features/images/image-storage.server";
 import { withParsedImageForm } from "~/features/uploads/image-form-action.server";
 import {
   getBoardMemberById,
@@ -29,7 +32,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     async onSuccess({ value }) {
       const { name, position, image } = value;
 
-      await updateBoardMember(userId, {
+      const { replacedImageKey } = await updateBoardMember(userId, {
         name,
         position,
         ...(image && {
@@ -39,6 +42,10 @@ export async function action({ request, params }: Route.ActionArgs) {
           },
         }),
       });
+
+      // a replaced portrait's provider asset goes strictly after the commit
+      // (capture-and-destroy, design §3.4)
+      await destroyImages([replacedImageKey]);
 
       return redirect("/admin/board-members");
     },

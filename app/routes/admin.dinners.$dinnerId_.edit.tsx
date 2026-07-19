@@ -16,7 +16,10 @@ import {
   defaultBuilderRows,
   descriptorsToBuilderRows,
 } from "~/features/signup-form/builder";
-import { storeImage } from "~/features/images/image-storage.server";
+import {
+  destroyImages,
+  storeImage,
+} from "~/features/images/image-storage.server";
 import { withParsedImageForm } from "~/features/uploads/image-form-action.server";
 import { getAddresses } from "~/models/address.server";
 import {
@@ -90,7 +93,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
       // versioning policy (deep-equal skip / in-place while unsubmitted / new
       // version), validated by SignupFormSchema inside EventSchema's signupForm
       // field
-      const event = await updateEvent(
+      const { event, replacedImageKey } = await updateEvent(
         dinnerId,
         {
           title,
@@ -116,6 +119,10 @@ export async function action({ request, params, context }: Route.ActionArgs) {
         },
         builderRowsToDescriptors(signupForm),
       );
+
+      // a replaced cover's provider asset goes strictly after the commit
+      // (capture-and-destroy, design §3.4)
+      await destroyImages([replacedImageKey]);
 
       return redirect(`/admin/dinners/${event.id}`);
     },
