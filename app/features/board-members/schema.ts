@@ -14,5 +14,5 @@ export const MemberSchema = z.object({
       error: "You must enter a position for the board member",
     })
     .trim(),
-  image: imageFileSchema(1024 * 1024 * 3).optional(),
+  image: imageFileSchema().optional(),
 });

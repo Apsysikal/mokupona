@@ -8,6 +8,7 @@ import {
 } from "@remix-run/form-data-parser";
 
 import { createFsTempStorage } from "~/shared/fs-file-storage.server";
+import { IMAGE_SIZE_ERROR, MAX_STAGED_IMAGE_BYTES } from "~/shared/image";
 
 // Staged-upload storage: IMAGE_UPLOAD_FOLDER when configured (production),
 // otherwise a per-process temp directory.
@@ -21,12 +22,10 @@ function getStorageKey(id: string) {
   return `dinner-${id}-cover`;
 }
 
-// The upload handler streams to a temp file up to 4 MB so the file is available
-// for Zod refinement. The schema enforces the real 3 MB user-facing limit and
-// produces the canonical "File cannot be greater than 3MB" error for 3–4 MB
-// files. Files exceeding 4 MB are rejected here (before disk I/O completes)
-// and report the same user-facing message since the advertised limit is 3 MB.
-const MAX_FILE_SIZE = 1024 * 1024 * 4;
+// The staging ceiling is deliberately higher than the schema's user-facing
+// limit so near-boundary files reach the canonical Zod validation. Files above
+// the staging ceiling are rejected before disk I/O completes with the same
+// policy-owned error message.
 const MAX_FILES = 1;
 
 export type ImageUploadSuccess = {
@@ -87,7 +86,7 @@ export async function parseImageFormData(
   try {
     const formData = await parseFormData(
       request,
-      { maxFileSize: MAX_FILE_SIZE, maxFiles: MAX_FILES },
+      { maxFileSize: MAX_STAGED_IMAGE_BYTES, maxFiles: MAX_FILES },
       uploadHandler,
     );
     return { success: true, formData, discardImage };
@@ -95,7 +94,7 @@ export async function parseImageFormData(
     // Clean up any partial write before returning an error result.
     await discardImage();
     if (error instanceof MaxFileSizeExceededError) {
-      return { success: false, uploadError: "File cannot be greater than 3MB" };
+      return { success: false, uploadError: IMAGE_SIZE_ERROR };
     }
     if (error instanceof MaxFilesExceededError) {
       return { success: false, uploadError: "You can only upload one file" };

@@ -1,11 +1,10 @@
 import type { ComponentProps } from "react";
 
-import { getImageUrl } from "~/shared/image";
-
-// Single source of truth for the resize fit vocabulary: the file.$fileId
-// resource route builds its search-param schema from this list.
-export const IMAGE_FITS = ["cover", "contain", "fill"] as const;
-export type ImageFit = (typeof IMAGE_FITS)[number];
+import {
+  getImageUrl,
+  RESPONSIVE_IMAGE_WIDTHS,
+  type ImageFit,
+} from "~/shared/image";
 
 type ImageInputProps = {
   imageId: string;
@@ -24,7 +23,6 @@ export function OptimizedImage({
   fit = "cover",
   ...props
 }: ImageProps) {
-  const breakPoints = [432, 648, 864, 1080];
   const imageUrl = getImageUrl(imageId);
   const aspect = width / height;
 
@@ -34,7 +32,7 @@ export function OptimizedImage({
     fit,
   });
 
-  const srcSetUrls = breakPoints.map((w) => {
+  const srcSetUrls = RESPONSIVE_IMAGE_WIDTHS.map((w) => {
     // sharp rejects fractional dimensions, so keep derived heights integer
     const h = Math.round(w / aspect);
     const searchParams = new URLSearchParams({

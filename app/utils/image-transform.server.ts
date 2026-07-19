@@ -1,4 +1,6 @@
-import sharp, { type FitEnum } from "sharp";
+import sharp from "sharp";
+
+import { isImageFit, type ImageFit } from "~/shared/image";
 
 // Tuned for the 512/256 MB single-vCPU fly machines: libvips' default
 // operation cache holds up to 100 MB of decoded image data across requests,
@@ -36,11 +38,7 @@ function releaseTransformSlot(): void {
 
 export async function transformToWebp(
   blob: Uint8Array,
-  {
-    width,
-    height,
-    fit,
-  }: { width?: number; height?: number; fit: string },
+  { width, height, fit }: { width?: number; height?: number; fit?: ImageFit },
 ): Promise<Buffer> {
   await acquireTransformSlot();
   try {
@@ -49,17 +47,12 @@ export async function transformToWebp(
       .resize({
         ...(width && { width }),
         ...(height && { height }),
-        fit: isAllowedFit(fit) ? fit : "cover",
+        // Keep a runtime backstop for untyped callers in addition to the
+        // resource route's search-param validation.
+        fit: isImageFit(fit) ? fit : "cover",
       })
       .toBuffer();
   } finally {
     releaseTransformSlot();
   }
-}
-
-function isAllowedFit(s: string | null): s is FitEnum[keyof FitEnum] {
-  const allowedFits: FitEnum[keyof FitEnum][] = ["contain", "cover", "fill"];
-  if (!s) return false;
-  // @ts-ignore
-  return allowedFits.includes(s);
 }

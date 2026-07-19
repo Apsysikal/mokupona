@@ -2,6 +2,8 @@ import path from "node:path";
 
 import sharp from "sharp";
 
+import { RESPONSIVE_IMAGE_WIDTHS } from "~/shared/image";
+
 const __dirname = import.meta.dirname;
 
 const landingPageImagePath = path.join(
@@ -19,19 +21,12 @@ const accentImagePath = path.join(
 );
 
 async function optimize() {
-  const variants = [
-    { size: "1080", width: 1080 },
-    { size: "864", width: 864 },
-    { size: "648", width: 648 },
-    { size: "432", width: 432 },
-  ];
-
-  for (const { size, width } of variants) {
+  for (const width of RESPONSIVE_IMAGE_WIDTHS) {
     const optimizedPath = path.join(
       __dirname,
       "..",
       "public",
-      `hero-image-${size}.webp`,
+      `hero-image-${width}.webp`,
     );
 
     await sharp(landingPageImagePath)
@@ -41,16 +36,16 @@ async function optimize() {
   }
 
   await sharp(landingPageImagePath)
-    .resize({ width: 432 })
+    .resize({ width: RESPONSIVE_IMAGE_WIDTHS[0] })
     .jpeg()
     .toFile(path.join(__dirname, "..", "public", "hero-image.jpg"));
 
-  for (const { size, width } of variants) {
+  for (const width of RESPONSIVE_IMAGE_WIDTHS) {
     const optimizedPath = path.join(
       __dirname,
       "..",
       "public",
-      `accent-image-${size}.webp`,
+      `accent-image-${width}.webp`,
     );
 
     await sharp(accentImagePath)
@@ -60,7 +55,7 @@ async function optimize() {
   }
 
   await sharp(accentImagePath)
-    .resize({ width: 432 })
+    .resize({ width: RESPONSIVE_IMAGE_WIDTHS[0] })
     .jpeg()
     .toFile(path.join(__dirname, "..", "public", "accent-image.jpg"));
 }

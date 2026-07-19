@@ -19,6 +19,6 @@ export const EventSchema = z.object({
     .min(0, "Price cannot be less than 0")
     .int(),
   discounts: z.string().trim().optional(),
-  cover: imageFileSchema(1024 * 1024 * 3),
+  cover: imageFileSchema(),
   addressId: z.string({ error: "Address is required" }).trim(),
 });

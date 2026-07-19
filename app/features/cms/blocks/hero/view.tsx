@@ -7,6 +7,7 @@ import type { HeroBlockType } from "./model";
 
 import { Eyebrow, SecondaryCTA } from "~/components/section";
 import { Button } from "~/components/ui/button";
+import { RESPONSIVE_IMAGE_WIDTHS } from "~/shared/image";
 
 type HeroBlockViewProps = React.ComponentPropsWithoutRef<"section"> & {
   blockData: HeroBlockType;
@@ -26,7 +27,7 @@ export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
     image,
   } = data;
   const { src, alt, width, height } = image;
-  const srcSet = generateSrcSet(src, [432, 648, 864, 1080]);
+  const srcSet = generateSrcSet(src, RESPONSIVE_IMAGE_WIDTHS);
 
   return (
     <section

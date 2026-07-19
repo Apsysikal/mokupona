@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import type { Route } from "./+types/file.$fileId";
 
-import { IMAGE_FITS } from "~/components/optimized-image";
 import {
   fileStorage as cache,
   getStorageKey as getCacheKey,
@@ -10,6 +9,7 @@ import {
 import { logger } from "~/logger.server";
 import { getImageById } from "~/models/image.server";
 import { requireFound } from "~/shared/http.server";
+import { IMAGE_FITS } from "~/shared/image";
 import { transformToWebp } from "~/utils/image-transform.server";
 
 const SearchParamsSchema = z.object({
