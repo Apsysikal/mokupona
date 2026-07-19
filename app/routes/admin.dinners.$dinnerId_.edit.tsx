@@ -12,14 +12,14 @@ import {
 import { toAddressOptions } from "~/features/events/view-models";
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
 import {
+  destroyImages,
+  storeImage,
+} from "~/features/images/image-storage.server";
+import {
   builderRowsToDescriptors,
   defaultBuilderRows,
   descriptorsToBuilderRows,
 } from "~/features/signup-form/builder";
-import {
-  destroyImages,
-  storeImage,
-} from "~/features/images/image-storage.server";
 import { withParsedImageForm } from "~/features/uploads/image-form-action.server";
 import { getAddresses } from "~/models/address.server";
 import {

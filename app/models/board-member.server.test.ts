@@ -1,3 +1,4 @@
+import { faker } from "@faker-js/faker";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -5,8 +6,6 @@ import {
   deleteBoardMember,
   updateBoardMember,
 } from "./board-member.server";
-
-import { faker } from "@faker-js/faker";
 
 import { prisma } from "~/db.server";
 import type { ImageCreateData } from "~/models/image.server";

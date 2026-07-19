@@ -72,3 +72,37 @@ export function createCloudinaryProvider(
     },
   };
 }
+
+/**
+ * Backfill-only: upload a repo static asset under a fixed public_id in the
+ * shared (non-env-prefixed) static/ folder. `overwrite: false` makes re-runs
+ * no-ops. Lives here so the SDK stays confined to this providers module.
+ */
+export async function uploadStaticAsset(
+  bytes: Uint8Array,
+  publicId: string,
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<void> {
+  const cloudName = env.CLOUDINARY_CLOUD_NAME;
+  const apiKey = env.CLOUDINARY_API_KEY;
+  const apiSecret = env.CLOUDINARY_API_SECRET;
+
+  invariant(
+    cloudName && apiKey && apiSecret,
+    "CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET must be set to upload static assets",
+  );
+
+  cloudinary.config({
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
+    secure: true,
+  });
+
+  await uploadStream(Buffer.from(bytes), {
+    resource_type: "image",
+    public_id: publicId,
+    overwrite: false,
+    asset_folder: "static",
+  });
+}
