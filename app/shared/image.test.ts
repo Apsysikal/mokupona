@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { getImageUrl, type ImageProviderConfig } from "./image";
+import {
+  getImageUrl,
+  IMAGE_SIZE_ERROR,
+  IMAGE_TYPE_ERROR,
+  imageFileSchema,
+  type ImageProviderConfig,
+} from "./image";
 
 const localConfig: ImageProviderConfig = {
   imageProvider: "local",
@@ -98,4 +104,41 @@ describe("getImageUrl — static public_id-only assets", () => {
       "",
     );
   });
+});
+
+describe("imageFileSchema", () => {
+  const schema = imageFileSchema();
+
+  function upload(bytes: number, type = "image/jpeg") {
+    return new File([new Uint8Array(bytes)], "upload.jpg", { type });
+  }
+
+  function firstError(file: File) {
+    const result = schema.safeParse(file);
+    return result.success ? null : result.error.issues[0]?.message;
+  }
+
+  it.each(["image/jpeg", "image/png", "image/webp"])(
+    "accepts a small %s upload",
+    (type) => {
+      expect(schema.safeParse(upload(10, type)).success).toBe(true);
+    },
+  );
+
+  it("rejects an empty file", () => {
+    expect(firstError(upload(0))).toBe("You must select a file");
+  });
+
+  it("rejects a file over the 3MB cap", () => {
+    expect(firstError(upload(3 * 1024 * 1024 + 1))).toBe(IMAGE_SIZE_ERROR);
+  });
+
+  it.each(["image/gif", "image/svg+xml", "application/pdf", ""])(
+    "rejects the %s MIME type server-side",
+    (type) => {
+      // uploads are forwarded to a third-party provider now — the allowlist
+      // is a real gate, not just the input's accept attribute
+      expect(firstError(upload(10, type))).toBe(IMAGE_TYPE_ERROR);
+    },
+  );
 });

@@ -105,11 +105,17 @@ export const MAX_STAGED_IMAGE_BYTES = 4 * 1024 * 1024;
 export const IMAGE_SIZE_ERROR = "File cannot be greater than 3MB";
 
 // Client-safe: the accepted types back every image input's `accept`
-// attribute; they are advertisory only — the schema deliberately validates
-// size, not MIME type.
+// attribute AND the schema's server-side allowlist below. (This reverses the
+// earlier size-only decision: bytes used to stay in our own DB, but uploads
+// are now forwarded to a third-party provider — design §2.)
 export const VALID_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-/** The size-validated upload schema shared by cover and portrait images. */
+export const IMAGE_TYPE_ERROR = "File must be a JPEG, PNG or WebP image";
+
+/**
+ * The upload schema shared by cover and portrait images: size-capped and
+ * MIME-allowlisted server-side.
+ */
 export function imageFileSchema() {
   return z
     .instanceof(File, { message: "You must select a file" })
@@ -118,5 +124,8 @@ export function imageFileSchema() {
     }, "You must select a file")
     .refine((file) => {
       return file.size <= MAX_IMAGE_BYTES;
-    }, IMAGE_SIZE_ERROR);
+    }, IMAGE_SIZE_ERROR)
+    .refine((file) => {
+      return VALID_IMAGE_TYPES.includes(file.type);
+    }, IMAGE_TYPE_ERROR);
 }
