@@ -12,10 +12,13 @@ import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
+import { auth } from "~/features/auth/auth.server";
 import { GoogleSignInButton } from "~/features/auth/components/google-button";
-import { emailSchema } from "~/features/auth/form-schemas";
-import { getUserId } from "~/features/auth/guards.server";
+import {
+  emailSchema,
+  parseRequestForm,
+} from "~/features/auth/form-schemas";
+import { anonymousAuthPageLoader } from "~/features/auth/guards.server";
 import { logger } from "~/logger.server";
 import {
   getClientIPAddress,
@@ -30,16 +33,10 @@ const schema = z.object({
   remember: z.boolean().optional().default(false),
 });
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  const userId = await getUserId(request);
-  if (userId) return redirect("/");
-  return { googleEnabled: googleAuthEnabled };
-};
+export const loader = anonymousAuthPageLoader;
 
 export const action = async ({ request }: Route.ActionArgs) => {
-  const formData = await request.formData();
-
-  const submission = parseWithZod(formData, { schema });
+  const submission = await parseRequestForm(request, schema);
 
   if (submission.status !== "success") {
     return data({ result: submission.reply(), authError: null });

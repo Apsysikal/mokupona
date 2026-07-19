@@ -24,8 +24,6 @@ import {
 } from "~/features/auth/middleware.server";
 import stylesheet from "~/tailwind.css?url";
 
-export type RootLoaderData = typeof loader;
-
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
   { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },

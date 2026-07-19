@@ -11,22 +11,15 @@ import {
   type ViewsFor,
 } from "./non-list";
 
-export {
-  NonListFieldDescriptorSchema,
-  zodForField,
-  type NonListFieldDescriptor,
-  type NonListFieldType,
-} from "./non-list";
-export { ListFieldSchema } from "./list/model";
+export { zodForField, type NonListFieldDescriptor } from "./non-list";
 
-export const FieldDescriptorSchema = z.discriminatedUnion("type", [
+const FieldDescriptorSchema = z.discriminatedUnion("type", [
   ...NonListFieldDescriptorSchema.options,
   ListFieldSchema,
 ]);
 
 export type FieldDescriptor = z.infer<typeof FieldDescriptorSchema>;
-export type ListFieldDescriptor = z.infer<typeof ListFieldSchema>;
-export type FieldType = FieldDescriptor["type"];
+type FieldType = FieldDescriptor["type"];
 
 interface PlacedDescriptor {
   descriptor: FieldDescriptor | NonListFieldDescriptor;

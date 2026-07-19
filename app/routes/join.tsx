@@ -9,10 +9,10 @@ import { AuthShell } from "~/components/auth-layout";
 import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
+import { auth } from "~/features/auth/auth.server";
 import { GoogleSignInButton } from "~/features/auth/components/google-button";
 import { displayNameSchema, emailSchema } from "~/features/auth/form-schemas";
-import { getUserId } from "~/features/auth/guards.server";
+import { anonymousAuthPageLoader } from "~/features/auth/guards.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
 import { logger } from "~/logger.server";
 import { getUserByEmail } from "~/models/user.server";
@@ -24,11 +24,7 @@ const schema = withPasswordConfirmation({
   redirectTo: z.string().optional(),
 });
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  const userId = await getUserId(request);
-  if (userId) return redirect("/");
-  return { googleEnabled: googleAuthEnabled };
-};
+export const loader = anonymousAuthPageLoader;
 
 export const action = async ({ request }: Route.ActionArgs) => {
   const formData = await request.formData();

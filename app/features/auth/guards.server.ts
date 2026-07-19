@@ -1,6 +1,6 @@
 import { redirect } from "react-router";
 
-import { auth } from "./auth.server";
+import { auth, googleAuthEnabled } from "./auth.server";
 import { isRoleName, type RoleName } from "./roles";
 
 import type { Role } from "~/models/role.server";
@@ -45,6 +45,20 @@ export async function getUserWithRole(request: Request) {
   if (user) return validateRoleName(user);
 
   throw await logout(request);
+}
+
+/**
+ * Loader shared by the anonymous-only auth pages (login/join): bounce
+ * signed-in users home and expose whether Google sign-in is configured.
+ */
+export async function anonymousAuthPageLoader({
+  request,
+}: {
+  request: Request;
+}) {
+  const userId = await getUserId(request);
+  if (userId) throw redirect("/");
+  return { googleEnabled: googleAuthEnabled };
 }
 
 export async function requireUserId(

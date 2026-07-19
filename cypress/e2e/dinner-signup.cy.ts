@@ -1,5 +1,10 @@
 import { faker } from "@faker-js/faker";
 
+import {
+  acceptPrivacyAndJoin,
+  fillSignupContact,
+} from "../support/upload-test-utils";
+
 describe("dinner signup", () => {
   function visitFirstDinner() {
     cy.visitAndCheck("/dinners");
@@ -8,43 +13,34 @@ describe("dinner signup", () => {
       .click();
   }
 
-  function fillSigner() {
+  function fillSigner(name = faker.person.fullName()) {
+    fillSignupContact({
+      name,
+      email: `${faker.internet.username()}@example.com`,
+    });
+  }
+
+  function addFriend(name: string) {
+    cy.findByRole("button", { name: /add a friend/i }).click();
     cy.findAllByRole("textbox", { name: /^name$/i })
-      .first()
-      .type(faker.person.fullName());
-    cy.findByRole("textbox", { name: /email/i }).type(
-      `${faker.internet.username()}@example.com`,
-    );
-    cy.findByRole("textbox", { name: /phone number/i }).type(
-      faker.phone.number({ style: "international" }),
-    );
+      .should("have.length", 2)
+      .last()
+      .type(name);
   }
 
   it("allows signing up for a dinner", () => {
     visitFirstDinner();
 
     fillSigner();
-    cy.findByLabelText(/agree to the privacy policy/i).click();
-    cy.findByRole("button", { name: /join/i }).click();
-
-    cy.location("pathname").should("equal", "/dinners");
-    cy.findByText(/signup complete/i);
+    acceptPrivacyAndJoin();
   });
 
   it("allows signing up with a friend", () => {
     visitFirstDinner();
 
     fillSigner();
-    cy.findByRole("button", { name: /add a friend/i }).click();
-    cy.findAllByRole("textbox", { name: /^name$/i })
-      .should("have.length", 2)
-      .last()
-      .type(faker.person.fullName());
-    cy.findByLabelText(/agree to the privacy policy/i).click();
-    cy.findByRole("button", { name: /join/i }).click();
-
-    cy.location("pathname").should("equal", "/dinners");
-    cy.findByText(/signup complete/i);
+    addFriend(faker.person.fullName());
+    acceptPrivacyAndJoin();
   });
 
   it("shows a new signup in the admin table and CSV export", () => {
@@ -59,24 +55,12 @@ describe("dinner signup", () => {
       .then((pathname) => {
         const dinnerId = pathname.split("/").pop();
 
-        cy.findAllByRole("textbox", { name: /^name$/i })
-          .first()
-          .type(signerName);
-        cy.findByRole("textbox", { name: /email/i }).type(
-          `signer-${suffix}@example.com`,
-        );
-        cy.findByRole("textbox", { name: /phone number/i }).type(
-          faker.phone.number({ style: "international" }),
-        );
-        cy.findByRole("button", { name: /add a friend/i }).click();
-        cy.findAllByRole("textbox", { name: /^name$/i })
-          .should("have.length", 2)
-          .last()
-          .type(friendName);
-        cy.findByLabelText(/agree to the privacy policy/i).click();
-        cy.findByRole("button", { name: /join/i }).click();
-        cy.location("pathname").should("equal", "/dinners");
-        cy.findByText(/signup complete/i);
+        fillSignupContact({
+          name: signerName,
+          email: `signer-${suffix}@example.com`,
+        });
+        addFriend(friendName);
+        acceptPrivacyAndJoin();
 
         cy.loginAsRole("moderator");
 

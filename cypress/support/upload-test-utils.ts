@@ -80,6 +80,11 @@ export function uploadFileInput(
   };
 }
 
+/** A file just over the Zod schema limit — rejected client-side with a form error. */
+export function oversizedZodUpload() {
+  return uploadFileInput(ZOD_LIMIT_BYTES + 1, { fileName: "zod-too-large.jpg" });
+}
+
 export function runUploadDbCommand<T>(
   action: UploadDbAction,
   payload?: unknown,
@@ -140,6 +145,33 @@ export function submitMultipartRequest({
   });
 }
 
+/**
+ * Posts the form with a file just over the upload handler limit and asserts
+ * the server rejects it gracefully (no 500, form error in the response).
+ */
+export function expectHandlerLimitRejection({
+  action,
+  fields,
+  fileFieldName,
+}: {
+  action: string;
+  fields: Record<string, string>;
+  fileFieldName: string;
+}) {
+  return submitMultipartRequest({
+    action,
+    fields,
+    fileFieldName,
+    file: {
+      size: UPLOAD_HANDLER_LIMIT_BYTES + 1,
+      name: "handler-too-large.jpg",
+    },
+  }).then((response) => {
+    expect(response.status).to.not.equal(500);
+    expect(response.body).to.include(FILE_TOO_LARGE_ERROR);
+  });
+}
+
 export function getFirstAddressId() {
   return cy
     .findByLabelText(/^address$/i)
@@ -192,6 +224,31 @@ export function fillDinnerForm(values: ReturnType<typeof dinnerFormValues>) {
 
 export function uploadDinnerCover(file: string | Cypress.FileReferenceObject) {
   cy.findByLabelText(/^cover$/i).selectFile(file, { force: true });
+}
+
+/** Visits the new-dinner form and fills it with a valid cover attached. */
+export function createDinnerViaAdminForm(
+  values: ReturnType<typeof dinnerFormValues>,
+) {
+  cy.visitAndCheck("/admin/dinners/new");
+  fillDinnerForm(values);
+  uploadDinnerCover(VALID_UPLOAD_FIXTURE_PATH);
+}
+
+/**
+ * Saves the dinner form, waits for the detail page, and yields the created
+ * dinner's id (so the caller can register cleanup).
+ */
+export function saveDinnerAndCaptureId(
+  title: string,
+): Cypress.Chainable<string> {
+  cy.findByRole("button", { name: /save dinner/i }).click();
+  cy.findByRole("heading", { name: title }).should("be.visible");
+
+  return cy
+    .location("pathname")
+    .should("match", /\/admin\/dinners\/[^/.]+$/)
+    .then((pathname) => getDinnerIdFromPathname(pathname));
 }
 
 export function getDinnerIdFromPathname(pathname: string) {

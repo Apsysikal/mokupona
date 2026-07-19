@@ -10,7 +10,7 @@ export const ADMIN_ROLE_NAMES = [
   "admin",
 ] as const satisfies readonly RoleName[];
 
-export const ROLE_LABELS = {
+const ROLE_LABELS = {
   user: "user",
   moderator: "moderator",
   admin: "administrator",

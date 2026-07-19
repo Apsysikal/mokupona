@@ -9,7 +9,7 @@ export const INVITABLE_ROLES = [
 ] as const satisfies readonly RoleName[];
 export type InvitableRole = (typeof INVITABLE_ROLES)[number];
 
-export function isInvitableRole(value: string): value is InvitableRole {
+function isInvitableRole(value: string): value is InvitableRole {
   return INVITABLE_ROLES.some((role) => role === value);
 }
 

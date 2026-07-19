@@ -11,6 +11,7 @@ import { AuthStatus } from "~/components/auth-status";
 import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { auth } from "~/features/auth/auth.server";
+import { parseRequestForm } from "~/features/auth/form-schemas";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
 import { logger } from "~/logger.server";
 import { getPasswordResetEmail } from "~/models/password-reset.server";
@@ -42,8 +43,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 };
 
 export const action = async ({ request }: Route.ActionArgs) => {
-  const formData = await request.formData();
-  const submission = parseWithZod(formData, { schema });
+  const submission = await parseRequestForm(request, schema);
 
   if (submission.status !== "success") {
     return data({ result: submission.reply() });

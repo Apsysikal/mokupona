@@ -2,7 +2,8 @@
 // shapes. The models describe exactly what the event UI consumes, so the
 // components no longer depend on Prisma entities or another route's loader.
 
-import type { Address, Event } from "~/models/event.server";
+import type { Address } from "~/models/address.server";
+import type { Event } from "~/models/event.server";
 
 /**
  * Dates cross the loader boundary, so a model mapped server-side may reach
