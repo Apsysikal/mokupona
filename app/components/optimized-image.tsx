@@ -93,20 +93,35 @@ export function OptimizedImage({
         <div aria-hidden className="bg-primary/10 absolute inset-0" />
       )}
       {src ? (
-        <img
-          ref={imgRef}
-          srcSet={srcSet}
-          src={src}
-          width={width}
-          height={height}
-          alt={alt}
-          onLoad={() => setLoaded(true)}
-          className={cn(
-            "absolute inset-0 size-full object-cover transition-opacity duration-300",
-            loaded ? "opacity-100" : "opacity-0",
-          )}
-          {...props}
-        />
+        <>
+          <img
+            ref={imgRef}
+            srcSet={srcSet}
+            src={src}
+            width={width}
+            height={height}
+            alt={alt}
+            onLoad={() => setLoaded(true)}
+            className={cn(
+              "absolute inset-0 size-full object-cover transition-opacity duration-300",
+              loaded ? "opacity-100" : "opacity-0",
+            )}
+            {...props}
+          />
+          {/* the fade needs JS (onLoad/hydration); without it the image
+              above stays at opacity 0 forever, so no-JS visitors get a
+              plain full-opacity copy instead (the KCD BlurrableImage trick) */}
+          <noscript>
+            <img
+              srcSet={srcSet}
+              src={src}
+              width={width}
+              height={height}
+              alt={alt}
+              className="absolute inset-0 size-full object-cover"
+            />
+          </noscript>
+        </>
       ) : null}
     </div>
   );

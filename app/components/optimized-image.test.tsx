@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { OptimizedImage } from "./optimized-image";
@@ -119,6 +120,20 @@ describe("OptimizedImage blur-up", () => {
 
     expect(screen.getByAltText("A dinner table")).toHaveClass("opacity-100");
     restore();
+  });
+
+  it("provides a full-opacity noscript fallback so no-JS visitors never sit on the blur", () => {
+    // only the server render materializes noscript children (that is exactly
+    // the markup a no-JS visitor receives), so assert on renderToString
+    const html = renderToString(
+      <OptimizedImage image={image} width={640} height={480} alt="A table" />,
+    );
+
+    const [, noscriptMarkup] = html.split("<noscript>");
+    expect(noscriptMarkup).toBeDefined();
+    const fallback = noscriptMarkup.split("</noscript>")[0];
+    expect(fallback).toContain('src="/file/img-1"');
+    expect(fallback).not.toContain("opacity-0");
   });
 
   it("renders the placeholder frame alone when no URL can be built (offline static asset)", () => {
