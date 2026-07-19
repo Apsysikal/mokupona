@@ -3,6 +3,8 @@ import { isDeepStrictEqual } from "node:util";
 import type { Prisma } from "#prisma/generated/client";
 
 import { prisma } from "~/db.server";
+
+export type { FormVersion } from "#prisma/generated/client";
 import { FormSchema, type FieldDescriptor } from "~/features/forms/fields";
 import { parseStoredFormSchema } from "~/features/forms/serialization";
 

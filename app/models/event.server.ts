@@ -6,6 +6,7 @@ import { DEFAULT_FORM } from "~/features/signup-form/default-form";
 import {
   CURRENT_FORM_VERSION_ORDER_BY,
   saveFormSchemaInTx,
+  type FormVersion,
 } from "~/models/form.server";
 import {
   IMAGE_METADATA_SELECT,
@@ -100,7 +101,10 @@ export async function getEventById(
  * routes' one consistent not-found outcome; every valid event has at least one
  * version by construction.
  */
-export async function getEventWithCurrentFormVersion(id: string) {
+export async function getEventWithCurrentFormVersion(id: string): Promise<{
+  event: EventWithImage & { address: Address };
+  version: FormVersion;
+} | null> {
   const record = await prisma.event.findUnique({
     where: { id },
     include: {

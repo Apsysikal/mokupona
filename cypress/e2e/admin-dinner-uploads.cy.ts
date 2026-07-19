@@ -72,6 +72,10 @@ describe("admin dinner uploads", () => {
           expect(dinner.imageId).to.be.a("string").and.not.be.empty;
           // uploads persist provider scalars now, never blob bytes
           expect(dinner.imageStorageKey).to.be.a("string").and.not.be.empty;
+          // the stored file must be servable back by the app — this pins the
+          // cross-process IMAGE_UPLOAD_FOLDER contract between the db helper
+          // and the server
+          cy.request(`/file/${dinner.imageId}`).its("status").should("eq", 200);
         },
       );
     });

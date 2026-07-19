@@ -121,6 +121,23 @@ describe("OptimizedImage blur-up", () => {
     restore();
   });
 
+  it("renders the placeholder frame alone when no URL can be built (offline static asset)", () => {
+    const restore = stubImageComplete(false);
+    // public_id-only asset, no cloud name configured → getImageUrl is ""
+    const { container } = render(
+      <OptimizedImage
+        image={{ storageKey: "static/hero-image" }}
+        width={640}
+        height={480}
+        alt="Hero"
+      />,
+    );
+
+    expect(container.querySelector("img")).not.toBeInTheDocument();
+    expect(container.querySelector(".bg-primary\\/10")).toBeInTheDocument();
+    restore();
+  });
+
   it("emits provider URLs for src and every srcSet rung", () => {
     mocks.useImageConfig.mockReturnValue({
       imageProvider: "cloudinary",
