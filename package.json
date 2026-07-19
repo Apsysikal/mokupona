@@ -48,6 +48,7 @@
     "@remix-run/form-data-parser": "^0.17.4",
     "better-auth": "^1.6.23",
     "class-variance-authority": "^0.7.1",
+    "cloudinary": "^2.10.0",
     "clsx": "^2.1.1",
     "dotenv": "^17.4.2",
     "isbot": "^5.2.1",
