@@ -97,6 +97,52 @@ type BoardMemberResult = {
   imageCount: number;
 };
 
+function toDinnerResult(event: {
+  id: string;
+  title: string;
+  description: string;
+  menuDescription: string | null;
+  donationDescription: string | null;
+  date: Date;
+  slots: number;
+  price: number;
+  discounts: string | null;
+  addressId: string;
+  imageId: string;
+}): DinnerResult {
+  return {
+    id: event.id,
+    title: event.title,
+    description: event.description,
+    menuDescription: event.menuDescription,
+    donationDescription: event.donationDescription,
+    date: event.date.toISOString(),
+    slots: event.slots,
+    price: event.price,
+    discounts: event.discounts,
+    addressId: event.addressId,
+    imageId: event.imageId,
+  };
+}
+
+function toBoardMemberResult(
+  boardMember: {
+    id: string;
+    name: string;
+    position: string;
+    image: { id: string } | null;
+  },
+  imageCount: number,
+): BoardMemberResult {
+  return {
+    id: boardMember.id,
+    name: boardMember.name,
+    position: boardMember.position,
+    imageId: boardMember.image?.id ?? null,
+    imageCount,
+  };
+}
+
 async function getDefaultImageInput() {
   const blob = await readFile(defaultImagePath);
 
@@ -164,19 +210,7 @@ async function createDinner(
     image: imageData,
   });
 
-  return outputJson<DinnerResult>({
-    id: event.id,
-    title: event.title,
-    description: event.description,
-    menuDescription: event.menuDescription,
-    donationDescription: event.donationDescription,
-    date: event.date.toISOString(),
-    slots: event.slots,
-    price: event.price,
-    discounts: event.discounts,
-    addressId: event.addressId,
-    imageId: event.imageId,
-  });
+  return outputJson<DinnerResult>(toDinnerResult(event));
 }
 
 async function getDinner(
@@ -190,19 +224,7 @@ async function getDinner(
     return outputJson<null>(null);
   }
 
-  return outputJson<DinnerResult>({
-    id: event.id,
-    title: event.title,
-    description: event.description,
-    menuDescription: event.menuDescription,
-    donationDescription: event.donationDescription,
-    date: event.date.toISOString(),
-    slots: event.slots,
-    price: event.price,
-    discounts: event.discounts,
-    addressId: event.addressId,
-    imageId: event.imageId,
-  });
+  return outputJson<DinnerResult>(toDinnerResult(event));
 }
 
 async function deleteDinner(
@@ -295,13 +317,9 @@ async function createBoardMember(
     },
   });
 
-  return outputJson<BoardMemberResult>({
-    id: boardMember.id,
-    name: boardMember.name,
-    position: boardMember.position,
-    imageId: boardMember.image?.id ?? null,
-    imageCount: boardMember.image ? 1 : 0,
-  });
+  return outputJson<BoardMemberResult>(
+    toBoardMemberResult(boardMember, boardMember.image ? 1 : 0),
+  );
 }
 
 async function getBoardMember(
@@ -324,13 +342,9 @@ async function getBoardMember(
     where: { boardMemberId: boardMember.id },
   });
 
-  return outputJson<BoardMemberResult>({
-    id: boardMember.id,
-    name: boardMember.name,
-    position: boardMember.position,
-    imageId: boardMember.image?.id ?? null,
-    imageCount,
-  });
+  return outputJson<BoardMemberResult>(
+    toBoardMemberResult(boardMember, imageCount),
+  );
 }
 
 async function getBoardMemberByName(
@@ -354,13 +368,9 @@ async function getBoardMemberByName(
     where: { boardMemberId: boardMember.id },
   });
 
-  return outputJson<BoardMemberResult>({
-    id: boardMember.id,
-    name: boardMember.name,
-    position: boardMember.position,
-    imageId: boardMember.image?.id ?? null,
-    imageCount,
-  });
+  return outputJson<BoardMemberResult>(
+    toBoardMemberResult(boardMember, imageCount),
+  );
 }
 
 async function deleteBoardMember(

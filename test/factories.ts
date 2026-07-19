@@ -15,15 +15,19 @@ export function ensureAuthRoles() {
   return Promise.all(ROLE_NAMES.map(ensureRole));
 }
 
-export async function createTestUser(roleName = "user") {
-  const role = await ensureRole(roleName);
+function createUserForRole(roleId: string) {
   return prisma.user.create({
     data: {
       email: `test-${faker.string.uuid()}@example.com`,
       name: faker.person.fullName(),
-      roleId: role.id,
+      roleId,
     },
   });
+}
+
+export async function createTestUser(roleName = "user") {
+  const role = await ensureRole(roleName);
+  return createUserForRole(role.id);
 }
 
 // Builds the row graph an Event needs (role -> user, address) and returns
@@ -34,16 +38,9 @@ export async function createTestUser(roleName = "user") {
 export async function buildEventData() {
   const [user, address] = await Promise.all([
     prisma.role
+      // a unique role per call keeps tests sharing one database isolated
       .create({ data: { name: `test-role-${faker.string.uuid()}` } })
-      .then((role) =>
-        prisma.user.create({
-          data: {
-            email: `test-${faker.string.uuid()}@example.com`,
-            name: faker.person.fullName(),
-            roleId: role.id,
-          },
-        }),
-      ),
+      .then((role) => createUserForRole(role.id)),
     prisma.address.create({
       data: {
         streetName: faker.location.street(),

@@ -6,11 +6,12 @@ import {
 } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { useMemo } from "react";
-import { Form, isRouteErrorResponse, Link } from "react-router";
+import { Form, Link } from "react-router";
 
 import type { Route } from "./+types/dinners_.$dinnerId";
 
 import { CheckboxField, ErrorList } from "~/components/forms";
+import { RouteErrorContent } from "~/components/route-error-content";
 import { Button } from "~/components/ui/button";
 import {
   EventFactList,
@@ -325,27 +326,5 @@ function SignupForm({
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  if (isRouteErrorResponse(error)) {
-    return (
-      <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
-        <h1 className="font-semibold">
-          {error.status} {error.statusText}
-        </h1>
-        <p>{error.data}</p>
-      </div>
-    );
-  } else if (error instanceof Error) {
-    return (
-      <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
-        <h1 className="font-semibold">Error</h1>
-        <p>{error.message}</p>
-      </div>
-    );
-  } else {
-    return (
-      <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
-        <h1 className="font-semibold">Unknown Error</h1>
-      </div>
-    );
-  }
+  return <RouteErrorContent error={error} />;
 }

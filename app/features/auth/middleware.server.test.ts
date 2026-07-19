@@ -1,14 +1,13 @@
 // @vitest-environment node
 // (happy-dom swaps the fetch primitives; better-auth needs the real ones)
 
-import { faker } from "@faker-js/faker";
 import { RouterContextProvider, type MiddlewareFunction } from "react-router";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
+import { signedInRequest } from "../../../test/auth-session";
 import { ensureAuthRoles } from "../../../test/factories";
 
 import { auth } from "./auth.server";
-import { createUserViaAuth } from "./create-user.server";
 import {
   narrowResolvedUserRoleMiddleware,
   optionalUserContext,
@@ -30,29 +29,8 @@ beforeAll(async () => {
   await ensureAuthRoles();
 });
 
-async function signedInAs(roleName: RoleName, path = "/admin") {
-  const email = `middleware-${faker.string.uuid()}@example.com`;
-  const password = faker.internet.password({ length: 16 });
-  const user = await createUserViaAuth({
-    email,
-    password,
-    name: "middleware test",
-    roleName,
-    emailVerified: true,
-  });
-
-  const { headers } = await auth.api.signInEmail({
-    body: { email, password },
-    returnHeaders: true,
-  });
-  const cookie = (headers.get("set-cookie") ?? "").split(";")[0];
-
-  return {
-    user,
-    request: new Request(`http://localhost:3000${path}`, {
-      headers: { cookie },
-    }),
-  };
+function signedInAs(roleName: RoleName, path = "/admin") {
+  return signedInRequest({ roleName, path });
 }
 
 // Drives a middleware the way the router does: same args shape, and a `next`

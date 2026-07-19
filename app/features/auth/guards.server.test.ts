@@ -1,13 +1,11 @@
 // @vitest-environment node
 // (happy-dom swaps the fetch primitives; better-auth needs the real ones)
 
-import { faker } from "@faker-js/faker";
 import { beforeAll, describe, expect, it } from "vitest";
 
+import { signedInRequest as signedInAuthRequest } from "../../../test/auth-session";
 import { ensureAuthRoles } from "../../../test/factories";
 
-import { auth } from "./auth.server";
-import { createUserViaAuth } from "./create-user.server";
 import {
   getUserId,
   getUserWithRole,
@@ -21,28 +19,8 @@ beforeAll(async () => {
   await ensureAuthRoles();
 });
 
-async function signedInRequest(path = "/admin/users") {
-  const email = `guard-${faker.string.uuid()}@example.com`;
-  const password = faker.internet.password({ length: 16 });
-  const user = await createUserViaAuth({
-    email,
-    password,
-    name: "guard test",
-    emailVerified: true,
-  });
-
-  const { headers } = await auth.api.signInEmail({
-    body: { email, password },
-    returnHeaders: true,
-  });
-  const cookie = (headers.get("set-cookie") ?? "").split(";")[0];
-
-  return {
-    user,
-    request: new Request(`http://localhost:3000${path}`, {
-      headers: { cookie },
-    }),
-  };
+function signedInRequest(path = "/admin/users") {
+  return signedInAuthRequest({ path });
 }
 
 describe("signup via better-auth", () => {

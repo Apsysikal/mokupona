@@ -1,8 +1,9 @@
-import { isRouteErrorResponse, Outlet } from "react-router";
+import { Outlet } from "react-router";
 
 import type { Route } from "./+types/admin";
 
 import { AdminTabs } from "~/components/admin-tabs";
+import { RouteErrorContent } from "~/components/route-error-content";
 import {
   requireResolvedUserRoleMiddleware,
   userContext,
@@ -53,33 +54,9 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
 // The middleware's 403 (and child 404s) land here instead of the root
 // boundary, so denied users see a styled page inside the site chrome.
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  if (isRouteErrorResponse(error)) {
-    return (
-      <main className="mx-auto w-full max-w-5xl grow px-5 pt-5 pb-4 md:px-10 md:pt-9">
-        <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
-          <h1 className="font-semibold">
-            {error.status} {error.statusText}
-          </h1>
-          <p>{error.data}</p>
-        </div>
-      </main>
-    );
-  } else if (error instanceof Error) {
-    return (
-      <main className="mx-auto w-full max-w-5xl grow px-5 pt-5 pb-4 md:px-10 md:pt-9">
-        <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
-          <h1 className="font-semibold">Error</h1>
-          <p>{error.message}</p>
-        </div>
-      </main>
-    );
-  } else {
-    return (
-      <main className="mx-auto w-full max-w-5xl grow px-5 pt-5 pb-4 md:px-10 md:pt-9">
-        <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
-          <h1 className="font-semibold">Unknown Error</h1>
-        </div>
-      </main>
-    );
-  }
+  return (
+    <main className="mx-auto w-full max-w-5xl grow px-5 pt-5 pb-4 md:px-10 md:pt-9">
+      <RouteErrorContent error={error} />
+    </main>
+  );
 }

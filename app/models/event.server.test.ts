@@ -22,6 +22,48 @@ import { prisma } from "~/db.server";
 import type { FieldDescriptor } from "~/features/forms/fields";
 import { DEFAULT_FORM } from "~/features/signup-form/default-form";
 
+// duplicate field names violate FormSchema's unique-name rule, making any
+// transaction that saves the schema throw mid-flight
+function duplicateNameFields(): FieldDescriptor[] {
+  return [
+    {
+      type: "text",
+      version: 1,
+      data: { name: "dup", label: "One", required: false },
+    },
+    {
+      type: "text",
+      version: 1,
+      data: { name: "dup", label: "Two", required: false },
+    },
+  ];
+}
+
+/** Asserts the event with its form, versions, submissions, and image is gone. */
+async function expectEventGraphDeleted(event: {
+  id: string;
+  formId: string;
+  imageId: string;
+}) {
+  await expect(
+    prisma.event.findUnique({ where: { id: event.id } }),
+  ).resolves.toBeNull();
+  await expect(
+    prisma.form.findUnique({ where: { id: event.formId } }),
+  ).resolves.toBeNull();
+  await expect(
+    prisma.formVersion.count({ where: { formId: event.formId } }),
+  ).resolves.toBe(0);
+  await expect(
+    prisma.formSubmission.count({
+      where: { formVersion: { formId: event.formId } },
+    }),
+  ).resolves.toBe(0);
+  await expect(
+    prisma.image.findUnique({ where: { id: event.imageId } }),
+  ).resolves.toBeNull();
+}
+
 describe("createEvent", () => {
   it("creates the form and its first version with the event", async () => {
     const event = await createEvent(await buildEventData());
@@ -51,21 +93,8 @@ describe("createEvent", () => {
   });
 
   it("rejects descriptors that violate FormSchema", async () => {
-    const duplicateNames: FieldDescriptor[] = [
-      {
-        type: "text",
-        version: 1,
-        data: { name: "name", label: "Name", required: true },
-      },
-      {
-        type: "text",
-        version: 1,
-        data: { name: "name", label: "Also Name", required: false },
-      },
-    ];
-
     await expect(
-      createEvent(await buildEventData(), duplicateNames),
+      createEvent(await buildEventData(), duplicateNameFields()),
     ).rejects.toThrow();
   });
 });
@@ -184,24 +213,11 @@ describe("event image lifecycle", () => {
       contentType: "image/png",
       blob: Buffer.from("never-persisted-cover"),
     };
-    // duplicate field names fail FormSchema inside saveFormSchemaInTx — the
-    // throw happens AFTER the new image was created and the event repointed,
-    // so the whole swap must roll back
-    const invalid: FieldDescriptor[] = [
-      {
-        type: "text",
-        version: 1,
-        data: { name: "dup", label: "One", required: false },
-      },
-      {
-        type: "text",
-        version: 1,
-        data: { name: "dup", label: "Two", required: false },
-      },
-    ];
-
+    // the schema failure inside saveFormSchemaInTx happens AFTER the new
+    // image was created and the event repointed, so the whole swap must
+    // roll back
     await expect(
-      updateEvent(event.id, { image: newImage }, invalid),
+      updateEvent(event.id, { image: newImage }, duplicateNameFields()),
     ).rejects.toThrow();
 
     const after = await prisma.event.findUniqueOrThrow({
@@ -243,12 +259,7 @@ describe("event image lifecycle", () => {
 
     await deleteAddress(data.addressId);
 
-    await expect(
-      prisma.event.findUnique({ where: { id: event.id } }),
-    ).resolves.toBeNull();
-    await expect(
-      prisma.image.findUnique({ where: { id: event.imageId } }),
-    ).resolves.toBeNull();
+    await expectEventGraphDeleted(event);
   });
 });
 
@@ -270,21 +281,13 @@ describe("updateEvent", () => {
 
   it("rolls the event data back when the form save fails", async () => {
     const event = await createEvent(await buildEventData());
-    const invalid: FieldDescriptor[] = [
-      {
-        type: "text",
-        version: 1,
-        data: { name: "dup", label: "One", required: false },
-      },
-      {
-        type: "text",
-        version: 1,
-        data: { name: "dup", label: "Two", required: false },
-      },
-    ];
 
     await expect(
-      updateEvent(event.id, { title: "Should Not Persist" }, invalid),
+      updateEvent(
+        event.id,
+        { title: "Should Not Persist" },
+        duplicateNameFields(),
+      ),
     ).rejects.toThrow();
 
     const after = await prisma.event.findUniqueOrThrow({
@@ -309,20 +312,7 @@ describe("deleteEvent", () => {
 
     await deleteEvent(event.id);
 
-    await expect(
-      prisma.event.findUnique({ where: { id: event.id } }),
-    ).resolves.toBeNull();
-    await expect(
-      prisma.form.findUnique({ where: { id: event.formId } }),
-    ).resolves.toBeNull();
-    await expect(
-      prisma.formVersion.count({ where: { formId: event.formId } }),
-    ).resolves.toBe(0);
-    await expect(
-      prisma.formSubmission.count({
-        where: { formVersion: { formId: event.formId } },
-      }),
-    ).resolves.toBe(0);
+    await expectEventGraphDeleted(event);
   });
 
   it("rejects for an unknown event id", async () => {
@@ -377,17 +367,6 @@ describe("cascade paths into Event", () => {
     // app-level form and image cascades or those rows are orphaned
     await deleteUserById(data.createdById);
 
-    await expect(
-      prisma.event.findUnique({ where: { id: event.id } }),
-    ).resolves.toBeNull();
-    await expect(
-      prisma.form.findUnique({ where: { id: event.formId } }),
-    ).resolves.toBeNull();
-    await expect(
-      prisma.formVersion.count({ where: { formId: event.formId } }),
-    ).resolves.toBe(0);
-    await expect(
-      prisma.image.findUnique({ where: { id: event.imageId } }),
-    ).resolves.toBeNull();
+    await expectEventGraphDeleted(event);
   });
 });
