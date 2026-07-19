@@ -19,7 +19,8 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { GoogleSignInButton } from "~/features/auth/components/google-button";
-import { getUserWithRole, logout } from "~/features/auth/guards.server";
+import { logout } from "~/features/auth/guards.server";
+import { optionalUserContext } from "~/features/auth/middleware.server";
 import { passwordSchema } from "~/features/auth/password-schema";
 import { landingPathForRole } from "~/features/auth/roles";
 import { isInvitableRole } from "~/features/users/invite.shared";
@@ -61,7 +62,7 @@ async function acceptCurrentInvite(
 // /invite/$token — email-bound, role-carrying link (design §6). Four states:
 // dead-end (invalid/expired/used), logged-out signup with locked email,
 // logged-in match (confirm upgrade), logged-in mismatch.
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
+export const loader = async ({ params, context }: Route.LoaderArgs) => {
   const invite = await getInviteByToken(params.token);
   const validity = inviteValidity(invite);
 
@@ -69,7 +70,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     return { state: "dead-end" as const, reason: validity };
   }
 
-  const user = await getUserWithRole(request);
+  const user = context.get(optionalUserContext);
 
   if (!user) {
     return {
@@ -97,7 +98,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   };
 };
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
+export const action = async ({ request, params, context }: Route.ActionArgs) => {
   const formData = await request.formData();
   const intent = formData.get("intent");
 
@@ -121,7 +122,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   );
 
   if (intent === "accept") {
-    const user = await getUserWithRole(request);
+    const user = context.get(optionalUserContext);
     if (!user || user.email !== invite.email) {
       return redirect(`/invite/${params.token}`);
     }

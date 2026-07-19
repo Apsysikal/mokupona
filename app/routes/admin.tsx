@@ -4,7 +4,7 @@ import type { Route } from "./+types/admin";
 
 import { AdminTabs } from "~/components/admin-tabs";
 import {
-  requireRoleMiddleware,
+  requireResolvedUserRoleMiddleware,
   userContext,
 } from "~/features/auth/middleware.server";
 import { ADMIN_ROLE_NAMES } from "~/features/auth/roles";
@@ -13,10 +13,11 @@ import { countBoardMembers } from "~/models/board-member.server";
 import { countEvents } from "~/models/event.server";
 import { countUsers } from "~/models/user.server";
 
-// Authenticates the whole admin segment — child routes rely on this instead
-// of per-loader/action guards (plan phase 2). admin.users narrows further.
+// Authorizes the root-resolved user for the whole admin hierarchy and exposes
+// the required userContext. Descendants inherit this middleware; only the
+// admin-only users segment needs an additional narrowing check.
 export const middleware: Route.MiddlewareFunction[] = [
-  requireRoleMiddleware(ADMIN_ROLE_NAMES),
+  requireResolvedUserRoleMiddleware(ADMIN_ROLE_NAMES),
 ];
 
 export async function loader({ context }: Route.LoaderArgs) {

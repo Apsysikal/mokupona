@@ -53,10 +53,37 @@ export async function requireUserId(
 ) {
   const userId = await getUserId(request);
   if (!userId) {
-    const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
-    throw redirect(`/login?${searchParams}`);
+    throw loginRedirect(redirectTo);
   }
   return userId;
+}
+
+function loginRedirect(redirectTo: string) {
+  const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
+  return redirect(`/login?${searchParams}`);
+}
+
+/** Assert a role on a user that has already passed session/DB validation. */
+export function assertUserHasRole(
+  user: ValidatedUser,
+  roles: readonly RoleName[],
+) {
+  if (!roles.includes(user.role.name)) {
+    throw new Response("Forbidden", { status: 403 });
+  }
+  return user;
+}
+
+/** Require a user already resolved by request middleware. */
+export function requireResolvedUserWithRole(
+  user: ValidatedUser | null,
+  request: Request,
+  roles: readonly RoleName[],
+) {
+  if (!user) {
+    throw loginRedirect(new URL(request.url).pathname);
+  }
+  return assertUserHasRole(user, roles);
 }
 
 /**
@@ -68,16 +95,11 @@ export async function requireUserWithRole(
   request: Request,
   roles: readonly RoleName[],
 ) {
-  const userId = await requireUserId(request);
-  const user = await getUserByIdWithRole(userId);
-
-  if (!user) throw await logout(request);
-  const validatedUser = validateRoleName(user);
-  if (!roles.includes(validatedUser.role.name)) {
-    throw new Response("Forbidden", { status: 403 });
-  }
-
-  return validatedUser;
+  return requireResolvedUserWithRole(
+    await getUserWithRole(request),
+    request,
+    roles,
+  );
 }
 
 export async function logout(request: Request) {

@@ -2,13 +2,13 @@ import { Outlet } from "react-router";
 
 import type { Route } from "./+types/admin.users";
 
-import { requireRoleMiddleware } from "~/features/auth/middleware.server";
+import { narrowResolvedUserRoleMiddleware } from "~/features/auth/middleware.server";
 
 // Narrows the segment to admins. The parent admin.tsx middleware already
-// authenticated the request and populated userContext, so this only
-// re-checks the role — no second session or user lookup (plan phase 2).
+// populated required userContext for every descendant, so this only checks
+// the role — no second session or user lookup.
 export const middleware: Route.MiddlewareFunction[] = [
-  requireRoleMiddleware(["admin"]),
+  narrowResolvedUserRoleMiddleware(["admin"]),
 ];
 
 export const meta: Route.MetaFunction = () => {

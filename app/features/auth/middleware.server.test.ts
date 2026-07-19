@@ -2,14 +2,20 @@
 // (happy-dom swaps the fetch primitives; better-auth needs the real ones)
 
 import { faker } from "@faker-js/faker";
-import { RouterContextProvider } from "react-router";
+import { RouterContextProvider, type MiddlewareFunction } from "react-router";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { ensureAuthRoles } from "../../../test/factories";
 
 import { auth } from "./auth.server";
 import { createUserViaAuth } from "./create-user.server";
-import { requireRoleMiddleware, userContext } from "./middleware.server";
+import {
+  narrowResolvedUserRoleMiddleware,
+  optionalUserContext,
+  requireResolvedUserRoleMiddleware,
+  resolveOptionalUserMiddleware,
+  userContext,
+} from "./middleware.server";
 import { ADMIN_ROLE_NAMES, type RoleName } from "./roles";
 
 import { prisma } from "~/db.server";
@@ -52,7 +58,7 @@ async function signedInAs(roleName: RoleName, path = "/admin") {
 // Drives a middleware the way the router does: same args shape, and a `next`
 // we control so tests can observe whether downstream handlers would run.
 async function runMiddleware(
-  middleware: ReturnType<typeof requireRoleMiddleware>,
+  middleware: MiddlewareFunction<Response>,
   request: Request,
   context: RouterContextProvider,
   next: () => Promise<Response> = async () => new Response(null),
@@ -69,13 +75,33 @@ async function runMiddleware(
   );
 }
 
-describe("requireRoleMiddleware", () => {
-  it("redirects anonymous requests to /login with redirectTo", async () => {
-    const request = new Request("http://localhost:3000/admin/dinners");
+async function resolveUser(request: Request, context: RouterContextProvider) {
+  await runMiddleware(resolveOptionalUserMiddleware, request, context);
+}
+
+describe("resolved-user role middleware", () => {
+  it("fails fast when root middleware did not initialize the optional context", async () => {
+    const request = new Request("http://localhost:3000/admin");
+
     const thrown = await runMiddleware(
-      requireRoleMiddleware(ADMIN_ROLE_NAMES),
+      requireResolvedUserRoleMiddleware(ADMIN_ROLE_NAMES),
       request,
       new RouterContextProvider(),
+    ).catch((error) => error);
+
+    expect(thrown).not.toBeInstanceOf(Response);
+    expect(getUserByIdWithRole).not.toHaveBeenCalled();
+  });
+
+  it("redirects anonymous requests to /login with redirectTo", async () => {
+    const request = new Request("http://localhost:3000/admin/dinners");
+    const context = new RouterContextProvider();
+    await resolveUser(request, context);
+    expect(context.get(optionalUserContext)).toBeNull();
+    const thrown = await runMiddleware(
+      requireResolvedUserRoleMiddleware(ADMIN_ROLE_NAMES),
+      request,
+      context,
     ).catch((error) => error);
 
     expect(thrown).toBeInstanceOf(Response);
@@ -94,11 +120,13 @@ describe("requireRoleMiddleware", () => {
       method: "POST",
       body: new URLSearchParams({ intent: "invite" }),
     });
+    const context = new RouterContextProvider();
+    await resolveUser(request, context);
 
     const thrown = await runMiddleware(
-      requireRoleMiddleware(ADMIN_ROLE_NAMES),
+      requireResolvedUserRoleMiddleware(ADMIN_ROLE_NAMES),
       request,
-      new RouterContextProvider(),
+      context,
       async () => {
         downstreamRan = true;
         return new Response(null);
@@ -115,9 +143,10 @@ describe("requireRoleMiddleware", () => {
   it("throws 403 for a signed-in ordinary user", async () => {
     const { request } = await signedInAs("user");
     const context = new RouterContextProvider();
+    await resolveUser(request, context);
 
     const thrown = await runMiddleware(
-      requireRoleMiddleware(ADMIN_ROLE_NAMES),
+      requireResolvedUserRoleMiddleware(ADMIN_ROLE_NAMES),
       request,
       context,
     ).catch((error) => error);
@@ -129,15 +158,20 @@ describe("requireRoleMiddleware", () => {
   it("lets a moderator into the admin segment but 403s the users segment", async () => {
     const { user, request } = await signedInAs("moderator", "/admin/users");
     const context = new RouterContextProvider();
+    await resolveUser(request, context);
 
     // outer admin.tsx middleware: passes and stores the user
-    await runMiddleware(requireRoleMiddleware(ADMIN_ROLE_NAMES), request, context);
+    await runMiddleware(
+      requireResolvedUserRoleMiddleware(ADMIN_ROLE_NAMES),
+      request,
+      context,
+    );
     expect(context.get(userContext).id).toBe(user.id);
     expect(context.get(userContext).role.name).toBe("moderator");
 
     // inner admin.users.tsx middleware: narrows to admin
     const thrown = await runMiddleware(
-      requireRoleMiddleware(["admin"]),
+      narrowResolvedUserRoleMiddleware(["admin"]),
       request,
       context,
     ).catch((error) => error);
@@ -149,9 +183,18 @@ describe("requireRoleMiddleware", () => {
   it("lets an admin through both the admin and users segments", async () => {
     const { user, request } = await signedInAs("admin", "/admin/users");
     const context = new RouterContextProvider();
+    await resolveUser(request, context);
 
-    await runMiddleware(requireRoleMiddleware(ADMIN_ROLE_NAMES), request, context);
-    await runMiddleware(requireRoleMiddleware(["admin"]), request, context);
+    await runMiddleware(
+      requireResolvedUserRoleMiddleware(ADMIN_ROLE_NAMES),
+      request,
+      context,
+    );
+    await runMiddleware(
+      narrowResolvedUserRoleMiddleware(["admin"]),
+      request,
+      context,
+    );
 
     expect(context.get(userContext).id).toBe(user.id);
     expect(context.get(userContext).role.name).toBe("admin");
@@ -162,12 +205,9 @@ describe("requireRoleMiddleware", () => {
     // the User FK cascades sessions away, so a plain row delete cannot
     // produce this state — force the lookup miss the guard defends against
     vi.mocked(getUserByIdWithRole).mockResolvedValueOnce(null);
+    const context = new RouterContextProvider();
 
-    const thrown = await runMiddleware(
-      requireRoleMiddleware(ADMIN_ROLE_NAMES),
-      request,
-      new RouterContextProvider(),
-    ).catch((error) => error);
+    const thrown = await resolveUser(request, context).catch((error) => error);
 
     expect(thrown).toBeInstanceOf(Response);
     expect((thrown as Response).status).toBe(302);
@@ -181,11 +221,13 @@ describe("requireRoleMiddleware", () => {
   it("redirects to login when the user row (and via cascade the session) is deleted", async () => {
     const { user, request } = await signedInAs("moderator");
     await prisma.user.delete({ where: { id: user.id } });
+    const context = new RouterContextProvider();
+    await resolveUser(request, context);
 
     const thrown = await runMiddleware(
-      requireRoleMiddleware(ADMIN_ROLE_NAMES),
+      requireResolvedUserRoleMiddleware(ADMIN_ROLE_NAMES),
       request,
-      new RouterContextProvider(),
+      context,
     ).catch((error) => error);
 
     expect(thrown).toBeInstanceOf(Response);
@@ -199,26 +241,45 @@ describe("requireRoleMiddleware", () => {
     const { user, request } = await signedInAs("admin", "/admin/users");
     const context = new RouterContextProvider();
 
+    const getSessionSpy = vi.spyOn(auth.api, "getSession");
+    getSessionSpy.mockClear();
     vi.mocked(getUserByIdWithRole).mockClear();
-    await runMiddleware(requireRoleMiddleware(ADMIN_ROLE_NAMES), request, context);
-    await runMiddleware(requireRoleMiddleware(["admin"]), request, context);
-    // outer middleware fetched once; the nested one reused the context
+    await resolveUser(request, context);
+    await runMiddleware(
+      requireResolvedUserRoleMiddleware(ADMIN_ROLE_NAMES),
+      request,
+      context,
+    );
+    await runMiddleware(
+      narrowResolvedUserRoleMiddleware(["admin"]),
+      request,
+      context,
+    );
+    // root middleware fetched once; both admin layers reused the contexts
+    expect(getSessionSpy).toHaveBeenCalledTimes(1);
     expect(getUserByIdWithRole).toHaveBeenCalledTimes(1);
+    getSessionSpy.mockRestore();
 
     // A request with NO session cookie: any session or user lookup would see
     // an anonymous request and login-redirect. The populated context alone
     // must let the nested middleware pass.
     const cookieless = new Request("http://localhost:3000/admin/users");
     await expect(
-      runMiddleware(requireRoleMiddleware(["admin"]), cookieless, context),
+      runMiddleware(
+        narrowResolvedUserRoleMiddleware(["admin"]),
+        cookieless,
+        context,
+      ),
     ).resolves.toBeUndefined();
     expect(context.get(userContext).id).toBe(user.id);
 
     // control: the same cookieless request against an empty context proves
-    // the pass above came from the context, not from the request
+    // the pass above came from the context, not from the request. Root then
+    // initializes the optional context before the parent role requirement.
     const fresh = new RouterContextProvider();
+    await resolveUser(cookieless, fresh);
     const thrown = await runMiddleware(
-      requireRoleMiddleware(["admin"]),
+      requireResolvedUserRoleMiddleware(ADMIN_ROLE_NAMES),
       cookieless,
       fresh,
     ).catch((error) => error);
@@ -233,12 +294,17 @@ describe("requireRoleMiddleware", () => {
     const context = new RouterContextProvider();
     context.set(userContext, {
       ...user,
-      role: { ...(await prisma.role.findUniqueOrThrow({ where: { name: "moderator" } })), name: "moderator" },
+      role: {
+        ...(await prisma.role.findUniqueOrThrow({
+          where: { name: "moderator" },
+        })),
+        name: "moderator",
+      },
     });
 
     const cookieless = new Request("http://localhost:3000/admin/users");
     const thrown = await runMiddleware(
-      requireRoleMiddleware(["admin"]),
+      narrowResolvedUserRoleMiddleware(["admin"]),
       cookieless,
       context,
     ).catch((error) => error);

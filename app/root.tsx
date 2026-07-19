@@ -18,7 +18,10 @@ import { getNextEvent } from "./models/event.server";
 import { combineHeaders, getDomainUrl } from "./shared/http.server";
 import { getToast } from "./utils/toast.server";
 
-import { getUserWithRole } from "~/features/auth/guards.server";
+import {
+  optionalUserContext,
+  resolveOptionalUserMiddleware,
+} from "~/features/auth/middleware.server";
 import stylesheet from "~/tailwind.css?url";
 
 export type RootLoaderData = typeof loader;
@@ -41,12 +44,14 @@ export const links: LinksFunction = () => [
   { rel: "manifest", href: "/site.webmanifest" },
 ];
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
+export const middleware: Route.MiddlewareFunction[] = [
+  resolveOptionalUserMiddleware,
+];
+
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const domainUrl = getDomainUrl(request);
-  const [user, nextEvent] = await Promise.all([
-    getUserWithRole(request),
-    getNextEvent(),
-  ]);
+  const user = context.get(optionalUserContext);
+  const nextEvent = await getNextEvent();
   const { toast, headers } = await getToast(request);
   const allowIndexing = process.env.ALLOW_INDEXING !== "false";
   const cypressSupport = process.env.CYPRESS_SUPPORT === "true";
