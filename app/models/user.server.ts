@@ -1,7 +1,6 @@
 import type { Prisma, Role, User } from "#prisma/generated/client";
 
 import { prisma } from "~/db.server";
-import { deleteEventsInTx } from "~/models/event.server";
 
 export type { User } from "#prisma/generated/client";
 
@@ -97,11 +96,9 @@ export async function updateNonAdminUserRole(
   });
 }
 
-// The DB cascades User -> Event, which would skip the app-level form cascade
-// and orphan Form/FormVersion/FormSubmission rows — delete the user's events
-// through it first, in the same transaction.
+// Event.createdById is onDelete: SetNull — events (and their responses and
+// form data) outlive their creator; only authorship is cleared.
 async function deleteUserInTx(tx: Prisma.TransactionClient, id: string) {
-  await deleteEventsInTx(tx, { createdById: id });
   return tx.user.delete({ where: { id } });
 }
 

@@ -130,16 +130,18 @@ model Event {
   price               Int
   discounts           String?
 
-  image   Image  @relation(fields: [imageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  imageId String @unique
+  // cover lives on Image (eventId, Cascade) like BoardMember portraits, so
+  // deleting an image can never take the event with it
+  image Image?
 
   addressId String
-  address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  address   Address @relation(fields: [addressId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   eventResponses EventResponse[]
 
-  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  createdById String
+  // authorship metadata only — events outlive their creator
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createdById String?
 
   form   Form   @relation(fields: [formId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   formId String @unique // non-nullable: every event has a form (backfilled)
@@ -221,7 +223,8 @@ model Image {
   boardMember   BoardMember? @relation(fields: [boardMemberId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   boardMemberId String?      @unique
 
-  event Event?
+  event   Event?  @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  eventId String? @unique
 }
 
 model BoardMember {

@@ -3,7 +3,7 @@
 // components no longer depend on Prisma entities or another route's loader.
 
 import type { Address } from "~/models/address.server";
-import type { Event } from "~/models/event.server";
+import type { EventWithImageId } from "~/models/event.server";
 
 /**
  * Dates cross the loader boundary, so a model mapped server-side may reach
@@ -18,7 +18,8 @@ export interface EventSummaryModel {
   title: string;
   description: string;
   date: SerializableDate;
-  imageId: string;
+  /** null renders the CoverImage fallback artwork */
+  imageId: string | null;
   price: number;
   slots: number;
 }
@@ -29,9 +30,9 @@ export interface EventCardModel extends EventSummaryModel {
   addressLine: string;
 }
 
-type EventWithAddress = Event & { address: Address };
+type EventWithAddress = EventWithImageId & { address: Address };
 
-function toEventSummaryModel(event: Event): EventSummaryModel {
+function toEventSummaryModel(event: EventWithImageId): EventSummaryModel {
   return {
     id: event.id,
     title: event.title,

@@ -183,7 +183,7 @@ export const meta: Route.MetaFunction = ({ loaderData, matches, location }) => {
 
   return withOpenGraphUrls(tags, {
     matches,
-    imagePath: getImageUrl(event.imageId),
+    imagePath: event.imageId ? getImageUrl(event.imageId) : undefined,
     pagePath: location.pathname,
   });
 };

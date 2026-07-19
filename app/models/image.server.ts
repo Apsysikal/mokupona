@@ -18,36 +18,17 @@ export async function fileToImageData(file: File): Promise<ImageData> {
   };
 }
 
-// Image rows are only ever created inside their owner's transaction (event
-// create/update) so bytes and ownership commit or roll back together — a
-// standalone create would leave an orphan row if the owner write failed.
-export async function createImageInTx(
-  tx: Prisma.TransactionClient,
-  data: ImageData,
-): Promise<{ id: string }> {
-  return tx.image.create({ data, select: { id: true } });
-}
-
-// The DB cascades Image -> Event: deleting an image an event still points at
-// deletes the event (skipping the app-level form cleanup). Callers must
-// repoint or delete the event first, in the same transaction.
-export async function deleteImageInTx(
-  tx: Prisma.TransactionClient,
-  id: string,
-): Promise<void> {
-  await tx.image.delete({ where: { id } });
-}
-
 export async function getImageById(id: string): Promise<Image | null> {
   return prisma.image.findUnique({ where: { id } });
 }
 
-// An image is an orphan iff neither owner relation holds: no board member
-// (boardMemberId null) and no event pointing at it. Owned images are never
-// touched — deleting an event-owned image would cascade-delete its event.
+// An image is an orphan iff neither owner FK holds: no board member and no
+// event. Both FKs live on Image, so deleting an image row — owned or not —
+// can never touch its owner; owned images are still skipped because covers
+// and portraits are current, not garbage.
 const ORPHAN_IMAGE_WHERE = {
   boardMemberId: null,
-  event: null,
+  eventId: null,
 } satisfies Prisma.ImageWhereInput;
 
 export async function countOrphanImages(): Promise<number> {

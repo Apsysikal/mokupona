@@ -8,7 +8,7 @@ import {
   InitialsAvatar,
   SeatProgress,
 } from "~/components/admin-ui";
-import { OptimizedImage } from "~/components/optimized-image";
+import { CoverImage } from "~/components/cover-image";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import {
@@ -144,7 +144,7 @@ function NextDinnerCard({ dinner }: { dinner: NextDinner }) {
 
   return (
     <Card className="flex flex-wrap items-center gap-4 p-4">
-      <OptimizedImage
+      <CoverImage
         imageId={dinner.imageId}
         alt=""
         width={236}

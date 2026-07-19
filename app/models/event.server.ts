@@ -7,13 +7,25 @@ import {
   CURRENT_FORM_VERSION_ORDER_BY,
   saveFormSchemaInTx,
 } from "~/models/form.server";
-import {
-  createImageInTx,
-  deleteImageInTx,
-  type ImageData,
-} from "~/models/image.server";
+import { type ImageData } from "~/models/image.server";
 
 export type { Address, Event } from "#prisma/generated/client";
+
+// The cover FK lives on Image (eventId), so routes can't read a scalar
+// imageId off Event anymore — getters join the relation and flatten it back
+// to `imageId: string | null` (null renders the UI fallback artwork).
+export type EventWithImageId = Event & { imageId: string | null };
+
+const EVENT_IMAGE_INCLUDE = {
+  image: { select: { id: true } },
+} satisfies Prisma.EventInclude;
+
+function flattenImageId<T extends { image: { id: string } | null }>({
+  image,
+  ...record
+}: T): Omit<T, "image"> & { imageId: string | null } {
+  return { ...record, imageId: image?.id ?? null };
+}
 
 export interface EventCreateData {
   title: string;
@@ -38,16 +50,19 @@ export async function countEvents(): Promise<number> {
 
 // the public dinners page shows location ("8004 zürich") on the featured card
 export async function getEventsWithAddress(): Promise<
-  (Event & { address: Address })[]
+  (EventWithImageId & { address: Address })[]
 > {
-  return prisma.event.findMany({
+  const events = await prisma.event.findMany({
     orderBy: {
       date: "asc",
     },
     include: {
       address: true,
+      ...EVENT_IMAGE_INCLUDE,
     },
   });
+
+  return events.map(flattenImageId);
 }
 
 // the site chrome's "join a dinner" CTA and the landing hero point at the
@@ -64,22 +79,27 @@ function nextEventArgs(now: Date) {
 
 export async function getNextEvent(
   now = new Date(),
-): Promise<(Event & { address: Address }) | null> {
-  return prisma.event.findFirst({
+): Promise<(EventWithImageId & { address: Address }) | null> {
+  const event = await prisma.event.findFirst({
     ...nextEventArgs(now),
-    include: { address: true },
+    include: { address: true, ...EVENT_IMAGE_INCLUDE },
   });
+
+  return event && flattenImageId(event);
 }
 
 export async function getEventById(
   id: string,
-): Promise<(Event & { address: Address }) | null> {
-  return prisma.event.findUnique({
+): Promise<(EventWithImageId & { address: Address }) | null> {
+  const event = await prisma.event.findUnique({
     where: { id },
     include: {
       address: true,
+      ...EVENT_IMAGE_INCLUDE,
     },
   });
+
+  return event && flattenImageId(event);
 }
 
 /**
@@ -93,6 +113,7 @@ export async function getEventWithCurrentFormVersion(id: string) {
     where: { id },
     include: {
       address: true,
+      ...EVENT_IMAGE_INCLUDE,
       form: {
         select: {
           versions: { orderBy: CURRENT_FORM_VERSION_ORDER_BY, take: 1 },
@@ -107,7 +128,7 @@ export async function getEventWithCurrentFormVersion(id: string) {
   if (!version) return null;
 
   const { form: _form, ...event } = record;
-  return { event, version };
+  return { event: flattenImageId(event), version };
 }
 
 // Every event owns a form (Event.formId is non-nullable) and a cover image,
@@ -124,8 +145,6 @@ export async function createEvent(
   const { image, ...eventData } = data;
 
   return prisma.$transaction(async (tx) => {
-    const { id: imageId } = await createImageInTx(tx, image);
-
     const form = await tx.form.create({
       data: {
         versions: {
@@ -138,7 +157,7 @@ export async function createEvent(
     });
 
     return tx.event.create({
-      data: { ...eventData, imageId, formId: form.id },
+      data: { ...eventData, formId: form.id, image: { create: image } },
     });
   });
 }
@@ -146,9 +165,8 @@ export async function createEvent(
 // When formFields or a new cover image are provided, everything persists in
 // ONE transaction (the create path is atomic too) — a failure must not leave
 // the event updated but its form unchanged, nor leak an image row. A cover
-// swap runs strictly as create new image -> repoint event -> delete old
-// image: the DB cascade Image -> Event means deleting an image the event
-// still points at would delete the event itself.
+// swap deletes the old image row and creates the new one in the same
+// transaction (the updateBoardMember pattern).
 export async function updateEvent(
   id: string,
   data: EventUpdateData,
@@ -161,30 +179,17 @@ export async function updateEvent(
   }
 
   return prisma.$transaction(async (tx) => {
-    let oldImageId: string | undefined;
-    let newImageId: string | undefined;
-
     if (image) {
-      const current = await tx.event.findUniqueOrThrow({
-        where: { id },
-        select: { imageId: true },
-      });
-      oldImageId = current.imageId;
-      newImageId = (await createImageInTx(tx, image)).id;
+      await tx.image.deleteMany({ where: { eventId: id } });
     }
 
     const event = await tx.event.update({
       where: { id },
-      data: { ...eventData, ...(newImageId && { imageId: newImageId }) },
+      data: { ...eventData, ...(image && { image: { create: image } }) },
     });
 
     if (formFields) {
       await saveFormSchemaInTx(tx, event.formId, formFields);
-    }
-
-    // last, once the event no longer points at it (see cascade note above)
-    if (oldImageId) {
-      await deleteImageInTx(tx, oldImageId);
     }
 
     return event;
@@ -192,27 +197,22 @@ export async function updateEvent(
 }
 
 // The FK points Event -> Form (Restrict), so deleting an event does not
-// cascade to its form data, and Image -> Event points the wrong way for the
-// cover to go with the event. All event deletes must go through here (design
-// §3.2): submissions and versions first, then the events, then the forms —
-// the Restrict FKs force the event rows to go before their forms — and last
-// the now-unreferenced cover images. Callers that delete rows Event itself
-// cascades from at the DB level (User, Address, Image) must run this first,
-// in the same transaction, or the DB cascade skips it and orphans the form
-// and image rows.
+// cascade to its form data — the cover does cascade (Image.eventId). All
+// event deletes must go through here (design §3.2): submissions and versions
+// first, then the events, then the forms — the Restrict FKs force the event
+// rows to go before their forms.
 export async function deleteEventsInTx(
   tx: Prisma.TransactionClient,
   where: Prisma.EventWhereInput,
 ) {
   const events = await tx.event.findMany({
     where,
-    select: { id: true, formId: true, imageId: true },
+    select: { id: true, formId: true },
   });
   if (events.length === 0) return [];
 
   const eventIds = events.map((event) => event.id);
   const formIds = events.map((event) => event.formId);
-  const imageIds = events.map((event) => event.imageId);
 
   await tx.formSubmission.deleteMany({
     where: { formVersion: { formId: { in: formIds } } },
@@ -220,7 +220,6 @@ export async function deleteEventsInTx(
   await tx.formVersion.deleteMany({ where: { formId: { in: formIds } } });
   await tx.event.deleteMany({ where: { id: { in: eventIds } } });
   await tx.form.deleteMany({ where: { id: { in: formIds } } });
-  await tx.image.deleteMany({ where: { id: { in: imageIds } } });
 
   return events;
 }

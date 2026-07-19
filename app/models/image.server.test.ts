@@ -34,9 +34,9 @@ describe("orphan image sweep", () => {
     ).resolves.toBeNull();
     // owned images survive: the event's cover ...
     await expect(
-      prisma.image.findUnique({ where: { id: event.imageId } }),
+      prisma.image.findUnique({ where: { eventId: event.id } }),
     ).resolves.not.toBeNull();
-    // ... and its event (deleting the cover would cascade the event away)
+    // ... and its event
     await expect(
       prisma.event.findUnique({ where: { id: event.id } }),
     ).resolves.not.toBeNull();

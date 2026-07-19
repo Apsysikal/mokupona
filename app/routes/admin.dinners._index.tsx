@@ -12,8 +12,8 @@ import {
   FilterChip,
   SeatProgress,
 } from "~/components/admin-ui";
+import { CoverImage } from "~/components/cover-image";
 import { UtensilsIcon } from "~/components/icons";
-import { OptimizedImage } from "~/components/optimized-image";
 import { Button } from "~/components/ui/button";
 import { formatAdminDateLine } from "~/features/events/date-format";
 import {
@@ -150,7 +150,7 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
         dinner.past && "opacity-60",
       )}
     >
-      <OptimizedImage
+      <CoverImage
         imageId={dinner.imageId}
         alt=""
         width={208}

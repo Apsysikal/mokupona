@@ -11,7 +11,7 @@ import {
 } from "./event-facts";
 
 import { AutoLink } from "~/components/auto-link";
-import { OptimizedImage } from "~/components/optimized-image";
+import { CoverImage } from "~/components/cover-image";
 import {
   Accordion,
   AccordionContent,
@@ -38,7 +38,7 @@ export function EventStory({ event }: EventViewProps) {
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-      <OptimizedImage
+      <CoverImage
         imageId={event.imageId}
         alt=""
         width={640}

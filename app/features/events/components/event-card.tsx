@@ -10,7 +10,7 @@ import {
   EventSeatsFact,
 } from "./event-facts";
 
-import { OptimizedImage } from "~/components/optimized-image";
+import { CoverImage } from "~/components/cover-image";
 import { SecondaryCTA } from "~/components/section";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -28,7 +28,7 @@ export function FeaturedEventCard({
   return (
     <article className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border md:flex-row">
       <div className="relative min-h-44 md:min-h-80 md:w-[46%]">
-        <OptimizedImage
+        <CoverImage
           imageId={event.imageId}
           alt=""
           width={640}
@@ -81,7 +81,7 @@ export function PastEventCard({ event }: { event: EventCardModel }) {
       to={`/dinners/${event.id}`}
       className="flex flex-col gap-2 opacity-70 transition-opacity hover:opacity-100"
     >
-      <OptimizedImage
+      <CoverImage
         imageId={event.imageId}
         alt=""
         width={640}
