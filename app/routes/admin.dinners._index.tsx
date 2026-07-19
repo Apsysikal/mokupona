@@ -15,7 +15,10 @@ import { UtensilsIcon } from "~/components/icons";
 import { OptimizedImage } from "~/components/optimized-image";
 import { Button } from "~/components/ui/button";
 import { formatAdminDateLine } from "~/features/events/date-format";
-import { isPastEvent } from "~/features/events/event-status";
+import {
+  isPastEvent,
+  orderEventsByStatus,
+} from "~/features/events/event-status";
 import { getAttendeeCountsForEvents } from "~/features/signup-form/read.server";
 import { cn } from "~/lib/utils";
 import { getEventsWithAddress } from "~/models/event.server";
@@ -59,7 +62,7 @@ export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
   const now = new Date();
   const q = query.trim().toLowerCase();
 
-  const visible = dinners
+  const filtered = dinners
     .map((dinner) => ({
       ...dinner,
       past: isPastEvent(new Date(dinner.date), now),
@@ -72,13 +75,9 @@ export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
         !q ||
         dinner.title.toLowerCase().includes(q) ||
         dinner.location.toLowerCase().includes(q),
-    )
-    // no status badges — upcoming (soonest first) sort above past (newest first)
-    .sort((a, b) => {
-      if (a.past !== b.past) return a.past ? 1 : -1;
-      const diff = new Date(a.date).getTime() - new Date(b.date).getTime();
-      return a.past ? -diff : diff;
-    });
+    );
+  // no status badges — upcoming (soonest first) sort above past (newest first)
+  const visible = orderEventsByStatus(filtered, now);
 
   return (
     <div className="animate-page-in">
@@ -195,7 +194,12 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="ghost" className="text-foreground/80" asChild>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-foreground/80"
+          asChild
+        >
           <Link to={`${dinner.id}/signups`}>Signups</Link>
         </Button>
         <Button size="sm" variant="outline" asChild>

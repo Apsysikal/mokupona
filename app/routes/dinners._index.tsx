@@ -6,7 +6,10 @@ import {
   FeaturedEventCard,
   PastEventCard,
 } from "~/features/events/components/event-card";
-import { partitionEvents } from "~/features/events/event-status";
+import {
+  orderEventsByStatus,
+  partitionEvents,
+} from "~/features/events/event-status";
 import { toEventCardModel } from "~/features/events/view-models";
 import { getEventsWithAddress } from "~/models/event.server";
 
@@ -26,7 +29,7 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
   // events arrive sorted ascending, so the first upcoming one is the next
   const { upcoming: upcomingEvents, past } = partitionEvents(events, now);
   // the archive reads newest-first
-  const pastEvents = past.reverse();
+  const pastEvents = orderEventsByStatus(past, now);
 
   return (
     <main className="mx-auto w-full max-w-5xl grow px-5 pt-7 pb-20 md:px-10 md:pt-16">

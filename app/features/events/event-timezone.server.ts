@@ -7,31 +7,33 @@ function offsetDate(date: Date, minutesOffset = 0): Date {
   return new Date(date.getTime() + minutesOffset * 60 * 1000);
 }
 
+// Fixed to the application event timezone; constructing this formatter is
+// comparatively expensive and conversion may call it twice around DST edges.
+const eventTimezonePartsFormat = new Intl.DateTimeFormat("en-US", {
+  timeZone: EVENT_TIMEZONE,
+  hour12: false,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+});
+
 /**
- * Return timezone offset in minutes for `timeZone` at the provided instant.
+ * Return the event-timezone offset in minutes at the provided instant.
  * Positive values are east of UTC (e.g. Europe/Zurich winter => 60).
  */
-function getTimezoneOffsetMinutes(date: Date, timeZone: string): number {
-  // Use a fixed Latin-digit locale so Number(...) parsing is deterministic.
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hour12: false,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-
-  const parts = formatter.formatToParts(date);
+function getTimezoneOffsetMinutes(date: Date): number {
+  const parts = eventTimezonePartsFormat.formatToParts(date);
 
   const getPart = (type: Intl.DateTimeFormatPartTypes) => {
     const value = parts.find((part) => {
       return part.type === type;
     })?.value;
 
-    if (!value) throw new Error(`Missing ${type} for timezone ${timeZone}`);
+    if (!value)
+      throw new Error(`Missing ${type} for timezone ${EVENT_TIMEZONE}`);
 
     return Number(value);
   };
@@ -81,10 +83,7 @@ export function toUtcEventDate(date: Date): Date {
   // Recompute once after applying the offset so DST edges settle on the
   // correct instant for the event timezone.
   for (let iteration = 0; iteration < 2; iteration++) {
-    const eventOffset = getTimezoneOffsetMinutes(
-      new Date(utcTimestamp),
-      EVENT_TIMEZONE,
-    );
+    const eventOffset = getTimezoneOffsetMinutes(new Date(utcTimestamp));
     const adjustedUtcTimestamp = localDateTimeAsUtc - eventOffset * 60 * 1000;
 
     if (adjustedUtcTimestamp === utcTimestamp) break;
@@ -100,6 +99,6 @@ export function toUtcEventDate(date: Date): Date {
  * can display in the user's timezone.
  */
 export function toDisplayEventDate(date: Date): string {
-  const eventOffset = getTimezoneOffsetMinutes(date, EVENT_TIMEZONE);
+  const eventOffset = getTimezoneOffsetMinutes(date);
   return offsetDate(date, eventOffset).toISOString().substring(0, 16);
 }

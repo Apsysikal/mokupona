@@ -9,10 +9,10 @@ import type { Address, Event } from "~/models/event.server";
  * the client serialized. Components always wrap in `new Date(...)` before
  * formatting.
  */
-type SerializableDate = Date | string;
+export type SerializableDate = Date | string;
 
-/** What FeaturedEventCard / PastEventCard render. */
-export interface EventCardModel {
+/** Fields shared by event cards and the full detail view. */
+export interface EventSummaryModel {
   id: string;
   title: string;
   description: string;
@@ -20,13 +20,17 @@ export interface EventCardModel {
   imageId: string;
   price: number;
   slots: number;
+}
+
+/** What FeaturedEventCard / PastEventCard render. */
+export interface EventCardModel extends EventSummaryModel {
   /** "8003 zürich" — lowercase `zip city`, the card's deliberate format */
   addressLine: string;
 }
 
-export function toEventCardModel(
-  event: Event & { address: Address },
-): EventCardModel {
+type EventWithAddress = Event & { address: Address };
+
+function toEventSummaryModel(event: Event): EventSummaryModel {
   return {
     id: event.id,
     title: event.title,
@@ -35,39 +39,30 @@ export function toEventCardModel(
     imageId: event.imageId,
     price: event.price,
     slots: event.slots,
+  };
+}
+
+export function toEventCardModel(event: EventWithAddress): EventCardModel {
+  return {
+    ...toEventSummaryModel(event),
     addressLine: `${event.address.zip} ${event.address.city}`.toLowerCase(),
   };
 }
 
 /** What EventStory / EventFactList / EventView render. */
-export interface EventDetailModel {
-  id: string;
-  title: string;
-  description: string;
+export interface EventDetailModel extends EventSummaryModel {
   menuDescription: string | null;
   donationDescription: string | null;
-  date: SerializableDate;
-  imageId: string;
-  price: number;
-  slots: number;
   discounts: string | null;
-  /** "8003 Zürich" — `zip city` as stored, the detail page's format */
+  /** "8003 Zürich" — stored casing for the detail page */
   addressLine: string;
 }
 
-export function toEventDetailModel(
-  event: Event & { address: Address },
-): EventDetailModel {
+export function toEventDetailModel(event: EventWithAddress): EventDetailModel {
   return {
-    id: event.id,
-    title: event.title,
-    description: event.description,
+    ...toEventSummaryModel(event),
     menuDescription: event.menuDescription,
     donationDescription: event.donationDescription,
-    date: event.date,
-    imageId: event.imageId,
-    price: event.price,
-    slots: event.slots,
     discounts: event.discounts,
     addressLine: `${event.address.zip} ${event.address.city}`,
   };

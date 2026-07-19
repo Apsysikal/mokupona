@@ -30,3 +30,21 @@ export function partitionEvents<T extends { date: Date | string }>(
 
   return { upcoming, past };
 }
+
+/** Return a new array: upcoming soonest-first, then past newest-first. */
+export function orderEventsByStatus<T extends { date: Date | string }>(
+  events: readonly T[],
+  now: Date,
+): T[] {
+  return [...events].sort((a, b) => {
+    const aDate = new Date(a.date);
+    const bDate = new Date(b.date);
+    const aPast = isPastEvent(aDate, now);
+    const bPast = isPastEvent(bDate, now);
+
+    if (aPast !== bPast) return aPast ? 1 : -1;
+
+    const difference = aDate.getTime() - bDate.getTime();
+    return aPast ? -difference : difference;
+  });
+}

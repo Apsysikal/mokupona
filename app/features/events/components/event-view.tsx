@@ -1,15 +1,16 @@
-import {
-  CalendarIcon,
-  InfoCircledIcon,
-  PersonIcon,
-  SewingPinIcon,
-} from "@radix-ui/react-icons";
+import { CalendarIcon, InfoCircledIcon } from "@radix-ui/react-icons";
 
 import { formatEventDateLine } from "../date-format";
 import type { EventDetailModel } from "../view-models";
 
+import {
+  EventDateHeading,
+  EventLocationFact,
+  EventPriceFact,
+  EventSeatsFact,
+} from "./event-facts";
+
 import { AutoLink } from "~/components/auto-link";
-import { CreditCardIcon } from "~/components/icons";
 import { OptimizedImage } from "~/components/optimized-image";
 import {
   Accordion,
@@ -30,8 +31,6 @@ export interface EventViewProps {
 // the editorial left column of the dinner detail page: photo, date, title,
 // story, and the menu/donation accordions (design handoff §3)
 export function EventStory({ event }: EventViewProps) {
-  const eventDate = new Date(event.date);
-
   const menuLines = event.menuDescription
     ?.split("\n")
     .map((line) => line.trim())
@@ -48,12 +47,7 @@ export function EventStory({ event }: EventViewProps) {
       />
 
       <div className="flex flex-col gap-3">
-        <span className="text-primary flex items-center gap-2 text-sm font-semibold">
-          <CalendarIcon className="size-4" />
-          <time dateTime={eventDate.toISOString()} suppressHydrationWarning>
-            {formatEventDateLine(eventDate, "long")}
-          </time>
-        </span>
+        <EventDateHeading date={event.date} />
         <h1 className="text-3xl font-light tracking-tight md:text-4xl">
           {event.title}
         </h1>
@@ -72,9 +66,7 @@ export function EventStory({ event }: EventViewProps) {
         >
           {menuLines?.length ? (
             <AccordionItem value="menu" className="border-border">
-              <AccordionTrigger className="text-primary">
-                menu
-              </AccordionTrigger>
+              <AccordionTrigger className="text-primary">menu</AccordionTrigger>
               <AccordionContent className="pb-6">
                 <div className="flex flex-col gap-3">
                   {menuLines.map((line, index) => (
@@ -120,25 +112,17 @@ export function EventFactList({ event }: EventViewProps) {
 
   return (
     <div className="text-foreground/80 flex flex-col gap-3 text-sm">
-      <div className="flex items-center gap-2">
+      <span className="flex items-center gap-2">
         <CalendarIcon className="text-foreground/50 size-4" />
         <time dateTime={eventDate.toISOString()} suppressHydrationWarning>
           {formatEventDateLine(eventDate, "short")}
         </time>
-      </div>
+      </span>
 
-      <div className="flex items-center gap-2">
-        <SewingPinIcon className="text-foreground/50 size-4" />
-        <span className="sr-only">location</span>
-        <span>{event.addressLine}</span>
-      </div>
+      <EventLocationFact addressLine={event.addressLine} />
 
       <div className="flex items-center justify-between">
-        <span className="flex items-center gap-2">
-          <CreditCardIcon className="text-foreground/50 size-4" />
-          <span className="sr-only">price</span>
-          {event.price} chf
-        </span>
+        <EventPriceFact price={event.price} />
 
         <Popover>
           <PopoverTrigger>
@@ -155,10 +139,7 @@ export function EventFactList({ event }: EventViewProps) {
         </Popover>
       </div>
 
-      <div className="flex items-center gap-2">
-        <PersonIcon className="text-foreground/50 size-4" />
-        <span>{event.slots} seats</span>
-      </div>
+      <EventSeatsFact slots={event.slots} />
     </div>
   );
 }

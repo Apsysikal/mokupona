@@ -14,8 +14,8 @@ import { Card } from "~/components/ui/card";
 import {
   formatAdminDateLine,
   formatAdminTimestamp,
+  formatAdminToday,
 } from "~/features/events/date-format";
-import { EVENT_TIMEZONE } from "~/features/events/timezone";
 import { getAttendeesForEvent } from "~/features/signup-form/read.server";
 import { getNextEvent } from "~/models/event.server";
 
@@ -23,12 +23,7 @@ export async function loader() {
   const nextDinner = await getNextEvent();
   const attendees = nextDinner ? await getAttendeesForEvent(nextDinner.id) : [];
 
-  const todayLabel = new Intl.DateTimeFormat("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    timeZone: EVENT_TIMEZONE,
-  }).format(new Date());
+  const todayLabel = formatAdminToday(new Date());
 
   return {
     todayLabel,
