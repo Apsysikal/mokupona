@@ -2,6 +2,8 @@ import { generateSrcSet } from "../utils";
 
 import type { ImageBlockType } from "./model";
 
+import { RESPONSIVE_IMAGE_WIDTHS } from "~/shared/image";
+
 type ImageBlockViewProps = React.ComponentPropsWithoutRef<"picture"> & {
   blockData: ImageBlockType;
 };
@@ -10,7 +12,7 @@ export function ImageBlockView({ blockData, ...rest }: ImageBlockViewProps) {
   const { data } = blockData;
   const { image, variant } = data;
   const { src, alt, width, height } = image;
-  const srcSet = generateSrcSet(src, [432, 648, 864, 1080]);
+  const srcSet = generateSrcSet(src, RESPONSIVE_IMAGE_WIDTHS);
 
   // "full-width" spans the editorial column, not the viewport (design §1)
   const imageClasses =

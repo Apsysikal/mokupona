@@ -3,18 +3,49 @@ import { faker } from "@faker-js/faker";
 import { readLatestMailTo, visitMailLink } from "../support/mail";
 
 describe("smoke tests", () => {
-  afterEach(() => {
-    cy.cleanupUser();
-  });
-
-  it("should allow you to register, verify your email and login", () => {
+  // Fresh signup credentials, registered for cleanupUser via the
+  // "user" alias.
+  function fakeSignupForm() {
     const loginForm = {
       name: faker.person.fullName(),
       email: `${faker.internet.username()}@example.com`.toLowerCase(),
       password: faker.internet.password(),
     };
-
     cy.then(() => ({ email: loginForm.email })).as("user");
+    return loginForm;
+  }
+
+  // Fills the join form and lands on the check-your-inbox interstitial —
+  // no session yet.
+  function submitJoinForm(loginForm: {
+    name: string;
+    email: string;
+    password: string;
+  }) {
+    cy.findByRole("textbox", { name: /name/i }).type(loginForm.name);
+    cy.findByRole("textbox", { name: /email/i }).type(loginForm.email);
+    cy.findAllByLabelText(/password/i)
+      .first()
+      .type(loginForm.password);
+    cy.findAllByLabelText(/password/i)
+      .last()
+      .type(loginForm.password);
+    cy.findByRole("button", { name: /create account/i }).click();
+    cy.location("pathname").should("equal", "/check-your-inbox");
+  }
+
+  function fillLoginForm(email: string, password: string) {
+    cy.findByRole("textbox", { name: /email/i }).type(email);
+    cy.findByLabelText(/^password$/i).type(password);
+    cy.findByRole("button", { name: /log in/i }).click();
+  }
+
+  afterEach(() => {
+    cy.cleanupUser();
+  });
+
+  it("should allow you to register, verify your email and login", () => {
+    const loginForm = fakeSignupForm();
 
     cy.visitAndCheck("/");
 
@@ -24,18 +55,7 @@ describe("smoke tests", () => {
       .first()
       .click();
 
-    cy.findByRole("textbox", { name: /name/i }).type(loginForm.name);
-    cy.findByRole("textbox", { name: /email/i }).type(loginForm.email);
-    cy.findAllByLabelText(/password/i)
-      .first()
-      .type(loginForm.password);
-    cy.findAllByLabelText(/password/i)
-      .last()
-      .type(loginForm.password);
-    cy.findByRole("button", { name: /create account/i }).click();
-
-    // signup lands on the check-your-inbox interstitial — no session yet
-    cy.location("pathname").should("equal", "/check-your-inbox");
+    submitJoinForm(loginForm);
 
     // follow the captured verification mail
     readLatestMailTo(loginForm.email).then((mail) => {
@@ -44,40 +64,21 @@ describe("smoke tests", () => {
     cy.findByRole("heading", { name: /your email is verified/i });
     cy.findByRole("link", { name: /continue to log in/i }).click();
 
-    cy.findByRole("textbox", { name: /email/i }).type(loginForm.email);
-    cy.findByLabelText(/^password$/i).type(loginForm.password);
-    cy.findByRole("button", { name: /log in/i }).click();
+    fillLoginForm(loginForm.email, loginForm.password);
 
     cy.findByRole("button", { name: /logout/i }).click();
     cy.findByRole("link", { name: /login/i });
   });
 
   it("should re-send the verification link on an unverified login attempt", () => {
-    const loginForm = {
-      name: faker.person.fullName(),
-      email: `${faker.internet.username()}@example.com`.toLowerCase(),
-      password: faker.internet.password(),
-    };
-
-    cy.then(() => ({ email: loginForm.email })).as("user");
+    const loginForm = fakeSignupForm();
 
     cy.visitAndCheck("/join");
-    cy.findByRole("textbox", { name: /name/i }).type(loginForm.name);
-    cy.findByRole("textbox", { name: /email/i }).type(loginForm.email);
-    cy.findAllByLabelText(/password/i)
-      .first()
-      .type(loginForm.password);
-    cy.findAllByLabelText(/password/i)
-      .last()
-      .type(loginForm.password);
-    cy.findByRole("button", { name: /create account/i }).click();
-    cy.location("pathname").should("equal", "/check-your-inbox");
+    submitJoinForm(loginForm);
 
     // logging in without verifying re-sends the link (there is no resend button)
     cy.visitAndCheck("/login");
-    cy.findByRole("textbox", { name: /email/i }).type(loginForm.email);
-    cy.findByLabelText(/^password$/i).type(loginForm.password);
-    cy.findByRole("button", { name: /log in/i }).click();
+    fillLoginForm(loginForm.email, loginForm.password);
 
     cy.findByText(/your email isn't verified yet/i);
     readLatestMailTo(loginForm.email).then((mail) => {
@@ -110,9 +111,7 @@ describe("smoke tests", () => {
       cy.findByRole("heading", { name: /password updated/i });
       cy.findByRole("link", { name: /continue to log in/i }).click();
 
-      cy.findByRole("textbox", { name: /email/i }).type(email);
-      cy.findByLabelText(/^password$/i).type(newPassword);
-      cy.findByRole("button", { name: /log in/i }).click();
+      fillLoginForm(email, newPassword);
       cy.findByRole("button", { name: /logout/i });
     });
   });

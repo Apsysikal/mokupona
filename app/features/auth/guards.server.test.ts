@@ -1,18 +1,15 @@
 // @vitest-environment node
 // (happy-dom swaps the fetch primitives; better-auth needs the real ones)
 
-import { faker } from "@faker-js/faker";
 import { beforeAll, describe, expect, it } from "vitest";
 
+import { signedInRequest as signedInAuthRequest } from "../../../test/auth-session";
 import { ensureAuthRoles } from "../../../test/factories";
 
-import { auth } from "./auth.server";
-import { createUserViaAuth } from "./create-user.server";
 import {
   getUserId,
   getUserWithRole,
-  requireUserId,
-  requireUserWithRole,
+  requireResolvedUserWithRole,
 } from "./guards.server";
 
 import { prisma } from "~/db.server";
@@ -21,28 +18,8 @@ beforeAll(async () => {
   await ensureAuthRoles();
 });
 
-async function signedInRequest(path = "/admin/users") {
-  const email = `guard-${faker.string.uuid()}@example.com`;
-  const password = faker.internet.password({ length: 16 });
-  const user = await createUserViaAuth({
-    email,
-    password,
-    name: "guard test",
-    emailVerified: true,
-  });
-
-  const { headers } = await auth.api.signInEmail({
-    body: { email, password },
-    returnHeaders: true,
-  });
-  const cookie = (headers.get("set-cookie") ?? "").split(";")[0];
-
-  return {
-    user,
-    request: new Request(`http://localhost:3000${path}`, {
-      headers: { cookie },
-    }),
-  };
+function signedInRequest(path = "/admin/users") {
+  return signedInAuthRequest({ path });
 }
 
 describe("signup via better-auth", () => {
@@ -57,12 +34,10 @@ describe("signup via better-auth", () => {
 });
 
 describe("guard shim", () => {
-  it("getUserId resolves the session user, or undefined without one", async () => {
+  it("getUserId resolves the session user, or null without one", async () => {
     const { user, request } = await signedInRequest();
     expect(await getUserId(request)).toBe(user.id);
-    expect(
-      await getUserId(new Request("http://localhost:3000/")),
-    ).toBeUndefined();
+    expect(await getUserId(new Request("http://localhost:3000/"))).toBeNull();
   });
 
   it("getUserWithRole returns the user with its role", async () => {
@@ -76,24 +51,66 @@ describe("guard shim", () => {
     ).toBeNull();
   });
 
-  it("requireUserId redirects anonymous requests to /login with redirectTo", async () => {
+  it("getUserWithRole tolerates a role outside the vocabulary", async () => {
+    // corrupt data must not lock the account out of every page — role
+    // checks deny the unknown name instead (least privilege)
+    const { user, request } = await signedInRequest();
+    const legacyRole = await prisma.role.upsert({
+      where: { name: "legacy-role" },
+      update: {},
+      create: { name: "legacy-role", description: "out of vocabulary" },
+    });
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { roleId: legacyRole.id },
+    });
+
+    const resolved = await getUserWithRole(request);
+    expect(resolved?.id).toBe(user.id);
+
+    const thrown = (() => {
+      try {
+        return requireResolvedUserWithRole(resolved, request, ["admin"]);
+      } catch (error) {
+        return error;
+      }
+    })();
+    expect(thrown).toBeInstanceOf(Response);
+    expect((thrown as Response).status).toBe(403);
+  });
+
+  it("requireResolvedUserWithRole redirects an unresolved user to /login with redirectTo", () => {
     const anonymous = new Request("http://localhost:3000/admin/dinners");
-    const thrown = await requireUserId(anonymous).catch((error) => error);
+    const thrown = (() => {
+      try {
+        return requireResolvedUserWithRole(null, anonymous, ["admin"]);
+      } catch (error) {
+        return error;
+      }
+    })();
     expect(thrown).toBeInstanceOf(Response);
     expect((thrown as Response).headers.get("location")).toBe(
       "/login?redirectTo=%2Fadmin%2Fdinners",
     );
   });
 
-  it("requireUserWithRole enforces role membership with a 403", async () => {
+  it("requireResolvedUserWithRole enforces role membership with a 403", async () => {
     const { user, request } = await signedInRequest();
+    const resolved = await getUserWithRole(request);
 
-    const allowed = await requireUserWithRole(request, ["user", "admin"]);
+    const allowed = requireResolvedUserWithRole(resolved, request, [
+      "user",
+      "admin",
+    ]);
     expect(allowed.id).toBe(user.id);
 
-    const thrown = await requireUserWithRole(request, ["admin"]).catch(
-      (error) => error,
-    );
+    const thrown = (() => {
+      try {
+        return requireResolvedUserWithRole(resolved, request, ["admin"]);
+      } catch (error) {
+        return error;
+      }
+    })();
     expect(thrown).toBeInstanceOf(Response);
     expect((thrown as Response).status).toBe(403);
   });

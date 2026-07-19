@@ -1,8 +1,7 @@
 import { faker } from "@faker-js/faker";
 
 import { prisma } from "~/db.server";
-
-const AUTH_ROLE_NAMES = ["user", "moderator", "admin"] as const;
+import { ROLE_NAMES } from "~/features/auth/roles";
 
 function ensureRole(name: string) {
   return prisma.role.upsert({
@@ -13,36 +12,35 @@ function ensureRole(name: string) {
 }
 
 export function ensureAuthRoles() {
-  return Promise.all(AUTH_ROLE_NAMES.map(ensureRole));
+  return Promise.all(ROLE_NAMES.map(ensureRole));
 }
 
-export async function createTestUser(roleName = "user") {
-  const role = await ensureRole(roleName);
+function createUserForRole(roleId: string) {
   return prisma.user.create({
     data: {
       email: `test-${faker.string.uuid()}@example.com`,
       name: faker.person.fullName(),
-      roleId: role.id,
+      roleId,
     },
   });
 }
 
-// Builds the row graph an Event needs (role -> user, address, image) and
-// returns ready-to-use event create data. Every call creates fresh rows with
-// unique keys, so the tests sharing one database never contend on fixtures.
+export async function createTestUser(roleName = "user") {
+  const role = await ensureRole(roleName);
+  return createUserForRole(role.id);
+}
+
+// Builds the row graph an Event needs (role -> user, address) and returns
+// ready-to-use event create data. Every call creates fresh rows with unique
+// keys, so the tests sharing one database never contend on fixtures. The
+// cover image travels as ImageData (createEvent persists it inside its
+// transaction); the unique blob lets tests find the row it became.
 export async function buildEventData() {
-  const [user, address, image] = await Promise.all([
+  const [user, address] = await Promise.all([
     prisma.role
+      // a unique role per call keeps tests sharing one database isolated
       .create({ data: { name: `test-role-${faker.string.uuid()}` } })
-      .then((role) =>
-        prisma.user.create({
-          data: {
-            email: `test-${faker.string.uuid()}@example.com`,
-            name: faker.person.fullName(),
-            roleId: role.id,
-          },
-        }),
-      ),
+      .then((role) => createUserForRole(role.id)),
     prisma.address.create({
       data: {
         streetName: faker.location.street(),
@@ -50,12 +48,6 @@ export async function buildEventData() {
         houseNumber: faker.string.uuid(),
         zip: faker.location.zipCode("####"),
         city: faker.location.city(),
-      },
-    }),
-    prisma.image.create({
-      data: {
-        contentType: "image/jpeg",
-        blob: Buffer.from("test-image"),
       },
     }),
   ]);
@@ -66,7 +58,10 @@ export async function buildEventData() {
     date: faker.date.soon({ days: 3 }),
     slots: 10,
     price: 20,
-    imageId: image.id,
+    image: {
+      contentType: "image/jpeg",
+      blob: Buffer.from(`test-image-${faker.string.uuid()}`),
+    },
     addressId: address.id,
     createdById: user.id,
   };

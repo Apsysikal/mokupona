@@ -20,10 +20,28 @@ function createInviteToken(
     });
 }
 
+function createAndVisitInvite(
+  email: string,
+  role: "user" | "moderator",
+  expired = false,
+) {
+  return createInviteToken(email, role, expired).then((token) => {
+    cy.visit(`/invite/${token}`);
+    return cy.wrap(token);
+  });
+}
+
 describe("invites", () => {
   afterEach(() => {
     cy.cleanupUser();
   });
+
+  function acceptInviteAsNewUser(name: string, password: string) {
+    cy.findByRole("textbox", { name: /name/i }).type(name);
+    cy.findByLabelText(/^password$/i).type(password);
+    cy.findByRole("button", { name: /accept & create account/i }).click();
+    cy.location("pathname").should("equal", "/admin");
+  }
 
   it("lets an admin invite a new moderator who signs up through the link", () => {
     const invitee = {
@@ -54,12 +72,8 @@ describe("invites", () => {
     cy.findByRole("heading", { name: /accept your invite/i });
     // the bound address is locked
     cy.findByLabelText(/email address/i).should("be.disabled");
-    cy.findByRole("textbox", { name: /name/i }).type(invitee.name);
-    cy.findByLabelText(/^password$/i).type(invitee.password);
-    cy.findByRole("button", { name: /accept & create account/i }).click();
-
     // lands in the admin area as a moderator, no verification hop needed
-    cy.location("pathname").should("equal", "/admin");
+    acceptInviteAsNewUser(invitee.name, invitee.password);
   });
 
   it("rejects a reused invite link", () => {
@@ -69,12 +83,8 @@ describe("invites", () => {
     };
     cy.then(() => ({ email: invitee.email })).as("user");
 
-    createInviteToken(invitee.email, "moderator").then((token) => {
-      cy.visit(`/invite/${token}`);
-      cy.findByRole("textbox", { name: /name/i }).type("test person");
-      cy.findByLabelText(/^password$/i).type(invitee.password);
-      cy.findByRole("button", { name: /accept & create account/i }).click();
-      cy.location("pathname").should("equal", "/admin");
+    createAndVisitInvite(invitee.email, "moderator").then((token) => {
+      acceptInviteAsNewUser("test person", invitee.password);
 
       // second use dead-ends
       cy.clearCookie("better-auth.session_token");
@@ -89,9 +99,7 @@ describe("invites", () => {
     cy.login().then((user) => {
       const { email } = user;
 
-      createInviteToken(email, "moderator").then((token) => {
-        cy.visit(`/invite/${token}`);
-
+      createAndVisitInvite(email, "moderator").then(() => {
         cy.findByRole("heading", { name: /accept your invite/i });
         cy.findByRole("button", {
           name: /accept and become a moderator/i,
@@ -106,8 +114,7 @@ describe("invites", () => {
     const email = `${faker.internet.username()}@example.com`.toLowerCase();
     cy.then(() => ({ email })).as("user");
 
-    createInviteToken(email, "user", true).then((token) => {
-      cy.visit(`/invite/${token}`);
+    createAndVisitInvite(email, "user", true).then(() => {
       cy.findByRole("heading", { name: /this invite has expired/i });
     });
   });
@@ -117,8 +124,7 @@ describe("invites", () => {
       const otherEmail =
         `${faker.internet.username()}@example.com`.toLowerCase();
 
-      createInviteToken(otherEmail, "user").then((token) => {
-        cy.visit(`/invite/${token}`);
+      createAndVisitInvite(otherEmail, "user").then(() => {
         cy.findByRole("heading", {
           name: /this invite is for a different account/i,
         });

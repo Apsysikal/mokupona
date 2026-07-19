@@ -2,33 +2,28 @@ import { PlusIcon } from "@radix-ui/react-icons";
 import { Link } from "react-router";
 
 import type { Route } from "./+types/admin._index";
-import { OptimizedImage } from "./file.$fileId";
 
 import {
   AdminPageHeader,
   InitialsAvatar,
   SeatProgress,
 } from "~/components/admin-ui";
+import { OptimizedImage } from "~/components/optimized-image";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import { requireUserWithRole } from "~/features/auth/guards.server";
+import {
+  formatAdminDateLine,
+  formatAdminTimestamp,
+  formatAdminToday,
+} from "~/features/events/date-format";
 import { getAttendeesForEvent } from "~/features/signup-form/read.server";
-import { getEventById, getNextEvent } from "~/models/event.server";
-import { formatAdminDateLine, formatAdminTimestamp } from "~/utils/misc";
+import { getNextEvent } from "~/models/event.server";
 
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
-  const next = await getNextEvent();
-  const nextDinner = next ? await getEventById(next.id) : null;
+export async function loader() {
+  const nextDinner = await getNextEvent();
   const attendees = nextDinner ? await getAttendeesForEvent(nextDinner.id) : [];
 
-  const todayLabel = new Intl.DateTimeFormat("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    timeZone: "Europe/Zurich",
-  }).format(new Date());
+  const todayLabel = formatAdminToday(new Date());
 
   return {
     todayLabel,

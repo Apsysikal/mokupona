@@ -80,9 +80,6 @@ Auth & mail:
 
 Optional:
 
-- `IMAGE_UPLOAD_FOLDER`: file storage directory for uploaded dinner images
-  - Defaults to a temporary directory in development
-  - Set to a persistent path in production (for Fly this is `/data/uploads/images`)
 - `ALLOW_INDEXING`: set to `false` to disable search engine indexing tags
 - `PORT`: server port (Fly uses `8080`)
 
@@ -145,7 +142,7 @@ Runtime details:
 5. Confirm both Fly apps exist and have a persistent volume mounted at `/data`.
 6. Set `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `RESEND_API_KEY` and the Google OAuth secrets as Fly secrets for both apps.
 
-`DATABASE_URL`, `IMAGE_UPLOAD_FOLDER`, and `PORT` are set in `fly.toml` and do not need to be duplicated as Fly secrets.
+`DATABASE_URL` and `PORT` are set in `fly.toml` and do not need to be duplicated as Fly secrets.
 
 ### Operational checks
 

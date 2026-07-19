@@ -1,29 +1,25 @@
 import type { Route } from "./+types/admin.dinners.$dinnerId.[signups.csv]";
 
-import { requireUserWithRole } from "~/features/auth/guards.server";
 import {
   getAttendeeRosterForEvent,
   type Attendee,
   type RosterColumn,
 } from "~/features/signup-form/read.server";
-import { contentDispositionAttachment } from "~/lib/content-disposition.server";
-import { buildCSVObject } from "~/lib/csv-builder.server";
 import { getEventById } from "~/models/event.server";
+import { contentDispositionAttachment } from "~/shared/content-disposition.server";
+import { buildCSVObject } from "~/shared/csv-builder.server";
+import { requireFound } from "~/shared/http.server";
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
+export async function loader({ params }: Route.LoaderArgs) {
   const { dinnerId } = params;
 
   // one line per attendee; columns are the field-name union across all
   // versions with submissions (plus legacy defaults), headers from the
   // latest labels — design §8
   const [event, { attendees, columns }] = await Promise.all([
-    getEventById(dinnerId),
+    getEventById(dinnerId).then(requireFound),
     getAttendeeRosterForEvent(dinnerId),
   ]);
-
-  if (!event) throw new Response("Not found", { status: 404 });
 
   const data = buildCSVObject(
     columns.map((column) => column.label),

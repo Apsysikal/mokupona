@@ -6,3 +6,8 @@ export const AddressSchema = z.object({
   zipCode: z.string({ error: "Zip Code is required" }).trim(),
   city: z.string({ error: "City is required" }).trim(),
 });
+
+export function toAddressData(value: z.output<typeof AddressSchema>) {
+  const { streetName, houseNumber, zipCode, city } = value;
+  return { streetName, houseNumber, zip: zipCode, city };
+}

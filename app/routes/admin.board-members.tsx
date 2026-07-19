@@ -1,21 +1,20 @@
 import { PersonIcon, PlusIcon } from "@radix-ui/react-icons";
-import { Link, Outlet, useFetcher, useLocation } from "react-router";
+import { Link, Outlet, useLocation } from "react-router";
 
 import type { Route } from "./+types/admin.board-members";
-import { OptimizedImage } from "./file.$fileId";
 
+import { AdminDeleteButton } from "~/components/admin-delete-button";
 import {
   AdminEmptyState,
   AdminPageHeader,
   InitialsAvatar,
 } from "~/components/admin-ui";
+import { OptimizedImage } from "~/components/optimized-image";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import { requireUserWithRole } from "~/features/auth/guards.server";
 import { listBoardMembers } from "~/models/board-member.server";
 
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
+export async function loader() {
   const boardMembers = await listBoardMembers();
   return { boardMembers };
 }
@@ -87,8 +86,6 @@ function BoardMemberCard({
   member: BoardMember;
   seed: number;
 }) {
-  const deleteFetcher = useFetcher();
-  const isDeleting = deleteFetcher.state !== "idle";
   const { id, name, position, imageId } = member;
 
   return (
@@ -114,16 +111,7 @@ function BoardMemberCard({
         <Button size="sm" variant="outline" asChild>
           <Link to={`${id}/edit`}>Edit</Link>
         </Button>
-        <deleteFetcher.Form method="POST" action={`${id}/delete`}>
-          <Button
-            type="submit"
-            size="sm"
-            variant="destructive-outline"
-            disabled={isDeleting}
-          >
-            {isDeleting ? "Deleting…" : "Delete"}
-          </Button>
-        </deleteFetcher.Form>
+        <AdminDeleteButton action={`${id}/delete`} />
       </div>
     </Card>
   );

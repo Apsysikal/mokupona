@@ -1,10 +1,10 @@
 import { PlusIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
-import { Link, useFetcher } from "react-router";
+import { Link } from "react-router";
 
 import type { Route } from "./+types/admin.dinners._index";
-import { OptimizedImage } from "./file.$fileId";
 
+import { AdminDeleteButton } from "~/components/admin-delete-button";
 import {
   AdminEmptyState,
   AdminPageHeader,
@@ -13,16 +13,18 @@ import {
   SeatProgress,
 } from "~/components/admin-ui";
 import { UtensilsIcon } from "~/components/icons";
+import { OptimizedImage } from "~/components/optimized-image";
 import { Button } from "~/components/ui/button";
-import { requireUserWithRole } from "~/features/auth/guards.server";
+import { formatAdminDateLine } from "~/features/events/date-format";
+import {
+  isPastEvent,
+  orderEventsByStatus,
+} from "~/features/events/event-status";
 import { getAttendeeCountsForEvents } from "~/features/signup-form/read.server";
 import { cn } from "~/lib/utils";
 import { getEventsWithAddress } from "~/models/event.server";
-import { formatAdminDateLine } from "~/utils/misc";
 
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
+export async function loader() {
   const events = await getEventsWithAddress();
   const seatCounts = await getAttendeeCountsForEvents(
     events.map((event) => event.id),
@@ -58,13 +60,13 @@ export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
 
-  const now = Date.now();
+  const now = new Date();
   const q = query.trim().toLowerCase();
 
-  const visible = dinners
+  const filtered = dinners
     .map((dinner) => ({
       ...dinner,
-      past: new Date(dinner.date).getTime() < now,
+      past: isPastEvent(new Date(dinner.date), now),
     }))
     .filter((dinner) =>
       filter === "all" ? true : filter === "past" ? dinner.past : !dinner.past,
@@ -74,13 +76,9 @@ export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
         !q ||
         dinner.title.toLowerCase().includes(q) ||
         dinner.location.toLowerCase().includes(q),
-    )
-    // no status badges — upcoming (soonest first) sort above past (newest first)
-    .sort((a, b) => {
-      if (a.past !== b.past) return a.past ? 1 : -1;
-      const diff = new Date(a.date).getTime() - new Date(b.date).getTime();
-      return a.past ? -diff : diff;
-    });
+    );
+  // no status badges — upcoming (soonest first) sort above past (newest first)
+  const visible = orderEventsByStatus(filtered, now);
 
   return (
     <div className="animate-page-in">
@@ -143,8 +141,6 @@ type Dinner = Awaited<ReturnType<typeof loader>>["dinners"][number] & {
 };
 
 function DinnerCard({ dinner }: { dinner: Dinner }) {
-  const deleteFetcher = useFetcher();
-  const isDeleting = deleteFetcher.state !== "idle";
   const date = new Date(dinner.date);
 
   return (
@@ -197,22 +193,18 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="ghost" className="text-foreground/80" asChild>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-foreground/80"
+          asChild
+        >
           <Link to={`${dinner.id}/signups`}>Signups</Link>
         </Button>
         <Button size="sm" variant="outline" asChild>
           <Link to={`${dinner.id}/edit`}>Edit</Link>
         </Button>
-        <deleteFetcher.Form method="POST" action={`${dinner.id}/delete`}>
-          <Button
-            type="submit"
-            size="sm"
-            variant="destructive-outline"
-            disabled={isDeleting}
-          >
-            {isDeleting ? "Deleting…" : "Delete"}
-          </Button>
-        </deleteFetcher.Form>
+        <AdminDeleteButton action={`${dinner.id}/delete`} />
       </div>
     </div>
   );

@@ -6,14 +6,14 @@ import { prisma } from "~/db.server";
 import { FormSchema, type FieldDescriptor } from "~/features/forms/fields";
 import { parseStoredFormSchema } from "~/features/forms/serialization";
 
-export type { FormVersion } from "#prisma/generated/client";
-
 // The single definition of "current version": max(version) among the rows
 // matching the filter.
+export const CURRENT_FORM_VERSION_ORDER_BY = { version: "desc" } as const;
+
 const currentVersionArgs = (where: Prisma.FormVersionWhereInput) =>
   ({
     where,
-    orderBy: { version: "desc" },
+    orderBy: CURRENT_FORM_VERSION_ORDER_BY,
   }) satisfies Prisma.FormVersionFindFirstArgs;
 
 // Every form has at least one version by construction (created with the

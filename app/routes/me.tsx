@@ -10,26 +10,21 @@ import type { Route } from "./+types/me";
 
 import { InitialsAvatar } from "~/components/admin-ui";
 import { Field } from "~/components/forms";
-import { GoogleMark } from "~/components/google-button";
 import { Eyebrow } from "~/components/section";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { authClient } from "~/features/auth/auth.client";
 import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
-import { logout, requireUserId } from "~/features/auth/guards.server";
+import { GoogleMark } from "~/features/auth/components/google-button";
+import { displayNameSchema } from "~/features/auth/form-schemas";
+import { requireResolvedUser } from "~/features/auth/middleware.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
-import {
-  getUserAccountSummary,
-  getUserAuthOverview,
-  updateUserName,
-} from "~/models/user.server";
+import { getUserAuthOverview, updateUserName } from "~/models/user.server";
+import { unknownIntent } from "~/shared/http.server";
 
 const nameSchema = z.object({
   intent: z.literal("update-name"),
-  name: z
-    .string({ error: "Name is required" })
-    .trim()
-    .min(1, "Name is required"),
+  name: displayNameSchema,
 });
 
 const passwordActionSchema = withPasswordConfirmation({
@@ -48,24 +43,25 @@ const passwordActionSchema = withPasswordConfirmation({
 
 export const meta: Route.MetaFunction = () => [{ title: "your account" }];
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  const userId = await requireUserId(request);
-  const [user, authOverview] = await Promise.all([
-    getUserAccountSummary(userId),
-    getUserAuthOverview(userId),
-  ]);
-
-  if (!user) throw await logout(request);
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
+  // root middleware already resolved session + user + role for this request
+  const user = await requireResolvedUser(context, request);
+  const authOverview = await getUserAuthOverview(user.id);
 
   return {
-    user,
+    user: {
+      name: user.name,
+      email: user.email,
+      emailVerified: user.emailVerified,
+      role: { name: user.role.name },
+    },
     ...authOverview,
     googleEnabled: googleAuthEnabled,
   };
 };
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  const userId = await requireUserId(request);
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const { id: userId } = await requireResolvedUser(context, request);
   const formData = await request.formData();
   const intent = formData.get("intent");
 
@@ -145,7 +141,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     return data({ result: null, done: "sessions" as const });
   }
 
-  throw new Response("Unknown intent", { status: 400 });
+  throw unknownIntent();
 };
 
 function useActionToast(

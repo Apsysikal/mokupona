@@ -13,6 +13,11 @@ import {
 // The schema the signup route used before the registry rewrite, verbatim.
 // event-signup-validation.ts is the regression anchor: as long as this test
 // passes, DEFAULT_FORM accepts and rejects exactly what the old form did.
+//
+// Review marker (architecture review 2026-07-18): keep this parity suite and
+// app/utils/event-signup-validation.ts until the signup-form rewrite has ~3 months
+// of production mileage without signup regressions (review ~2026-10). Owner: Benedikt.
+// Delete both together.
 const legacySchema = z
   .object({
     signupPerson: SignupPersonSchema,

@@ -1,6 +1,6 @@
-export function generateSrcSet(src: string, widths: number[]) {
+export function generateSrcSet(src: string, widths: readonly number[]) {
   const extIndex = src.lastIndexOf(".");
-  const basename = src.slice(0, extIndex);
+  const basename = extIndex === -1 ? src : src.slice(0, extIndex);
   const extension = ".webp";
 
   return widths

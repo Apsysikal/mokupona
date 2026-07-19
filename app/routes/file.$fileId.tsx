@@ -1,74 +1,59 @@
-import type { ComponentProps } from "react";
 import { z } from "zod";
 
 import type { Route } from "./+types/file.$fileId";
 
-import { logger } from "~/logger.server";
-import { getImageById } from "~/models/image.server";
 import {
   fileStorage as cache,
   getStorageKey as getCacheKey,
-} from "~/utils/file-chache-storage.server";
+} from "~/features/uploads/file-cache-storage.server";
+import { getImageById } from "~/models/image.server";
+import { requireFound } from "~/shared/http.server";
+import { IMAGE_FITS } from "~/shared/image";
 import { transformToWebp } from "~/utils/image-transform.server";
-import { getImageUrl } from "~/utils/misc";
+
+// Transform URLs outlive the components that emitted them (scraped og:image
+// previews, sent emails, open tabs), so numeric dimensions are normalized
+// rather than rejected: each snaps to the nearest ladder rung. That keeps
+// every historically published URL serving an image while bounding the
+// unauthenticated, never-evicted cache to ladder² × fits variants per image
+// instead of one per arbitrary (w, h) pair. The rungs are the union of every
+// geometry the app currently emits — RESPONSIVE_IMAGE_WIDTHS, the
+// OptimizedImage call sites' width/height props, and their aspect-derived
+// srcset heights — plus a few spacers up to a 2048 ceiling; a changed call
+// site serves a near-identical crop until its geometry is added here.
+const DIMENSION_LADDER = [
+  96, 172, 208, 236, 324, 357, 432, 480, 486, 536, 640, 648, 714, 810, 864,
+  893, 1080, 1296, 1536, 2048,
+];
+
+function snapToDimensionLadder(value: number): number {
+  return DIMENSION_LADDER.reduce((closest, rung) =>
+    Math.abs(rung - value) < Math.abs(closest - value) ? rung : closest,
+  );
+}
 
 const SearchParamsSchema = z.object({
-  width: z.coerce.number().min(0).optional(),
-  height: z.coerce.number().min(0).optional(),
-  fit: z.enum(["cover", "contain", "fill"]).optional().default("cover"),
+  width: z.coerce.number().transform(snapToDimensionLadder).optional(),
+  height: z.coerce.number().transform(snapToDimensionLadder).optional(),
+  fit: z.enum(IMAGE_FITS).optional().default("cover"),
 });
 
-type SearchParams = z.infer<typeof SearchParamsSchema>;
-
-type ImageInputProps = {
-  imageId: string;
-  width: number;
-  height: number;
-} & Partial<Pick<SearchParams, "fit">>;
-
-type ImageProps = Omit<ComponentProps<"img">, "width" | "height" | "src"> &
-  ImageInputProps;
-
-export function OptimizedImage({
-  imageId,
-  width,
-  height,
-  fit = "cover",
-  ...props
-}: ImageProps) {
-  const breakPoints = [432, 648, 864, 1080];
-  const imageUrl = getImageUrl(imageId);
-  const aspect = width / height;
-
-  const searchParams = new URLSearchParams({
-    w: `${width}`,
-    h: `${height}`,
-    fit,
+// The storage returns LazyFiles, which undici no longer accepts as a
+// Response body (lazy-file >= 5 does not implement File). Streaming the body
+// also keeps cached transforms out of memory; `size` is storage metadata and
+// does not read the file.
+function createImageResponse(
+  file: Pick<File, "size" | "stream">,
+  fileId: string,
+) {
+  return new Response(file.stream(), {
+    headers: {
+      "Content-Type": "image/webp",
+      "Content-Disposition": `inline; filename="${fileId}"`,
+      "Content-Length": String(file.size),
+      "Cache-Control": "public, max-age=31536000, immutable",
+    },
   });
-
-  const srcSetUrls = breakPoints.map((w) => {
-    // sharp rejects fractional dimensions, so keep derived heights integer
-    const h = Math.round(w / aspect);
-    const searchParams = new URLSearchParams({
-      w: `${w}`,
-      h: `${h}`,
-      fit,
-    });
-
-    return `${imageUrl + "?" + searchParams.toString()} ${w}w`;
-  });
-
-  return (
-    <picture>
-      <img
-        srcSet={srcSetUrls.join(", ")}
-        src={imageUrl + "?" + searchParams.toString()}
-        width={width}
-        height={height}
-        {...props}
-      />
-    </picture>
-  );
 }
 
 export async function loader({ url, params }: Route.LoaderArgs) {
@@ -76,12 +61,10 @@ export async function loader({ url, params }: Route.LoaderArgs) {
   const { fileId } = params;
 
   const options = SearchParamsSchema.safeParse({
-    width: searchParams.get("w"),
-    height: searchParams.get("h"),
-    fit: searchParams.get("fit"),
+    width: searchParams.get("w") ?? undefined,
+    height: searchParams.get("h") ?? undefined,
+    fit: searchParams.get("fit") ?? undefined,
   });
-
-  logger.info(JSON.stringify(options));
 
   if (!options.success) {
     // Params were malformed
@@ -93,32 +76,12 @@ export async function loader({ url, params }: Route.LoaderArgs) {
   const { width, height, fit } = options.data;
   const cacheKey = getCacheKey(`${fileId}-${width}-${height}-${fit}`);
 
-  logger.info(`Checking cache with: ${cacheKey}`);
-
-  if (await cache.has(cacheKey)) {
-    const fileStream = await cache.get(cacheKey);
-    if (!fileStream) {
-      // Key exists but no file.
-      // Continue as if no cache exists
-      logger.info(`Cache miss with: ${cacheKey}`);
-    } else {
-      // Cache hit successful
-      logger.info(`Cache hit with: ${cacheKey}`);
-      return new Response(fileStream.stream(), {
-        headers: {
-          "Content-Type": "image/webp",
-          "Content-Disposition": `inline; filename="${params.fileId}"`,
-          "Cache-Control": "public, max-age=31536000, immutable",
-          "Transfer-Encoding": "chunked",
-        },
-      });
-    }
-  } else {
-    logger.info(`Cache miss with: ${cacheKey}`);
+  const cachedFile = await cache.get(cacheKey);
+  if (cachedFile) {
+    return createImageResponse(cachedFile, fileId);
   }
 
-  const file = await getImageById(fileId);
-  if (!file) throw new Response("Not found", { status: 404 });
+  const file = requireFound(await getImageById(fileId));
 
   const optimizedImage = await transformToWebp(file.blob, {
     width,
@@ -126,16 +89,9 @@ export async function loader({ url, params }: Route.LoaderArgs) {
     fit,
   });
 
-  const test = new Uint8Array(optimizedImage);
-  const testFile = new File([test], fileId);
+  const imageBytes = new Uint8Array(optimizedImage);
+  const imageFile = new File([imageBytes], fileId, { type: "image/webp" });
+  const storedFile = await cache.put(cacheKey, imageFile);
 
-  // @ts-ignore
-  return new Response((await cache.put(cacheKey, testFile)).stream(), {
-    headers: {
-      "Content-Type": "image/webp",
-      "Content-Disposition": `inline; filename="${params.fileId}"`,
-      "Cache-Control": "public, max-age=31536000, immutable",
-      "Transfer-Encoding": "chunked",
-    },
-  });
+  return createImageResponse(storedFile, fileId);
 }

@@ -8,8 +8,9 @@ import {
   TextSectionBlockView,
   type TextSectionBlockType,
 } from "~/features/cms/blocks/text-section";
+import { formatEventDayMonth } from "~/features/events/date-format";
 import { getNextEvent } from "~/models/event.server";
-import { formatEventDayMonth } from "~/utils/misc";
+import { withOpenGraphUrls } from "~/shared/meta";
 
 export const loader = async () => {
   const nextEvent = await getNextEvent();
@@ -31,18 +32,17 @@ export const meta: Route.MetaFunction = ({ matches, location }) => {
     },
   ] satisfies ReturnType<Route.MetaFunction>;
 
-  const domainUrl = matches[0].loaderData.domainUrl;
-
-  const imageUrl = new URL("/landing-page-default.jpg", domainUrl);
-  const currentUrl = new URL(location.pathname, domainUrl);
-
-  return [
+  const tags = [
     ...metaTags,
     { property: "og:title", content: metaTags[0].title },
     { property: "og:type", content: "website" },
-    { property: "og:image", content: imageUrl },
-    { property: "og:url", content: currentUrl },
   ];
+
+  return withOpenGraphUrls(tags, {
+    matches,
+    imagePath: "/landing-page-default.jpg",
+    pagePath: location.pathname,
+  });
 };
 
 const visionSectionData: TextSectionBlockType = {

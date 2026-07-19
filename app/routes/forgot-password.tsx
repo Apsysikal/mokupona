@@ -11,16 +11,19 @@ import { AuthStatus } from "~/components/auth-status";
 import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { auth } from "~/features/auth/auth.server";
+import {
+  emailSchema,
+  parseRequestForm,
+} from "~/features/auth/form-schemas";
 import { logger } from "~/logger.server";
-import { getClientIPAddress, obscureEmail } from "~/utils/misc";
+import { getClientIPAddress, obscureEmail } from "~/shared/http.server";
 
 const schema = z.object({
-  email: z.email({ error: "Email is required" }),
+  email: emailSchema,
 });
 
 export const action = async ({ request }: Route.ActionArgs) => {
-  const formData = await request.formData();
-  const submission = parseWithZod(formData, { schema });
+  const submission = await parseRequestForm(request, schema);
 
   if (submission.status !== "success") {
     return data({ result: submission.reply(), sentTo: null });

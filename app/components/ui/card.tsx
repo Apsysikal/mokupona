@@ -76,25 +76,4 @@ const CardContent = ({
 
 CardContent.displayName = "CardContent";
 
-const CardFooter = ({
-  className,
-  ref,
-  ...props
-}: React.ComponentProps<"div">) => (
-  <div
-    ref={ref}
-    className={cn("flex items-center p-6 pt-0", className)}
-    {...props}
-  />
-);
-
-CardFooter.displayName = "CardFooter";
-
-export {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-};
+export { Card, CardContent, CardDescription, CardHeader, CardTitle };

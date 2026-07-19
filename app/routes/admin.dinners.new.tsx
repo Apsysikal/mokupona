@@ -1,156 +1,93 @@
-import {
-  FormProvider,
-  getFormProps,
-  useForm,
-  type SubmissionResult,
-} from "@conform-to/react";
-import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import { Form, redirect } from "react-router";
+import { redirect } from "react-router";
 
 import type { Route } from "./+types/admin.dinners.new";
 
-import {
-  AdminDinnerForm,
-  toAddressOptions,
-} from "~/components/admin-dinner-form";
-import { requireUserWithRole } from "~/features/auth/guards.server";
+import { userContext } from "~/features/auth/middleware.server";
+import { AdminEventRouteForm } from "~/features/events/components/admin-event-route-form";
+import { EventSchema } from "~/features/events/event-schema";
+import { toUtcEventDate } from "~/features/events/event-timezone.server";
+import { toAddressOptions } from "~/features/events/view-models";
 import {
   builderRowsToDescriptors,
   defaultBuilderRows,
 } from "~/features/signup-form/builder";
-import { logger } from "~/logger.server";
+import { withParsedImageForm } from "~/features/uploads/image-form-action.server";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
-import { getClientHints } from "~/utils/client-hints.server";
-import { toUtcEventDate } from "~/utils/event-timezone.server";
-import { EventSchema } from "~/utils/event-validation";
-import { parseImageFormData } from "~/utils/image-upload.server";
+import { fileToImageData } from "~/models/image.server";
 
-const validImageTypes = ["image/jpeg", "image/png", "image/webp"];
-
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
+export async function loader() {
   const addresses = await getAddresses();
 
-  return {
-    validImageTypes,
-    addresses,
-  };
+  return { addresses };
 }
 
-export async function action({ request }: Route.ActionArgs) {
-  const user = await requireUserWithRole(request, ["moderator", "admin"]);
-  const clientHints = getClientHints(request);
+export async function action({ request, context }: Route.ActionArgs) {
+  const user = context.get(userContext);
 
-  const uploadResult = await parseImageFormData(request, "cover");
-
-  if (!uploadResult.success) {
-    // folded into the conform result so actionData has a single shape
-    return {
-      status: "error",
-      error: { cover: [uploadResult.uploadError] },
-    } satisfies SubmissionResult;
-  }
-
-  const submission = parseWithZod(uploadResult.formData, {
+  return withParsedImageForm(request, {
+    fieldName: "cover",
     schema: EventSchema,
-  });
+    async onSuccess({ value }) {
+      const {
+        title,
+        description,
+        menuDescription,
+        donationDescription,
+        date,
+        slots,
+        price,
+        discounts,
+        cover,
+        addressId,
+        signupForm,
+      } = value;
 
-  if (
-    submission.status !== "success" &&
-    submission.payload &&
-    submission.payload.cover
-  ) {
-    // Remove the uploaded file from disk.
-    // It will be sent again when submitting.
-    await uploadResult.discardImage();
-  }
+      const event = await createEvent(
+        {
+          title,
+          description,
+          menuDescription,
+          donationDescription,
+          date: toUtcEventDate(date),
+          slots,
+          price,
+          discounts,
+          addressId,
+          // the image row is created inside createEvent's transaction, so a
+          // failed event write can no longer leak it
+          image: await fileToImageData(cover),
+          createdById: user.id,
+        },
+        // validated by SignupFormSchema inside EventSchema's signupForm field
+        builderRowsToDescriptors(signupForm),
+      );
 
-  if (submission.status !== "success" || !submission.value) {
-    return submission.reply();
-  }
-
-  const {
-    title,
-    description,
-    menuDescription,
-    donationDescription,
-    date,
-    slots,
-    price,
-    discounts,
-    cover,
-    addressId,
-    signupForm,
-  } = submission.value;
-
-  logger.info(`Client zone offset: ${clientHints.userTimezoneOffset}`);
-  logger.info(`Client zone: ${clientHints.userTimezone}`);
-
-  const imageId = await uploadResult.persistImage(cover);
-
-  const event = await createEvent(
-    {
-      title,
-      description,
-      menuDescription,
-      donationDescription,
-      date: toUtcEventDate(date, clientHints),
-      slots,
-      price,
-      discounts,
-      addressId,
-      imageId,
-      createdById: user.id,
+      return redirect(`/admin/dinners/${event.id}`);
     },
-    // validated by SignupFormSchema inside EventSchema's signupForm field
-    builderRowsToDescriptors(signupForm),
-  );
-
-  return redirect(`/admin/dinners/${event.id}`);
+  });
 }
 
 export const meta: Route.MetaFunction = () => {
   return [{ title: "Admin - Create Dinner" }];
 };
 
-export default function DinnersPage({
+export default function AdminDinnerNewPage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const { addresses, validImageTypes } = loaderData;
+  const { addresses } = loaderData;
   const addressOptions = toAddressOptions(addresses);
 
-  const [form, fields] = useForm({
-    lastResult: actionData,
-    shouldValidate: "onBlur",
-    constraint: getZodConstraint(EventSchema),
-    defaultValue: {
-      signupForm: defaultBuilderRows(),
-    },
-    onValidate({ formData }) {
-      return parseWithZod(formData, { schema: EventSchema });
-    },
-  });
-
   return (
-    <FormProvider context={form.context}>
-      <Form
-        method="POST"
-        encType="multipart/form-data"
-        replace
-        {...getFormProps(form)}
-      >
-        <AdminDinnerForm
-          fields={fields}
-          addressOptions={addressOptions}
-          validImageTypes={validImageTypes}
-          submitText="Save dinner"
-          pageTitle="New dinner"
-          cancelHref="/admin/dinners"
-        />
-      </Form>
-    </FormProvider>
+    <AdminEventRouteForm
+      schema={EventSchema}
+      lastResult={actionData}
+      defaultValue={{ signupForm: defaultBuilderRows() }}
+      addressOptions={addressOptions}
+      submitText="Save dinner"
+      pageTitle="New dinner"
+      cancelHref="/admin/dinners"
+    />
   );
 }

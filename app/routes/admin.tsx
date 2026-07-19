@@ -3,15 +3,27 @@ import { Outlet } from "react-router";
 import type { Route } from "./+types/admin";
 
 import { AdminTabs } from "~/components/admin-tabs";
-import { requireUserWithRole } from "~/features/auth/guards.server";
+import { RouteErrorContent } from "~/components/route-error-content";
+import {
+  requireResolvedUserRoleMiddleware,
+  userContext,
+} from "~/features/auth/middleware.server";
+import { ADMIN_ROLE_NAMES, isAdminRole } from "~/features/auth/roles";
 import { countAddresses } from "~/models/address.server";
 import { countBoardMembers } from "~/models/board-member.server";
 import { countEvents } from "~/models/event.server";
 import { countUsers } from "~/models/user.server";
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const user = await requireUserWithRole(request, ["moderator", "admin"]);
-  const isAdmin = user.role.name === "admin";
+// Authorizes the root-resolved user for the whole admin hierarchy and exposes
+// the required userContext. Descendants inherit this middleware; only the
+// admin-only users segment needs an additional narrowing check.
+export const middleware: Route.MiddlewareFunction[] = [
+  requireResolvedUserRoleMiddleware(ADMIN_ROLE_NAMES),
+];
+
+export async function loader({ context }: Route.LoaderArgs) {
+  const user = context.get(userContext);
+  const isAdmin = isAdminRole(user.role.name);
 
   const [dinners, locations, board, users] = await Promise.all([
     countEvents(),
@@ -36,5 +48,15 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
         <Outlet />
       </main>
     </>
+  );
+}
+
+// The middleware's 403 (and child 404s) land here instead of the root
+// boundary, so denied users see a styled page inside the site chrome.
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  return (
+    <main className="mx-auto w-full max-w-5xl grow px-5 pt-5 pb-4 md:px-10 md:pt-9">
+      <RouteErrorContent error={error} />
+    </main>
   );
 }

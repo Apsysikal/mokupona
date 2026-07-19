@@ -6,39 +6,49 @@ import {
 } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { useMemo } from "react";
-import { Form, isRouteErrorResponse, Link } from "react-router";
+import { Form, Link } from "react-router";
 
 import type { Route } from "./+types/dinners_.$dinnerId";
 
-import { DinnerFactList, DinnerStory } from "~/components/dinner-view";
 import { CheckboxField, ErrorList } from "~/components/forms";
+import { RouteErrorContent } from "~/components/route-error-content";
 import { Button } from "~/components/ui/button";
+import {
+  EventFactList,
+  EventStory,
+} from "~/features/events/components/event-view";
+import { isPastEvent } from "~/features/events/event-status";
+import { toEventDetailModel } from "~/features/events/view-models";
 import { getViewForField, type FieldDescriptor } from "~/features/forms/fields";
 import { normalizeSubmissionValues } from "~/features/forms/normalize-submission";
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
 import { buildSignupSchema } from "~/features/signup-form/build-schema";
 import { logger } from "~/logger.server";
-import { getEventById } from "~/models/event.server";
+import { getEventWithCurrentFormVersion } from "~/models/event.server";
 import {
   createFormSubmission,
   FormVersionChangedError,
 } from "~/models/form-submission.server";
-import { getCurrentFormVersionForEvent } from "~/models/form.server";
-import { getClientIPAddress, getImageUrl, obscureEmail } from "~/utils/misc";
+import {
+  getClientIPAddress,
+  obscureEmail,
+  requireFound,
+} from "~/shared/http.server";
+import { getImageUrl } from "~/shared/image";
+import { withOpenGraphUrls } from "~/shared/meta";
 import { redirectWithToast } from "~/utils/toast.server";
 
 export async function loader({ params }: Route.LoaderArgs) {
   const { dinnerId } = params;
 
-  const [event, version] = await Promise.all([
-    getEventById(dinnerId),
-    getCurrentFormVersionForEvent(dinnerId),
-  ]);
-
-  if (!event || !version) throw new Response("Not found", { status: 404 });
+  const { event, version } = requireFound(
+    await getEventWithCurrentFormVersion(dinnerId),
+  );
 
   return {
-    event,
+    // the route ships the detail model, not the Prisma entity; it also covers
+    // the meta tags (title, imageId) and the past check (date)
+    event: toEventDetailModel(event),
     // null when the stored schema fails to parse — the signup section is
     // hidden rather than rendered wrong (design §11)
     formFields: parseStoredFormSchemaOrLog(version),
@@ -54,13 +64,11 @@ export async function action({ params, request }: Route.ActionArgs) {
 
   // the action never trusts client descriptors: re-read the current version
   // from the DB and rebuild the identical schema server-side (design §6.1)
-  const [dinner, version] = await Promise.all([
-    getEventById(dinnerId),
-    getCurrentFormVersionForEvent(dinnerId),
-  ]);
+  const { event: dinner, version } = requireFound(
+    await getEventWithCurrentFormVersion(dinnerId),
+  );
 
-  if (!dinner || !version) throw new Response("Not found", { status: 404 });
-  if (dinner.date < new Date()) {
+  if (isPastEvent(dinner.date, new Date())) {
     throw new Response("Forbidden", { status: 403 });
   }
 
@@ -167,18 +175,17 @@ export const meta: Route.MetaFunction = ({ loaderData, matches, location }) => {
   if (!loaderData) return metaTags;
 
   const { event } = loaderData;
-  const domainUrl = matches[0].loaderData.domainUrl;
-
-  const dinnerUrl = new URL(location.pathname, domainUrl);
-  const imageUrl = new URL(getImageUrl(event.imageId), domainUrl);
-
-  return [
+  const tags = [
     { title: `Dinner - ${event.title}` },
     { property: "og:title", content: event.title },
     { property: "og:type", content: "website" },
-    { property: "og:image", content: imageUrl },
-    { property: "og:url", content: dinnerUrl },
   ];
+
+  return withOpenGraphUrls(tags, {
+    matches,
+    imagePath: getImageUrl(event.imageId),
+    pagePath: location.pathname,
+  });
 };
 
 export default function DinnerPage({
@@ -187,10 +194,10 @@ export default function DinnerPage({
 }: Route.ComponentProps) {
   const { event, formFields, formVersionId } = loaderData;
 
-  const isPastEvent = event.date < new Date();
+  const eventIsPast = isPastEvent(new Date(event.date), new Date());
   // formFields is null when the stored schema failed to parse — the signup
   // section is hidden rather than rendered wrong (design §11)
-  const signupFields = isPastEvent ? null : formFields;
+  const signupFields = eventIsPast ? null : formFields;
 
   return (
     <main className="mx-auto w-full max-w-5xl grow px-5 pt-6 pb-20 md:px-10 md:pt-9">
@@ -202,13 +209,13 @@ export default function DinnerPage({
       </Link>
 
       <div className="grid items-start gap-8 md:grid-cols-[1.2fr_1fr] md:gap-11">
-        <DinnerStory event={event} />
+        <EventStory event={event} />
 
         <aside
           id="sign-up"
           className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-5 md:sticky md:top-6 md:p-7"
         >
-          <DinnerFactList event={event} />
+          <EventFactList event={event} />
 
           {signupFields ? (
             <>
@@ -319,27 +326,5 @@ function SignupForm({
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  if (isRouteErrorResponse(error)) {
-    return (
-      <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
-        <h1 className="font-semibold">
-          {error.status} {error.statusText}
-        </h1>
-        <p>{error.data}</p>
-      </div>
-    );
-  } else if (error instanceof Error) {
-    return (
-      <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
-        <h1 className="font-semibold">Error</h1>
-        <p>{error.message}</p>
-      </div>
-    );
-  } else {
-    return (
-      <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
-        <h1 className="font-semibold">Unknown Error</h1>
-      </div>
-    );
-  }
+  return <RouteErrorContent error={error} />;
 }

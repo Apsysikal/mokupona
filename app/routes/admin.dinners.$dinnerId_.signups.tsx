@@ -14,13 +14,13 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { requireUserWithRole } from "~/features/auth/guards.server";
+import { formatAdminTimestamp } from "~/features/events/date-format";
 import {
   getAttendeesForEvent,
   type Attendee,
 } from "~/features/signup-form/read.server";
 import { getEventById } from "~/models/event.server";
-import { formatAdminTimestamp } from "~/utils/misc";
+import { requireFound } from "~/shared/http.server";
 
 // The table reads one row per party: the signer fronts the row, friends only
 // bump the party size. Legacy rows never share a submissionId, so each stays
@@ -52,17 +52,13 @@ function toParties(attendees: Attendee[]) {
   return [...parties.values()];
 }
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
+export async function loader({ params }: Route.LoaderArgs) {
   const { dinnerId } = params;
 
   const [event, attendees] = await Promise.all([
-    getEventById(dinnerId),
+    getEventById(dinnerId).then(requireFound),
     getAttendeesForEvent(dinnerId),
   ]);
-
-  if (!event) throw new Response("Not found", { status: 404 });
 
   return {
     event: { title: event.title, slots: event.slots },
@@ -72,9 +68,13 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export const meta: Route.MetaFunction = ({ loaderData }) => {
-  const { event } = loaderData;
-
-  return [{ title: `Admin - Dinner - ${event.title} - Signups` }];
+  return [
+    {
+      title: loaderData
+        ? `Admin - Dinner - ${loaderData.event.title} - Signups`
+        : "Admin - Dinner - Signups",
+    },
+  ];
 };
 
 export default function DinnerSignupsPage({

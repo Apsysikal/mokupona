@@ -14,13 +14,17 @@ import type { Route } from "./+types/invite.$token";
 import { AuthShell } from "~/components/auth-layout";
 import { AuthStatus } from "~/components/auth-status";
 import { ErrorList, Field } from "~/components/forms";
-import { GoogleSignInButton } from "~/components/google-button";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
-import { getUserWithRole, logout } from "~/features/auth/guards.server";
+import { GoogleSignInButton } from "~/features/auth/components/google-button";
+import { displayNameSchema } from "~/features/auth/form-schemas";
+import { logout } from "~/features/auth/guards.server";
+import { optionalUserContext } from "~/features/auth/middleware.server";
 import { passwordSchema } from "~/features/auth/password-schema";
+import { landingPathForRole } from "~/features/auth/roles";
+import { normalizeInvitableRole } from "~/features/users/invite.shared";
 import { cn } from "~/lib/utils";
 import { logger } from "~/logger.server";
 import {
@@ -30,14 +34,15 @@ import {
   inviteValidity,
 } from "~/models/invite.server";
 import { getUserByEmail } from "~/models/user.server";
-import { getClientIPAddress, obscureEmail } from "~/utils/misc";
+import {
+  getClientIPAddress,
+  obscureEmail,
+  unknownIntent,
+} from "~/shared/http.server";
 
 const signupSchema = z.object({
   intent: z.literal("signup"),
-  name: z
-    .string({ error: "Name is required" })
-    .trim()
-    .min(1, "Name is required"),
+  name: displayNameSchema,
   password: passwordSchema,
 });
 
@@ -59,7 +64,7 @@ async function acceptCurrentInvite(
 // /invite/$token — email-bound, role-carrying link (design §6). Four states:
 // dead-end (invalid/expired/used), logged-out signup with locked email,
 // logged-in match (confirm upgrade), logged-in mismatch.
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
+export const loader = async ({ params, context }: Route.LoaderArgs) => {
   const invite = await getInviteByToken(params.token);
   const validity = inviteValidity(invite);
 
@@ -67,7 +72,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     return { state: "dead-end" as const, reason: validity };
   }
 
-  const user = await getUserWithRole(request);
+  const user = await context.get(optionalUserContext)();
 
   if (!user) {
     return {
@@ -95,7 +100,11 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   };
 };
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
+export const action = async ({
+  request,
+  params,
+  context,
+}: Route.ActionArgs) => {
   const formData = await request.formData();
   const intent = formData.get("intent");
 
@@ -112,8 +121,14 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     return redirect(`/invite/${params.token}`);
   }
 
+  // Prisma types roleName as string; invites only ever carry an invitable
+  // role, so fall back the way the invite mailer does.
+  const landingPath = landingPathForRole(
+    normalizeInvitableRole(invite.roleName),
+  );
+
   if (intent === "accept") {
-    const user = await getUserWithRole(request);
+    const user = await context.get(optionalUserContext)();
     if (!user || user.email !== invite.email) {
       return redirect(`/invite/${params.token}`);
     }
@@ -123,7 +138,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       email: obscureEmail(user.email),
       role: invite.roleName,
     });
-    return redirect(invite.roleName === "moderator" ? "/admin" : "/");
+    return redirect(landingPath);
   }
 
   if (intent === "signup") {
@@ -165,12 +180,10 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       role: invite.roleName,
     });
 
-    return redirect(invite.roleName === "moderator" ? "/admin" : "/", {
-      headers,
-    });
+    return redirect(landingPath, { headers });
   }
 
-  throw new Response("Unknown intent", { status: 400 });
+  throw unknownIntent();
 };
 
 export const meta: Route.MetaFunction = () => [{ title: "Invite" }];

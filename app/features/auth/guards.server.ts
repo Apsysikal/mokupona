@@ -1,7 +1,10 @@
 import { redirect } from "react-router";
 
 import { auth } from "./auth.server";
+import { isRoleName, type RoleName } from "./roles";
 
+import { logger } from "~/logger.server";
+import type { Role } from "~/models/role.server";
 import type { User } from "~/models/user.server";
 import { getUserByIdWithRole } from "~/models/user.server";
 
@@ -9,45 +12,72 @@ import { getUserByIdWithRole } from "~/models/user.server";
 // better-auth — the admin routes and root.tsx only change an import path
 // (design §3). Role checks stay here; better-auth knows nothing about them.
 
-export async function getUserId(
-  request: Request,
-): Promise<User["id"] | undefined> {
-  const session = await auth.api.getSession({ headers: request.headers });
-  return session?.user.id;
+/** A user whose persisted role name passed the vocabulary check. */
+export type ValidatedUser = User & { role: Role & { name: RoleName } };
+
+// Prisma types Role.name as string; the guards are where persisted roles
+// enter the app, so screen against the vocabulary here (plan phase 1). A
+// stored name outside it is corrupt data — surface it in the logs, but keep
+// the request alive: this runs for every request via root middleware, so a
+// hard failure would lock the account out of every page, logout included.
+// The cast is safe in practice because role checks compare against the
+// vocabulary (`assertUserHasRole`), which denies an unknown name everywhere.
+function validateRoleName(user: User & { role: Role }): ValidatedUser {
+  if (!isRoleName(user.role.name)) {
+    logger.error(
+      `User ${user.id} has role "${user.role.name}" outside the role vocabulary`,
+    );
+  }
+  return user as ValidatedUser;
 }
 
+/** Resolve the session's user id, or null for anonymous requests. */
+export async function getUserId(request: Request): Promise<User["id"] | null> {
+  const session = await auth.api.getSession({ headers: request.headers });
+  return session?.user.id ?? null;
+}
+
+/**
+ * Resolve the session's user with its role. Returns null for anonymous
+ * requests; throws a logout redirect for a stale session (a live cookie
+ * whose user row is gone) so the root loader clears dead sessions.
+ */
 export async function getUserWithRole(request: Request) {
   const userId = await getUserId(request);
-  if (userId === undefined) return null;
+  if (userId === null) return null;
 
   const user = await getUserByIdWithRole(userId);
-  if (user) return user;
+  if (user) return validateRoleName(user);
 
   throw await logout(request);
 }
 
-export async function requireUserId(
-  request: Request,
-  redirectTo: string = new URL(request.url).pathname,
-) {
-  const userId = await getUserId(request);
-  if (!userId) {
-    const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
-    throw redirect(`/login?${searchParams}`);
-  }
-  return userId;
+export function loginRedirect(redirectTo: string) {
+  const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
+  return redirect(`/login?${searchParams}`);
 }
 
-export async function requireUserWithRole(request: Request, roles: string[]) {
-  const userId = await requireUserId(request);
-  const user = await getUserByIdWithRole(userId);
-
-  if (!user) throw await logout(request);
+/** Assert a role on a user that has already passed session/DB validation. */
+export function assertUserHasRole(
+  user: ValidatedUser,
+  roles: readonly RoleName[],
+) {
   if (!roles.includes(user.role.name)) {
     throw new Response("Forbidden", { status: 403 });
   }
-
   return user;
+}
+
+/** Require a user already resolved by request middleware. */
+export function requireResolvedUserWithRole(
+  user: ValidatedUser | null,
+  request: Request,
+  roles: readonly RoleName[],
+) {
+  if (!user) {
+    throw loginRedirect(new URL(request.url).pathname);
+  }
+  return assertUserHasRole(user, roles);
 }
 
 export async function logout(request: Request) {

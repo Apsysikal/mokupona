@@ -40,4 +40,4 @@ function Badge({ className, variant, pill, ...props }: BadgeProps) {
   );
 }
 
-export { Badge, badgeVariants };
+export { Badge };

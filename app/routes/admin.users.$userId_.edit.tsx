@@ -7,25 +7,26 @@ import type { Route } from "./+types/admin.users.$userId_.edit";
 
 import { SelectField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
-import { requireUserWithRole } from "~/features/auth/guards.server";
+import { isAdminRole } from "~/features/auth/roles";
+import {
+  INVITABLE_ROLE_OPTIONS,
+  INVITABLE_ROLES,
+} from "~/features/users/invite.shared";
 import { getRoleByName } from "~/models/role.server";
 import {
   getUserAccountSummary,
   updateNonAdminUserRole,
 } from "~/models/user.server";
+import { requireFound } from "~/shared/http.server";
 
 const schema = z.object({
-  roleName: z.union([z.literal("user"), z.literal("moderator")]),
+  roleName: z.enum(INVITABLE_ROLES),
 });
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["admin"]);
-
+export async function loader({ params }: Route.LoaderArgs) {
   const { userId } = params;
 
-  const user = await getUserAccountSummary(userId);
-
-  if (!user) throw new Response("Not found", { status: 404 });
+  const user = requireFound(await getUserAccountSummary(userId));
 
   return {
     user,
@@ -37,8 +38,6 @@ export const meta: Route.MetaFunction = () => {
 };
 
 export async function action({ request, params }: Route.ActionArgs) {
-  await requireUserWithRole(request, ["admin"]);
-
   const { userId } = params;
 
   const formData = await request.formData();
@@ -94,12 +93,7 @@ export default function DinnersPage({
     },
   });
 
-  const isAdmin = user.role.name === "admin";
-  const options = [
-    { label: "User", value: "user" },
-    { label: "Moderator", value: "moderator" },
-  ];
-
+  const isAdmin = isAdminRole(user.role.name);
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-col gap-4">
@@ -120,7 +114,7 @@ export default function DinnersPage({
           selectProps={{
             ...getSelectProps(fields.roleName),
             disabled: isAdmin,
-            options,
+            options: [...INVITABLE_ROLE_OPTIONS],
           }}
           errors={fields.roleName.errors}
         />

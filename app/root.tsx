@@ -1,7 +1,6 @@
 import type { LinksFunction } from "react-router";
 import {
   data,
-  isRouteErrorResponse,
   Links,
   Meta,
   Outlet,
@@ -11,18 +10,19 @@ import {
 
 import type { Route } from "./+types/root";
 import { Footer } from "./components/footer";
+import { RouteErrorContent } from "./components/route-error-content";
 import { SiteNav } from "./components/site-nav";
 import { Toaster } from "./components/ui/sonner";
 import { useToast } from "./hooks/useToast";
 import { getNextEvent } from "./models/event.server";
-import { getClientHints } from "./utils/client-hints.server";
-import { combineHeaders, getDomainUrl } from "./utils/misc";
+import { getDomainUrl } from "./shared/http.server";
 import { getToast } from "./utils/toast.server";
 
-import { getUserWithRole } from "~/features/auth/guards.server";
+import {
+  optionalUserContext,
+  resolveOptionalUserMiddleware,
+} from "~/features/auth/middleware.server";
 import stylesheet from "~/tailwind.css?url";
-
-export type RootLoaderData = typeof loader;
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
@@ -42,13 +42,14 @@ export const links: LinksFunction = () => [
   { rel: "manifest", href: "/site.webmanifest" },
 ];
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
+export const middleware: Route.MiddlewareFunction[] = [
+  resolveOptionalUserMiddleware,
+];
+
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const domainUrl = getDomainUrl(request);
-  const [user, nextEvent] = await Promise.all([
-    getUserWithRole(request),
-    getNextEvent(),
-  ]);
-  const clientHints = getClientHints(request);
+  const user = await context.get(optionalUserContext)();
+  const nextEvent = await getNextEvent();
   const { toast, headers } = await getToast(request);
   const allowIndexing = process.env.ALLOW_INDEXING !== "false";
   const cypressSupport = process.env.CYPRESS_SUPPORT === "true";
@@ -57,12 +58,11 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       user,
       toast,
       domainUrl,
-      clientHints,
       allowIndexing,
       cypressSupport,
       nextDinnerId: nextEvent?.id ?? null,
     },
-    { headers: combineHeaders(headers) },
+    { headers: headers ?? undefined },
   );
 };
 
@@ -127,27 +127,5 @@ function Document({
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  if (isRouteErrorResponse(error)) {
-    return (
-      <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
-        <h1 className="font-semibold">
-          {error.status} {error.statusText}
-        </h1>
-        <p>{error.data}</p>
-      </div>
-    );
-  } else if (error instanceof Error) {
-    return (
-      <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
-        <h1 className="font-semibold">Error</h1>
-        <p>{error.message}</p>
-      </div>
-    );
-  } else {
-    return (
-      <div className="mx-auto mt-16 flex flex-col items-center gap-2 pt-4">
-        <h1 className="font-semibold">Unknown Error</h1>
-      </div>
-    );
-  }
+  return <RouteErrorContent error={error} />;
 }

@@ -1,16 +1,15 @@
 import { PlusIcon, SewingPinIcon } from "@radix-ui/react-icons";
-import { Link, useFetcher } from "react-router";
+import { Link } from "react-router";
 
 import type { Route } from "./+types/admin.locations._index";
 
+import { AdminDeleteButton } from "~/components/admin-delete-button";
 import { AdminEmptyState, AdminPageHeader } from "~/components/admin-ui";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import { requireUserWithRole } from "~/features/auth/guards.server";
 import { getAddresses, type Address } from "~/models/address.server";
 
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
+export async function loader() {
   const addresses = await getAddresses();
 
   return { addresses };
@@ -63,8 +62,6 @@ export default function AdminLocationsPage({
 }
 
 function LocationCard({ address }: { address: Address }) {
-  const deleteFetcher = useFetcher();
-  const isDeleting = deleteFetcher.state !== "idle";
   const { id, streetName, houseNumber, zip, city } = address;
 
   return (
@@ -86,16 +83,7 @@ function LocationCard({ address }: { address: Address }) {
         <Button size="sm" variant="outline" asChild>
           <Link to={`${id}/edit`}>Edit</Link>
         </Button>
-        <deleteFetcher.Form method="POST" action={`${id}/delete`}>
-          <Button
-            type="submit"
-            size="sm"
-            variant="destructive-outline"
-            disabled={isDeleting}
-          >
-            {isDeleting ? "Deleting…" : "Delete"}
-          </Button>
-        </deleteFetcher.Form>
+        <AdminDeleteButton action={`${id}/delete`} />
       </div>
     </Card>
   );

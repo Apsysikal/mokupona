@@ -1,70 +1,29 @@
-import {
-  getFormProps,
-  getInputProps,
-  useForm,
-  type SubmissionResult,
-} from "@conform-to/react";
-import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import { Form, redirect, useLocation } from "react-router";
+import { redirect, useLocation } from "react-router";
 
 import type { Route } from "./+types/admin.board-members.new";
 
-import { Field, fileFieldClassName } from "~/components/forms";
-import { Button } from "~/components/ui/button";
-import { requireUserWithRole } from "~/features/auth/guards.server";
-import { MemberSchema, validImageTypes } from "~/features/board-members/schema";
+import { AdminBoardMemberForm } from "~/features/board-members/admin-board-member-form";
+import { MemberSchema } from "~/features/board-members/schema";
+import { withParsedImageForm } from "~/features/uploads/image-form-action.server";
 import { createBoardMember } from "~/models/board-member.server";
 import { fileToImageData } from "~/models/image.server";
-import { parseImageFormData } from "~/utils/image-upload.server";
-
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-  return {};
-}
 
 export async function action({ request }: Route.ActionArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
-  const uploadResult = await parseImageFormData(request, "image");
-
-  if (!uploadResult.success) {
-    // folded into the conform result so actionData has a single shape
-    return {
-      status: "error",
-      error: { image: [uploadResult.uploadError] },
-    } satisfies SubmissionResult;
-  }
-
-  const submission = parseWithZod(uploadResult.formData, {
+  return withParsedImageForm(request, {
+    fieldName: "image",
     schema: MemberSchema,
+    async onSuccess({ value }) {
+      const { name, position, image } = value;
+
+      await createBoardMember({
+        name,
+        position,
+        ...(image && { image: await fileToImageData(image) }),
+      });
+
+      return redirect("/admin/board-members/new");
+    },
   });
-
-  if (
-    submission.status !== "success" &&
-    submission.payload &&
-    submission.payload.image
-  ) {
-    // Remove the uploaded file from disk.
-    // It will be sent again when submitting.
-    await uploadResult.discardImage();
-  }
-
-  if (submission.status !== "success" || !submission.value) {
-    return submission.reply();
-  }
-
-  const { name, position, image } = submission.value;
-
-  await createBoardMember({
-    name,
-    position,
-    ...(image && { image: await fileToImageData(image) }),
-  });
-
-  // Remove the staged file from disk now that its bytes have been read.
-  await uploadResult.discardImage();
-
-  return redirect("/admin/board-members/new");
 }
 
 export const meta: Route.MetaFunction = () => {
@@ -76,65 +35,13 @@ export default function BoardMemberNewRoute({
 }: Route.ComponentProps) {
   const location = useLocation();
 
-  return <BoardMemberForm key={location.key} actionData={actionData} />;
-}
-
-function BoardMemberForm({
-  actionData,
-}: {
-  actionData: Route.ComponentProps["actionData"];
-}) {
-  const [form, fields] = useForm({
-    lastResult: actionData,
-    shouldValidate: "onBlur",
-    constraint: getZodConstraint(MemberSchema),
-    onValidate({ formData }) {
-      return parseWithZod(formData, { schema: MemberSchema });
-    },
-  });
-
   return (
-    <>
-      <div className="flex flex-col gap-3">
-        <h2 className="text-3xl">Add a board member</h2>
-        <p>
-          This will add a new board member. Careful, information entered here
-          will be displayed on the website.
-        </p>
-      </div>
-
-      <Form
-        method="POST"
-        encType="multipart/form-data"
-        replace
-        className="mt-6 flex flex-col gap-6"
-        {...getFormProps(form)}
-      >
-        <Field
-          labelProps={{ children: "Name" }}
-          inputProps={{ ...getInputProps(fields.name, { type: "text" }) }}
-          errors={fields.name.errors}
-        />
-
-        <Field
-          labelProps={{ children: "Position" }}
-          inputProps={{ ...getInputProps(fields.position, { type: "text" }) }}
-          errors={fields.position.errors}
-        />
-
-        <Field
-          labelProps={{ children: "Photo" }}
-          inputProps={{
-            ...getInputProps(fields.image, { type: "file" }),
-            tabIndex: 0,
-            accept: validImageTypes.join(","),
-            className: fileFieldClassName,
-          }}
-          errors={fields.image.errors}
-        />
-
-        <Button type="submit">Add new board member</Button>
-      </Form>
-    </>
+    <AdminBoardMemberForm
+      key={location.key}
+      lastResult={actionData}
+      heading="Add a board member"
+      description="This will add a new board member. Careful, information entered here will be displayed on the website."
+      submitText="Add new board member"
+    />
   );
 }

@@ -9,31 +9,35 @@ import { ChevronLeftIcon } from "@radix-ui/react-icons";
 import { Link } from "react-router";
 import type z from "zod";
 
-import { Field, fileFieldClassName, SelectField, TextareaField } from "./forms";
-import { SectionNav } from "./section-nav";
-import { SignupFormBuilder } from "./signup-form-builder";
-import { Button } from "./ui/button";
+import type { EventEditSchema } from "../event-schema";
+import type { AddressOptionModel } from "../view-models";
+
+import {
+  Field,
+  fileFieldClassName,
+  SelectField,
+  TextareaField,
+} from "~/components/forms";
+import { SectionNav } from "~/components/section-nav";
+import { SignupFormBuilder } from "~/components/signup-form-builder";
+import { Button } from "~/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "./ui/card";
-
+} from "~/components/ui/card";
 import { cn } from "~/lib/utils";
-import { EventSchema } from "~/utils/event-validation";
-
-const EventFormSchema = EventSchema.partial({ cover: true });
+import { VALID_IMAGE_TYPES } from "~/shared/image";
 
 type FieldsetOf<Schema extends z.ZodType> = {
   [K in keyof z.input<Schema>]-?: FieldMetadata<z.input<Schema>[K]>;
 };
 
-type UpdatedAdminDinnerFormProps = {
-  fields: FieldsetOf<typeof EventFormSchema>;
-  addressOptions: Array<{ label: string; value: string }>;
-  validImageTypes: string[];
+type AdminEventFormProps = {
+  fields: FieldsetOf<typeof EventEditSchema>;
+  addressOptions: AddressOptionModel[];
   submitText: string;
   pageTitle: string;
   cancelHref: string;
@@ -48,23 +52,6 @@ const SECTIONS = [
   { id: "section-cover-location", label: "Cover & location" },
   { id: "section-signup-form", label: "Signup form" },
 ];
-
-// Shared by the dinner create and edit routes so the address label format
-// can't drift between the two pages.
-export function toAddressOptions(
-  addresses: Array<{
-    id: string;
-    streetName: string;
-    houseNumber: string;
-    zip: string;
-    city: string;
-  }>,
-) {
-  return addresses.map((address) => ({
-    label: `${address.streetName} ${address.houseNumber} - ${address.zip} ${address.city}`,
-    value: address.id,
-  }));
-}
 
 function SectionCard({
   id,
@@ -129,15 +116,14 @@ function SaveBar({
   );
 }
 
-export function AdminDinnerForm({
+export function AdminEventForm({
   fields,
   addressOptions,
-  validImageTypes,
   submitText,
   pageTitle,
   cancelHref,
   lockFieldKeys,
-}: UpdatedAdminDinnerFormProps) {
+}: AdminEventFormProps) {
   return (
     <div className="flex flex-col gap-4 md:gap-6">
       <div>
@@ -256,7 +242,7 @@ export function AdminDinnerForm({
               inputProps={{
                 ...getInputProps(fields.cover, { type: "file" }),
                 tabIndex: 0,
-                accept: validImageTypes.join(","),
+                accept: VALID_IMAGE_TYPES.join(","),
                 // reads as a dashed dropzone (design system §9 file-upload)
                 className: fileFieldClassName,
               }}

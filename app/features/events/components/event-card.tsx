@@ -1,27 +1,30 @@
-import { CalendarIcon, PersonIcon, SewingPinIcon } from "@radix-ui/react-icons";
 import { Link } from "react-router";
 
-import { CreditCardIcon } from "./icons";
-import { SecondaryCTA } from "./section";
-import { Badge } from "./ui/badge";
-import { Button } from "./ui/button";
+import { formatEventMonthYear } from "../date-format";
+import type { EventCardModel } from "../view-models";
 
-import type { Address, Event } from "~/models/event.server";
-import { OptimizedImage } from "~/routes/file.$fileId";
-import { formatEventDateLine, formatEventMonthYear } from "~/utils/misc";
+import {
+  EventDateHeading,
+  EventLocationFact,
+  EventPriceFact,
+  EventSeatsFact,
+} from "./event-facts";
+
+import { OptimizedImage } from "~/components/optimized-image";
+import { SecondaryCTA } from "~/components/section";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 
 // the one upcoming dinner gets the whole spotlight: image + pill on the
 // left, date/title/stats/CTAs on the right (design handoff §2)
-export function FeaturedDinnerCard({
+export function FeaturedEventCard({
   event,
   isNext = true,
 }: {
-  event: Event & { address: Address };
+  event: EventCardModel;
   /** the "next dinner" pill belongs on the soonest dinner only */
   isNext?: boolean;
 }) {
-  const eventDate = new Date(event.date);
-
   return (
     <article className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border md:flex-row">
       <div className="relative min-h-44 md:min-h-80 md:w-[46%]">
@@ -40,12 +43,7 @@ export function FeaturedDinnerCard({
       </div>
 
       <div className="flex flex-col justify-center gap-3 p-5 md:w-[54%] md:gap-4 md:p-10">
-        <span className="text-primary flex items-center gap-2 text-sm font-semibold">
-          <CalendarIcon className="size-4" />
-          <time dateTime={eventDate.toISOString()} suppressHydrationWarning>
-            {formatEventDateLine(eventDate, "long")}
-          </time>
-        </span>
+        <EventDateHeading date={event.date} />
 
         <h2 className="text-2xl font-light tracking-tight md:text-3xl">
           {event.title}
@@ -56,20 +54,9 @@ export function FeaturedDinnerCard({
         </p>
 
         <div className="text-foreground/80 border-border flex flex-wrap gap-4 border-y py-3 text-sm md:gap-6">
-          <span className="flex items-center gap-2">
-            <SewingPinIcon className="text-foreground/50 size-4" />
-            <span className="sr-only">location</span>
-            {`${event.address.zip} ${event.address.city}`.toLowerCase()}
-          </span>
-          <span className="flex items-center gap-2">
-            <CreditCardIcon className="text-foreground/50 size-4" />
-            <span className="sr-only">price</span>
-            {event.price} chf
-          </span>
-          <span className="flex items-center gap-2">
-            <PersonIcon className="text-foreground/50 size-4" />
-            {event.slots} seats
-          </span>
+          <EventLocationFact addressLine={event.addressLine} />
+          <EventPriceFact price={event.price} />
+          <EventSeatsFact slots={event.slots} />
         </div>
 
         <div className="mt-1 flex flex-col gap-4 md:flex-row md:items-center md:gap-5">
@@ -86,7 +73,7 @@ export function FeaturedDinnerCard({
 }
 
 // quiet archive tile: image, month label, title
-export function PastDinnerCard({ event }: { event: Event }) {
+export function PastEventCard({ event }: { event: EventCardModel }) {
   const eventDate = new Date(event.date);
 
   return (
