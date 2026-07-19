@@ -1,9 +1,4 @@
-import {
-  FormProvider,
-  getFormProps,
-  useForm,
-  type SubmissionResult,
-} from "@conform-to/react";
+import { FormProvider, getFormProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { Form, redirect } from "react-router";
 
@@ -23,7 +18,7 @@ import {
   defaultBuilderRows,
   descriptorsToBuilderRows,
 } from "~/features/signup-form/builder";
-import { parseImageFormData } from "~/features/uploads/image-upload.server";
+import { withParsedImageForm } from "~/features/uploads/image-form-action.server";
 import { getAddresses } from "~/models/address.server";
 import { getEventById, updateEvent } from "~/models/event.server";
 import { eventHasSignups } from "~/models/form-submission.server";
@@ -67,81 +62,62 @@ export async function action({ request, params, context }: Route.ActionArgs) {
 
   const { dinnerId } = params;
 
-  const uploadResult = await parseImageFormData(request, "cover");
-
-  if (!uploadResult.success) {
-    // folded into the conform result so actionData has a single shape
-    return {
-      status: "error",
-      error: { cover: [uploadResult.uploadError] },
-    } satisfies SubmissionResult;
-  }
-
-  // Every exit below — validation failure (the file is sent again on
-  // resubmit), success, or a thrown error — is done with the staged temp
-  // file, so one idempotent discard in `finally` covers them all.
-  try {
-    const submission = parseWithZod(uploadResult.formData, {
-      schema,
-    });
-
-    if (submission.status !== "success" || !submission.value) {
-      return submission.reply();
-    }
-
-    const {
-      title,
-      description,
-      date,
-      slots,
-      price,
-      discounts,
-      cover,
-      addressId,
-      signupForm,
-    } = submission.value;
-
-    const menuDescriptionUpdateValue = nullableStringUpdateValue({
-      formData: uploadResult.formData,
-      fieldName: "menuDescription",
-    });
-    const donationDescriptionUpdateValue = nullableStringUpdateValue({
-      formData: uploadResult.formData,
-      fieldName: "donationDescription",
-    });
-
-    // event data, the swapped cover image, and the authored form persist in
-    // one transaction (updateEvent creates the new image, repoints the event
-    // and deletes the old image atomically); the form follows the §9
-    // versioning policy (deep-equal skip / in-place while unsubmitted / new
-    // version), validated by SignupFormSchema inside EventSchema's signupForm
-    // field
-    const event = await updateEvent(
-      dinnerId,
-      {
+  return withParsedImageForm(request, {
+    fieldName: "cover",
+    schema,
+    async onSuccess({ value, formData }) {
+      const {
         title,
         description,
-        ...(menuDescriptionUpdateValue !== undefined && {
-          menuDescription: menuDescriptionUpdateValue,
-        }),
-        ...(donationDescriptionUpdateValue !== undefined && {
-          donationDescription: donationDescriptionUpdateValue,
-        }),
-        date: toUtcEventDate(date),
+        date,
         slots,
         price,
         discounts,
+        cover,
         addressId,
-        ...(cover && { image: await fileToImageData(cover) }),
-        createdById: user.id,
-      },
-      builderRowsToDescriptors(signupForm),
-    );
+        signupForm,
+      } = value;
 
-    return redirect(`/admin/dinners/${event.id}`);
-  } finally {
-    await uploadResult.discardImage();
-  }
+      const menuDescriptionUpdateValue = nullableStringUpdateValue({
+        formData,
+        fieldName: "menuDescription",
+      });
+      const donationDescriptionUpdateValue = nullableStringUpdateValue({
+        formData,
+        fieldName: "donationDescription",
+      });
+
+      // event data, the swapped cover image, and the authored form persist in
+      // one transaction (updateEvent creates the new image, repoints the event
+      // and deletes the old image atomically); the form follows the §9
+      // versioning policy (deep-equal skip / in-place while unsubmitted / new
+      // version), validated by SignupFormSchema inside EventSchema's signupForm
+      // field
+      const event = await updateEvent(
+        dinnerId,
+        {
+          title,
+          description,
+          ...(menuDescriptionUpdateValue !== undefined && {
+            menuDescription: menuDescriptionUpdateValue,
+          }),
+          ...(donationDescriptionUpdateValue !== undefined && {
+            donationDescription: donationDescriptionUpdateValue,
+          }),
+          date: toUtcEventDate(date),
+          slots,
+          price,
+          discounts,
+          addressId,
+          ...(cover && { image: await fileToImageData(cover) }),
+          createdById: user.id,
+        },
+        builderRowsToDescriptors(signupForm),
+      );
+
+      return redirect(`/admin/dinners/${event.id}`);
+    },
+  });
 }
 
 export const meta: Route.MetaFunction = ({ loaderData }) => {

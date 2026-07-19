@@ -1,9 +1,4 @@
-import {
-  FormProvider,
-  getFormProps,
-  useForm,
-  type SubmissionResult,
-} from "@conform-to/react";
+import { FormProvider, getFormProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { Form, redirect } from "react-router";
 
@@ -18,7 +13,7 @@ import {
   builderRowsToDescriptors,
   defaultBuilderRows,
 } from "~/features/signup-form/builder";
-import { parseImageFormData } from "~/features/uploads/image-upload.server";
+import { withParsedImageForm } from "~/features/uploads/image-form-action.server";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
 import { fileToImageData } from "~/models/image.server";
@@ -36,66 +31,47 @@ export async function loader() {
 export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext);
 
-  const uploadResult = await parseImageFormData(request, "cover");
-
-  if (!uploadResult.success) {
-    // folded into the conform result so actionData has a single shape
-    return {
-      status: "error",
-      error: { cover: [uploadResult.uploadError] },
-    } satisfies SubmissionResult;
-  }
-
-  // Every exit below — validation failure (the file is sent again on
-  // resubmit), success, or a thrown error — is done with the staged temp
-  // file, so one idempotent discard in `finally` covers them all.
-  try {
-    const submission = parseWithZod(uploadResult.formData, {
-      schema: EventSchema,
-    });
-
-    if (submission.status !== "success" || !submission.value) {
-      return submission.reply();
-    }
-
-    const {
-      title,
-      description,
-      menuDescription,
-      donationDescription,
-      date,
-      slots,
-      price,
-      discounts,
-      cover,
-      addressId,
-      signupForm,
-    } = submission.value;
-
-    const event = await createEvent(
-      {
+  return withParsedImageForm(request, {
+    fieldName: "cover",
+    schema: EventSchema,
+    async onSuccess({ value }) {
+      const {
         title,
         description,
         menuDescription,
         donationDescription,
-        date: toUtcEventDate(date),
+        date,
         slots,
         price,
         discounts,
+        cover,
         addressId,
-        // the image row is created inside createEvent's transaction, so a
-        // failed event write can no longer leak it
-        image: await fileToImageData(cover),
-        createdById: user.id,
-      },
-      // validated by SignupFormSchema inside EventSchema's signupForm field
-      builderRowsToDescriptors(signupForm),
-    );
+        signupForm,
+      } = value;
 
-    return redirect(`/admin/dinners/${event.id}`);
-  } finally {
-    await uploadResult.discardImage();
-  }
+      const event = await createEvent(
+        {
+          title,
+          description,
+          menuDescription,
+          donationDescription,
+          date: toUtcEventDate(date),
+          slots,
+          price,
+          discounts,
+          addressId,
+          // the image row is created inside createEvent's transaction, so a
+          // failed event write can no longer leak it
+          image: await fileToImageData(cover),
+          createdById: user.id,
+        },
+        // validated by SignupFormSchema inside EventSchema's signupForm field
+        builderRowsToDescriptors(signupForm),
+      );
+
+      return redirect(`/admin/dinners/${event.id}`);
+    },
+  });
 }
 
 export const meta: Route.MetaFunction = () => {

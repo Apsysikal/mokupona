@@ -1,9 +1,4 @@
-import {
-  getFormProps,
-  getInputProps,
-  useForm,
-  type SubmissionResult,
-} from "@conform-to/react";
+import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { Form, redirect, useLocation } from "react-router";
 
@@ -12,46 +7,27 @@ import type { Route } from "./+types/admin.board-members.new";
 import { Field, fileFieldClassName } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { MemberSchema } from "~/features/board-members/schema";
-import { parseImageFormData } from "~/features/uploads/image-upload.server";
+import { withParsedImageForm } from "~/features/uploads/image-form-action.server";
 import { createBoardMember } from "~/models/board-member.server";
 import { fileToImageData } from "~/models/image.server";
 import { VALID_IMAGE_TYPES } from "~/shared/image";
 
 export async function action({ request }: Route.ActionArgs) {
-  const uploadResult = await parseImageFormData(request, "image");
+  return withParsedImageForm(request, {
+    fieldName: "image",
+    schema: MemberSchema,
+    async onSuccess({ value }) {
+      const { name, position, image } = value;
 
-  if (!uploadResult.success) {
-    // folded into the conform result so actionData has a single shape
-    return {
-      status: "error",
-      error: { image: [uploadResult.uploadError] },
-    } satisfies SubmissionResult;
-  }
+      await createBoardMember({
+        name,
+        position,
+        ...(image && { image: await fileToImageData(image) }),
+      });
 
-  // Every exit below — validation failure (the file is sent again on
-  // resubmit), success, or a thrown error — is done with the staged temp
-  // file, so one idempotent discard in `finally` covers them all.
-  try {
-    const submission = parseWithZod(uploadResult.formData, {
-      schema: MemberSchema,
-    });
-
-    if (submission.status !== "success" || !submission.value) {
-      return submission.reply();
-    }
-
-    const { name, position, image } = submission.value;
-
-    await createBoardMember({
-      name,
-      position,
-      ...(image && { image: await fileToImageData(image) }),
-    });
-
-    return redirect("/admin/board-members/new");
-  } finally {
-    await uploadResult.discardImage();
-  }
+      return redirect("/admin/board-members/new");
+    },
+  });
 }
 
 export const meta: Route.MetaFunction = () => {
