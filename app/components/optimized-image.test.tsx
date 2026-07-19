@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { OptimizedImage } from "./optimized-image";
 
-import type { ImageProviderConfig } from "~/shared/image";
+import type { ImageDisplaySource, ImageProviderConfig } from "~/shared/image";
 
 // the component reads delivery config from the root loader; pin it per test
 const mocks = vi.hoisted(() => ({
@@ -17,7 +17,7 @@ vi.mock("~/shared/root-data", () => ({
   useImageConfig: mocks.useImageConfig,
 }));
 
-const image = {
+const image: ImageDisplaySource = {
   id: "img-1",
   storageKey: "abc123",
   version: 3,
@@ -26,7 +26,7 @@ const image = {
   blurDataUrl: "data:image/webp;base64,dGlueQ==",
 };
 
-function renderImage(overrides: Partial<typeof image> = {}) {
+function renderImage(overrides: Partial<ImageDisplaySource> = {}) {
   return render(
     <OptimizedImage
       image={{ ...image, ...overrides }}
