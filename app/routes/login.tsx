@@ -18,7 +18,7 @@ import {
   emailSchema,
   parseRequestForm,
 } from "~/features/auth/form-schemas";
-import { anonymousAuthPageLoader } from "~/features/auth/guards.server";
+import { anonymousAuthPageLoader } from "~/features/auth/middleware.server";
 import { logger } from "~/logger.server";
 import {
   getClientIPAddress,

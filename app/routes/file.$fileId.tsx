@@ -6,25 +6,35 @@ import {
   fileStorage as cache,
   getStorageKey as getCacheKey,
 } from "~/features/uploads/file-cache-storage.server";
-import { logger } from "~/logger.server";
 import { getImageById } from "~/models/image.server";
 import { requireFound } from "~/shared/http.server";
 import { IMAGE_FITS } from "~/shared/image";
 import { transformToWebp } from "~/utils/image-transform.server";
 
-// Current responsive variants top out at 1080px. A 2048px ceiling leaves
-// room for larger high-density uses without allowing unbounded transforms or
-// cache-key proliferation from arbitrary dimensions.
-const MAX_IMAGE_DIMENSION = 2048;
+// Transform URLs outlive the components that emitted them (scraped og:image
+// previews, sent emails, open tabs), so numeric dimensions are normalized
+// rather than rejected: each snaps to the nearest ladder rung. That keeps
+// every historically published URL serving an image while bounding the
+// unauthenticated, never-evicted cache to ladder² × fits variants per image
+// instead of one per arbitrary (w, h) pair. The rungs are the union of every
+// geometry the app currently emits — RESPONSIVE_IMAGE_WIDTHS, the
+// OptimizedImage call sites' width/height props, and their aspect-derived
+// srcset heights — plus a few spacers up to a 2048 ceiling; a changed call
+// site serves a near-identical crop until its geometry is added here.
+const DIMENSION_LADDER = [
+  96, 172, 208, 236, 324, 357, 432, 480, 486, 536, 640, 648, 714, 810, 864,
+  893, 1080, 1296, 1536, 2048,
+];
+
+function snapToDimensionLadder(value: number): number {
+  return DIMENSION_LADDER.reduce((closest, rung) =>
+    Math.abs(rung - value) < Math.abs(closest - value) ? rung : closest,
+  );
+}
 
 const SearchParamsSchema = z.object({
-  width: z.coerce.number().int().positive().max(MAX_IMAGE_DIMENSION).optional(),
-  height: z.coerce
-    .number()
-    .int()
-    .positive()
-    .max(MAX_IMAGE_DIMENSION)
-    .optional(),
+  width: z.coerce.number().transform(snapToDimensionLadder).optional(),
+  height: z.coerce.number().transform(snapToDimensionLadder).optional(),
   fit: z.enum(IMAGE_FITS).optional().default("cover"),
 });
 
@@ -56,8 +66,6 @@ export async function loader({ url, params }: Route.LoaderArgs) {
     fit: searchParams.get("fit") ?? undefined,
   });
 
-  logger.info(JSON.stringify(options));
-
   if (!options.success) {
     // Params were malformed
     throw new Response("Bad request", {
@@ -68,14 +76,10 @@ export async function loader({ url, params }: Route.LoaderArgs) {
   const { width, height, fit } = options.data;
   const cacheKey = getCacheKey(`${fileId}-${width}-${height}-${fit}`);
 
-  logger.info(`Checking cache with: ${cacheKey}`);
-
   const cachedFile = await cache.get(cacheKey);
   if (cachedFile) {
-    logger.info(`Cache hit with: ${cacheKey}`);
     return createImageResponse(cachedFile, fileId);
   }
-  logger.info(`Cache miss with: ${cacheKey}`);
 
   const file = requireFound(await getImageById(fileId));
 

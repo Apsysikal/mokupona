@@ -14,9 +14,9 @@ type ParsedImageFormOptions<Schema extends $ZodType, Result> = {
 };
 
 /**
- * Run the common multipart image-action lifecycle: stage the upload, report
- * upload and schema errors as a Conform result, invoke the route-specific
- * write, and remove the staged file on every exit after a successful parse.
+ * Run the common multipart image-action lifecycle: parse the upload, report
+ * upload and schema errors as a Conform result, and invoke the route-specific
+ * write.
  *
  * The callback also receives the original FormData because update actions may
  * need to distinguish an omitted field from an explicitly submitted blank.
@@ -34,18 +34,14 @@ export async function withParsedImageForm<Schema extends $ZodType, Result>(
     } satisfies SubmissionResult;
   }
 
-  try {
-    const submission = parseWithZod(uploadResult.formData, { schema });
+  const submission = parseWithZod(uploadResult.formData, { schema });
 
-    if (submission.status !== "success") {
-      return submission.reply();
-    }
-
-    return await onSuccess({
-      value: submission.value,
-      formData: uploadResult.formData,
-    });
-  } finally {
-    await uploadResult.discardImage();
+  if (submission.status !== "success") {
+    return submission.reply();
   }
+
+  return onSuccess({
+    value: submission.value,
+    formData: uploadResult.formData,
+  });
 }

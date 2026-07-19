@@ -51,31 +51,33 @@ function getTimezoneOffsetMinutes(date: Date): number {
   return (tzAsUtc - date.getTime()) / (60 * 1000);
 }
 
+const DATETIME_LOCAL_VALUE =
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/;
+
 /**
  * Convert a `datetime-local` value into UTC for storage in the database while
  * treating the wall-clock value as being in `EVENT_TIMEZONE`.
  */
-export function toUtcEventDate(date: Date): Date {
+export function toUtcEventDate(value: string): Date {
   // `datetime-local` inputs encode a wall-clock date/time without timezone
-  // information. By the time it reaches the server, `z.coerce.date()` has
-  // already interpreted that value in the server's local timezone. Recover the
-  // original wall-clock components and reinterpret them in the event timezone.
-  const year = date.getFullYear();
-  const month = date.getMonth();
-  const day = date.getDate();
-  const hour = date.getHours();
-  const minute = date.getMinutes();
-  const second = date.getSeconds();
-  const millisecond = date.getMilliseconds();
+  // information. Read the components straight off the string — routing it
+  // through `new Date()` first would interpret it in the server's local
+  // timezone, which is lossy inside that zone's DST spring-forward gap.
+  const match = DATETIME_LOCAL_VALUE.exec(value);
+  if (!match) {
+    throw new Error(`Not a datetime-local value: ${value}`);
+  }
+  const [, year, month, day, hour, minute, second, millisecond] = match;
 
+  // Date.UTC expects a zero-based month (January = 0), so subtract 1.
   const localDateTimeAsUtc = Date.UTC(
-    year,
-    month,
-    day,
-    hour,
-    minute,
-    second,
-    millisecond,
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute),
+    Number(second ?? "0"),
+    Number((millisecond ?? "0").padEnd(3, "0")),
   );
 
   let utcTimestamp = localDateTimeAsUtc;

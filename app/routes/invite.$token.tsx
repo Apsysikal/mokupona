@@ -72,7 +72,7 @@ export const loader = async ({ params, context }: Route.LoaderArgs) => {
     return { state: "dead-end" as const, reason: validity };
   }
 
-  const user = context.get(optionalUserContext);
+  const user = await context.get(optionalUserContext)();
 
   if (!user) {
     return {
@@ -128,7 +128,7 @@ export const action = async ({
   );
 
   if (intent === "accept") {
-    const user = context.get(optionalUserContext);
+    const user = await context.get(optionalUserContext)();
     if (!user || user.email !== invite.email) {
       return redirect(`/invite/${params.token}`);
     }

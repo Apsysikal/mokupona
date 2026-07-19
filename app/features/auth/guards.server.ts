@@ -1,8 +1,9 @@
 import { redirect } from "react-router";
 
-import { auth, googleAuthEnabled } from "./auth.server";
+import { auth } from "./auth.server";
 import { isRoleName, type RoleName } from "./roles";
 
+import { logger } from "~/logger.server";
 import type { Role } from "~/models/role.server";
 import type { User } from "~/models/user.server";
 import { getUserByIdWithRole } from "~/models/user.server";
@@ -15,11 +16,15 @@ import { getUserByIdWithRole } from "~/models/user.server";
 export type ValidatedUser = User & { role: Role & { name: RoleName } };
 
 // Prisma types Role.name as string; the guards are where persisted roles
-// enter the app, so validate against the vocabulary here (plan phase 1). A
-// stored name outside it is corrupt data, not a request error.
+// enter the app, so screen against the vocabulary here (plan phase 1). A
+// stored name outside it is corrupt data — surface it in the logs, but keep
+// the request alive: this runs for every request via root middleware, so a
+// hard failure would lock the account out of every page, logout included.
+// The cast is safe in practice because role checks compare against the
+// vocabulary (`assertUserHasRole`), which denies an unknown name everywhere.
 function validateRoleName(user: User & { role: Role }): ValidatedUser {
   if (!isRoleName(user.role.name)) {
-    throw new Error(
+    logger.error(
       `User ${user.id} has role "${user.role.name}" outside the role vocabulary`,
     );
   }
@@ -47,32 +52,7 @@ export async function getUserWithRole(request: Request) {
   throw await logout(request);
 }
 
-/**
- * Loader shared by the anonymous-only auth pages (login/join): bounce
- * signed-in users home and expose whether Google sign-in is configured.
- */
-export async function anonymousAuthPageLoader({
-  request,
-}: {
-  request: Request;
-}) {
-  const userId = await getUserId(request);
-  if (userId) throw redirect("/");
-  return { googleEnabled: googleAuthEnabled };
-}
-
-export async function requireUserId(
-  request: Request,
-  redirectTo: string = new URL(request.url).pathname,
-) {
-  const userId = await getUserId(request);
-  if (!userId) {
-    throw loginRedirect(redirectTo);
-  }
-  return userId;
-}
-
-function loginRedirect(redirectTo: string) {
+export function loginRedirect(redirectTo: string) {
   const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
   return redirect(`/login?${searchParams}`);
 }
@@ -98,22 +78,6 @@ export function requireResolvedUserWithRole(
     throw loginRedirect(new URL(request.url).pathname);
   }
   return assertUserHasRole(user, roles);
-}
-
-/**
- * Require a session whose user holds one of `roles`. Throws a login redirect
- * for anonymous requests, a logout redirect for a stale session, and a 403
- * response for a user outside `roles`.
- */
-export async function requireUserWithRole(
-  request: Request,
-  roles: readonly RoleName[],
-) {
-  return requireResolvedUserWithRole(
-    await getUserWithRole(request),
-    request,
-    roles,
-  );
 }
 
 export async function logout(request: Request) {

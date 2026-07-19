@@ -15,7 +15,6 @@ const mocks = vi.hoisted(() => ({
   cachePut: vi.fn(),
   getImageById: vi.fn(),
   transformToWebp: vi.fn(),
-  loggerInfo: vi.fn(),
 }));
 
 vi.mock("~/features/uploads/file-cache-storage.server", () => ({
@@ -24,10 +23,6 @@ vi.mock("~/features/uploads/file-cache-storage.server", () => ({
     put: mocks.cachePut,
   },
   getStorageKey: (id: string) => `file-${id}`,
-}));
-
-vi.mock("~/logger.server", () => ({
-  logger: { info: mocks.loggerInfo },
 }));
 
 vi.mock("~/models/image.server", () => ({
@@ -62,8 +57,8 @@ afterEach(() => {
 });
 
 describe("image resource route", () => {
-  it.each(["?w=0", "?h=-1", "?w=1.5", "?h=2049"])(
-    "rejects an unsafe dimension in %s before consulting the cache",
+  it.each(["?w=abc", "?h=12px", "?fit=stretch"])(
+    "rejects malformed params in %s before consulting the cache",
     async (query) => {
       await expect(loadImage(query)).rejects.toMatchObject({ status: 400 });
 
@@ -71,6 +66,31 @@ describe("image resource route", () => {
       expect(mocks.transformToWebp).not.toHaveBeenCalled();
     },
   );
+
+  it.each([
+    // numeric dimensions snap to the nearest ladder rung so previously
+    // published URLs keep serving while the cache keyspace stays bounded
+    ["?w=2400&h=1600", 2048, 1536],
+    ["?w=433&h=242", 432, 236],
+    ["?w=0&h=2049", 96, 2048],
+  ])("normalizes dimensions in %s to the ladder", async (query, w, h) => {
+    mocks.cacheGet.mockResolvedValue(null);
+    mocks.getImageById.mockResolvedValue({
+      id: "image-id",
+      blob: new Uint8Array([1, 2, 3]),
+    });
+    mocks.transformToWebp.mockResolvedValue(Buffer.from("optimized-image"));
+    mocks.cachePut.mockResolvedValue(lazyFile("optimized-image"));
+
+    await loadImage(query);
+
+    expect(mocks.cacheGet).toHaveBeenCalledWith(`file-image-id-${w}-${h}-cover`);
+    expect(mocks.transformToWebp).toHaveBeenCalledWith(expect.anything(), {
+      width: w,
+      height: h,
+      fit: "cover",
+    });
+  });
 
   it("serves a cache hit after one lookup with the shared response headers", async () => {
     mocks.cacheGet.mockResolvedValue(lazyFile("cached-image"));
@@ -83,9 +103,6 @@ describe("image resource route", () => {
     );
     expect(mocks.getImageById).not.toHaveBeenCalled();
     expect(mocks.transformToWebp).not.toHaveBeenCalled();
-    expect(mocks.loggerInfo).toHaveBeenCalledWith(
-      "Cache hit with: file-image-id-undefined-undefined-cover",
-    );
     expectImageHeaders(response);
     await expect(response.text()).resolves.toBe("cached-image");
   });
@@ -112,9 +129,6 @@ describe("image resource route", () => {
     expect(mocks.cachePut).toHaveBeenCalledWith(
       "file-image-id-2048-1080-contain",
       expect.objectContaining({ name: "image-id", type: "image/webp" }),
-    );
-    expect(mocks.loggerInfo).toHaveBeenCalledWith(
-      "Cache miss with: file-image-id-2048-1080-contain",
     );
     expectImageHeaders(response);
     await expect(response.text()).resolves.toBe("optimized-image");

@@ -11,13 +11,19 @@ describe("buildCSVObject", () => {
       [['peanuts, "severe" allergy']],
     );
 
-    expect(data).toBe(`${BOM}Restrictions,\n"peanuts, ""severe"" allergy",\n`);
+    expect(data).toBe(`${BOM}Restrictions\n"peanuts, ""severe"" allergy"\n`);
   });
 
   it("quotes values containing separators or line breaks", () => {
     const { data } = buildCSVObject(["A", "B"], [["one,two", "three\nfour"]]);
 
-    expect(data).toBe(`${BOM}A,B,\n"one,two","three\nfour",\n`);
+    expect(data).toBe(`${BOM}A,B\n"one,two","three\nfour"\n`);
+  });
+
+  it("ends rows with the line break directly, without a trailing separator", () => {
+    const { data } = buildCSVObject(["A", "B"], [["1", "2"]], ";");
+
+    expect(data).toBe(`${BOM}A;B\n1;2\n`);
   });
 
   it("starts with a UTF-8 BOM and declares the charset so Excel decodes umlauts", () => {

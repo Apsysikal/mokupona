@@ -20,14 +20,12 @@ describe("toUtcEventDate / toDisplayEventDate round-trip", () => {
   test("round-trips a stored UTC instant", () => {
     const original = new Date("2024-06-15T19:00:00.000Z");
     const displayStr = toDisplayEventDate(original);
-    const roundTripped = toUtcEventDate(new Date(displayStr));
+    const roundTripped = toUtcEventDate(displayStr);
     expect(roundTripped.toISOString()).toBe(original.toISOString());
   });
 
   test("toUtcEventDate converts a datetime-local value to the Zurich UTC instant", () => {
-    const datetimeLocalAsDate = new Date("2024-06-15T21:00");
-
-    expect(toUtcEventDate(datetimeLocalAsDate).toISOString()).toBe(
+    expect(toUtcEventDate("2024-06-15T21:00").toISOString()).toBe(
       "2024-06-15T19:00:00.000Z",
     );
   });
@@ -40,22 +38,36 @@ describe("toUtcEventDate / toDisplayEventDate round-trip", () => {
   });
 
   test("toUtcEventDate produces a Date instance", () => {
-    const result = toUtcEventDate(new Date("2024-06-15T19:00:00.000Z"));
+    const result = toUtcEventDate("2024-06-15T19:00");
     expect(result).toBeInstanceOf(Date);
   });
 
+  test("toUtcEventDate rejects a value that is not datetime-local", () => {
+    expect(() => toUtcEventDate("15.06.2024 19:00")).toThrow(
+      "Not a datetime-local value",
+    );
+  });
+
   test("Europe/Zurich winter (CET): 18:00 local converts to 17:00Z", () => {
-    const datetimeLocalAsDate = new Date("2024-12-10T18:00");
-    const utc = toUtcEventDate(datetimeLocalAsDate);
+    const utc = toUtcEventDate("2024-12-10T18:00");
 
     expect(utc.toISOString()).toBe("2024-12-10T17:00:00.000Z");
   });
 
   test("Europe/Zurich summer (CEST): 18:00 local converts to 16:00Z", () => {
-    const datetimeLocalAsDate = new Date("2024-06-10T18:00");
-    const utc = toUtcEventDate(datetimeLocalAsDate);
+    const utc = toUtcEventDate("2024-06-10T18:00");
 
     expect(utc.toISOString()).toBe("2024-06-10T16:00:00.000Z");
+  });
+
+  test("Zurich spring-forward gap: the nonexistent 02:30 resolves past the gap, independent of server timezone", () => {
+    // 2025-03-30 02:00–03:00 does not exist in Zurich (CET -> CEST). The
+    // wall clock is read off the string, so a server in a DST-observing zone
+    // no longer shifts it; the offset iteration settles on 01:30Z (03:30
+    // CEST) deterministically.
+    const utc = toUtcEventDate("2025-03-30T02:30");
+
+    expect(utc.toISOString()).toBe("2025-03-30T01:30:00.000Z");
   });
 
   test("Europe/Zurich winter (CET): 17:00Z displays as 18:00", () => {

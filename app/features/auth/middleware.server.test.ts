@@ -75,7 +75,7 @@ describe("resolved-user role middleware", () => {
     const request = new Request("http://localhost:3000/admin/dinners");
     const context = new RouterContextProvider();
     await resolveUser(request, context);
-    expect(context.get(optionalUserContext)).toBeNull();
+    await expect(context.get(optionalUserContext)()).resolves.toBeNull();
     const thrown = await runMiddleware(
       requireResolvedUserRoleMiddleware(ADMIN_ROLE_NAMES),
       request,
@@ -184,8 +184,12 @@ describe("resolved-user role middleware", () => {
     // produce this state — force the lookup miss the guard defends against
     vi.mocked(getUserByIdWithRole).mockResolvedValueOnce(null);
     const context = new RouterContextProvider();
+    await resolveUser(request, context);
 
-    const thrown = await resolveUser(request, context).catch((error) => error);
+    // resolution is lazy — the logout redirect surfaces at the first consumer
+    const thrown = await context
+      .get(optionalUserContext)()
+      .catch((error) => error);
 
     expect(thrown).toBeInstanceOf(Response);
     expect((thrown as Response).status).toBe(302);

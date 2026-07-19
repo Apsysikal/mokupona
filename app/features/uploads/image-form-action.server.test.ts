@@ -41,14 +41,12 @@ describe("withParsedImageForm", () => {
     expect(onSuccess).not.toHaveBeenCalled();
   });
 
-  it("returns Conform validation errors and discards the staged image", async () => {
+  it("returns Conform validation errors without invoking the callback", async () => {
     const formData = new FormData();
     formData.set("name", "");
-    const discardImage = vi.fn().mockResolvedValue(undefined);
     parseImageFormDataMock.mockResolvedValue({
       success: true,
       formData,
-      discardImage,
     });
     const onSuccess = vi.fn();
 
@@ -63,17 +61,14 @@ describe("withParsedImageForm", () => {
       error: { name: ["Name is required"] },
     });
     expect(onSuccess).not.toHaveBeenCalled();
-    expect(discardImage).toHaveBeenCalledOnce();
   });
 
-  it("passes the parsed value and original FormData to the callback before cleanup", async () => {
+  it("passes the parsed value and original FormData to the callback", async () => {
     const formData = new FormData();
     formData.set("name", "Board member");
-    const discardImage = vi.fn().mockResolvedValue(undefined);
     parseImageFormDataMock.mockResolvedValue({
       success: true,
       formData,
-      discardImage,
     });
     const successResult = { id: "member-id" };
     const onSuccess = vi.fn().mockResolvedValue(successResult);
@@ -89,17 +84,14 @@ describe("withParsedImageForm", () => {
       value: { name: "Board member" },
       formData,
     });
-    expect(discardImage).toHaveBeenCalledOnce();
   });
 
-  it("discards the staged image and preserves an error thrown by the callback", async () => {
+  it("preserves an error thrown by the callback", async () => {
     const formData = new FormData();
     formData.set("name", "Board member");
-    const discardImage = vi.fn().mockResolvedValue(undefined);
     parseImageFormDataMock.mockResolvedValue({
       success: true,
       formData,
-      discardImage,
     });
     const callbackError = new Error("Write failed");
 
@@ -112,6 +104,5 @@ describe("withParsedImageForm", () => {
     });
 
     await expect(result).rejects.toBe(callbackError);
-    expect(discardImage).toHaveBeenCalledOnce();
   });
 });

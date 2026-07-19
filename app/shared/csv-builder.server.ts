@@ -48,7 +48,7 @@ function sanitizeCSVValue(value: string) {
 }
 
 function arrayToCSVString(array: string[], separator = ","): string {
-  return [...array, newLine].join(separator);
+  return array.join(separator) + newLine;
 }
 
 function nestedArrayToCSVString(array: string[][], separator = ","): string {

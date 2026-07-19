@@ -48,7 +48,7 @@ export const middleware: Route.MiddlewareFunction[] = [
 
 export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const domainUrl = getDomainUrl(request);
-  const user = context.get(optionalUserContext);
+  const user = await context.get(optionalUserContext)();
   const nextEvent = await getNextEvent();
   const { toast, headers } = await getToast(request);
   const allowIndexing = process.env.ALLOW_INDEXING !== "false";

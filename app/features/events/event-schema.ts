@@ -9,7 +9,21 @@ export const EventSchema = z.object({
   description: z.string({ error: "Description is required" }).trim(),
   menuDescription: z.string().trim().optional(),
   donationDescription: z.string().trim().optional(),
-  date: z.coerce.date({ error: "Date is required" }),
+  // `datetime-local` submits a wall-clock string without timezone info. It
+  // stays a string here — coercing through `new Date()` would interpret it in
+  // the runtime's local timezone, which is lossy inside that zone's DST
+  // spring-forward gap; the server converts it with `toUtcEventDate`, which
+  // owns the event-timezone semantics.
+  date: z
+    .string({ error: "Date is required" })
+    .regex(
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?$/,
+      "Date is required",
+    )
+    .refine(
+      (value) => !Number.isNaN(new Date(value).getTime()),
+      "Date is required",
+    ),
   slots: z
     .number({ error: "Slots is required" })
     .min(0, "Slots cannot be less than 0")

@@ -12,7 +12,7 @@ import { Input } from "~/components/ui/input";
 import { auth } from "~/features/auth/auth.server";
 import { GoogleSignInButton } from "~/features/auth/components/google-button";
 import { displayNameSchema, emailSchema } from "~/features/auth/form-schemas";
-import { anonymousAuthPageLoader } from "~/features/auth/guards.server";
+import { anonymousAuthPageLoader } from "~/features/auth/middleware.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
 import { logger } from "~/logger.server";
 import { getUserByEmail } from "~/models/user.server";

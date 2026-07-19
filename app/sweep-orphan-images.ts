@@ -23,13 +23,12 @@ async function sweep() {
   console.log(`Deleted ${count} orphan image(s).`);
 }
 
-sweep()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(() => {
-    // better-sqlite3 is synchronous; nothing keeps the event loop alive, but
-    // exit explicitly so the script never hangs a shell on driver changes.
-    process.exit();
-  });
+// No explicit process.exit(): it does not wait for piped stdout and can
+// swallow the report line under npm/CI. better-sqlite3 is synchronous and
+// holds no open handles, so the event loop drains on its own; should a
+// future driver change make this hang, disconnect the client through a
+// model helper instead of exiting.
+sweep().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
