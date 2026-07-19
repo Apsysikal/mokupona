@@ -21,25 +21,31 @@
 ## Remaining steps
 
 ### 1. Ship release 1 to staging
+
 1. Push `feat/cloudinary-images`, open a PR against `dev`, merge. CI (offline, no new secrets) gates, then auto-deploys staging on the `dev` push.
 2. Verify release 1 is inert on staging: boot clean (`fly logs -a <staging-app>`), migration applied by `start.sh`, covers still render via `/file/:fileId`, hero/accent render from Cloudinary (secrets + statics already in place), an admin upload works (lands on `/data/image-uploads` with a local `storageKey`).
 
 ### 2. Backfill staging
+
 ```sh
 fly ssh console -a <staging-app>
 npx tsx scripts/backfill-images-to-cloudinary.ts
 ```
+
 Idempotent/resumable; logs per row; migrates blob rows AND window uploads; static step is a no-op. Spot-check the Cloudinary console: `staging/dinners`, `staging/board-members`.
 
 ### 3. Flip staging
+
 ```sh
 fly secrets set IMAGE_PROVIDER=cloudinary -a <staging-app>   # restarts the app
 ```
+
 Verify: pages emit `res.cloudinary.com` URLs with working srcset variants; blur-up renders; dinner OG image is an absolute Cloudinary URL; upload → replace → delete round-trips (asset appears/disappears in the console); `/file/:fileId` 302s for old links; memory flat during an image-heavy crawl; credit usage sane after one-time transform generation.
 
 **Rollback at any point:** `fly secrets unset IMAGE_PROVIDER -a <staging-app>` — blobs are untouched until Phase 3.
 
 ### 4. Prod (after the staging soak, one merge)
+
 1. **Before merging `dev` → `main`**: set the four `CLOUDINARY_*` secrets on prod (`fly secrets set … CLOUDINARY_FOLDER_PREFIX=prod`). At minimum the cloud name must exist or the landing hero renders as an empty frame after deploy.
 2. Merge `dev` → `main` → prod deploys release 1 (inert: blob serving continues; window uploads go to the volume).
 3. Backfill prod: `fly ssh console` → `npx tsx scripts/backfill-images-to-cloudinary.ts`.
@@ -47,6 +53,7 @@ Verify: pages emit `res.cloudinary.com` URLs with working srcset variants; blur-
 5. Set the Cloudinary usage alert (~50% of 25 credits) if not done yet.
 
 ### 5. Later
+
 - **Phase 3** (separate release after a prod verification window): drop `blob` + VACUUM, delete the sharp stack/mitigations, fold `features/uploads` into `features/images` — see implementation-plan.md.
 - Optional hygiene: rotate the API key pair used during local testing (Settings → API Keys supports concurrent pairs).
 

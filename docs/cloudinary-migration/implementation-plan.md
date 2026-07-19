@@ -6,11 +6,11 @@ Companion to [design.md](design.md). Phases are shippable increments; phases 1 a
 
 ## Phase 0 — Account & config setup (manual, no code)
 
-- [x] Create the Cloudinary account (free plan). Note the **cloud name** (`mokupona`); the account will be in *dynamic folder mode*.
+- [x] Create the Cloudinary account (free plan). Note the **cloud name** (`mokupona`); the account will be in _dynamic folder mode_.
 - [x] Generate API key + secret (console → Settings → Access Keys).
 - [ ] Set a usage alert at ~50% of the 25 monthly credits.
 - [ ] Fly secrets on **both** apps — **staging done 2026-07-19, prod pending** (do before the `main` merge):
-  `fly secrets set CLOUDINARY_CLOUD_NAME=… CLOUDINARY_API_KEY=… CLOUDINARY_API_SECRET=… CLOUDINARY_FOLDER_PREFIX=… [-a <staging-app>]`
+      `fly secrets set CLOUDINARY_CLOUD_NAME=… CLOUDINARY_API_KEY=… CLOUDINARY_API_SECRET=… CLOUDINARY_FOLDER_PREFIX=… [-a <staging-app>]`
 - [x] ~~`fly.toml [env]`: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_FOLDER_PREFIX`~~ **Superseded (rollout.md): all `CLOUDINARY_*` values live as per-app Fly secrets, never in fly.toml.** `IMAGE_UPLOAD_FOLDER=/data/image-uploads` is in `[env]`; `IMAGE_PROVIDER` stays **unset until the Phase 2 flip** — Phase 1 code defaults safely.
 - [x] `.env` / `.env.example`: document `IMAGE_PROVIDER`, `CLOUDINARY_*` group ("only needed when `IMAGE_PROVIDER=cloudinary`").
 

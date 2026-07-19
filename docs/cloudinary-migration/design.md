@@ -31,23 +31,23 @@ Move image **storage, serving, and transforms** out of the app and onto **Cloudi
 
 ## 2. Decision record
 
-| Decision | Choice | Why |
-| --- | --- | --- |
-| Provider | Cloudinary free tier | 25 credits/mo (1 credit = 1k transforms or 1 GB storage or 1 GB bandwidth) is comfortable for low-hundreds of images; best all-in-one (storage + transform + CDN) fit vs Cloudflare Images / imgix / Bunny |
-| Upload path | **Server-side proxy now, direct browser upload later** | Keeps the existing multipart forms and Zod validation untouched; admin-only ≤ 3 MB uploads are negligible load. The provider interface isolates the change when direct upload becomes worth it (gallery era) |
-| Vendor isolation | `ImageStorageProvider` abstraction, `cloudinary` \| `local` | Mirrors the proven `MailProvider` pattern; dev/CI/e2e stay offline and secret-free; SDK confined to one module |
-| Module placement | New **`app/features/images/`**; the existing `app/features/uploads/` is folded into it in the cleanup phase | `uploads` currently mixes the multipart parse seam with the sharp/webp serving stack this migration deletes; building clean in `images` and migrating the survivors afterwards avoids churning code that's about to die |
-| Layering | Provider calls live in the **feature layer**; models stay Prisma-only and exchange scalars | The DAL boundary is ESLint-enforced: only `app/models/**` imports Prisma, models must not import features, and model interfaces take/return scalars or domain types ([data-access-layer](../data-access-layer/design.md)) |
-| Delivery URLs | Plain URL strings, **no** `@cloudinary/url-gen` / `@cloudinary/react` | For `f_auto,q_auto,w_X,c_fill,g_auto` a template literal is enough; avoids a client bundle dependency. Official docs endorse plain URLs in `srcset` for SSR |
-| Environments | **One cloud, folder per env** (`CLOUDINARY_FOLDER_PREFIX` = `prod` \| `staging`) | Single free account, one credit pool, one set of secrets. Accepted risk: staging code could touch prod assets — mitigated by the prefix being the only namespace the app writes to |
-| Data model | Keep the `Image` table; swap `blob` for `storageKey` + `version` + intrinsic `width`/`height` | A standalone asset record is the gallery-ready shape; metadata enables correct `srcset` aspect ratios without decoding bytes |
-| Deletion | **Capture-and-destroy**: model reads the doomed `storageKey` inside its transaction and returns it; the feature layer calls `provider.destroy(key, { invalidate: true })` after commit | The 1:1 `@unique` FKs make identification exact — no staleness heuristics. DB commit first, then provider destroy (a leaked asset on crash is acceptable; a broken DB reference is not). An Admin-API prefix-diff sweep remains available as a rare ops-level mop-up, not app code |
-| Blur-up placeholders | Base64 data URL generated **once** at upload/backfill time, stored on `Image.blurDataUrl` | Per-request generation would put a Cloudinary fetch in the render path; ~1–2 KB per row is trivial in SQLite. Local provider degrades to a neutral background (no sharp to blur with) |
-| Cutover | **Two-phase**: backfill + switch serving while `blob` stays as safety net; drop `blob` + `VACUUM` in a later release | Rollback during the verification window is a config flip, not a volume-snapshot restore |
-| Backfill | Repo `tsx` script run via `fly ssh console`, staging first | Same operational pattern as `prisma/seed.ts`; idempotent and resumable; no temporary admin routes on a 256 MB VM |
-| Account | To be created (Phase 0 checklist) | New accounts are in *dynamic folder mode*: use `asset_folder` for organization; `public_id` is decoupled from folders |
-| Client config | Root loader gains explicit `imageProvider` / `cloudinaryCloudName` fields | There is no bulk `window.ENV` mechanism in this app — the root loader returns named fields, surfaced via [`app/shared/root-data.ts`](../../app/shared/root-data.ts). Cloud name is public by nature (it's in every delivery URL) |
-| MIME validation | Add a server-side allowlist to [`imageFileSchema`](../../app/shared/image.ts) | **Reverses a recorded decision**: the shared schema deliberately validates size only, with `VALID_IMAGE_TYPES` feeding the `accept` attribute. That was fine when bytes stayed in our DB; forwarding uploads to a third party warrants the stricter gate. One change covers events and board members |
+| Decision             | Choice                                                                                                                                                                                 | Why                                                                                                                                                                                                                                                                                                  |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Provider             | Cloudinary free tier                                                                                                                                                                   | 25 credits/mo (1 credit = 1k transforms or 1 GB storage or 1 GB bandwidth) is comfortable for low-hundreds of images; best all-in-one (storage + transform + CDN) fit vs Cloudflare Images / imgix / Bunny                                                                                           |
+| Upload path          | **Server-side proxy now, direct browser upload later**                                                                                                                                 | Keeps the existing multipart forms and Zod validation untouched; admin-only ≤ 3 MB uploads are negligible load. The provider interface isolates the change when direct upload becomes worth it (gallery era)                                                                                         |
+| Vendor isolation     | `ImageStorageProvider` abstraction, `cloudinary` \| `local`                                                                                                                            | Mirrors the proven `MailProvider` pattern; dev/CI/e2e stay offline and secret-free; SDK confined to one module                                                                                                                                                                                       |
+| Module placement     | New **`app/features/images/`**; the existing `app/features/uploads/` is folded into it in the cleanup phase                                                                            | `uploads` currently mixes the multipart parse seam with the sharp/webp serving stack this migration deletes; building clean in `images` and migrating the survivors afterwards avoids churning code that's about to die                                                                              |
+| Layering             | Provider calls live in the **feature layer**; models stay Prisma-only and exchange scalars                                                                                             | The DAL boundary is ESLint-enforced: only `app/models/**` imports Prisma, models must not import features, and model interfaces take/return scalars or domain types ([data-access-layer](../data-access-layer/design.md))                                                                            |
+| Delivery URLs        | Plain URL strings, **no** `@cloudinary/url-gen` / `@cloudinary/react`                                                                                                                  | For `f_auto,q_auto,w_X,c_fill,g_auto` a template literal is enough; avoids a client bundle dependency. Official docs endorse plain URLs in `srcset` for SSR                                                                                                                                          |
+| Environments         | **One cloud, folder per env** (`CLOUDINARY_FOLDER_PREFIX` = `prod` \| `staging`)                                                                                                       | Single free account, one credit pool, one set of secrets. Accepted risk: staging code could touch prod assets — mitigated by the prefix being the only namespace the app writes to                                                                                                                   |
+| Data model           | Keep the `Image` table; swap `blob` for `storageKey` + `version` + intrinsic `width`/`height`                                                                                          | A standalone asset record is the gallery-ready shape; metadata enables correct `srcset` aspect ratios without decoding bytes                                                                                                                                                                         |
+| Deletion             | **Capture-and-destroy**: model reads the doomed `storageKey` inside its transaction and returns it; the feature layer calls `provider.destroy(key, { invalidate: true })` after commit | The 1:1 `@unique` FKs make identification exact — no staleness heuristics. DB commit first, then provider destroy (a leaked asset on crash is acceptable; a broken DB reference is not). An Admin-API prefix-diff sweep remains available as a rare ops-level mop-up, not app code                   |
+| Blur-up placeholders | Base64 data URL generated **once** at upload/backfill time, stored on `Image.blurDataUrl`                                                                                              | Per-request generation would put a Cloudinary fetch in the render path; ~1–2 KB per row is trivial in SQLite. Local provider degrades to a neutral background (no sharp to blur with)                                                                                                                |
+| Cutover              | **Two-phase**: backfill + switch serving while `blob` stays as safety net; drop `blob` + `VACUUM` in a later release                                                                   | Rollback during the verification window is a config flip, not a volume-snapshot restore                                                                                                                                                                                                              |
+| Backfill             | Repo `tsx` script run via `fly ssh console`, staging first                                                                                                                             | Same operational pattern as `prisma/seed.ts`; idempotent and resumable; no temporary admin routes on a 256 MB VM                                                                                                                                                                                     |
+| Account              | To be created (Phase 0 checklist)                                                                                                                                                      | New accounts are in _dynamic folder mode_: use `asset_folder` for organization; `public_id` is decoupled from folders                                                                                                                                                                                |
+| Client config        | Root loader gains explicit `imageProvider` / `cloudinaryCloudName` fields                                                                                                              | There is no bulk `window.ENV` mechanism in this app — the root loader returns named fields, surfaced via [`app/shared/root-data.ts`](../../app/shared/root-data.ts). Cloud name is public by nature (it's in every delivery URL)                                                                     |
+| MIME validation      | Add a server-side allowlist to [`imageFileSchema`](../../app/shared/image.ts)                                                                                                          | **Reverses a recorded decision**: the shared schema deliberately validates size only, with `VALID_IMAGE_TYPES` feeding the `accept` attribute. That was fine when bytes stayed in our DB; forwarding uploads to a third party warrants the stricter gate. One change covers events and board members |
 
 ---
 
@@ -87,11 +87,11 @@ Move image **storage, serving, and transforms** out of the app and onto **Cloudi
 ```ts
 // app/features/images/types.ts — deliberately minimal
 export interface StoredImage {
-  storageKey: string;      // Cloudinary public_id, or local file key
-  version?: number;        // Cloudinary version → immutable versioned URLs
+  storageKey: string; // Cloudinary public_id, or local file key
+  version?: number; // Cloudinary version → immutable versioned URLs
   width?: number;
   height?: number;
-  blurDataUrl?: string;    // generated at store time (cloudinary only)
+  blurDataUrl?: string; // generated at store time (cloudinary only)
 }
 
 export interface ImageStorageProvider {
@@ -112,7 +112,7 @@ export interface ImageStorageProvider {
 // cloudinary
 `https://res.cloudinary.com/${cloudName}/image/upload/f_auto,q_auto,c_fill,g_auto,w_${w},h_${h}/v${image.version}/${image.storageKey}`
 // local
-`/file/${image.id}`
+`/file/${image.id}`;
 ```
 
 - It lives in [`app/shared/image.ts`](../../app/shared/image.ts) — the client-safe shared bucket, per convention — replacing today's `getImageUrl(id)` / `buildImageTransformUrl(id, opts)` pair there. `RESPONSIVE_IMAGE_WIDTHS = [432, 648, 864, 1080]` and `imageFileSchema` stay in that module.
@@ -137,7 +137,7 @@ Since the FK rework, deletion identification is exact: `Image.eventId` and `Imag
 - **Models** ([`event.server.ts`](../../app/models/event.server.ts), [`board-member.server.ts`](../../app/models/board-member.server.ts)): inside the existing transaction, `findUnique` the owned image's `storageKey` before the delete/`deleteMany`, and return it as a plain scalar (fits the DAL rule — scalars out, no Prisma shapes). Affected: `deleteEvent`, `deleteEventsInTx`, `updateEvent` (replace path), `deleteBoardMember` (currently a plain cascade-reliant `delete`), `updateBoardMember`.
 - **Feature layer** (the route action / `features/images` orchestration): after the model call returns (transaction committed), call `provider.destroy(storageKey)` for each returned key. Ordering invariant: DB commit first — a leaked Cloudinary asset on crash is acceptable, a dangling DB reference is not.
 - **Residual gap**: a crash between commit and destroy leaks the asset (the row — and with it the key — is gone). Accepted; volume is admin-only and tiny. If it ever matters, the mop-up is an ops-level prefix-diff: list assets under the env's folder prefix via the Cloudinary Admin API, diff against `SELECT storageKey FROM Image`, destroy the unmatched. Not app code, not scheduled.
-- The existing [`sweep:orphan-images`](../../app/sweep-orphan-images.ts) script addresses *historical* DB-row orphans (pre-FK-rework leftovers); it is not an ongoing mechanism this design depends on.
+- The existing [`sweep:orphan-images`](../../app/sweep-orphan-images.ts) script addresses _historical_ DB-row orphans (pre-FK-rework leftovers); it is not an ongoing mechanism this design depends on.
 
 ---
 
@@ -201,14 +201,14 @@ model Image {
 
 ## 7. Environments & config
 
-| Variable | local dev / CI | staging | prod | Secret? |
-| --- | --- | --- | --- | --- |
-| `IMAGE_PROVIDER` | `local` | `cloudinary` | `cloudinary` | no (`fly.toml [env]` / `.env`) |
-| `CLOUDINARY_CLOUD_NAME` | — | shared cloud | shared cloud | no |
-| `CLOUDINARY_API_KEY` | — | ✓ | ✓ | Fly secret |
-| `CLOUDINARY_API_SECRET` | — | ✓ | ✓ | Fly secret |
-| `CLOUDINARY_FOLDER_PREFIX` | `dev` (unused) | `staging` | `prod` | no |
-| `IMAGE_UPLOAD_FOLDER` | temp default | kept (upload staging + local provider) | kept | no |
+| Variable                   | local dev / CI | staging                                | prod         | Secret?                        |
+| -------------------------- | -------------- | -------------------------------------- | ------------ | ------------------------------ |
+| `IMAGE_PROVIDER`           | `local`        | `cloudinary`                           | `cloudinary` | no (`fly.toml [env]` / `.env`) |
+| `CLOUDINARY_CLOUD_NAME`    | —              | shared cloud                           | shared cloud | no                             |
+| `CLOUDINARY_API_KEY`       | —              | ✓                                      | ✓            | Fly secret                     |
+| `CLOUDINARY_API_SECRET`    | —              | ✓                                      | ✓            | Fly secret                     |
+| `CLOUDINARY_FOLDER_PREFIX` | `dev` (unused) | `staging`                              | `prod`       | no                             |
+| `IMAGE_UPLOAD_FOLDER`      | temp default   | kept (upload staging + local provider) | kept         | no                             |
 
 - `.env.example` documents each var in the established commented style, marking the `CLOUDINARY_*` group as "only needed when `IMAGE_PROVIDER=cloudinary`". (No image vars exist there today.)
 - GitHub Actions CI needs **no** new secrets (`IMAGE_PROVIDER=local`).
@@ -226,4 +226,4 @@ model Image {
 
 ## 9. Later: direct browser uploads (out of scope, but the seam)
 
-When the gallery arrives (more images, larger files, possibly non-admin uploaders), server-side proxying stops being the right trade. The upgrade path, unchanged from this design's shape: an auth-gated resource route returns `cloudinary.utils.api_sign_request` signatures (valid 1 h); the browser POSTs `FormData` straight to `api.cloudinary.com/v1_1/<cloud>/image/upload`; the form then submits the returned `public_id`/`version` to the normal action, which verifies and writes the `Image` row. Only the *upload* half of the provider changes — storage schema, URL building, deletion, and the local provider are already compatible.
+When the gallery arrives (more images, larger files, possibly non-admin uploaders), server-side proxying stops being the right trade. The upgrade path, unchanged from this design's shape: an auth-gated resource route returns `cloudinary.utils.api_sign_request` signatures (valid 1 h); the browser POSTs `FormData` straight to `api.cloudinary.com/v1_1/<cloud>/image/upload`; the form then submits the returned `public_id`/`version` to the normal action, which verifies and writes the `Image` row. Only the _upload_ half of the provider changes — storage schema, URL building, deletion, and the local provider are already compatible.
