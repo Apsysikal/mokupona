@@ -10,7 +10,7 @@ import {
 } from "~/features/cms/blocks/text-section";
 import { formatEventDayMonth } from "~/features/events/date-format";
 import { getNextEvent } from "~/models/event.server";
-import { getRootLoaderData } from "~/shared/root-data";
+import { withOpenGraphUrls } from "~/shared/meta";
 
 export const loader = async () => {
   const nextEvent = await getNextEvent();
@@ -38,19 +38,11 @@ export const meta: Route.MetaFunction = ({ matches, location }) => {
     { property: "og:type", content: "website" },
   ];
 
-  // without the root loader's domainUrl the absolute og:image/og:url tags
-  // cannot be built — keep the rest
-  const domainUrl = getRootLoaderData(matches)?.domainUrl;
-  if (!domainUrl) return tags;
-
-  const imageUrl = new URL("/landing-page-default.jpg", domainUrl);
-  const currentUrl = new URL(location.pathname, domainUrl);
-
-  return [
-    ...tags,
-    { property: "og:image", content: imageUrl },
-    { property: "og:url", content: currentUrl },
-  ];
+  return withOpenGraphUrls(tags, {
+    matches,
+    imagePath: "/landing-page-default.jpg",
+    pagePath: location.pathname,
+  });
 };
 
 const visionSectionData: TextSectionBlockType = {

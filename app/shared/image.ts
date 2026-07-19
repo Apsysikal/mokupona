@@ -12,6 +12,24 @@ export function getImageUrl(imageId: string) {
 export const IMAGE_FITS = ["cover", "contain", "fill"] as const;
 export type ImageFit = (typeof IMAGE_FITS)[number];
 
+/**
+ * Client-safe: builds the resource-route URL including the transform query
+ * understood by the image route; shared by `src` and `srcSet` construction
+ * so both request identical parameters.
+ */
+export function buildImageTransformUrl(
+  imageId: string,
+  { width, height, fit }: { width: number; height: number; fit: ImageFit },
+) {
+  const searchParams = new URLSearchParams({
+    w: `${width}`,
+    h: `${height}`,
+    fit,
+  });
+
+  return `${getImageUrl(imageId)}?${searchParams.toString()}`;
+}
+
 export function isImageFit(value: unknown): value is ImageFit {
   return typeof value === "string" && IMAGE_FITS.some((fit) => fit === value);
 }

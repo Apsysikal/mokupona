@@ -1,7 +1,7 @@
 import type { ComponentProps } from "react";
 
 import {
-  getImageUrl,
+  buildImageTransformUrl,
   RESPONSIVE_IMAGE_WIDTHS,
   type ImageFit,
 } from "~/shared/image";
@@ -16,6 +16,12 @@ type ImageInputProps = {
 type ImageProps = Omit<ComponentProps<"img">, "width" | "height" | "src"> &
   ImageInputProps;
 
+/**
+ * Renders a dynamically transformed image with a width-descriptor `srcSet`.
+ * Pass `sizes` whenever the image renders narrower than the viewport —
+ * without it browsers assume roughly `100vw` and pick needlessly large
+ * candidates.
+ */
 export function OptimizedImage({
   imageId,
   width,
@@ -23,32 +29,19 @@ export function OptimizedImage({
   fit = "cover",
   ...props
 }: ImageProps) {
-  const imageUrl = getImageUrl(imageId);
   const aspect = width / height;
 
-  const searchParams = new URLSearchParams({
-    w: `${width}`,
-    h: `${height}`,
-    fit,
-  });
-
-  const srcSetUrls = RESPONSIVE_IMAGE_WIDTHS.map((w) => {
+  const srcSet = RESPONSIVE_IMAGE_WIDTHS.map((w) => {
     // sharp rejects fractional dimensions, so keep derived heights integer
     const h = Math.round(w / aspect);
-    const searchParams = new URLSearchParams({
-      w: `${w}`,
-      h: `${h}`,
-      fit,
-    });
-
-    return `${imageUrl + "?" + searchParams.toString()} ${w}w`;
-  });
+    return `${buildImageTransformUrl(imageId, { width: w, height: h, fit })} ${w}w`;
+  }).join(", ");
 
   return (
     <picture>
       <img
-        srcSet={srcSetUrls.join(", ")}
-        src={imageUrl + "?" + searchParams.toString()}
+        srcSet={srcSet}
+        src={buildImageTransformUrl(imageId, { width, height, fit })}
         width={width}
         height={height}
         {...props}

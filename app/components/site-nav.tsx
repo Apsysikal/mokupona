@@ -18,6 +18,73 @@ import { ADMIN_ROLE_NAMES } from "~/features/auth/roles";
 import { useOptionalUser } from "~/hooks/useOptionalUser";
 import { cn } from "~/lib/utils";
 
+const INSTAGRAM_URL = "https://instagram.com/mokupona";
+
+type NavItem =
+  | {
+      kind: "link";
+      label: string;
+      to: string;
+      isActive: (pathname: string) => boolean;
+      prefetch?: "intent";
+    }
+  | { kind: "instagram" }
+  | { kind: "logout" };
+
+/**
+ * One authenticated item list drives both layouts; desktop and mobile keep
+ * their own markup and may place items elsewhere (mobile renders instagram
+ * in its footer instead of the link list).
+ */
+function buildNavItems({
+  loggedIn,
+  isModerator,
+}: {
+  loggedIn: boolean;
+  isModerator: boolean;
+}): NavItem[] {
+  const items: NavItem[] = [
+    {
+      kind: "link",
+      label: "dinners",
+      to: "/dinners",
+      isActive: (pathname) => pathname.startsWith("/dinners"),
+    },
+    { kind: "instagram" },
+  ];
+
+  if (isModerator) {
+    items.push({
+      kind: "link",
+      label: "admin area",
+      to: "/admin",
+      prefetch: "intent",
+      isActive: (pathname) => pathname.startsWith("/admin"),
+    });
+  }
+
+  if (loggedIn) {
+    items.push(
+      {
+        kind: "link",
+        label: "account",
+        to: "/me",
+        isActive: (pathname) => pathname === "/me",
+      },
+      { kind: "logout" },
+    );
+  } else {
+    items.push({
+      kind: "link",
+      label: "login",
+      to: "/login",
+      isActive: (pathname) => pathname.startsWith("/login"),
+    });
+  }
+
+  return items;
+}
+
 export function SiteNav({ joinHref }: { joinHref: string }) {
   const optionalUser = useOptionalUser();
   const loggedIn = Boolean(optionalUser);
@@ -27,6 +94,8 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
   const isModerator = (ADMIN_ROLE_NAMES as readonly string[]).includes(
     optionalUser?.role.name ?? "",
   );
+
+  const navItems = buildNavItems({ loggedIn, isModerator });
 
   // the overlay must never survive a navigation
   useEffect(() => {
@@ -47,62 +116,44 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
           <BrandLockup to="/" />
 
           <div className="text-foreground/80 flex items-center gap-7 text-sm">
-            <Link
-              to="/dinners"
-              className={sectionLinkClasses(
-                location.pathname.startsWith("/dinners"),
-              )}
-            >
-              dinners
-            </Link>
-
-            <a
-              href="https://instagram.com/mokupona"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-foreground"
-            >
-              <InstagramLogoIcon className="size-5" />
-              <span className="sr-only">instagram</span>
-            </a>
-
-            {isModerator ? (
-              <Link
-                prefetch="intent"
-                to="/admin"
-                className={sectionLinkClasses(
-                  location.pathname.startsWith("/admin"),
-                )}
-              >
-                admin area
-              </Link>
-            ) : null}
-
-            {loggedIn ? (
-              <Link
-                to="/me"
-                className={sectionLinkClasses(location.pathname === "/me")}
-              >
-                account
-              </Link>
-            ) : null}
-
-            {loggedIn ? (
-              <Form action="/logout" method="POST">
-                <button className="text-foreground/80 hover:text-foreground">
-                  logout
-                </button>
-              </Form>
-            ) : (
-              <Link
-                to="/login"
-                className={sectionLinkClasses(
-                  location.pathname.startsWith("/login"),
-                )}
-              >
-                login
-              </Link>
-            )}
+            {navItems.map((item) => {
+              switch (item.kind) {
+                case "link":
+                  return (
+                    <Link
+                      key={item.label}
+                      to={item.to}
+                      prefetch={item.prefetch}
+                      className={sectionLinkClasses(
+                        item.isActive(location.pathname),
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                case "instagram":
+                  return (
+                    <a
+                      key="instagram"
+                      href={INSTAGRAM_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-foreground"
+                    >
+                      <InstagramLogoIcon className="size-5" />
+                      <span className="sr-only">instagram</span>
+                    </a>
+                  );
+                case "logout":
+                  return (
+                    <Form key="logout" action="/logout" method="POST">
+                      <button className="text-foreground/80 hover:text-foreground">
+                        logout
+                      </button>
+                    </Form>
+                  );
+              }
+            })}
 
             <Button size="sm" asChild>
               <Link to={joinHref}>join a dinner</Link>
@@ -129,8 +180,7 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
       {menuOpen ? (
         <MobileMenu
           joinHref={joinHref}
-          isModerator={isModerator}
-          loggedIn={loggedIn}
+          navItems={navItems}
           onClose={() => setMenuOpen(false)}
         />
       ) : null}
@@ -140,13 +190,11 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
 
 function MobileMenu({
   joinHref,
-  isModerator,
-  loggedIn,
+  navItems,
   onClose: closeMenu,
 }: {
   joinHref: string;
-  isModerator: boolean;
-  loggedIn: boolean;
+  navItems: NavItem[];
   onClose: () => void;
 }) {
   return (
@@ -172,23 +220,27 @@ function MobileMenu({
 
       <div className="relative flex flex-1 flex-col overflow-y-auto px-7 pt-10 pb-8">
         <div className="flex flex-col">
-          <MobileMenuLink to="/dinners">dinners</MobileMenuLink>
-
-          {isModerator ? (
-            <MobileMenuLink to="/admin">admin area</MobileMenuLink>
-          ) : null}
-
-          {loggedIn ? <MobileMenuLink to="/me">account</MobileMenuLink> : null}
-
-          {loggedIn ? (
-            <Form action="/logout" method="POST">
-              <MobileMenuLink as="button" className="w-full text-left">
-                logout
-              </MobileMenuLink>
-            </Form>
-          ) : (
-            <MobileMenuLink to="/login">login</MobileMenuLink>
-          )}
+          {navItems.map((item) => {
+            switch (item.kind) {
+              case "link":
+                return (
+                  <MobileMenuLink key={item.label} to={item.to}>
+                    {item.label}
+                  </MobileMenuLink>
+                );
+              case "instagram":
+                // rendered in the footer below instead
+                return null;
+              case "logout":
+                return (
+                  <Form key="logout" action="/logout" method="POST">
+                    <MobileMenuLink as="button" className="w-full text-left">
+                      logout
+                    </MobileMenuLink>
+                  </Form>
+                );
+            }
+          })}
         </div>
 
         <Button size="lg" className="mt-8" asChild>
@@ -197,11 +249,7 @@ function MobileMenu({
 
         <div className="mt-auto flex flex-col gap-4 pt-9">
           <div className="text-foreground/80 flex gap-6 text-sm">
-            <a
-              href="https://instagram.com/mokupona"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer">
               instagram
             </a>
             <Link to="/privacy">privacy policy</Link>

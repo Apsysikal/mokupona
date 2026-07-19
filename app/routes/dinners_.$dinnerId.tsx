@@ -34,7 +34,7 @@ import {
   requireFound,
 } from "~/shared/http.server";
 import { getImageUrl } from "~/shared/image";
-import { getRootLoaderData } from "~/shared/root-data";
+import { withOpenGraphUrls } from "~/shared/meta";
 import { redirectWithToast } from "~/utils/toast.server";
 
 export async function loader({ params }: Route.LoaderArgs) {
@@ -180,19 +180,11 @@ export const meta: Route.MetaFunction = ({ loaderData, matches, location }) => {
     { property: "og:type", content: "website" },
   ];
 
-  // without the root loader's domainUrl the absolute og:image/og:url tags
-  // cannot be built — keep the rest
-  const domainUrl = getRootLoaderData(matches)?.domainUrl;
-  if (!domainUrl) return tags;
-
-  const dinnerUrl = new URL(location.pathname, domainUrl);
-  const imageUrl = new URL(getImageUrl(event.imageId), domainUrl);
-
-  return [
-    ...tags,
-    { property: "og:image", content: imageUrl },
-    { property: "og:url", content: dinnerUrl },
-  ];
+  return withOpenGraphUrls(tags, {
+    matches,
+    imagePath: getImageUrl(event.imageId),
+    pagePath: location.pathname,
+  });
 };
 
 export default function DinnerPage({

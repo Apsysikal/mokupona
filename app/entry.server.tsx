@@ -20,70 +20,33 @@ export default function handleRequest(
   responseHeaders: Headers,
   reactRouterContext: EntryContext,
 ) {
-  return isbot(request.headers.get("user-agent"))
-    ? handleBotRequest(
-        request,
-        responseStatusCode,
-        responseHeaders,
-        reactRouterContext,
-      )
-    : handleBrowserRequest(
-        request,
-        responseStatusCode,
-        responseHeaders,
-        reactRouterContext,
-      );
+  // bots wait for the full document so crawlers see complete markup;
+  // browsers stream as soon as the shell is ready
+  const readyEvent = isbot(request.headers.get("user-agent"))
+    ? "onAllReady"
+    : "onShellReady";
+
+  return streamDocument(
+    request,
+    responseStatusCode,
+    responseHeaders,
+    reactRouterContext,
+    readyEvent,
+  );
 }
 
-function handleBotRequest(
+function streamDocument(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
   reactRouterContext: EntryContext,
+  readyEvent: "onAllReady" | "onShellReady",
 ) {
   return new Promise((resolve, reject) => {
     const { abort, pipe } = renderToPipeableStream(
       <ServerRouter context={reactRouterContext} url={request.url} />,
       {
-        onAllReady() {
-          const body = new PassThrough();
-
-          responseHeaders.set("Content-Type", "text/html");
-
-          resolve(
-            new Response(createReadableStreamFromReadable(body), {
-              headers: responseHeaders,
-              status: responseStatusCode,
-            }),
-          );
-
-          pipe(body);
-        },
-        onShellError(error: unknown) {
-          reject(error);
-        },
-        onError(error: unknown) {
-          responseStatusCode = 500;
-          console.error(error);
-        },
-      },
-    );
-
-    setTimeout(abort, streamTimeout + 1000);
-  });
-}
-
-function handleBrowserRequest(
-  request: Request,
-  responseStatusCode: number,
-  responseHeaders: Headers,
-  reactRouterContext: EntryContext,
-) {
-  return new Promise((resolve, reject) => {
-    const { abort, pipe } = renderToPipeableStream(
-      <ServerRouter context={reactRouterContext} url={request.url} />,
-      {
-        onShellReady() {
+        [readyEvent]() {
           const body = new PassThrough();
 
           responseHeaders.set("Content-Type", "text/html");
