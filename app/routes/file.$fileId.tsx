@@ -1,100 +1,81 @@
-import { z } from "zod";
+import { redirect } from "react-router";
 
 import type { Route } from "./+types/file.$fileId";
 
-import {
-  fileStorage as cache,
-  getStorageKey as getCacheKey,
-} from "~/features/uploads/file-cache-storage.server";
+import { getLocalImageFile } from "~/features/images/providers/local.server";
 import { getImageById } from "~/models/image.server";
 import { requireFound } from "~/shared/http.server";
-import { IMAGE_FITS } from "~/shared/image";
-import { transformToWebp } from "~/utils/image-transform.server";
+import { getImageUrl, type ImageProviderConfig } from "~/shared/image";
 
-// Transform URLs outlive the components that emitted them (scraped og:image
-// previews, sent emails, open tabs), so numeric dimensions are normalized
-// rather than rejected: each snaps to the nearest ladder rung. That keeps
-// every historically published URL serving an image while bounding the
-// unauthenticated, never-evicted cache to ladder² × fits variants per image
-// instead of one per arbitrary (w, h) pair. The rungs are the union of every
-// geometry the app currently emits — RESPONSIVE_IMAGE_WIDTHS, the
-// OptimizedImage call sites' width/height props, and their aspect-derived
-// srcset heights — plus a few spacers up to a 2048 ceiling; a changed call
-// site serves a near-identical crop until its geometry is added here.
-const DIMENSION_LADDER = [
-  96, 172, 208, 236, 324, 357, 432, 480, 486, 536, 640, 648, 714, 810, 864, 893,
-  1080, 1296, 1536, 2048,
-];
+// Thin serving/redirect route since the Cloudinary migration. Transforms
+// happen on the CDN; this route only ever hands out original bytes:
+//
+// - cloudinary provider + provider-stored row → 302 to the delivery URL
+//   (legacy links out in the wild: OG scrapers, cached pages)
+// - local provider → stream the stored file from disk
+// - legacy blob-only row (not yet backfilled) → stream the original bytes,
+//   sharp-free — the phase 1 interim path
+//
+// Old transform query params (w/h/fit) are ignored. The route stays off the
+// lazy user context — keep it auth-cost-free.
 
-function snapToDimensionLadder(value: number): number {
-  return DIMENSION_LADDER.reduce((closest, rung) =>
-    Math.abs(rung - value) < Math.abs(closest - value) ? rung : closest,
-  );
+function imageConfigFromEnv(): ImageProviderConfig {
+  return {
+    imageProvider:
+      process.env.IMAGE_PROVIDER === "cloudinary" ? "cloudinary" : "local",
+    cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME ?? null,
+  };
 }
 
-const SearchParamsSchema = z.object({
-  width: z.coerce.number().transform(snapToDimensionLadder).optional(),
-  height: z.coerce.number().transform(snapToDimensionLadder).optional(),
-  fit: z.enum(IMAGE_FITS).optional().default("cover"),
-});
-
-// The storage returns LazyFiles, which undici no longer accepts as a
-// Response body (lazy-file >= 5 does not implement File). Streaming the body
-// also keeps cached transforms out of memory; `size` is storage metadata and
-// does not read the file.
+// Streaming keeps image bytes out of memory; LazyFile (fs storage) no longer
+// implements File, so responses are built from the stream + size metadata.
 function createImageResponse(
-  file: Pick<File, "size" | "stream">,
-  fileId: string,
+  body: BodyInit,
+  {
+    contentType,
+    size,
+    fileId,
+  }: { contentType: string; size: number; fileId: string },
 ) {
-  return new Response(file.stream(), {
+  return new Response(body, {
     headers: {
-      "Content-Type": "image/webp",
+      "Content-Type": contentType,
       "Content-Disposition": `inline; filename="${fileId}"`,
-      "Content-Length": String(file.size),
+      "Content-Length": String(size),
+      // replaced covers get fresh row ids, rows never mutate — safe to pin
       "Cache-Control": "public, max-age=31536000, immutable",
     },
   });
 }
 
-export async function loader({ url, params }: Route.LoaderArgs) {
-  const searchParams = new URL(url).searchParams;
+export async function loader({ params }: Route.LoaderArgs) {
   const { fileId } = params;
 
-  const options = SearchParamsSchema.safeParse({
-    width: searchParams.get("w") ?? undefined,
-    height: searchParams.get("h") ?? undefined,
-    fit: searchParams.get("fit") ?? undefined,
-  });
+  const image = requireFound(await getImageById(fileId));
+  const config = imageConfigFromEnv();
 
-  if (!options.success) {
-    // Params were malformed
-    throw new Response("Bad request", {
-      status: 400,
-    });
+  if (image.storageKey) {
+    if (config.imageProvider === "cloudinary" && config.cloudinaryCloudName) {
+      return redirect(getImageUrl(image, config), 302);
+    }
+
+    // missing file (e.g. a cloudinary-stored row during a provider rollback)
+    // falls through to the legacy blob
+    const file = await getLocalImageFile(image.storageKey);
+    if (file) {
+      return createImageResponse(file.stream(), {
+        contentType: image.contentType,
+        size: file.size,
+        fileId,
+      });
+    }
   }
 
-  const { width, height, fit } = options.data;
-  const cacheKey = getCacheKey(`${fileId}-${width}-${height}-${fit}`);
-
-  const cachedFile = await cache.get(cacheKey);
-  if (cachedFile) {
-    return createImageResponse(cachedFile, fileId);
-  }
-
-  const file = requireFound(await getImageById(fileId));
-  // blob is nullable since the Cloudinary migration; provider-backed serving
-  // arrives with the route rework — until then a blob-less row is a miss
-  const blob = requireFound(file.blob);
-
-  const optimizedImage = await transformToWebp(blob, {
-    width,
-    height,
-    fit,
+  const blob = requireFound(image.blob);
+  const bytes = new Uint8Array(blob);
+  return createImageResponse(bytes, {
+    contentType: image.contentType,
+    size: bytes.byteLength,
+    fileId,
   });
-
-  const imageBytes = new Uint8Array(optimizedImage);
-  const imageFile = new File([imageBytes], fileId, { type: "image/webp" });
-  const storedFile = await cache.put(cacheKey, imageFile);
-
-  return createImageResponse(storedFile, fileId);
 }
