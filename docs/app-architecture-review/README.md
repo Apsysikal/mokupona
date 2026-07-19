@@ -4,12 +4,58 @@ Full-codebase review of `app/` (186 TS files, ~16k lines): where friction lives 
 modules, in calling signatures, and in coupling — and which primitives to extract to make
 the codebase more workable.
 
-- [`analysis.md`](./analysis.md) — the findings: friction inventory by theme, with
-  file:line evidence, plus incidental bugs found along the way.
+- [`analysis.md`](./analysis.md) — **immutable pre-refactor baseline**: friction
+  inventory by theme, with file:line evidence, plus incidental bugs found along the
+  way. It is not updated as work lands.
 - [`plan.md`](./plan.md) — the refactor plan: seven phases from bug fixes to structural
   restructuring, each with the primitives to extract, call-site counts, and sequencing.
+- [`dry-follow-up.md`](./dry-follow-up.md) — the DRY continuation executed after the
+  phase work; its commit table records what landed.
 
-## Headline findings
+## Implementation status (2026-07-19)
+
+The one place tracking execution state; the other documents keep their detail but do
+not repeat this inventory.
+
+| Work                                                                | Status                                                                                                                          |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Phase 0 — standalone fixes and safe deletions                       | complete                                                                                                                         |
+| Phase 1 — auth/event vocabulary (`RoleName`, `requireFound`, meta)  | complete                                                                                                                         |
+| Phase 2 — admin authentication middleware                           | complete (all baseline role-guard call sites replaced)                                                                           |
+| Phase 3 — event image lifecycle                                     | complete (image bytes move inside model transactions; the four unsafe upload blocks are gone)                                    |
+| Phase 4 — `features/events` extraction                              | complete (events own their schema, date formats, status rules, view models, and UI)                                              |
+| Phase 5 — domain-adjacent cleanup                                   | partial (roster/CSV shaping deferred per plan §5.6; visual primitives handed to `docs/design-harmonization` per §5.7)            |
+| DRY follow-up steps 1–3 (presentation, errors/fixtures, small wins) | complete                                                                                                                         |
+| Phase 6 — independent structural decisions                          | deferred (each item needs its own decision)                                                                                      |
+| Forms/signup-form restructuring, generic `formAction`, factories    | deferred or rejected — see plan “Explicitly deferred or rejected”                                                                |
+| Client-hints removal                                                | complete (Phase 5)                                                                                                               |
+
+## Intentional non-DRY decisions
+
+Recorded so later reviewers do not “fix” them:
+
+- **Card versus detail address casing** — the event card and detail views format
+  address lines differently on purpose; they are distinct view models.
+- **Event create versus edit cover semantics** — create requires a cover image while
+  edit treats it as nullable (keep current); a shared schema would blur that contract.
+- **Join versus invite-acceptance workflows** — similar forms, different policies
+  (self-service versus token-gated); they stay separate flows.
+- **Prisma predicates versus in-memory event status** — `getNextEvent`'s DB-side
+  `date >= now` and `isPastEvent`/`partitionEvents` are deliberate twins of one policy
+  on either side of the query boundary.
+- **Independent legacy parity schema** — `utils/event-signup-validation.ts` must not
+  import the replacement production schema; it exists to disagree loudly if the
+  rewrite drifts.
+- **Separate cascade-path tests** — direct event deletion, address cascade, user
+  cascade, and image lifecycle share assertion helpers but remain separate tests;
+  they protect different transaction entry points.
+- **Login/join authenticated-redirect loaders** — two near-identical loaders stay
+  inline; extract a helper only when a third public-only auth route adopts the policy.
+
+## Headline findings (baseline, 2026-07-18)
+
+Findings below describe the pre-refactor state; see the status matrix above for what
+has since changed.
 
 1. **The app-owned data-access layer is done and clean.**
    `docs/data-access-layer/design.md` is fully implemented and ESLint-enforced; app
@@ -48,7 +94,7 @@ work focuses on events, authentication middleware, image lifecycle, route vocabu
 and cleanup around those areas. The parity test and legacy comparison schema stay until
 an explicit production-mileage review.
 
-## Bugs found (fix independently of any refactor)
+## Bugs found (baseline; all addressed in Phase 0, kept as record)
 
 | Bug                                                                                                                                               | Where                                                                                                                                             |
 | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |

@@ -1,5 +1,11 @@
 # Analysis — friction, coupling, and code smells in `app/`
 
+> **Immutable pre-refactor baseline (2026-07-18).** This document describes the
+> codebase as it was before the architecture rework and is deliberately not
+> updated as work lands. Counts such as “31 role-guard call sites” or the four
+> unsafe upload blocks refer to that baseline. For what has since been done,
+> see the implementation-status matrix in [`README.md`](./README.md).
+
 Scope: every file under `app/` (41 route modules, 7 feature folders, 12 model files,
 20 bespoke + 14 ui components, utils/lib/hooks, root/entry/infra) plus
 `prisma/schema.prisma` and the existing docs in `docs/route-module-conventions/` and
