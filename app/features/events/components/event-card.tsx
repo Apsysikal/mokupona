@@ -29,7 +29,7 @@ export function FeaturedEventCard({
     <article className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border md:flex-row">
       <div className="relative min-h-44 md:min-h-80 md:w-[46%]">
         <CoverImage
-          imageId={event.imageId}
+          image={event.image}
           alt=""
           width={640}
           height={480}
@@ -82,7 +82,7 @@ export function PastEventCard({ event }: { event: EventCardModel }) {
       className="flex flex-col gap-2 opacity-70 transition-opacity hover:opacity-100"
     >
       <CoverImage
-        imageId={event.imageId}
+        image={event.image}
         alt=""
         width={640}
         height={480}

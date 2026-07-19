@@ -7,25 +7,23 @@ import {
   CURRENT_FORM_VERSION_ORDER_BY,
   saveFormSchemaInTx,
 } from "~/models/form.server";
-import { type ImageData } from "~/models/image.server";
+import {
+  IMAGE_METADATA_SELECT,
+  type ImageData,
+  type ImageMetadata,
+} from "~/models/image.server";
 
 export type { Address, Event } from "#prisma/generated/client";
 
 // The cover FK lives on Image (eventId), so routes can't read a scalar
-// imageId off Event anymore — getters join the relation and flatten it back
-// to `imageId: string | null` (null renders the UI fallback artwork).
-export type EventWithImageId = Event & { imageId: string | null };
+// imageId off Event anymore — getters join the relation and project the
+// metadata components need for URLs and blur-up (null renders the UI
+// fallback artwork).
+export type EventWithImage = Event & { image: ImageMetadata | null };
 
 const EVENT_IMAGE_INCLUDE = {
-  image: { select: { id: true } },
+  image: { select: IMAGE_METADATA_SELECT },
 } satisfies Prisma.EventInclude;
-
-function flattenImageId<T extends { image: { id: string } | null }>({
-  image,
-  ...record
-}: T): Omit<T, "image"> & { imageId: string | null } {
-  return { ...record, imageId: image?.id ?? null };
-}
 
 export interface EventCreateData {
   title: string;
@@ -50,9 +48,9 @@ export async function countEvents(): Promise<number> {
 
 // the public dinners page shows location ("8004 zürich") on the featured card
 export async function getEventsWithAddress(): Promise<
-  (EventWithImageId & { address: Address })[]
+  (EventWithImage & { address: Address })[]
 > {
-  const events = await prisma.event.findMany({
+  return prisma.event.findMany({
     orderBy: {
       date: "asc",
     },
@@ -61,8 +59,6 @@ export async function getEventsWithAddress(): Promise<
       ...EVENT_IMAGE_INCLUDE,
     },
   });
-
-  return events.map(flattenImageId);
 }
 
 // the site chrome's "join a dinner" CTA and the landing hero point at the
@@ -79,27 +75,23 @@ function nextEventArgs(now: Date) {
 
 export async function getNextEvent(
   now = new Date(),
-): Promise<(EventWithImageId & { address: Address }) | null> {
-  const event = await prisma.event.findFirst({
+): Promise<(EventWithImage & { address: Address }) | null> {
+  return prisma.event.findFirst({
     ...nextEventArgs(now),
     include: { address: true, ...EVENT_IMAGE_INCLUDE },
   });
-
-  return event && flattenImageId(event);
 }
 
 export async function getEventById(
   id: string,
-): Promise<(EventWithImageId & { address: Address }) | null> {
-  const event = await prisma.event.findUnique({
+): Promise<(EventWithImage & { address: Address }) | null> {
+  return prisma.event.findUnique({
     where: { id },
     include: {
       address: true,
       ...EVENT_IMAGE_INCLUDE,
     },
   });
-
-  return event && flattenImageId(event);
 }
 
 /**
@@ -128,7 +120,7 @@ export async function getEventWithCurrentFormVersion(id: string) {
   if (!version) return null;
 
   const { form: _form, ...event } = record;
-  return { event: flattenImageId(event), version };
+  return { event, version };
 }
 
 // Every event owns a form (Event.formId is non-nullable) and a cover image,

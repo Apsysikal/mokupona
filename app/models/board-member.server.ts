@@ -1,7 +1,11 @@
 import type { BoardMember } from "#prisma/generated/client";
 
 import { prisma } from "~/db.server";
-import type { ImageData } from "~/models/image.server";
+import {
+  IMAGE_METADATA_SELECT,
+  type ImageData,
+  type ImageMetadata,
+} from "~/models/image.server";
 
 export type { BoardMember };
 
@@ -17,17 +21,22 @@ export async function countBoardMembers(): Promise<number> {
 }
 
 export async function listBoardMembers(): Promise<
-  { id: string; name: string; position: string; imageId: string | null }[]
+  {
+    id: string;
+    name: string;
+    position: string;
+    image: ImageMetadata | null;
+  }[]
 > {
   const boardMembers = await prisma.boardMember.findMany({
-    include: { image: { select: { id: true } } },
+    include: { image: { select: IMAGE_METADATA_SELECT } },
   });
 
   return boardMembers.map(({ id, name, position, image }) => ({
     id,
     name,
     position,
-    imageId: image?.id ?? null,
+    image,
   }));
 }
 

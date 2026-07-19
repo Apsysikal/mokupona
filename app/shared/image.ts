@@ -16,6 +16,17 @@ export interface ImageUrlSource {
   version?: number | null;
 }
 
+/**
+ * What rendering components consume: URL identity plus intrinsic dimensions
+ * (aspect-ratio reservation) and the blur-up placeholder. The models'
+ * `ImageMetadata` projection satisfies this shape structurally.
+ */
+export interface ImageDisplaySource extends ImageUrlSource {
+  width?: number | null;
+  height?: number | null;
+  blurDataUrl?: string | null;
+}
+
 /** The root loader's public image-delivery fields (never the API secret). */
 export interface ImageProviderConfig {
   imageProvider: "local" | "cloudinary";

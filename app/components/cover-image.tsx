@@ -1,28 +1,29 @@
 import { OptimizedImage } from "./optimized-image";
 
 import { cn } from "~/lib/utils";
+import type { ImageDisplaySource } from "~/shared/image";
 
 // Cover slot for entities whose image is optional (Image.eventId is the FK,
 // so a cover can disappear without taking its owner): renders the image when
 // one exists, otherwise a quiet CSS "plate" artwork filling the same frame —
 // the events' cousin of the board members' InitialsAvatar.
 export function CoverImage({
-  imageId,
+  image,
   alt,
   width,
   height,
   className,
 }: {
-  imageId: string | null;
+  image: ImageDisplaySource | null;
   alt: string;
   width: number;
   height: number;
   className?: string;
 }) {
-  if (imageId) {
+  if (image) {
     return (
       <OptimizedImage
-        imageId={imageId}
+        image={image}
         alt={alt}
         width={width}
         height={height}

@@ -35,7 +35,7 @@ export async function loader() {
       id: event.id,
       title: event.title,
       date: event.date,
-      imageId: event.imageId,
+      image: event.image,
       slots: event.slots,
       location: `${event.address.streetName} ${event.address.houseNumber}`,
       signups: seatCounts[event.id] ?? 0,
@@ -151,7 +151,7 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
       )}
     >
       <CoverImage
-        imageId={dinner.imageId}
+        image={dinner.image}
         alt=""
         width={208}
         height={172}

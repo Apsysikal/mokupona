@@ -39,7 +39,7 @@ export function EventStory({ event }: EventViewProps) {
   return (
     <div className="flex flex-col gap-5 md:gap-6">
       <CoverImage
-        imageId={event.imageId}
+        image={event.image}
         alt=""
         width={640}
         height={480}

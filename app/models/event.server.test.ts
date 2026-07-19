@@ -45,10 +45,7 @@ function findCover(eventId: string) {
 }
 
 /** Asserts the event with its form, versions, submissions, and image is gone. */
-async function expectEventGraphDeleted(event: {
-  id: string;
-  formId: string;
-}) {
+async function expectEventGraphDeleted(event: { id: string; formId: string }) {
   await expect(
     prisma.event.findUnique({ where: { id: event.id } }),
   ).resolves.toBeNull();

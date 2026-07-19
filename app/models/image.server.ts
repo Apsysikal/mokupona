@@ -4,6 +4,31 @@ import { prisma } from "~/db.server";
 
 export type { Image };
 
+/**
+ * The read projection components need to render an image: enough for URL
+ * building (storageKey/version), layout (intrinsic width/height) and the
+ * blur-up placeholder. All-scalar and serialization-safe by construction.
+ */
+export interface ImageMetadata {
+  id: string;
+  storageKey: string | null;
+  version: number | null;
+  width: number | null;
+  height: number | null;
+  blurDataUrl: string | null;
+}
+
+// Models-internal plumbing: the select the owning models' includes share so
+// their `image` projections cannot drift from ImageMetadata.
+export const IMAGE_METADATA_SELECT = {
+  id: true,
+  storageKey: true,
+  version: true,
+  width: true,
+  height: true,
+  blurDataUrl: true,
+} satisfies Prisma.ImageSelect;
+
 export interface ImageData {
   contentType: string;
   // Buffer's bare form is Buffer<ArrayBufferLike>, which Prisma's Bytes input rejects
