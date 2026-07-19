@@ -56,7 +56,7 @@ import {
 import { cn } from "~/lib/utils";
 import { listPendingInvites, revokeInvite } from "~/models/invite.server";
 import { listUsersWithRoleName } from "~/models/user.server";
-import { getDomainUrl } from "~/shared/http.server";
+import { getDomainUrl, unknownIntent } from "~/shared/http.server";
 
 const inviteSchema = z.object({
   intent: z.literal("invite"),
@@ -121,7 +121,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     return data({ result: null, sentTo: null });
   }
 
-  throw new Response(`Unknown intent`, { status: 400 });
+  throw unknownIntent();
 }
 
 export const meta: Route.MetaFunction = () => {

@@ -56,6 +56,14 @@ export function getClientIPAddress(request: Request) {
 }
 
 /**
+ * The 400 an action throws when the submitted `intent` matched no known
+ * branch. The flows differ per route — only the terminal response is shared.
+ */
+export function unknownIntent() {
+  return new Response("Unknown intent", { status: 400 });
+}
+
+/**
  * Combine multiple header objects into one (uses append so headers are not overridden)
  */
 export function combineHeaders(

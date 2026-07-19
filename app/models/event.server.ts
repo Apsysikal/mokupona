@@ -210,19 +210,17 @@ export async function deleteEventsInTx(
   });
   if (events.length === 0) return [];
 
+  const eventIds = events.map((event) => event.id);
   const formIds = events.map((event) => event.formId);
+  const imageIds = events.map((event) => event.imageId);
 
   await tx.formSubmission.deleteMany({
     where: { formVersion: { formId: { in: formIds } } },
   });
   await tx.formVersion.deleteMany({ where: { formId: { in: formIds } } });
-  await tx.event.deleteMany({
-    where: { id: { in: events.map((event) => event.id) } },
-  });
+  await tx.event.deleteMany({ where: { id: { in: eventIds } } });
   await tx.form.deleteMany({ where: { id: { in: formIds } } });
-  await tx.image.deleteMany({
-    where: { id: { in: events.map((event) => event.imageId) } },
-  });
+  await tx.image.deleteMany({ where: { id: { in: imageIds } } });
 
   return events;
 }

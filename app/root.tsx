@@ -15,7 +15,7 @@ import { SiteNav } from "./components/site-nav";
 import { Toaster } from "./components/ui/sonner";
 import { useToast } from "./hooks/useToast";
 import { getNextEvent } from "./models/event.server";
-import { combineHeaders, getDomainUrl } from "./shared/http.server";
+import { getDomainUrl } from "./shared/http.server";
 import { getToast } from "./utils/toast.server";
 
 import {
@@ -64,7 +64,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
       cypressSupport,
       nextDinnerId: nextEvent?.id ?? null,
     },
-    { headers: combineHeaders(headers) },
+    { headers: headers ?? undefined },
   );
 };
 

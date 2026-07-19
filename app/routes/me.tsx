@@ -24,6 +24,7 @@ import {
   getUserAuthOverview,
   updateUserName,
 } from "~/models/user.server";
+import { unknownIntent } from "~/shared/http.server";
 
 const nameSchema = z.object({
   intent: z.literal("update-name"),
@@ -143,7 +144,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     return data({ result: null, done: "sessions" as const });
   }
 
-  throw new Response("Unknown intent", { status: 400 });
+  throw unknownIntent();
 };
 
 function useActionToast(

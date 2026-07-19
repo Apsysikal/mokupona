@@ -34,7 +34,11 @@ import {
   inviteValidity,
 } from "~/models/invite.server";
 import { getUserByEmail } from "~/models/user.server";
-import { getClientIPAddress, obscureEmail } from "~/shared/http.server";
+import {
+  getClientIPAddress,
+  obscureEmail,
+  unknownIntent,
+} from "~/shared/http.server";
 
 const signupSchema = z.object({
   intent: z.literal("signup"),
@@ -179,7 +183,7 @@ export const action = async ({
     return redirect(landingPath, { headers });
   }
 
-  throw new Response("Unknown intent", { status: 400 });
+  throw unknownIntent();
 };
 
 export const meta: Route.MetaFunction = () => [{ title: "Invite" }];
