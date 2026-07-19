@@ -28,8 +28,15 @@ const SearchParamsSchema = z.object({
   fit: z.enum(IMAGE_FITS).optional().default("cover"),
 });
 
-function createImageResponse(file: File, fileId: string) {
-  return new Response(file, {
+// The storage returns LazyFiles, which undici no longer accepts as a
+// Response body (lazy-file >= 5 does not implement File). Streaming the body
+// also keeps cached transforms out of memory; `size` is storage metadata and
+// does not read the file.
+function createImageResponse(
+  file: Pick<File, "size" | "stream">,
+  fileId: string,
+) {
+  return new Response(file.stream(), {
     headers: {
       "Content-Type": "image/webp",
       "Content-Disposition": `inline; filename="${fileId}"`,

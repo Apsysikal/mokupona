@@ -1,6 +1,14 @@
+import { LazyFile } from "@remix-run/lazy-file";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { loader } from "~/routes/file.$fileId";
+
+// The fs storage returns LazyFiles, not Files — the mocks must too, or they
+// mask Response-body incompatibilities (lazy-file >= 5 stopped implementing
+// File, which undici rejects as a body).
+function lazyFile(content: string) {
+  return new LazyFile([content], "image-id", { type: "image/webp" });
+}
 
 const mocks = vi.hoisted(() => ({
   cacheGet: vi.fn(),
@@ -65,9 +73,7 @@ describe("image resource route", () => {
   );
 
   it("serves a cache hit after one lookup with the shared response headers", async () => {
-    mocks.cacheGet.mockResolvedValue(
-      new File(["cached-image"], "image-id", { type: "image/webp" }),
-    );
+    mocks.cacheGet.mockResolvedValue(lazyFile("cached-image"));
 
     const response = await loadImage();
 
@@ -85,9 +91,7 @@ describe("image resource route", () => {
   });
 
   it("bounds a cache miss, stores it, and uses the same response builder", async () => {
-    const storedFile = new File(["optimized-image"], "image-id", {
-      type: "image/webp",
-    });
+    const storedFile = lazyFile("optimized-image");
     mocks.cacheGet.mockResolvedValue(null);
     mocks.getImageById.mockResolvedValue({
       id: "image-id",
