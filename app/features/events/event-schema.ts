@@ -22,3 +22,5 @@ export const EventSchema = z.object({
   cover: imageFileSchema(),
   addressId: z.string({ error: "Address is required" }).trim(),
 });
+
+export const EventEditSchema = EventSchema.partial({ cover: true });

@@ -1,12 +1,10 @@
-import { FormProvider, getFormProps, useForm } from "@conform-to/react";
-import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import { Form, redirect } from "react-router";
+import { redirect } from "react-router";
 
 import type { Route } from "./+types/admin.dinners.$dinnerId_.edit";
 
 import { userContext } from "~/features/auth/middleware.server";
-import { AdminEventForm } from "~/features/events/components/admin-event-form";
-import { EventSchema } from "~/features/events/event-schema";
+import { AdminEventRouteForm } from "~/features/events/components/admin-event-route-form";
+import { EventEditSchema } from "~/features/events/event-schema";
 import {
   toDisplayEventDate,
   toUtcEventDate,
@@ -27,7 +25,6 @@ import {
 import { eventHasSignups } from "~/models/form-submission.server";
 import { fileToImageData } from "~/models/image.server";
 import { requireFound } from "~/shared/http.server";
-import { VALID_IMAGE_TYPES } from "~/shared/image";
 import { nullableStringUpdateValue } from "~/utils/nullable-update-field.server";
 
 export async function loader({ params }: Route.LoaderArgs) {
@@ -45,7 +42,6 @@ export async function loader({ params }: Route.LoaderArgs) {
   const storedFields = parseStoredFormSchemaOrLog(version);
 
   return {
-    validImageTypes: VALID_IMAGE_TYPES,
     addresses,
     formHasSubmissions,
     signupForm: storedFields
@@ -59,14 +55,13 @@ export async function loader({ params }: Route.LoaderArgs) {
 }
 
 export async function action({ request, params, context }: Route.ActionArgs) {
-  const schema = EventSchema.partial({ cover: true });
   const user = context.get(userContext);
 
   const { dinnerId } = params;
 
   return withParsedImageForm(request, {
     fieldName: "cover",
-    schema,
+    schema: EventEditSchema,
     async onSuccess({ value, formData }) {
       const {
         title,
@@ -136,42 +131,20 @@ export default function AdminDinnerEditPage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const schema = EventSchema.partial({ cover: true });
-  const { addresses, validImageTypes, dinner, signupForm, formHasSubmissions } =
+  const { addresses, dinner, signupForm, formHasSubmissions } =
     loaderData;
   const addressOptions = toAddressOptions(addresses);
 
-  const [form, fields] = useForm({
-    lastResult: actionData,
-    shouldValidate: "onBlur",
-    constraint: getZodConstraint(schema),
-    defaultValue: {
-      ...dinner,
-      signupForm,
-    },
-    onValidate({ formData }) {
-      return parseWithZod(formData, { schema });
-    },
-  });
-
   return (
-    <FormProvider context={form.context}>
-      <Form
-        method="POST"
-        encType="multipart/form-data"
-        replace
-        {...getFormProps(form)}
-      >
-        <AdminEventForm
-          fields={fields}
-          addressOptions={addressOptions}
-          validImageTypes={validImageTypes}
-          submitText="Save dinner"
-          pageTitle="Edit dinner"
-          cancelHref={`/admin/dinners/${dinner.id}`}
-          lockFieldKeys={formHasSubmissions}
-        />
-      </Form>
-    </FormProvider>
+    <AdminEventRouteForm
+      schema={EventEditSchema}
+      lastResult={actionData}
+      defaultValue={{ ...dinner, signupForm }}
+      addressOptions={addressOptions}
+      submitText="Save dinner"
+      pageTitle="Edit dinner"
+      cancelHref={`/admin/dinners/${dinner.id}`}
+      lockFieldKeys={formHasSubmissions}
+    />
   );
 }

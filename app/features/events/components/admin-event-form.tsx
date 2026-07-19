@@ -9,7 +9,7 @@ import { ChevronLeftIcon } from "@radix-ui/react-icons";
 import { Link } from "react-router";
 import type z from "zod";
 
-import { EventSchema } from "../event-schema";
+import type { EventEditSchema } from "../event-schema";
 import type { AddressOptionModel } from "../view-models";
 
 import {
@@ -29,17 +29,15 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
-
-const EventFormSchema = EventSchema.partial({ cover: true });
+import { VALID_IMAGE_TYPES } from "~/shared/image";
 
 type FieldsetOf<Schema extends z.ZodType> = {
   [K in keyof z.input<Schema>]-?: FieldMetadata<z.input<Schema>[K]>;
 };
 
 type AdminEventFormProps = {
-  fields: FieldsetOf<typeof EventFormSchema>;
+  fields: FieldsetOf<typeof EventEditSchema>;
   addressOptions: AddressOptionModel[];
-  validImageTypes: string[];
   submitText: string;
   pageTitle: string;
   cancelHref: string;
@@ -121,7 +119,6 @@ function SaveBar({
 export function AdminEventForm({
   fields,
   addressOptions,
-  validImageTypes,
   submitText,
   pageTitle,
   cancelHref,
@@ -245,7 +242,7 @@ export function AdminEventForm({
               inputProps={{
                 ...getInputProps(fields.cover, { type: "file" }),
                 tabIndex: 0,
-                accept: validImageTypes.join(","),
+                accept: VALID_IMAGE_TYPES.join(","),
                 // reads as a dashed dropzone (design system §9 file-upload)
                 className: fileFieldClassName,
               }}

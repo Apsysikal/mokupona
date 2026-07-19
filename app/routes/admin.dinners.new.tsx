@@ -1,11 +1,9 @@
-import { FormProvider, getFormProps, useForm } from "@conform-to/react";
-import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import { Form, redirect } from "react-router";
+import { redirect } from "react-router";
 
 import type { Route } from "./+types/admin.dinners.new";
 
 import { userContext } from "~/features/auth/middleware.server";
-import { AdminEventForm } from "~/features/events/components/admin-event-form";
+import { AdminEventRouteForm } from "~/features/events/components/admin-event-route-form";
 import { EventSchema } from "~/features/events/event-schema";
 import { toUtcEventDate } from "~/features/events/event-timezone.server";
 import { toAddressOptions } from "~/features/events/view-models";
@@ -17,15 +15,11 @@ import { withParsedImageForm } from "~/features/uploads/image-form-action.server
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
 import { fileToImageData } from "~/models/image.server";
-import { VALID_IMAGE_TYPES } from "~/shared/image";
 
 export async function loader() {
   const addresses = await getAddresses();
 
-  return {
-    validImageTypes: VALID_IMAGE_TYPES,
-    addresses,
-  };
+  return { addresses };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -82,38 +76,18 @@ export default function AdminDinnerNewPage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const { addresses, validImageTypes } = loaderData;
+  const { addresses } = loaderData;
   const addressOptions = toAddressOptions(addresses);
 
-  const [form, fields] = useForm({
-    lastResult: actionData,
-    shouldValidate: "onBlur",
-    constraint: getZodConstraint(EventSchema),
-    defaultValue: {
-      signupForm: defaultBuilderRows(),
-    },
-    onValidate({ formData }) {
-      return parseWithZod(formData, { schema: EventSchema });
-    },
-  });
-
   return (
-    <FormProvider context={form.context}>
-      <Form
-        method="POST"
-        encType="multipart/form-data"
-        replace
-        {...getFormProps(form)}
-      >
-        <AdminEventForm
-          fields={fields}
-          addressOptions={addressOptions}
-          validImageTypes={validImageTypes}
-          submitText="Save dinner"
-          pageTitle="New dinner"
-          cancelHref="/admin/dinners"
-        />
-      </Form>
-    </FormProvider>
+    <AdminEventRouteForm
+      schema={EventSchema}
+      lastResult={actionData}
+      defaultValue={{ signupForm: defaultBuilderRows() }}
+      addressOptions={addressOptions}
+      submitText="Save dinner"
+      pageTitle="New dinner"
+      cancelHref="/admin/dinners"
+    />
   );
 }
