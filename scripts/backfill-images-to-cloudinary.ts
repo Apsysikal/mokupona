@@ -125,10 +125,34 @@ async function backfillLocalStoredRows(provider: ImageStorageProvider) {
 
 async function uploadStaticAssets() {
   for (const asset of STATIC_ASSETS) {
-    const bytes = await readFile(path.resolve(process.cwd(), asset.file));
+    // the deployed image ships build/client (Vite's copy of public/), not
+    // public/ itself; the assets already exist in the account either way
+    // (overwrite: false), so a missing file is a skip, not a failure
+    const candidates = [
+      asset.file,
+      path.join("build/client", path.basename(asset.file)),
+    ];
+    const bytes = await readFirstExisting(candidates);
+
+    if (!bytes) {
+      console.log(`- static: ${asset.publicId} skipped (file not on disk)`);
+      continue;
+    }
+
     await uploadStaticAsset(bytes, asset.publicId);
     console.log(`- static: ${asset.publicId} (overwrite: false)`);
   }
+}
+
+async function readFirstExisting(candidates: string[]) {
+  for (const candidate of candidates) {
+    try {
+      return await readFile(path.resolve(process.cwd(), candidate));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+  }
+  return null;
 }
 
 async function main() {
