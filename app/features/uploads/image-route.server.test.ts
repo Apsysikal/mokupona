@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { loader } from "./file.$fileId";
+import { loader } from "~/routes/file.$fileId";
 
 const mocks = vi.hoisted(() => ({
   cacheGet: vi.fn(),
