@@ -123,7 +123,7 @@ export function SelectField({
         aria-invalid={errorId ? true : undefined}
         aria-describedby={errorId}
         className={cn(
-          "border-border bg-foreground/5 placeholder:text-foreground/40 file:placeholder:text-foreground focus-visible:inset-ring-ring flex h-11 w-full appearance-none rounded-lg border px-3 py-1 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:border-0 focus-visible:inset-ring-2 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
+          "border-border bg-foreground/5 placeholder:text-foreground/40 file:placeholder:text-foreground focus-visible:inset-ring-ring flex h-11 w-full appearance-none rounded-lg border px-3 py-1 transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:border-0 focus-visible:inset-ring-2 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
           selectClassName,
         )}
         {...props}
@@ -151,7 +151,7 @@ export function CheckboxField({
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
-      <div className="flex items-start gap-2">
+      <div className="flex items-center gap-2">
         <Checkbox
           {...buttonProps}
           id={id}

@@ -211,7 +211,7 @@ export default function DinnerPage({
         ← all dinners
       </Link>
 
-      <div className="grid items-start gap-8 md:grid-cols-[1.2fr_1fr] md:gap-11">
+      <div className="grid items-start gap-8 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] md:gap-11">
         <EventStory event={event} />
 
         <aside
