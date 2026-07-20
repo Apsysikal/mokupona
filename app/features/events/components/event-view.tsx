@@ -37,7 +37,7 @@ export function EventStory({ event }: EventViewProps) {
     .filter(Boolean);
 
   return (
-    <div className="flex flex-col gap-5 md:gap-6">
+    <div className="flex min-w-0 flex-col gap-5 md:gap-6">
       <CoverImage
         image={event.image}
         alt=""
