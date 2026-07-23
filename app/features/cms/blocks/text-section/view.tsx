@@ -18,13 +18,13 @@ export function TextSectionBlockView({
   if (variant === "slanted") {
     // full accent band, skewed, dark copy (the "who we are" panel)
     return (
-      <div className="mx-auto w-full max-w-5xl px-5 md:px-10" {...rest}>
-        <section className="relative my-9 md:mt-18 md:mb-24">
-          <div
-            aria-hidden
-            className="bg-primary absolute inset-x-0 -inset-y-1.5 -skew-y-3 rounded-xs"
-          />
-          <div className="text-primary-foreground relative flex flex-col gap-3 px-6 py-8 md:gap-4 md:px-14 md:py-16">
+      <div className="relative mx-auto w-full max-w-5xl px-5" {...rest}>
+        <div
+          aria-hidden
+          className="bg-primary absolute inset-x-0 -inset-y-1.5 -skew-y-3 rounded-xs"
+        />
+        <section className="relative my-9 md:mt-18 md:mb-24 md:px-5">
+          <div className="text-primary-foreground relative flex flex-col gap-3 py-8 md:gap-4 md:py-16">
             {eyebrow ? (
               <span className="text-xs font-semibold tracking-widest uppercase opacity-70">
                 {eyebrow}
@@ -33,7 +33,7 @@ export function TextSectionBlockView({
             <h2 className="text-2xl leading-tight font-light tracking-tight md:text-3xl">
               {headline}
             </h2>
-            <p className="max-w-2xl text-base leading-relaxed md:text-lg">
+            <p className="text-base leading-relaxed font-light md:text-lg">
               {body}
             </p>
           </div>
