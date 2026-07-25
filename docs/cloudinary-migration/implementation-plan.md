@@ -71,14 +71,68 @@ Companion to [design.md](design.md). Phases are shippable increments; phases 1 a
 - [x] Flip staging `IMAGE_PROVIDER=cloudinary`. Verify: pages render CDN images, srcset variants + OG image resolve, upload/replace/delete round-trips (asset disappears in the Cloudinary console), memory graphs flat during an image-heavy crawl. **Done 2026-07-20.**
 - [x] Repeat on prod (backfill → flip → verify). Watch credit usage after the one-time transform generation. **Done 2026-07-25** (dev→main merged via PR #417, backfilled, flipped; /dinners and landing serve `res.cloudinary.com` URLs, no legacy `/file/` links).
 
-## Phase 3 — Cleanup (release 2, after verification window)
+## Phase 3 — Cleanup (release 2, after verification window) — **done 2026-07-25** (`chore/cloudinary-phase-3`)
 
-- [ ] Prisma migration: drop `Image.blob`; run `VACUUM` (via script or `fly ssh` sqlite3) to reclaim the file space.
-- [ ] Delete: [`image-transform.server.ts`](../../app/utils/image-transform.server.ts), [`file-cache-storage.server.ts`](../../app/features/uploads/file-cache-storage.server.ts), [`image-route.server.ts`](../../app/features/uploads/image-route.server.ts) + tests, the legacy blob-serving branch, `sharp` dependency, [`optimize-images.ts`](../../app/optimize-images.ts) + `optimize:images` script + generated `public/hero-image-*`/accent artifacts.
-- [ ] Fold the surviving `app/features/uploads/` files (`image-upload.server.ts`, `image-form-action.server.ts`) into `app/features/images/`; delete the `uploads` feature directory.
-- [ ] Retire the historical orphan-sweep if its job is done: check `sweep:orphan-images` (script + npm entry) — post-FK-rework, no new DB orphans can accrue.
-- [ ] Remove the memory mitigations: jemalloc `LD_PRELOAD` ([Dockerfile:49](../../Dockerfile)), `MALLOC_ARENA_MAX` ([fly.toml](../../fly.toml)). Note the change in [staging-memory-investigation/findings.md](../staging-memory-investigation/findings.md).
-- [ ] Keep `/file/:fileId` as the local-provider route + legacy 302 redirect.
+- [x] Prisma migration: drop `Image.blob`; run `VACUUM` (via script or `fly ssh` sqlite3) to reclaim the file space.
+- [x] Delete: [`image-transform.server.ts`](../../app/utils/image-transform.server.ts), [`file-cache-storage.server.ts`](../../app/features/uploads/file-cache-storage.server.ts), [`image-route.server.ts`](../../app/features/uploads/image-route.server.ts) + tests, the legacy blob-serving branch, `sharp` dependency, [`optimize-images.ts`](../../app/optimize-images.ts) + `optimize:images` script + generated `public/hero-image-*`/accent artifacts.
+- [x] Fold the surviving `app/features/uploads/` files (`image-upload.server.ts`, `image-form-action.server.ts`) into `app/features/images/`; delete the `uploads` feature directory.
+- [x] Retire the historical orphan-sweep if its job is done: check `sweep:orphan-images` (script + npm entry) — post-FK-rework, no new DB orphans can accrue.
+- [x] Remove the memory mitigations: jemalloc `LD_PRELOAD` ([Dockerfile:49](../../Dockerfile)), `MALLOC_ARENA_MAX` ([fly.toml](../../fly.toml)). Note the change in [staging-memory-investigation/findings.md](../staging-memory-investigation/findings.md).
+- [x] Keep `/file/:fileId` as the local-provider route + legacy 302 redirect.
+- [x] Retire the completed backfill script — `backfillBlobRows` cannot compile once `Image.blob` is gone. Its static-asset upload is the only non-one-shot part; keep that as its own script so a fresh Cloudinary account can be seeded from the retained `public/*-original.*` files.
+
+## Phase 3 appendix — the nullability/route cleanup (follow-up pass)
+
+Deliberately **not** part of the Phase 3 pass above: it kept `Image.storageKey`
+nullable so the release stayed a pure deletion. Dropping `blob` makes a
+null-key row unrenderable garbage, which turns the leftover nullability into
+dead defensive surface. Do this as a second, self-contained pass once Phase 3
+has been deployed and verified.
+
+**1. `storageKey` → `NOT NULL`** (the schema comment always anticipated this)
+
+- Migration: the SQLite table rebuild fails loudly if any row still holds a
+  null key — that is the desired failure, not something to guard around. Check
+  `SELECT count(*) FROM Image WHERE storageKey IS NULL` on both envs first.
+- Ripple: `ImageUrlSource.storageKey` / `ImageMetadata.storageKey` lose
+  `| null`, which deletes the null branches in
+  [`getImageUrl`](../../app/shared/image.ts), the components' fallbacks, and
+  the "404s a keyless row" case in
+  [`file-route.test.ts`](../../app/features/images/file-route.test.ts).
+- The sibling test ("404s when the storage key has no local file") **stays** —
+  it pins 404-not-500 for a row whose file is missing from disk, which is
+  reachable whenever a dev DB is restored from a Cloudinary-backed dump.
+
+**2. What is actually left of `/file/:fileId`**
+
+Under `cloudinary` + a NOT NULL `storageKey`, `getImageUrl` returns a
+`res.cloudinary.com` URL for every row, so **the app stops emitting
+`/file/:id` links entirely**. The route then serves exactly two callers:
+
+- inbound legacy links (OG scrapers, cached pages, anything published before
+  the cutover) → the 302 branch;
+- the **local provider** → the streaming branch.
+
+So the route cannot simply be deleted. The real question the follow-up has to
+answer is _whether `local` stays a supported provider_, because that one
+decision gates everything else:
+
+| If `local` stays (status quo)                                                               | If `local` is dropped                                                                                                                           |
+| ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Route, `providers/local.server.ts`, `createFsFolderStorage`, `IMAGE_UPLOAD_FOLDER` all stay | All of them go, plus the provider-switch in `image-storage.server.ts`, `imageConfigFromEnv`, `ImageUrlSource.id` and the `/file/${id}` fallback |
+| `Image.contentType` stays (it sets `Content-Type` on the streamed response)                 | `contentType` becomes dead — the CDN sets its own; drop the column too                                                                          |
+| Route shrinks to the 302 + stream branches (already true after Phase 3)                     | Route degrades to a pure legacy redirect, deletable once the link window closes                                                                 |
+
+**Constraint that likely settles it:** Cypress e2e and `npm run dev` both run
+with `IMAGE_PROVIDER` unset (it defaults to `local`), and CI holds no
+Cloudinary credentials. Dropping `local` means giving the e2e suite a real
+Cloudinary test account or a stubbed provider — decide that before touching
+anything in the right-hand column.
+
+**3. The legacy 302 branch** can go once published pre-cutover `/file/:id`
+links have aged out of caches and scrapers. It is ~5 lines; there is no cost
+to leaving it indefinitely, and no way to know the window has closed except by
+watching for 404s on the route.
 
 ## Cross-cutting
 
