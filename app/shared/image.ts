@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const IMAGE_FITS = ["cover", "contain", "fill"] as const;
+const IMAGE_FITS = ["cover", "contain", "fill"] as const;
 export type ImageFit = (typeof IMAGE_FITS)[number];
 
 /**
@@ -39,8 +39,7 @@ export interface ImageTransformOptions {
   fit?: ImageFit;
 }
 
-// c_fill,g_auto replaces the old sharp fit=cover; the CSS-ish contain/fill
-// map to Cloudinary's fit/scale crops
+// The CSS-ish fit names map onto Cloudinary's crop modes
 const CLOUDINARY_CROPS: Record<ImageFit, string> = {
   cover: "c_fill,g_auto",
   contain: "c_fit",
@@ -68,9 +67,9 @@ function cloudinaryTransform({
  * - Cloudinary: a plain `res.cloudinary.com` URL — the app is not in the
  *   serving path. Static assets (no `id`) use it whenever a cloud name is
  *   configured, independent of `imageProvider` (delivery needs no secrets).
- * - Local provider, no storage key yet (pre-backfill row), or no cloud name:
- *   the `/file/:fileId` resource route. Transforms are dropped — dev and the
- *   interim blob path serve original bytes.
+ * - Local provider, no storage key, or no cloud name: the `/file/:fileId`
+ *   resource route, which serves original bytes (transforms are dropped —
+ *   only the CDN resizes).
  * - A static asset without a cloud name renders nothing (offline dev hero).
  */
 export function getImageUrl(
@@ -92,10 +91,6 @@ export function getImageUrl(
   }
 
   return id ? `/file/${id}` : "";
-}
-
-export function isImageFit(value: unknown): value is ImageFit {
-  return typeof value === "string" && IMAGE_FITS.some((fit) => fit === value);
 }
 
 export const RESPONSIVE_IMAGE_WIDTHS = [432, 648, 864, 1080] as const;
