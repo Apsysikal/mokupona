@@ -1,0 +1,99 @@
+<!-- @dsCard group="Components" title="Card tiers" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mokupona — Card tiers</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --background: #15110E; --card: #1B1511; --foreground: rgb(245 241 236);
+    --primary: #ED825E;
+    --border: rgb(245 241 236 / 0.15);
+  }
+  body {
+    background: var(--background); color: var(--foreground);
+    font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+    padding: 32px; -webkit-font-smoothing: antialiased;
+  }
+  .eyebrow { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgb(245 241 236 / 0.5); }
+  h1 { font-size: 24px; font-weight: 300; letter-spacing: -0.025em; margin: 6px 0 4px; }
+  .note { font-size: 14px; line-height: 1.5; color: rgb(245 241 236 / 0.65); max-width: 640px; }
+  section { margin-top: 28px; }
+  h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgb(245 241 236 / 0.5); margin-bottom: 12px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; }
+  .card .pill { display: inline-flex; border-radius: 999px; background: var(--primary); color: #15110E; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+  .card p { font-size: 14px; line-height: 1.5; color: rgb(245 241 236 / 0.65); margin-top: 6px; }
+  .card .meta { font-size: 14px; color: rgb(245 241 236 / 0.5); margin-top: 14px; }
+  .comfortable { padding: 24px; }
+  .comfortable h3 { font-size: 24px; line-height: 1.33; font-weight: 300; letter-spacing: -0.025em; margin-top: 12px; }
+  .compact { padding: 16px; }
+  .compact h3 { font-size: 16px; font-weight: 600; margin-top: 8px; }
+  .interactive { cursor: pointer; transition: border-color 150ms; }
+  .interactive:hover { border-color: rgb(237 130 94 / 0.3); }
+  .empty { padding: 40px 24px; text-align: center; }
+  .empty h3 { font-size: 20px; font-weight: 300; }
+  .empty p { max-width: 320px; margin: 6px auto 0; }
+  .cap { font-size: 12px; color: rgb(245 241 236 / 0.4); margin-top: 8px; line-height: 1.6; }
+  .rules { border: 1px solid var(--border); border-radius: 16px; background: var(--card); padding: 24px; font-size: 14px; line-height: 1.7; color: rgb(245 241 236 / 0.65); }
+  .rules b { color: var(--foreground); font-weight: 600; }
+  code { font-size: 13px; }
+  @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+  <p class="eyebrow">Components</p>
+  <h1>Card</h1>
+  <p class="note">One card: <code>rounded-2xl</code> (call #1 — the admin <code>rounded-[14px]</code>
+  fork converges), one <code>border-foreground/15</code> hairline, <b>no shadow</b>. Density and
+  hover are props, not forks — and titles use the same voice in both registers
+  (<code>font-light</code> for display sizes, <code>font-semibold</code> for row-level titles; the
+  shipped admin <code>font-extrabold</code> is harmonized away).</p>
+
+  <section>
+    <h2>Comfortable (public) vs compact + interactive (admin)</h2>
+    <div class="grid">
+      <div>
+        <div class="card comfortable">
+          <span class="pill">next dinner</span>
+          <h3>Late summer, long table</h3>
+          <p>Seven courses from whatever the market had that morning. Bring nothing but an appetite.</p>
+          <div class="meta">Fri, 21 June · 19:00 · 6 seats left</div>
+        </div>
+        <p class="cap">comfortable: p-6 md:p-7 · title text-2xl font-light tracking-tight · hover-less</p>
+      </div>
+      <div>
+        <div class="card compact interactive">
+          <span class="pill" style="background:none; border:1px solid var(--border); color:rgb(245 241 236 / 0.65)">draft</span>
+          <h3>Late summer, long table</h3>
+          <p>12 guests · 3 signups pending review</p>
+          <div class="meta">Edited 2 days ago</div>
+        </div>
+        <p class="cap">compact: p-4 · title text-base font-semibold (row-level, not display) · interactive prop: hover:border-primary/30 (try it)</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Empty state</h2>
+    <div class="card empty">
+      <h3>No dinners yet</h3>
+      <p>When you publish your first dinner it will show up here, ready for signups.</p>
+    </div>
+    <p class="cap">same card tier · copy at max-w-xs · title text-xl font-light</p>
+  </section>
+
+  <section>
+    <h2>Rulings</h2>
+    <div class="rules">
+      <b>Radius:</b> <code>rounded-2xl</code> everywhere — native step; admin's <code>rounded-[14px]</code> converges up.<br>
+      <b>Elevation:</b> remove <code>shadow-sm</code> from Card; the hairline carries the surface.
+      <code>shadow-md/lg</code> only on portalled overlays (popover, dropdown, tooltip, toast).<br>
+      <b>Hover:</b> admin's <code>hover:border-primary/30</code> is an <code>interactive</code> prop on the shared Card, not a separate component.<br>
+      <b>Weight:</b> no register-specific heading weight — display titles <code>font-light</code>, row titles <code>font-semibold</code>, in public and admin alike.
+    </div>
+  </section>
+</body>
+</html>

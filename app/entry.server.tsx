@@ -20,98 +20,33 @@ export default function handleRequest(
   responseHeaders: Headers,
   reactRouterContext: EntryContext,
 ) {
-  return isbot(request.headers.get("user-agent"))
-    ? handleBotRequest(
-        request,
-        responseStatusCode,
-        responseHeaders,
-        reactRouterContext,
-      )
-    : handleBrowserRequest(
-        request,
-        responseStatusCode,
-        responseHeaders,
-        reactRouterContext,
-      );
+  // bots wait for the full document so crawlers see complete markup;
+  // browsers stream as soon as the shell is ready
+  const readyEvent = isbot(request.headers.get("user-agent"))
+    ? "onAllReady"
+    : "onShellReady";
+
+  return streamDocument(
+    request,
+    responseStatusCode,
+    responseHeaders,
+    reactRouterContext,
+    readyEvent,
+  );
 }
 
-function handleBotRequest(
+function streamDocument(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
   reactRouterContext: EntryContext,
+  readyEvent: "onAllReady" | "onShellReady",
 ) {
   return new Promise((resolve, reject) => {
     const { abort, pipe } = renderToPipeableStream(
       <ServerRouter context={reactRouterContext} url={request.url} />,
       {
-        onAllReady() {
-          const body = new PassThrough();
-
-          responseHeaders.set("Content-Type", "text/html");
-
-          resolve(
-            new Response(createReadableStreamFromReadable(body), {
-              headers: responseHeaders,
-              status: responseStatusCode,
-            }),
-          );
-
-          pipe(body);
-        },
-        onShellError(error: unknown) {
-          reject(error);
-        },
-        onError(error: unknown) {
-          responseStatusCode = 500;
-          console.error(error);
-        },
-      },
-    );
-
-    setTimeout(abort, streamTimeout + 1000);
-  });
-}
-
-function handleBrowserRequest(
-  request: Request,
-  responseStatusCode: number,
-  responseHeaders: Headers,
-  reactRouterContext: EntryContext,
-) {
-  if (
-    !request.headers.get("cookie")?.includes("clockOffset") ||
-    !request.headers.get("cookie")?.includes("timeZone")
-  ) {
-    const script = `
-    document.cookie = 'clockOffset=' + (new Date().getTimezoneOffset() * -1) + '; path=/';
-    document.cookie = 'timeZone=' + (Intl.DateTimeFormat().resolvedOptions().timeZone) + '; path=/';
-    document.cookie = 'locale=' + (Intl.DateTimeFormat().resolvedOptions().locale) + '; path=/';
-    window.location.reload();
-  `;
-
-    const response = new Response(
-      `<html><body><script>${script}</script></body></html>`,
-      {
-        headers: {
-          "Content-Type": "text/html",
-          Refresh: `0; url=${request.url}`,
-        },
-      },
-    );
-
-    response.headers.append("Set-Cookie", "clockOffset=0; path=/");
-    response.headers.append("Set-Cookie", "timeZone=UTC; path=/");
-    response.headers.append("Set-Cookie", "locale=de-DE; path=/");
-
-    return response;
-  }
-
-  return new Promise((resolve, reject) => {
-    const { abort, pipe } = renderToPipeableStream(
-      <ServerRouter context={reactRouterContext} url={request.url} />,
-      {
-        onShellReady() {
+        [readyEvent]() {
           const body = new PassThrough();
 
           responseHeaders.set("Content-Type", "text/html");

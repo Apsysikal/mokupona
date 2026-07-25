@@ -2,6 +2,8 @@ import type React from "react";
 
 import type { TextSectionBlockType } from "./model";
 
+import { Eyebrow } from "~/components/section";
+
 type TextSectionBlockViewProps = React.ComponentPropsWithoutRef<"div"> & {
   blockData: TextSectionBlockType;
 };
@@ -11,35 +13,49 @@ export function TextSectionBlockView({
   ...rest
 }: TextSectionBlockViewProps) {
   const { data } = blockData;
-  const { headline, body, variant } = data;
+  const { eyebrow, headline, body, variant } = data;
 
-  const section = (
-    <section className="my-5 grid max-w-4xl grid-cols-5 gap-5">
-      <h2 className="col-span-full text-4xl">{headline}</h2>
+  if (variant === "slanted") {
+    // full accent band, skewed, dark copy (the "who we are" panel)
+    return (
+      <div className="relative mx-auto w-full max-w-5xl px-5" {...rest}>
+        <div
+          aria-hidden
+          className="bg-primary absolute inset-x-0 -inset-y-1.5 -skew-y-3 rounded-xs"
+        />
+        <section className="relative my-9 md:mt-18 md:mb-24 md:px-5">
+          <div className="text-primary-foreground relative flex flex-col gap-3 py-8 md:gap-4 md:py-16">
+            {eyebrow ? (
+              <span className="text-xs font-semibold tracking-widest uppercase opacity-70">
+                {eyebrow}
+              </span>
+            ) : null}
+            <h2 className="text-2xl leading-tight font-light tracking-tight md:text-3xl">
+              {headline}
+            </h2>
+            <p className="text-base leading-relaxed font-light md:text-lg">
+              {body}
+            </p>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
-      <p className="col-span-full my-auto text-xl leading-relaxed font-thin">
-        {body}
-      </p>
-    </section>
-  );
-
-  const textClasses =
-    variant === "slanted" ? "text-background" : "text-foreground";
-
+  // editorial two-column grid: eyebrow + headline left, body right
   return (
-    <div
-      className={["relative my-20 w-full py-10", textClasses].join(" ")}
-      {...rest}
-    >
-      {variant === "slanted" ? (
-        <div className="after:bg-accent mx-auto flex max-w-4xl flex-col gap-2 px-4 after:absolute after:inset-0 after:-z-10 after:skew-y-3">
-          {section}
+    <div className="mx-auto w-full max-w-5xl px-5 md:px-10" {...rest}>
+      <section className="grid items-start gap-3 py-9 md:grid-cols-[1fr_1.2fr] md:gap-12 md:py-14">
+        <div className="flex flex-col gap-3 md:gap-4">
+          {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
+          <h2 className="text-2xl font-light tracking-tight md:text-3xl">
+            {headline}
+          </h2>
         </div>
-      ) : (
-        <div className="mx-auto flex max-w-4xl flex-col gap-2 px-4">
-          {section}
-        </div>
-      )}
+        <p className="text-foreground/80 text-base leading-relaxed font-light md:text-lg">
+          {body}
+        </p>
+      </section>
     </div>
   );
 }

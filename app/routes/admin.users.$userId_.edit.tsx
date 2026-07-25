@@ -1,40 +1,32 @@
 import { getFormProps, getSelectProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import { Form, redirect, useActionData, useLoaderData } from "react-router";
-import invariant from "tiny-invariant";
+import { Form, redirect } from "react-router";
 import { z } from "zod";
 
 import type { Route } from "./+types/admin.users.$userId_.edit";
 
 import { SelectField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
-import { prisma } from "~/db.server";
-import type { UserSelect, UserWhereUnique } from "~/models/user.server";
-import { getUserById, updateUser } from "~/models/user.server";
-import { requireUserWithRole } from "~/utils/session.server";
+import { isAdminRole } from "~/features/auth/roles";
+import {
+  INVITABLE_ROLE_OPTIONS,
+  INVITABLE_ROLES,
+} from "~/features/users/invite.shared";
+import { getRoleByName } from "~/models/role.server";
+import {
+  getUserAccountSummary,
+  updateNonAdminUserRole,
+} from "~/models/user.server";
+import { requireFound } from "~/shared/http.server";
 
 const schema = z.object({
-  roleName: z.union([z.literal("user"), z.literal("moderator")]),
+  roleName: z.enum(INVITABLE_ROLES),
 });
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["admin"]);
-
+export async function loader({ params }: Route.LoaderArgs) {
   const { userId } = params;
-  invariant(typeof userId === "string", "Parameter userId is missing");
 
-  const select = {
-    email: true,
-    role: {
-      select: {
-        name: true,
-      },
-    },
-  } satisfies UserSelect;
-
-  const user = await getUserById(userId, select);
-
-  if (!user) throw new Response("Not found", { status: 404 });
+  const user = requireFound(await getUserAccountSummary(userId));
 
   return {
     user,
@@ -46,23 +38,18 @@ export const meta: Route.MetaFunction = () => {
 };
 
 export async function action({ request, params }: Route.ActionArgs) {
-  await requireUserWithRole(request, ["admin"]);
-
   const { userId } = params;
-  invariant(typeof userId === "string", "Parameter userId is missing");
 
   const formData = await request.formData();
   const submission = await parseWithZod(formData, {
     schema: (intent) =>
       schema.transform(async (data, ctx) => {
         if (intent !== null) return { ...data, roleId: null };
-        const role = await prisma.role.findUnique({
-          where: { name: data.roleName },
-        });
+        const role = await getRoleByName(data.roleName);
         if (!role) {
           ctx.addIssue({
             path: ["roleName"],
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             message: "Invalid role",
           });
           return z.NEVER;
@@ -83,23 +70,17 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   const { roleId } = submission.value;
 
-  const where = {
-    id: userId,
-    role: {
-      NOT: {
-        name: "admin",
-      },
-    },
-  } satisfies UserWhereUnique;
-
-  await updateUser(where, { roleId });
+  await updateNonAdminUserRole(userId, roleId);
 
   return redirect(`/admin/users`);
 }
 
-export default function DinnersPage() {
-  const { user } = useLoaderData<typeof loader>();
-  const lastResult = useActionData<typeof action>();
+export default function DinnersPage({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
+  const { user } = loaderData;
+  const lastResult = actionData;
   const [form, fields] = useForm({
     lastResult,
     shouldValidate: "onBlur",
@@ -112,8 +93,7 @@ export default function DinnersPage() {
     },
   });
 
-  const isAdmin = user.role.name === "admin";
-
+  const isAdmin = isAdminRole(user.role.name);
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-col gap-4">
@@ -134,23 +114,9 @@ export default function DinnersPage() {
           selectProps={{
             ...getSelectProps(fields.roleName),
             disabled: isAdmin,
-            children: [
-              { name: "User", value: "user" },
-              { name: "Moderator", value: "moderator" },
-            ].map((role) => {
-              const { name, value } = role;
-
-              return (
-                <option key={value} value={value}>
-                  {name}
-                </option>
-              );
-            }),
-            className:
-              "focus-visible:border-0 flex h-9 w-full appearance-none rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground file:placeholder:text-foreground focus-visible:outline-hidden focus-visible:inset-ring-2 focus-visible:inset-ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+            options: [...INVITABLE_ROLE_OPTIONS],
           }}
           errors={fields.roleName.errors}
-          className="flex w-full flex-col gap-2"
         />
 
         <Button type="submit">Update User</Button>

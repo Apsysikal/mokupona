@@ -1,16 +1,16 @@
-import { Link, useFetcher, useLoaderData } from "react-router";
-
-import type { Address } from "#prisma/generated/client";
+import { PlusIcon, SewingPinIcon } from "@radix-ui/react-icons";
+import { Link } from "react-router";
 
 import type { Route } from "./+types/admin.locations._index";
 
+import { AdminDeleteButton } from "~/components/admin-delete-button";
+import { AdminEmptyState, AdminPageHeader } from "~/components/admin-ui";
 import { Button } from "~/components/ui/button";
-import { getAddresses } from "~/models/address.server";
-import { requireUserWithRole } from "~/utils/session.server";
+import { Card } from "~/components/ui/card";
+import { getAddressesWithEventCount } from "~/models/address.server";
 
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-  const addresses = await getAddresses();
+export async function loader() {
+  const addresses = await getAddressesWithEventCount();
 
   return { addresses };
 }
@@ -19,47 +19,82 @@ export const meta: Route.MetaFunction = () => {
   return [{ title: "Admin - Locations" }];
 };
 
-export default function DinnersPage() {
-  const { addresses } = useLoaderData<typeof loader>();
+export default function AdminLocationsPage({
+  loaderData,
+}: Route.ComponentProps) {
+  const { addresses } = loaderData;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="animate-page-in">
+      <AdminPageHeader
+        eyebrow={`${addresses.length} total`}
+        title="Locations"
+        actions={
+          <Button asChild>
+            <Link to="new">
+              <PlusIcon className="mr-2 size-4" />
+              New location
+            </Link>
+          </Button>
+        }
+      />
+
       {addresses.length > 0 ? (
-        <div className="flex flex-col gap-4">
-          {addresses.map((address) => {
-            return <Location key={address.id} {...address} />;
-          })}
+        <div className="grid gap-3 md:grid-cols-2">
+          {addresses.map((address) => (
+            <LocationCard key={address.id} address={address} />
+          ))}
         </div>
       ) : (
-        <p>There are currently no locations</p>
+        <AdminEmptyState
+          icon={<SewingPinIcon className="size-6" />}
+          title="No locations yet"
+          description="Add the first venue address so dinners have somewhere to happen."
+          action={
+            <Button asChild>
+              <Link to="new">New location</Link>
+            </Button>
+          }
+        />
       )}
-
-      <Button asChild>
-        <Link to="new">Create new location</Link>
-      </Button>
     </div>
   );
 }
 
-function Location({ id, streetName, houseNumber, zip, city }: Address) {
-  const deleteFetcher = useFetcher();
-  const isDeleting = deleteFetcher.state !== "idle";
+type AddressWithEventCount = Awaited<
+  ReturnType<typeof loader>
+>["addresses"][number];
+
+function LocationCard({ address }: { address: AddressWithEventCount }) {
+  const { id, streetName, houseNumber, zip, city, eventCount } = address;
+  const inUse = eventCount > 0;
 
   return (
-    <div className="flex items-center justify-between gap-2">
-      <span className="text-sm leading-none font-medium">{`${streetName} ${houseNumber} - ${zip} ${city}`}</span>
-
-      <span className="flex gap-2">
-        <Button variant="secondary" asChild>
+    <Card interactive className="p-4">
+      <div className="flex items-start gap-3">
+        <div className="bg-primary/10 flex size-10 shrink-0 items-center justify-center rounded-lg">
+          <SewingPinIcon className="text-primary size-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate text-base font-semibold">
+            {streetName} {houseNumber}
+          </h2>
+          <p className="text-muted-foreground mt-0.5 text-sm">
+            {zip} {city}
+          </p>
+        </div>
+      </div>
+      <div className="border-border mt-4 flex gap-2 border-t pt-4">
+        <Button size="sm" variant="outline" asChild>
           <Link to={`${id}/edit`}>Edit</Link>
         </Button>
-
-        <deleteFetcher.Form method="POST" action={`${id}/delete`}>
-          <Button type="submit" variant="destructive" disabled={isDeleting}>
-            {isDeleting ? "Deleting..." : "Delete"}
-          </Button>
-        </deleteFetcher.Form>
-      </span>
-    </div>
+        <AdminDeleteButton action={`${id}/delete`} disabled={inUse} />
+        {inUse ? (
+          <span className="text-muted-foreground self-center text-xs">
+            hosts {eventCount} {eventCount === 1 ? "dinner" : "dinners"}
+          </span>
+        ) : null}
+      </div>
+    </Card>
   );
 }

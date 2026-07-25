@@ -1,111 +1,121 @@
-import bcrypt from "bcryptjs";
-
-import type { Password, Prisma, Role, User } from "#prisma/generated/client";
+import type { Prisma, Role, User } from "#prisma/generated/client";
 
 import { prisma } from "~/db.server";
 
 export type { User } from "#prisma/generated/client";
 
-export type UserSelect = Prisma.UserSelect;
-export type UserWhere = Prisma.UserWhereInput;
-export type UserWhereUnique = Prisma.UserWhereUniqueInput;
-export type UserUpdateData = Prisma.UserUncheckedUpdateInput;
-
-type UserFindManyPayload<T extends UserSelect> = Array<
-  Prisma.UserGetPayload<{ select: T }>
->;
-
-type UserFindUniquePayload<T extends UserSelect> = Prisma.UserGetPayload<{
-  select: T;
-}>;
-
-export async function getUsers<T extends UserSelect>(
-  select: T,
-): Promise<UserFindManyPayload<T>> {
-  return prisma.user.findMany({ select });
-}
-
-export async function getUserById<T extends UserSelect>(
-  id: User["id"],
-  select: T = {} as T,
-): Promise<UserFindUniquePayload<T> | null> {
-  return prisma.user.findUnique({ where: { id }, select });
-}
-
-export async function getUserByIdWithRole(id: User["id"]) {
+export async function getUserByIdWithRole(
+  id: string,
+): Promise<(User & { role: Role }) | null> {
   return prisma.user.findUnique({ where: { id }, include: { role: true } });
 }
 
-export async function getUserByEmail(email: User["email"]) {
-  return prisma.user.findUnique({ where: { email } });
+export async function getUserByEmail(email: string): Promise<User | null> {
+  return prisma.user.findUnique({ where: { email: email.toLowerCase() } });
 }
 
-export async function createUser(
-  email: User["email"],
-  password: string,
-  roleName: Role["name"] = "user",
-) {
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const role = await prisma.role.findUnique({ where: { name: roleName } });
+// The projection the admin user list needs.
+// the admin tab bar shows a count pill per section
+export async function countUsers(): Promise<number> {
+  return prisma.user.count();
+}
 
-  if (!role) throw new Error(`Role "${roleName}" is not a valid role`);
+export async function listUsersWithRoleName(): Promise<
+  { id: string; email: string; role: { name: string } }[]
+> {
+  return prisma.user.findMany({
+    select: { id: true, email: true, role: { select: { name: true } } },
+  });
+}
 
-  return prisma.user.create({
-    data: {
-      email,
-      roleId: role.id,
-      password: {
-        create: {
-          hash: hashedPassword,
-        },
-      },
+// The account view shared by the profile page and the admin user edit page.
+export async function getUserAccountSummary(id: string): Promise<{
+  name: string;
+  email: string;
+  emailVerified: boolean;
+  role: { name: string; description: string };
+} | null> {
+  return prisma.user.findUnique({
+    where: { id },
+    select: {
+      name: true,
+      email: true,
+      emailVerified: true,
+      role: { select: { name: true, description: true } },
     },
   });
 }
 
-export async function deleteUserByEmail(email: User["email"]) {
-  return prisma.user.delete({ where: { email } });
+// What /me needs to render its password / connected-accounts / sessions
+// sections: which auth providers back this user, and how many live sessions
+// they have.
+export async function getUserAuthOverview(id: string): Promise<{
+  hasPassword: boolean;
+  googleLinked: boolean;
+  sessionCount: number;
+}> {
+  const [accounts, sessionCount] = await Promise.all([
+    prisma.account.findMany({
+      where: { userId: id },
+      select: { providerId: true },
+    }),
+    prisma.session.count({
+      where: { userId: id, expiresAt: { gt: new Date() } },
+    }),
+  ]);
+
+  return {
+    hasPassword: accounts.some((a) => a.providerId === "credential"),
+    googleLinked: accounts.some((a) => a.providerId === "google"),
+    sessionCount,
+  };
 }
 
-export async function deleteUserById(id: User["id"]) {
-  return prisma.user.delete({ where: { id } });
+export async function updateUserName(id: string, name: string): Promise<void> {
+  await prisma.user.update({ where: { id }, data: { name } });
 }
 
-export async function updateUser<T extends UserWhereUnique>(
-  where: T = {} as T,
-  data: UserUpdateData,
-) {
-  return prisma.user.update({
-    where,
-    data,
+// Mailbox ownership was proven out-of-band (password reset completion,
+// invite-link acceptance) — deliberate shortcuts per the auth design.
+export async function setUserEmailVerified(id: string): Promise<void> {
+  await prisma.user.update({
+    where: { id },
+    data: { emailVerified: true },
   });
 }
 
-export async function verifyLogin(
-  email: User["email"],
-  password: Password["hash"],
-) {
-  const userWithPassword = await prisma.user.findUnique({
-    where: { email },
-    include: {
-      password: true,
-    },
+// Admins can't have their role changed from the admin UI — the guard is part
+// of the write itself, not a check the caller can forget.
+export async function updateNonAdminUserRole(
+  userId: string,
+  roleId: string,
+): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId, role: { NOT: { name: "admin" } } },
+    data: { roleId },
   });
+}
 
-  if (!userWithPassword || !userWithPassword.password) {
-    return null;
-  }
+// Event.createdById is onDelete: SetNull — events (and their responses and
+// form data) outlive their creator; only authorship is cleared.
+async function deleteUserInTx(tx: Prisma.TransactionClient, id: string) {
+  return tx.user.delete({ where: { id } });
+}
 
-  const isValid = await bcrypt.compare(
-    password,
-    userWithPassword.password.hash,
-  );
+export async function deleteUserById(id: string): Promise<User> {
+  return prisma.$transaction((tx) => deleteUserInTx(tx, id));
+}
 
-  if (!isValid) {
-    return null;
-  }
+// Admin deletion policy belongs to the write, not only its route/UI. Missing
+// and protected admin users are both no-ops for the idempotent admin action.
+export async function deleteNonAdminUserById(id: string): Promise<User | null> {
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.findUnique({
+      where: { id },
+      include: { role: true },
+    });
+    if (!user || user.role.name === "admin") return null;
 
-  const { password: _password, ...userWithoutPassword } = userWithPassword;
-
-  return userWithoutPassword;
+    return deleteUserInTx(tx, id);
+  });
 }

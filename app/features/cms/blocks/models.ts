@@ -1,14 +1,15 @@
-import { z } from "zod/v4";
+export type BlockAction = {
+  label: string;
+  href: string;
+  variant?: "primary" | "secondary";
+};
 
-export const ActionSchema = z.object({
-  label: z.string(),
-  href: z.string(),
-  variant: z.enum(["primary", "secondary"]).optional(),
-});
-
-export const ImageSchema = z.object({
-  src: z.string(),
-  alt: z.string().optional(),
-  width: z.number().optional(),
-  height: z.number().optional(),
-});
+export type BlockImage = {
+  /** Cloudinary public_id (e.g. "static/hero-image") since the migration. */
+  src: string;
+  alt?: string;
+  width?: number;
+  height?: number;
+  /** Blur-up placeholder, supplied by the loader via getBlurDataUrl. */
+  blurDataUrl?: string | null;
+};

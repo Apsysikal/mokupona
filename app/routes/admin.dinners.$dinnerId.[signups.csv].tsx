@@ -1,61 +1,51 @@
-import invariant from "tiny-invariant";
-
-import type { EventResponse } from "#prisma/generated/client";
-
 import type { Route } from "./+types/admin.dinners.$dinnerId.[signups.csv]";
 
-import { buildCSVObject } from "~/lib/csv-builder.server";
-import { getEventResponsesForEvent } from "~/models/event-response.server";
+import {
+  getAttendeeRosterForEvent,
+  type Attendee,
+  type RosterColumn,
+} from "~/features/signup-form/read.server";
 import { getEventById } from "~/models/event.server";
-import { requireUserWithRole } from "~/utils/session.server";
+import { contentDispositionAttachment } from "~/shared/content-disposition.server";
+import { buildCSVObject } from "~/shared/csv-builder.server";
+import { requireFound } from "~/shared/http.server";
 
-const HEADER_ROW = [
-  "Name",
-  "Email",
-  "Phone",
-  "Vegetarian/Vegan",
-  "Student",
-  "Restrictions",
-  "Comment",
-];
-
-export async function loader({ request, params }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
+export async function loader({ params }: Route.LoaderArgs) {
   const { dinnerId } = params;
-  invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
 
-  const event = await getEventById(dinnerId);
-  const responses = await getEventResponsesForEvent(dinnerId);
+  // one line per attendee; columns are the field-name union across all
+  // versions with submissions (plus legacy defaults), headers from the
+  // latest labels — design §8
+  const [event, { attendees, columns }] = await Promise.all([
+    getEventById(dinnerId).then(requireFound),
+    getAttendeeRosterForEvent(dinnerId),
+  ]);
 
-  const data = buildCSVObject(HEADER_ROW, getCsvDataFromResponses(responses));
+  const data = buildCSVObject(
+    columns.map((column) => column.label),
+    attendees.map((attendee) => toCsvRow(attendee, columns)),
+  );
 
-  if (!event) throw new Response("Not found", { status: 404 });
+  // the helper emits an ASCII-safe filename= fallback plus an RFC 5987
+  // filename*, so umlauts in the title survive into the saved file's name
+  const filename = `${event.title.split(" ").join("-")}-signups.csv`;
 
   return new Response(data.data, {
     headers: {
       "Content-Type": data.mimeType,
       "Content-Length": `${data.size}`,
-      "Content-Disposition": `attachment; filename="${event.title.split(" ").join("-")}-signups.csv"`,
+      "Content-Disposition": contentDispositionAttachment(filename),
       "Cache-Control": "public, max-age=0, immutable",
     },
   });
 }
 
-function getCsvDataFromResponses(responses: EventResponse[]) {
-  return [
-    ...responses.map(
-      ({ name, email, phone, vegetarian, student, restrictions, comment }) => {
-        return [
-          name,
-          email,
-          phone,
-          vegetarian ? "true" : "false",
-          student ? "true" : "false",
-          restrictions || "",
-          comment || "",
-        ];
-      },
-    ),
-  ];
+function toCsvRow(attendee: Attendee, columns: RosterColumn[]) {
+  return columns.map((column) => formatAnswer(attendee.answers[column.name]));
+}
+
+function formatAnswer(value: string | boolean | undefined): string {
+  if (value === undefined) return "";
+  if (typeof value === "boolean") return value ? "true" : "false";
+  return value;
 }

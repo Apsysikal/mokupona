@@ -1,91 +1,56 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import type { MetaFunction } from "react-router";
-import {
-  Form,
-  Link,
-  redirect,
-  useActionData,
-  useSearchParams,
-} from "react-router";
+import { Form, Link, redirect, useSearchParams } from "react-router";
 import { z } from "zod";
 
 import type { Route } from "./+types/join";
 
-import { CheckboxField, Field } from "~/components/forms";
+import { AuthShell } from "~/components/auth-layout";
+import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { auth } from "~/features/auth/auth.server";
+import { GoogleSignInButton } from "~/features/auth/components/google-button";
+import { displayNameSchema, emailSchema } from "~/features/auth/form-schemas";
+import { anonymousAuthPageLoader } from "~/features/auth/middleware.server";
+import { withPasswordConfirmation } from "~/features/auth/password-schema";
 import { logger } from "~/logger.server";
-import { createUser, getUserByEmail } from "~/models/user.server";
-import { getClientIPAddress, obscureEmail, safeRedirect } from "~/utils/misc";
-import { createUserSession, getUserId } from "~/utils/session.server";
+import { getUserByEmail } from "~/models/user.server";
+import { getClientIPAddress, obscureEmail } from "~/shared/http.server";
 
-const schema = z
-  .object({
-    email: z.string({ error: "Email is required" }).email("Invalid email"),
-    password: z
-      .string({
-        error: "Password is required",
-      })
-      .min(8, "Password must be greater than 8 characters"),
-    confirmPassword: z.string({
-      error: "Please confirm your password",
-    }),
-    acceptedPrivacy: z.boolean({
-      error: "You must agree to register",
-    }),
-    redirectTo: z.string().optional(),
-  })
-  .refine(
-    (data) => {
-      return data.password === data.confirmPassword;
-    },
-    {
-      message: "Passwords must match",
-      path: ["confirmPassword"],
-    },
-  )
-  .refine(
-    (data) => {
-      return data.acceptedPrivacy === true;
-    },
-    {
-      message: "You must agree to register",
-      path: ["acceptedPrivacy"],
-    },
-  );
+const schema = withPasswordConfirmation({
+  name: displayNameSchema,
+  email: emailSchema,
+  redirectTo: z.string().optional(),
+});
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  const userId = await getUserId(request);
-  if (userId) return redirect("/");
-  return {};
-};
+export const loader = anonymousAuthPageLoader;
 
 export const action = async ({ request }: Route.ActionArgs) => {
   const formData = await request.formData();
 
   const submission = await parseWithZod(formData, {
-    schema: (intent) =>
-      schema.check(async (ctx) => {
-        const existingUser = await getUserByEmail(ctx.value.email);
+    schema: schema.check(async (ctx) => {
+      const existingUser = await getUserByEmail(ctx.value.email);
 
-        if (existingUser) {
-          ctx.issues.push({
-            code: "custom",
-            path: ["email"],
-            message: "A user already exists with this email",
-            input: ctx.value.email,
-          });
-        }
-      }),
+      if (existingUser) {
+        ctx.issues.push({
+          code: "custom",
+          path: ["email"],
+          message:
+            "an account already exists with this email. try logging in instead.",
+          input: ctx.value.email,
+        });
+      }
+    }),
     async: true,
   });
 
   if (submission.status !== "success" || !submission.value) {
-    logger.info("Failed login request", {
+    logger.info("Failed signup request", {
       ip: getClientIPAddress(request),
       email: obscureEmail(
-        submission.payload["email"].toString() ?? "unknown@no-domain.com",
+        submission.payload["email"]?.toString() ?? "unknown@no-domain.com",
       ),
       reason: submission.status === "error" ? submission.error : null,
     });
@@ -93,32 +58,38 @@ export const action = async ({ request }: Route.ActionArgs) => {
     return submission.reply();
   }
 
-  const redirectTo = safeRedirect(submission.value.redirectTo, "/");
-  const { email, password } = submission.value;
+  const { name, email, password, redirectTo } = submission.value;
 
-  const user = await createUser(email, password);
+  await auth.api.signUpEmail({
+    body: { name, email, password },
+    headers: request.headers,
+  });
+
+  await auth.api.sendVerificationEmail({
+    body: {
+      email,
+      callbackURL: `/verify-email?email=${encodeURIComponent(email)}`,
+    },
+    headers: request.headers,
+  });
 
   logger.info("Successful signup request", {
     ip: getClientIPAddress(request),
-    email: obscureEmail(submission.value.email),
+    email: obscureEmail(email),
   });
 
-  return createUserSession({
-    redirectTo,
-    remember: false,
-    request,
-    userId: user.id,
-  });
+  const search = new URLSearchParams({ email });
+  if (redirectTo) search.set("redirectTo", redirectTo);
+  return redirect(`/check-your-inbox?${search}`);
 };
 
-export const meta: MetaFunction = () => [{ title: "Sign Up" }];
+export const meta: Route.MetaFunction = () => [{ title: "Sign Up" }];
 
-export default function Join() {
+export default function Join({ loaderData, actionData }: Route.ComponentProps) {
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
-  const lastResult = useActionData<typeof action>();
   const [form, fields] = useForm({
-    lastResult,
+    lastResult: actionData,
     shouldValidate: "onBlur",
     constraint: getZodConstraint(schema),
     defaultValue: { redirectTo },
@@ -128,69 +99,78 @@ export default function Join() {
   });
 
   return (
-    <div className="flex min-h-full flex-col justify-center">
-      <div className="mx-auto w-full max-w-md px-8">
-        <Form method="post" className="space-y-6" {...getFormProps(form)}>
-          <Field
-            labelProps={{ children: "Email address" }}
-            inputProps={{ ...getInputProps(fields.email, { type: "email" }) }}
-            errors={fields.email.errors}
-          />
+    <AuthShell mode="join" search={searchParams.toString()}>
+      <h1 className="mt-1 text-3xl font-light">sign up</h1>
 
-          <Field
-            labelProps={{ children: "Password" }}
-            inputProps={{
-              ...getInputProps(fields.password, { type: "password" }),
+      <Form
+        method="post"
+        className="flex flex-col gap-4"
+        {...getFormProps(form)}
+      >
+        <Field
+          labelProps={{ children: "name" }}
+          inputProps={{
+            ...getInputProps(fields.name, { type: "text" }),
+            placeholder: "e.g. lena huber",
+          }}
+          errors={fields.name.errors}
+        />
+
+        <Field
+          labelProps={{ children: "email address" }}
+          inputProps={{
+            ...getInputProps(fields.email, { type: "email" }),
+            placeholder: "you@example.com",
+          }}
+          errors={fields.email.errors}
+        />
+
+        <Field
+          labelProps={{ children: "password" }}
+          inputProps={{
+            ...getInputProps(fields.password, { type: "password" }),
+          }}
+          errors={fields.password.errors}
+        />
+
+        <Field
+          labelProps={{ children: "confirm password" }}
+          inputProps={{
+            ...getInputProps(fields.confirmPassword, { type: "password" }),
+          }}
+          errors={fields.confirmPassword.errors}
+        />
+
+        <Input type="hidden" name="redirectTo" value={redirectTo} />
+
+        <p className="text-foreground/50 text-center text-xs">
+          by creating an account you accept the{" "}
+          <Link to="/privacy" className="text-primary hover:underline">
+            privacy policy
+          </Link>
+        </p>
+
+        <Button type="submit" size="lg" className="mt-0.5 w-full">
+          create account
+        </Button>
+
+        {loaderData.googleEnabled ? (
+          <GoogleSignInButton callbackURL={redirectTo ?? "/"} />
+        ) : null}
+
+        <p className="text-foreground/65 text-center text-sm">
+          already have an account?{" "}
+          <Link
+            to={{
+              pathname: "/login",
+              search: searchParams.toString(),
             }}
-            errors={fields.password.errors}
-          />
-
-          <Field
-            labelProps={{ children: "Confirm Password" }}
-            inputProps={{
-              ...getInputProps(fields.confirmPassword, { type: "password" }),
-            }}
-            errors={fields.confirmPassword.errors}
-          />
-
-          <CheckboxField
-            labelProps={{
-              children: (
-                <span>
-                  Agree to{" "}
-                  <Link to="/privacy" className="text-primary">
-                    Privacy Policy
-                  </Link>
-                </span>
-              ),
-            }}
-            buttonProps={{
-              ...getInputProps(fields.acceptedPrivacy, { type: "checkbox" }),
-            }}
-            errors={fields.acceptedPrivacy.errors}
-          />
-
-          <Input type="hidden" name="redirectTo" value={redirectTo} />
-
-          <Button type="submit">Create Account</Button>
-
-          <div className="flex items-center justify-center">
-            <div className="text-center text-sm text-gray-500">
-              Already have an account?{" "}
-              <Button variant="link" asChild>
-                <Link
-                  to={{
-                    pathname: "/login",
-                    search: searchParams.toString(),
-                  }}
-                >
-                  Log in
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </Form>
-      </div>
-    </div>
+            className="text-primary font-medium hover:underline"
+          >
+            log in
+          </Link>
+        </p>
+      </Form>
+    </AuthShell>
   );
 }

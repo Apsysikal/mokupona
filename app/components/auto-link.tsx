@@ -50,8 +50,7 @@ function isValidUrlMatch(url: string): boolean {
 }
 
 export type AutoLinkPart =
-  | { type: "text"; value: string }
-  | { type: "link"; url: string };
+  { type: "text"; value: string } | { type: "link"; url: string };
 
 /**
  * Parses a plain-text string and returns an array of parts, where each part

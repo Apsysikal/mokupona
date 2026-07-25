@@ -1,26 +1,14 @@
 import { prisma } from "~/db.server";
 
-export async function createEventResponse(
-  eventId: string,
-  name: string,
-  email: string,
-  phone: string,
-  vegetarian = false,
-  student = false,
-  restrictions?: string,
-  comment?: string,
-) {
-  return prisma.eventResponse.create({
-    data: {
-      name,
-      email,
-      phone,
-      eventId,
-      vegetarian,
-      student,
-      restrictions,
-      comment,
-    },
+export type { EventResponse } from "#prisma/generated/client";
+
+// EventResponse is frozen legacy (design §3.3): no new writes, read-only
+// access for the read layer's legacy merge.
+export async function countEventResponsesByEvent(eventIds: string[]) {
+  return prisma.eventResponse.groupBy({
+    by: ["eventId"],
+    where: { eventId: { in: eventIds } },
+    _count: { _all: true },
   });
 }
 

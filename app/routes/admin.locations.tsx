@@ -2,14 +2,6 @@ import { Outlet } from "react-router";
 
 import type { Route } from "./+types/admin.locations";
 
-import { requireUserWithRole } from "~/utils/session.server";
-
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
-  return {};
-}
-
 export const meta: Route.MetaFunction = () => {
   return [{ title: "Admin - Locations" }];
 };

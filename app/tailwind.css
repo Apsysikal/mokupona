@@ -1,36 +1,41 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
-@plugin 'tailwindcss-animate';
-@plugin '@tailwindcss/typography';
+@plugin "tailwindcss-animate";
+@plugin "@tailwindcss/typography";
 
+/* moku pona is intentionally single-theme (dark-only) by design — see
+   docs/design-harmonization. This `dark` variant + the .dark-scoped plumbing
+   below are kept deliberately, unused, so a future light mode stays a
+   one-file change rather than a re-audit. Do not remove. */
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: rgb(17 17 17);
-  --foreground: rgb(245 243 245);
-  --card: rgb(17 17 17);
-  --card-foreground: rgb(245 243 245);
-  --popover: rgb(17 17 17);
-  --popover-foreground: rgb(245 243 245);
-  --primary: rgb(237 130 94);
-  --primary-foreground: rgb(17 17 17);
-  --secondary: rgb(17 17 17);
-  --secondary-foreground: rgb(245 243 245);
-  --muted: rgb(17 17 17);
-  --muted-foreground: rgb(245 243 245);
+  /* "supper club" palette from tmp/design_handoff_website_redesign */
+  --background: rgb(21 17 14); /* surface #15110E */
+  --foreground: rgb(245 241 236); /* text primary #F5F1EC */
+  --card: rgb(27 21 17); /* raised surface #1B1511 */
+  --card-foreground: rgb(245 241 236);
+  --popover: rgb(27 21 17);
+  --popover-foreground: rgb(245 241 236);
+  --primary: rgb(237 130 94); /* accent #ED825E */
+  --primary-foreground: rgb(21 17 14); /* on-accent */
+  --secondary: rgb(27 21 17);
+  --secondary-foreground: rgb(245 241 236);
+  --muted: rgb(27 21 17);
+  --muted-foreground: rgb(167 158 149); /* text muted #A79E95 */
   --accent: rgb(237 130 94);
-  --accent-foreground: rgb(17 17 17);
+  --accent-foreground: rgb(21 17 14);
   --destructive: rgb(167 29 49);
-  --destructive-foreground: rgb(245 243 245);
-  --border: rgb(245 243 245);
-  --input: rgb(245 243 245);
+  --destructive-foreground: rgb(245 241 236);
+  /* the one hairline: --border and the old --input merged onto a single
+     native opacity step (foreground/15), the brighter of the two kept */
+  --border: rgb(245 241 236 / 0.15);
   --ring: rgb(237 130 94);
   --radius: 0.5rem;
 }
 
 @theme {
   --color-border: var(--border);
-  --color-input: var(--input);
   --color-ring: var(--ring);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -56,6 +61,11 @@
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
 
+  /* the one remaining brand accent beyond primary (avatar tints, kickers).
+     The former fg-secondary/-muted/-label/-faint text tiers are gone — they
+     are now native foreground/80·65·50·40 opacity steps at the call site. */
+  --color-accent-light: rgb(241 180 140); /* #F1B48C */
+
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
@@ -64,8 +74,8 @@
   --animate-accordion-up: accordion-up 0.2s ease-out;
 
   --font-sans:
-    'Open Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
-    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    "Open Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 
   @keyframes accordion-down {
     from {
@@ -93,6 +103,44 @@
   }
   @media (width >= 1400px) {
     max-width: 1400px;
+  }
+}
+
+/* the corner accent glow, at native primary opacity steps (was ad-hoc raw
+   rgba at .16/.20). Anchor to a corner with position + size utilities; never
+   place it behind body text. The primary (#ED825E) is inlined with an alpha
+   here because the CSS optimiser flattens color-mix(var(--primary)…) to a
+   solid fill. */
+@utility glow-primary {
+  background-image: radial-gradient(
+    circle,
+    rgb(237 130 94 / 0.15),
+    transparent 70%
+  );
+}
+
+@utility glow-primary-strong {
+  background-image: radial-gradient(
+    circle,
+    rgb(237 130 94 / 0.2),
+    transparent 70%
+  );
+}
+
+/* the admin page-entrance, from one source (design system §8). Motion stays a
+   register signal: admin animates in, the public site is static. */
+@utility animate-page-in {
+  animation: page-in 300ms ease-out;
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -169,6 +217,24 @@
     font-style: italic;
     font-display: swap;
     font-weight: 500;
+    src: url(/fonts/opensans-semibolditalic-webfont.woff2) format("woff2");
+  }
+
+  /* the redesign leans on 600-weight for buttons/nav; the semibold file
+     doubles as both 500 and 600 so font-semibold doesn't fake-bolden */
+  @font-face {
+    font-family: "Open Sans";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 600;
+    src: url(/fonts/opensans-semibold-webfont.woff2) format("woff2");
+  }
+
+  @font-face {
+    font-family: "Open Sans";
+    font-style: italic;
+    font-display: swap;
+    font-weight: 600;
     src: url(/fonts/opensans-semibolditalic-webfont.woff2) format("woff2");
   }
 

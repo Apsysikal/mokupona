@@ -38,7 +38,7 @@ The app includes:
 
    ```env
    DATABASE_URL="file:./prisma/data.db"
-   SESSION_SECRET="replace-with-a-random-secret"
+   BETTER_AUTH_SECRET="replace-with-a-random-secret"
    ```
 
 3. Initialize database and seed data:
@@ -68,13 +68,18 @@ By default, the app runs at `http://localhost:3000`.
 Required:
 
 - `DATABASE_URL`: Prisma SQLite connection string
-- `SESSION_SECRET`: secret used for session and toast cookies
+- `BETTER_AUTH_SECRET`: better-auth signing secret (also signs toast cookies)
+
+Auth & mail:
+
+- `BETTER_AUTH_URL`: canonical origin for auth callbacks and emailed links (set on Fly; inferred from the request in local dev)
+- `MAIL_PROVIDER`: `console` (dev default), `capture` (e2e), or `resend` (prod/staging, set in `fly.toml`)
+- `RESEND_API_KEY`: required when `MAIL_PROVIDER=resend`
+- `MAIL_FROM`: sender address, defaults to `moku pona <no-reply@mail.mokupona.ch>`
+- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`: Google OAuth; the "Continue with Google" buttons hide while unset
 
 Optional:
 
-- `IMAGE_UPLOAD_FOLDER`: file storage directory for uploaded dinner images
-  - Defaults to a temporary directory in development
-  - Set to a persistent path in production (for Fly this is `/data/uploads/images`)
 - `ALLOW_INDEXING`: set to `false` to disable search engine indexing tags
 - `PORT`: server port (Fly uses `8080`)
 
@@ -135,9 +140,9 @@ Runtime details:
 3. Add `FLY_API_TOKEN` as an environment secret to both environments.
 4. Configure required reviewers on the `production` environment.
 5. Confirm both Fly apps exist and have a persistent volume mounted at `/data`.
-6. Set `SESSION_SECRET` as a Fly secret for both apps.
+6. Set `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `RESEND_API_KEY` and the Google OAuth secrets as Fly secrets for both apps.
 
-`DATABASE_URL`, `IMAGE_UPLOAD_FOLDER`, and `PORT` are set in `fly.toml` and do not need to be duplicated as Fly secrets.
+`DATABASE_URL` and `PORT` are set in `fly.toml` and do not need to be duplicated as Fly secrets.
 
 ### Operational checks
 
@@ -151,7 +156,7 @@ Keep these repository settings aligned with the workflow:
 ### Useful Fly commands
 
 ```sh
-fly secrets set SESSION_SECRET=$(openssl rand -hex 32) --app <fly-app-name>
+fly secrets set BETTER_AUTH_SECRET=$(openssl rand -hex 32) --app <fly-app-name>
 fly volumes create data --size 1 --app <fly-app-name>
 fly ssh console -C database-cli --app <fly-app-name>
 ```

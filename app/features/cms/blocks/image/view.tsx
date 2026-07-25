@@ -1,34 +1,34 @@
-import { generateSrcSet } from "../utils";
-
 import type { ImageBlockType } from "./model";
 
-type ImageBlockViewProps = React.ComponentPropsWithoutRef<"picture"> & {
+import { OptimizedImage } from "~/components/optimized-image";
+
+type ImageBlockViewProps = {
   blockData: ImageBlockType;
+  className?: string;
 };
 
-export function ImageBlockView({ blockData, ...rest }: ImageBlockViewProps) {
+export function ImageBlockView({ blockData, className }: ImageBlockViewProps) {
   const { data } = blockData;
   const { image, variant } = data;
-  const { src, alt, width, height } = image;
-  const srcSet = generateSrcSet(src, [432, 648, 864, 1080]);
+  const { src, alt, width, height, blurDataUrl } = image;
 
-  const baseClasses = "mx-auto my-20";
-  const defaultClasses = "w-4xl h-auto object-cover px-4";
-  const fullWidthClasses = "h-96 w-full object-cover";
+  // "full-width" spans the editorial column, not the viewport (design §1)
+  const imageClasses =
+    variant === "full-width"
+      ? "h-64 w-full rounded-2xl md:h-96"
+      : "h-auto w-full";
 
   return (
-    <picture>
-      <img
-        src={src}
-        srcSet={srcSet}
-        className={[
-          baseClasses,
-          variant === "full-width" ? fullWidthClasses : defaultClasses,
-        ].join(" ")}
-        alt={alt}
-        width={width}
-        height={height}
+    <div className="mx-auto w-full max-w-5xl px-5 md:px-10">
+      <OptimizedImage
+        image={{ storageKey: src, blurDataUrl }}
+        width={width ?? 1080}
+        height={height ?? 382}
+        alt={alt ?? ""}
+        className={
+          imageClasses ? `${imageClasses} ${className ?? ""}` : className
+        }
       />
-    </picture>
+    </div>
   );
 }

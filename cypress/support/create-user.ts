@@ -1,13 +1,16 @@
 // Use this to create a new user and login with that user
 // Simply call this with:
-// npx ts-node -r tsconfig-paths/register ./cypress/support/create-user.ts username@example.com,
+// npx tsx ./cypress/support/create-user.ts username@example.com,
 // and it will log out the cookie value you can use to interact with the server
 // as that new user.
 
-import { parse } from "cookie";
+export {}; // top-level await needs module scope
 
-import { createUser } from "~/models/user.server";
-import { createUserSession } from "~/utils/session.server";
+// mail side effects stay out of the shared capture directory — a user
+// factory must never clear or pollute what a running test is reading
+process.env.MAIL_PROVIDER = "console";
+
+const PASSWORD = "myreallystrongpassword";
 
 async function createAndLogin(email: string) {
   if (!email) {
@@ -17,29 +20,17 @@ async function createAndLogin(email: string) {
     throw new Error("All test emails must end in @example.com");
   }
 
-  const user = await createUser(email, "myreallystrongpassword");
+  const { createUserViaAuth } =
+    await import("~/features/auth/create-user.server");
+  const { printSessionCookie } = await import("./session-cookie");
 
-  const response = await createUserSession({
-    request: new Request("test://test"),
-    userId: user.id,
-    remember: false,
-    redirectTo: "/",
+  await createUserViaAuth({
+    email,
+    password: PASSWORD,
+    name: "test user",
+    emailVerified: true,
   });
-
-  const cookieValue = response.headers.get("Set-Cookie");
-  if (!cookieValue) {
-    throw new Error("Cookie missing from createUserSession response");
-  }
-  const parsedCookie = parse(cookieValue);
-  // we log it like this so our cypress command can parse it out and set it as
-  // the cookie value.
-  console.log(
-    `
-<cookie>
-  ${parsedCookie.__session}
-</cookie>
-  `.trim(),
-  );
+  await printSessionCookie(email, PASSWORD);
 }
 
 createAndLogin(process.argv[2]);

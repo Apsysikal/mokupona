@@ -1,3 +1,5 @@
+import { faker } from "@faker-js/faker";
+
 export const ZOD_LIMIT_BYTES = 1024 * 1024 * 3;
 export const UPLOAD_HANDLER_LIMIT_BYTES = 1024 * 1024 * 4;
 export const FILE_TOO_LARGE_ERROR = "File cannot be greater than 3MB";
@@ -15,6 +17,7 @@ export interface DinnerRecord {
   discounts: string | null;
   addressId: string;
   imageId: string;
+  imageStorageKey: string | null;
 }
 
 export interface BoardMemberRecord {
@@ -22,14 +25,23 @@ export interface BoardMemberRecord {
   name: string;
   position: string;
   imageId: string | null;
+  imageStorageKey: string | null;
   imageCount: number;
+}
+
+export interface ImageRecord {
+  id: string;
+  contentType: string;
+  storageKey: string | null;
 }
 
 type UploadDbAction =
   | "create-dinner"
   | "get-dinner"
   | "delete-dinner"
+  | "get-image"
   | "delete-image"
+  | "create-legacy-response"
   | "create-board-member"
   | "get-board-member"
   | "get-board-member-by-name"
@@ -75,6 +87,13 @@ export function uploadFileInput(
     mimeType,
     lastModified: Date.now(),
   };
+}
+
+/** A file just over the Zod schema limit — rejected client-side with a form error. */
+export function oversizedZodUpload() {
+  return uploadFileInput(ZOD_LIMIT_BYTES + 1, {
+    fileName: "zod-too-large.jpg",
+  });
 }
 
 export function runUploadDbCommand<T>(
@@ -135,4 +154,146 @@ export function submitMultipartRequest({
       body: await response.text(),
     };
   });
+}
+
+/**
+ * Posts the form with a file just over the upload handler limit and asserts
+ * the server rejects it gracefully (no 500, form error in the response).
+ */
+export function expectHandlerLimitRejection({
+  action,
+  fields,
+  fileFieldName,
+}: {
+  action: string;
+  fields: Record<string, string>;
+  fileFieldName: string;
+}) {
+  return submitMultipartRequest({
+    action,
+    fields,
+    fileFieldName,
+    file: {
+      size: UPLOAD_HANDLER_LIMIT_BYTES + 1,
+      name: "handler-too-large.jpg",
+    },
+  }).then((response) => {
+    expect(response.status).to.not.equal(500);
+    expect(response.body).to.include(FILE_TOO_LARGE_ERROR);
+  });
+}
+
+export function getFirstAddressId() {
+  return cy
+    .findByLabelText(/^address$/i)
+    .find("option")
+    .first()
+    .then(($option) => {
+      const addressId = $option.val();
+
+      if (typeof addressId !== "string") {
+        throw new Error("Address value missing from dinner form");
+      }
+
+      return addressId;
+    });
+}
+
+export function selectFirstAddress() {
+  getFirstAddressId().then((addressId) => {
+    cy.findByLabelText(/^address$/i).select(addressId);
+  });
+}
+
+export function fillDinnerForm(values: ReturnType<typeof dinnerFormValues>) {
+  cy.findByLabelText(/^title$/i)
+    .clear()
+    .type(values.title);
+  cy.findByLabelText(/^description$/i)
+    .clear()
+    .type(values.description);
+  cy.findByLabelText(/^menu$/i)
+    .clear()
+    .type(values.menuDescription);
+  cy.findByLabelText(/^donation$/i)
+    .clear()
+    .type(values.donationDescription);
+  cy.findByLabelText(/^date$/i)
+    .clear()
+    .type(values.date);
+  cy.findByLabelText(/^slots$/i)
+    .clear()
+    .type(values.slots);
+  cy.findByLabelText(/^price$/i)
+    .clear()
+    .type(values.price);
+  cy.findByLabelText(/^discounts$/i)
+    .clear()
+    .type(values.discounts);
+  selectFirstAddress();
+}
+
+export function uploadDinnerCover(file: string | Cypress.FileReferenceObject) {
+  cy.findByLabelText(/^cover$/i).selectFile(file, { force: true });
+}
+
+/** Visits the new-dinner form and fills it with a valid cover attached. */
+export function createDinnerViaAdminForm(
+  values: ReturnType<typeof dinnerFormValues>,
+) {
+  cy.visitAndCheck("/admin/dinners/new");
+  fillDinnerForm(values);
+  uploadDinnerCover(VALID_UPLOAD_FIXTURE_PATH);
+}
+
+/**
+ * Saves the dinner form, waits for the detail page, and yields the created
+ * dinner's id (so the caller can register cleanup).
+ */
+export function saveDinnerAndCaptureId(
+  title: string,
+): Cypress.Chainable<string> {
+  cy.findByRole("button", { name: /save dinner/i }).click();
+  cy.findByRole("heading", { name: title }).should("be.visible");
+
+  return cy
+    .location("pathname")
+    .should("match", /\/admin\/dinners\/[^/.]+$/)
+    .then((pathname) => getDinnerIdFromPathname(pathname));
+}
+
+export function getDinnerIdFromPathname(pathname: string) {
+  const dinnerId = pathname.match(
+    /\/admin\/dinners\/([^/.]+)(?:\.data)?$/,
+  )?.[1];
+
+  if (!dinnerId) {
+    throw new Error(`Unable to determine dinner id from pathname: ${pathname}`);
+  }
+
+  return dinnerId;
+}
+
+// Signup-page interactions shared by the specs that submit real signups.
+export function fillSignupContact({
+  name,
+  email,
+}: {
+  name: string;
+  email: string;
+}) {
+  cy.findAllByRole("textbox", { name: /^name$/i })
+    .first()
+    .type(name);
+  cy.findByRole("textbox", { name: /email/i }).type(email);
+  cy.findByRole("textbox", { name: /phone number/i }).type(
+    faker.phone.number({ style: "international" }),
+  );
+}
+
+export function acceptPrivacyAndJoin() {
+  cy.findByLabelText(/agree to the privacy policy/i).click();
+  cy.findByRole("button", { name: /join/i }).click();
+  cy.location("pathname").should("equal", "/dinners");
+  cy.findByText(/signup complete/i);
 }

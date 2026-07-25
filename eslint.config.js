@@ -92,4 +92,32 @@ export default [
       cypress: (await import("eslint-plugin-cypress")).default,
     },
   },
+  {
+    // Data-access boundary (docs/data-access-layer/design.md): only the
+    // models layer may touch Prisma. Tests are exempt — they seed the DB
+    // directly. auth.server.ts is exempt for one reason only: better-auth's
+    // prismaAdapter needs the raw client; our own queries still go through
+    // models.
+    files: ["app/**/*.{js,jsx,ts,tsx}"],
+    ignores: [
+      "app/models/**",
+      "app/db.server.ts",
+      "app/features/auth/auth.server.ts",
+      "**/*.test.{js,jsx,ts,tsx}",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["~/db.server", "#prisma/generated/*"],
+              message:
+                "Only app/models/** may import the database layer. Use or add a model function instead.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];

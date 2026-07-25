@@ -8,18 +8,103 @@ datasource db {
 }
 
 model User {
-  id    String @id @default(cuid())
-  email String @unique
+  id            String  @id @default(cuid())
+  email         String  @unique
+  name          String
+  emailVerified Boolean @default(false)
+  image         String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  password Password?
+  sessions Session[]
+  accounts Account[]
+
+  invitesCreated Invite[]
 
   events Event[]
 
   role   Role   @relation(fields: [roleId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   roleId String
+}
+
+// Session / Account / Verification are owned by better-auth (1.6 field set,
+// hand-merged — the CLI must never rewrite this file; our User carries the
+// roleId relation and events).
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId String
+
+  @@index([userId])
+}
+
+model Account {
+  id String @id @default(cuid())
+
+  // provider user id ("credential" accounts reuse the user id)
+  accountId  String
+  providerId String
+
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  // scrypt hash for providerId = "credential"
+  password              String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId String
+
+  @@index([userId])
+}
+
+// Email-bound, single-use, role-carrying invite links — a custom feature
+// beside better-auth, NOT a plugin (design §6). Ceiling "moderator" is
+// enforced in code; "admin" stays a seed/DB-level role.
+model Invite {
+  id         String    @id @default(cuid())
+  // bound address — must match at acceptance
+  email      String
+  // "user" | "moderator"
+  roleName   String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  acceptedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdById String
+
+  @@index([email])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([identifier])
 }
 
 model Role {
@@ -34,13 +119,6 @@ model Role {
   users User[]
 }
 
-model Password {
-  hash String
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId String @unique
-}
-
 model Event {
   id                  String   @id @default(cuid())
   title               String
@@ -52,16 +130,57 @@ model Event {
   price               Int
   discounts           String?
 
-  image   Image  @relation(fields: [imageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  imageId String @unique
+  // cover lives on Image (eventId, Cascade) like BoardMember portraits, so
+  // deleting an image can never take the event with it
+  image Image?
 
   addressId String
-  address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  address   Address @relation(fields: [addressId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   eventResponses EventResponse[]
 
-  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  createdById String
+  // authorship metadata only — events outlive their creator
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createdById String?
+
+  form   Form   @relation(fields: [formId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  formId String @unique // non-nullable: every event has a form (backfilled)
+}
+
+model Form {
+  id String @id @default(cuid())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  versions FormVersion[]
+  event    Event? // back-relation only; Form itself stays event-agnostic
+}
+
+model FormVersion {
+  id      String @id @default(cuid())
+  version Int
+  schema  Json // FieldDescriptor[]; validated by SignupFormSchema on every write
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt // mutated in place only while no submissions reference it
+
+  form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  formId String
+
+  submissions FormSubmission[]
+
+  @@unique([formId, version])
+}
+
+model FormSubmission {
+  id      String @id @default(cuid())
+  answers Json // nested: { name, email, …, friends: [{ name, … }] }
+
+  createdAt DateTime @default(now())
+
+  formVersion   FormVersion @relation(fields: [formVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  formVersionId String
 }
 
 model EventResponse {
@@ -96,7 +215,17 @@ model Image {
   id          String  @id @default(cuid())
   altText     String?
   contentType String
-  blob        Bytes
+  // provider key (Cloudinary public_id / local file key); required post-backfill
+  storageKey  String?
+  // Cloudinary asset version — versioned delivery URLs
+  version     Int?
+  // intrinsic pixels, from the upload response
+  width       Int?
+  height      Int?
+  // base64 blur-up placeholder (~1–2 KB), generated at store/backfill time
+  blurDataUrl String?
+  // legacy — nullable since the Cloudinary migration (phase 1), dropped in phase 3
+  blob        Bytes?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -104,7 +233,8 @@ model Image {
   boardMember   BoardMember? @relation(fields: [boardMemberId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   boardMemberId String?      @unique
 
-  event Event?
+  event   Event?  @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  eventId String? @unique
 }
 
 model BoardMember {

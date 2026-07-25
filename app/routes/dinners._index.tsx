@@ -1,70 +1,109 @@
-import { useLoaderData } from "react-router";
-
 import type { Route } from "./+types/dinners._index";
 
-import { DinnerCard } from "~/components/dinner-card";
-import { getEvents } from "~/models/event.server";
+import { Eyebrow, SectionDivider } from "~/components/section";
+import { Button } from "~/components/ui/button";
+import {
+  FeaturedEventCard,
+  PastEventCard,
+} from "~/features/events/components/event-card";
+import {
+  orderEventsByStatus,
+  partitionEvents,
+} from "~/features/events/event-status";
+import { toEventCardModel } from "~/features/events/view-models";
+import { getEventsWithAddress } from "~/models/event.server";
 
 export const loader = async () => {
-  const events = await getEvents();
+  const events = await getEventsWithAddress();
 
-  return { events };
+  // the route ships the card model, not the Prisma entity
+  return { events: events.map(toEventCardModel) };
 };
 
 export const meta: Route.MetaFunction = () => [{ title: "Dinners" }];
 
-export default function DinnersIndexPage() {
-  const { events } = useLoaderData<typeof loader>();
+export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
+  const { events } = loaderData;
 
-  const upcomingEvents = events.filter((event) => {
-    const eventDate = new Date(event.date);
-    const now = new Date();
-    return eventDate >= now;
-  });
-
-  const pastEvents = events.filter((event) => {
-    const eventDate = new Date(event.date);
-    const now = new Date();
-    return eventDate < now;
-  });
+  const now = new Date();
+  // events arrive sorted ascending, so the first upcoming one is the next
+  const { upcoming: upcomingEvents, past } = partitionEvents(events, now);
+  // the archive reads newest-first
+  const pastEvents = orderEventsByStatus(past, now);
 
   return (
-    <main className="mt-16 flex grow flex-col py-4">
-      {upcomingEvents.length > 0 || pastEvents.length > 0 ? (
-        <>
-          {upcomingEvents.length > 0 ? (
-            <div className="flex flex-col gap-8">
-              <h2 className="text-4xl">Upcoming dinners</h2>
-              <div className="flex flex-col gap-16">
-                {upcomingEvents.map((event) => {
-                  return <DinnerCard key={event.id} event={event} />;
-                })}
-              </div>
-            </div>
-          ) : null}
+    <main className="mx-auto w-full max-w-5xl grow px-5 pt-7 pb-20 md:px-10 md:pt-16">
+      <div className="mb-9 flex flex-col gap-3 md:mb-12">
+        <Eyebrow>gatherings</Eyebrow>
+        <h1 className="text-3xl font-light tracking-tight md:text-4xl">
+          dinners
+        </h1>
+        <p className="text-foreground/65 max-w-2xl text-base leading-relaxed font-light md:text-lg">
+          {upcomingEvents.length > 0
+            ? "a handful of seats open before each supper. reserve early, tables are small and fill quickly."
+            : "we run a handful of intimate dinners a year. there's nothing on the calendar right now, but the next one is never far off."}
+        </p>
+      </div>
 
-          {pastEvents.length > 0 ? (
-            <div className="flex flex-col gap-8">
-              {upcomingEvents.length > 0 ? <hr className="my-16" /> : null}
-              <h2 className="text-4xl">Past dinners</h2>
-              <div className="flex flex-col gap-16">
-                {pastEvents.map((event) => {
-                  return <DinnerCard key={event.id} event={event} />;
-                })}
-              </div>
-            </div>
-          ) : null}
+      {upcomingEvents.length > 0 ? (
+        <>
+          <SectionDivider className="mb-5">the next dinner</SectionDivider>
+          <div className="mb-14 flex flex-col gap-8 md:mb-18">
+            {upcomingEvents.map((event, index) => (
+              <FeaturedEventCard
+                key={event.id}
+                event={event}
+                isNext={index === 0}
+              />
+            ))}
+          </div>
         </>
       ) : (
-        <>
-          <p className="text-center text-4xl font-bold">
-            There are currently no dinners available.
-          </p>
-          <p className="textgray text-center text-xl font-semibold">
-            Please come back later...
-          </p>
-        </>
+        <EmptyState />
       )}
+
+      {pastEvents.length > 0 ? (
+        <>
+          <SectionDivider className="mb-5">past dinners</SectionDivider>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
+            {pastEvents.map((event) => (
+              <PastEventCard key={event.id} event={event} />
+            ))}
+          </div>
+        </>
+      ) : null}
     </main>
+  );
+}
+
+// between dinners the page stays warm rather than blank; deliberately no
+// mailing-list capture here (design handoff §5)
+function EmptyState() {
+  return (
+    <div className="border-border bg-card relative mb-14 flex flex-col items-center gap-4 overflow-hidden rounded-2xl border px-6 py-9 text-center md:mb-18 md:gap-5 md:px-14 md:py-19">
+      <div
+        aria-hidden
+        className="glow-primary pointer-events-none absolute -top-36 left-1/2 h-80 w-md -translate-x-1/2"
+      />
+      <span className="text-primary relative text-sm font-semibold">
+        nothing on the calendar right now
+      </span>
+      <h2 className="relative max-w-lg text-3xl font-light tracking-tight md:text-4xl">
+        the table is being set
+      </h2>
+      <p className="text-foreground/80 relative max-w-md text-sm leading-relaxed font-light md:text-lg">
+        we&apos;re planning the next gathering. check back soon to see
+        what&apos;s next, or follow along on instagram for the announcement.
+      </p>
+      <Button variant="outline" size="lg" className="relative mt-1" asChild>
+        <a
+          href="https://instagram.com/mokupona"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          follow on instagram
+        </a>
+      </Button>
+    </div>
   );
 }

@@ -1,4 +1,4 @@
-import type { MetaFunction } from "react-router";
+import type { Route } from "./+types/_index";
 
 import { HeroBlockView } from "~/features/cms/blocks/hero";
 import type { HeroBlockType } from "~/features/cms/blocks/hero/model";
@@ -8,12 +8,35 @@ import {
   TextSectionBlockView,
   type TextSectionBlockType,
 } from "~/features/cms/blocks/text-section";
-import type { RootLoaderData } from "~/root";
+import { formatEventDayMonth } from "~/features/events/date-format";
+import { getBlurDataUrl } from "~/features/images/blur-placeholder.server";
+import { getNextEvent } from "~/models/event.server";
+import { withOpenGraphUrls } from "~/shared/meta";
 
-export const meta: MetaFunction<null, { root: RootLoaderData }> = ({
-  matches,
-  location,
-}) => {
+// fixed public_ids in the shared, non-env-prefixed static/ folder — the
+// originals stay in the repo (public/*-original.*) as source of truth
+const HERO_IMAGE_ID = "static/hero-image";
+const ACCENT_IMAGE_ID = "static/accent-image";
+
+export const loader = async () => {
+  // the blur placeholders are module-cached — one Cloudinary fetch per
+  // server boot per asset, never a per-request cost (design §3.3)
+  const [nextEvent, heroBlurDataUrl, accentBlurDataUrl] = await Promise.all([
+    getNextEvent(),
+    getBlurDataUrl(HERO_IMAGE_ID),
+    getBlurDataUrl(ACCENT_IMAGE_ID),
+  ]);
+
+  return {
+    nextDinner: nextEvent
+      ? { id: nextEvent.id, date: nextEvent.date, slots: nextEvent.slots }
+      : null,
+    heroBlurDataUrl,
+    accentBlurDataUrl,
+  };
+};
+
+export const meta: Route.MetaFunction = ({ matches, location }) => {
   const metaTags = [
     { title: "moku pona" },
     {
@@ -21,66 +44,55 @@ export const meta: MetaFunction<null, { root: RootLoaderData }> = ({
       content:
         "A dinner society in Zurich, bringing people together through shared meals, stories, and the joy of discovery.",
     },
-  ] satisfies ReturnType<MetaFunction>;
+  ] satisfies ReturnType<Route.MetaFunction>;
 
-  const domainUrl = matches.find(({ id }) => id === "root")?.data.domainUrl;
-  if (!domainUrl) return metaTags;
-
-  const imageUrl = new URL("/landing-page-default.jpg", domainUrl);
-  const currentUrl = new URL(location.pathname, domainUrl);
-
-  return [
+  const tags = [
     ...metaTags,
     { property: "og:title", content: metaTags[0].title },
     { property: "og:type", content: "website" },
-    { property: "og:image", content: imageUrl },
-    { property: "og:url", content: currentUrl },
   ];
-};
 
-const heroSectionData: HeroBlockType = {
-  type: "hero",
-  version: 1,
-  data: {
-    eyebrow: "our next event is on may 9th",
-    headline: "moku pona",
-    description:
-      "A dinner society in Zurich, bringing people together through shared meals, stories, and the joy of discovery.",
-    actions: [{ href: "/dinners", label: "join a dinner" }],
-    image: {
-      src: "/hero-image.jpg",
-    },
-  },
+  return withOpenGraphUrls(tags, {
+    matches,
+    imagePath: "/landing-page-default.jpg",
+    pagePath: location.pathname,
+  });
 };
 
 const visionSectionData: TextSectionBlockType = {
   type: "text-section",
   version: 1,
   data: {
-    headline: "our vision",
-    body: "moku pona began as a passion project by a group of friends who love cooking and wanted a creative way to explore our culinary interests. For us, food is a way to express creativity, share experiences, and connect with others. Through our dinner club, we aim to surprise our guests with unique flavors and ingredients, introducing them to diverse cuisines and the stories behind them. At its heart, moku pona is about celebrating the art of food and inspiring curiosity about global food cultures.",
+    eyebrow: "our vision",
+    headline: "food as a way to connect",
+    body: "moku pona began as a passion project by a group of friends who love cooking and wanted a creative way to explore our culinary interests. for us, food is a way to express creativity, share experiences, and connect with others. through our dinner club, we surprise our guests with unique flavors and ingredients, introducing them to diverse cuisines and the stories behind them.",
     variant: "plain",
   },
 };
 
-const imageSectionData: ImageBlockType = {
+// 2792×988 original — keep its aspect so c_fill never crops surprisingly
+const accentSectionData = (blurDataUrl: string | null): ImageBlockType => ({
   type: "image",
   version: 1,
   data: {
     image: {
-      src: "/accent-image.png",
+      src: ACCENT_IMAGE_ID,
       alt: "",
+      width: 1080,
+      height: 382,
+      blurDataUrl,
     },
     variant: "full-width",
   },
-};
+});
 
 const differenceSectionData: TextSectionBlockType = {
   type: "text-section",
   version: 1,
   data: {
-    headline: "how's this different?",
-    body: "At moku pona, we believe that food is a powerful way to bring people together. Our dinner events go beyond the typical restaurant experience, creating a warm and welcoming community space where friends and strangers can forge new connections. We aim to make every gathering an opportunity not just to enjoy a wonderful meal, but also to meet new people, share stories, and build meaningful relationships. It's a place to connect, learn, and experience the magic of a shared table in a cozy, intimate setting.",
+    eyebrow: "how's this different?",
+    headline: "more than a meal out",
+    body: "our dinner events go beyond the typical restaurant experience, creating a warm and welcoming space where friends and strangers can forge new connections. every gathering is a chance not just to enjoy a wonderful meal, but to meet new people, share stories, and build meaningful relationships, the magic of a shared table in a cozy, intimate setting.",
     variant: "plain",
   },
 };
@@ -89,86 +101,57 @@ const aboutSectionData: TextSectionBlockType = {
   type: "text-section",
   version: 1,
   data: {
-    headline: "who we are",
-    body: "What started as a shared love of cooking has grown into a community of around 15 members who come together to create, host, and share meals. We see food as a way to bring people together: to exchange ideas, build friendships, and create meaningful experiences around the table. As an association, moku pona is about community, creativity, and hospitality - not just dining, but making people feel welcome.",
+    eyebrow: "who we are",
+    headline: "a community of around fifteen",
+    body: "what started as a shared love of cooking has grown into a community who come together to create, host, and share meals. as an association, moku pona is about community, creativity, and hospitality, not just dining, but making people feel welcome.",
     variant: "slanted",
   },
 };
 
-export default function Index() {
+export default function Index({ loaderData }: Route.ComponentProps) {
+  const { nextDinner, heroBlurDataUrl, accentBlurDataUrl } = loaderData;
+
+  const heroSectionData: HeroBlockType = {
+    type: "hero",
+    version: 1,
+    data: {
+      eyebrow: nextDinner
+        ? `next gathering · ${formatEventDayMonth(new Date(nextDinner.date))}`
+        : undefined,
+      headline: "an evening around",
+      headlineAccent: "one long table",
+      description:
+        "moku pona is a dinner society in zürich, shared meals, new stories, and the quiet joy of discovery.",
+      actions: [
+        {
+          href: nextDinner ? `/dinners/${nextDinner.id}` : "/dinners",
+          label: "reserve a seat",
+        },
+        { href: "/dinners", label: "see all dinners →", variant: "secondary" },
+      ],
+      meta: undefined,
+      // 6240×3304 original — keep its aspect so c_fill never crops surprisingly
+      image: {
+        src: HERO_IMAGE_ID,
+        alt: "",
+        width: 1080,
+        height: 572,
+        blurDataUrl: heroBlurDataUrl,
+      },
+    },
+  };
+
   return (
     <main>
       <HeroBlockView blockData={heroSectionData} />
 
       <TextSectionBlockView blockData={visionSectionData} />
 
-      <ImageBlockView blockData={imageSectionData} />
+      <ImageBlockView blockData={accentSectionData(accentBlurDataUrl)} />
 
       <TextSectionBlockView blockData={differenceSectionData} />
 
       <TextSectionBlockView blockData={aboutSectionData} />
     </main>
-  );
-}
-
-type SplitSectionMediaBlock = {
-  heading: string;
-  body: string;
-  media: {
-    src: string;
-    srcSet?: string;
-    alt?: string;
-  };
-  mediaPosition?: "left" | "right";
-  actions?: { href: string; label: string }[];
-  variant?: "default" | "alternate";
-  theme?: "light" | "dark";
-};
-
-function SplitSectionMedia() {
-  const data: SplitSectionMediaBlock = {
-    heading: "our vision",
-    body: "moku pona began as a passion project by a group of friends who love cooking and wanted a creative way to explore our culinary interests. For us, food is a way to express creativity, share experiences, and connect with others. Through our dinner club, we aim to surprise our guests with unique flavors and ingredients, introducing them to diverse cuisines and the stories behind them. At its heart, moku pona is about celebrating the art of food and inspiring curiosity about global food cultures.",
-    media: {
-      src: "/vision-image.jpg",
-      srcSet:
-        "/vision-image-sm.webp 432w, /vision-image-md.webp 648w, /vision-image-lg.webp 864w, /vision-image-original.webp 1080w",
-      alt: "Our vision image",
-    },
-    mediaPosition: "right",
-    actions: [],
-    variant: "default",
-  };
-
-  const content = (
-    <div className="flex flex-col gap-10">
-      <h2 className="text-4xl">{data.heading}</h2>
-      <p className="text-xl leading-relaxed font-light">{data.body}</p>
-    </div>
-  );
-
-  const media = (
-    <picture>
-      <img
-        srcSet={data.media.srcSet}
-        src={data.media.src}
-        className="aspect-square h-full w-full rounded-md object-cover"
-        alt={data.media.alt}
-      />
-    </picture>
-  );
-
-  return (
-    <div className="mx-auto grid max-w-4xl grid-cols-6 gap-5 border border-solid border-red-500">
-      {/* Left block */}
-      <div className="col-span-3 border border-solid border-blue-500">
-        {data.mediaPosition === "left" ? media : content}
-      </div>
-
-      {/* Right block */}
-      <div className="col-span-3 border border-solid border-green-500">
-        {data.mediaPosition === "right" ? media : content}
-      </div>
-    </div>
   );
 }

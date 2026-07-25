@@ -1,0 +1,105 @@
+<!-- @dsCard group="Foundations" title="Color tokens" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mokupona — Color tokens</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --background: #15110E;
+    --card: #1B1511;
+    --foreground: rgb(245 241 236);
+    --primary: #ED825E;
+    --accent-light: #F1B48C;
+    --destructive: #A71D31;
+    --red-300: #FCA5A5;   /* tailwind native */
+    --sky-300: #7DD3FC;   /* tailwind native */
+    --border: rgb(245 241 236 / 0.15);
+  }
+  body {
+    background: var(--background); color: var(--foreground);
+    font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+    padding: 32px; -webkit-font-smoothing: antialiased;
+  }
+  .eyebrow { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgb(245 241 236 / 0.5); }
+  h1 { font-size: 24px; font-weight: 300; letter-spacing: -0.025em; margin: 6px 0 4px; }
+  .note { font-size: 14px; line-height: 1.5; color: rgb(245 241 236 / 0.65); max-width: 640px; }
+  section { margin-top: 28px; }
+  h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgb(245 241 236 / 0.5); margin-bottom: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+  .swatch { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); }
+  .swatch .chip { height: 64px; }
+  .swatch .meta { padding: 10px 12px; }
+  .swatch .name { font-size: 14px; font-weight: 600; }
+  .swatch .val { font-size: 12px; color: rgb(245 241 236 / 0.4); margin-top: 2px; }
+  .text-tiers { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; background: var(--card); font-size: 16px; }
+  .glow-demo { position: relative; border: 1px solid var(--border); border-radius: 16px; background: var(--card); height: 120px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .glow-demo::before { content: ""; position: absolute; inset: -40%; background: radial-gradient(circle, rgb(237 130 94 / 0.15), transparent 70%); }
+  .glow-demo span { position: relative; font-size: 14px; color: rgb(245 241 236 / 0.65); }
+  .dropped { font-size: 14px; color: rgb(245 241 236 / 0.4); margin-top: 10px; line-height: 1.6; }
+  code { font-size: 13px; }
+</style>
+</head>
+<body>
+  <p class="eyebrow">Foundations</p>
+  <h1>Color tokens</h1>
+  <p class="note">Dark-only "supper club" palette. Custom colors are the brand only: two surfaces and
+  the accent pair. Everything else is expressed in Tailwind-native terms — text tiers are
+  <code>foreground</code> at native opacity steps, semantic text colors are native palette colors,
+  and there is <b>one</b> hairline.</p>
+
+  <section>
+    <h2>Surfaces &amp; the one hairline</h2>
+    <div class="grid">
+      <div class="swatch"><div class="chip" style="background:#15110E"></div><div class="meta"><div class="name">background</div><div class="val">#15110E</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#1B1511"></div><div class="meta"><div class="name">card / raised</div><div class="val">#1B1511</div></div></div>
+      <div class="swatch"><div class="chip" style="background:rgb(245 241 236 / 0.15)"></div><div class="meta"><div class="name">border</div><div class="val">foreground/15</div></div></div>
+    </div>
+    <p class="dropped">Hairline (<s>foreground/10</s>) and input border (<s>foreground/16</s>) merge into
+    <b>one</b> <code>border-foreground/15</code> — the brighter of the two, at the nearest native opacity
+    step. All former /8, /12, /[0.22], white/10 and white/20 hairlines land here.</p>
+  </section>
+
+  <section>
+    <h2>Accent</h2>
+    <div class="grid">
+      <div class="swatch"><div class="chip" style="background:#ED825E"></div><div class="meta"><div class="name">primary</div><div class="val">#ED825E</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#F1B48C"></div><div class="meta"><div class="name">accent-light</div><div class="val">#F1B48C</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#15110E; border-bottom:1px solid var(--border)"></div><div class="meta"><div class="name">primary-foreground</div><div class="val">= background (on accent)</div></div></div>
+    </div>
+    <p class="dropped"><s>--color-tan #E0A87F</s> — dropped (call #4). Avatars rotate on
+    <code>accent-light</code> / <code>foreground/80</code>.</p>
+  </section>
+
+  <section>
+    <h2>Text tiers — foreground at native opacity steps</h2>
+    <div class="text-tiers">
+      <span style="color:rgb(245 241 236)">text-foreground — primary text</span>
+      <span style="color:rgb(245 241 236 / 0.8)">text-foreground/80 — body copy, nav links <s style="margin-left:6px">--color-fg-secondary</s></span>
+      <span style="color:rgb(245 241 236 / 0.65)">text-foreground/65 — field labels, metadata <s style="margin-left:6px">--color-fg-muted</s></span>
+      <span style="color:rgb(245 241 236 / 0.5)">text-foreground/50 — section/eyebrow labels <s style="margin-left:6px">--color-fg-label</s></span>
+      <span style="color:rgb(245 241 236 / 0.4)">text-foreground/40 — placeholders, fine print <s style="margin-left:6px">--color-fg-faint</s></span>
+    </div>
+    <p class="dropped">The four custom fg-* hex tokens are deleted: composited over the background they
+    match foreground at /80, /65, /50, /40 — all native opacity values, one source color.</p>
+  </section>
+
+  <section>
+    <h2>Semantic</h2>
+    <div class="grid">
+      <div class="swatch"><div class="chip" style="background:#A71D31"></div><div class="meta"><div class="name">destructive</div><div class="val">#A71D31 — surface only (solid buttons)</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#FCA5A5"></div><div class="meta"><div class="name">text-red-300 (native)</div><div class="val">red text on dark — replaces #E0899A</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#7DD3FC"></div><div class="meta"><div class="name">sky-300 (native)</div><div class="val">"friends" chip — replaces custom oklch</div></div></div>
+    </div>
+    <p class="dropped">Rule of thumb: saturated deep colors are <b>surfaces</b> (white text on top);
+    red/sky <b>-300</b> shades are <b>text</b> on dark. Info chip: <code>border-sky-300/40 bg-sky-300/15 text-sky-300</code>.</p>
+  </section>
+
+  <section>
+    <h2>.glow-primary utility</h2>
+    <div class="glow-demo"><span>radial-gradient(circle, primary/15, transparent 70%) — default /15, strong /20</span></div>
+  </section>
+</body>
+</html>

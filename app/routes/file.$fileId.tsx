@@ -1,154 +1,81 @@
-import type { ComponentProps } from "react";
-import sharp, { type FitEnum } from "sharp";
-import invariant from "tiny-invariant";
-import { z } from "zod";
+import { redirect } from "react-router";
 
 import type { Route } from "./+types/file.$fileId";
 
-import { prisma } from "~/db.server";
-import { logger } from "~/logger.server";
-import {
-  fileStorage as cache,
-  getStorageKey as getCacheKey,
-} from "~/utils/file-chache-storage.server";
-import { getImageUrl } from "~/utils/misc";
+import { getLocalImageFile } from "~/features/images/providers/local.server";
+import { getImageById } from "~/models/image.server";
+import { requireFound } from "~/shared/http.server";
+import { getImageUrl, type ImageProviderConfig } from "~/shared/image";
 
-const SearchParamsSchema = z.object({
-  width: z.coerce.number().min(0).optional(),
-  height: z.coerce.number().min(0).optional(),
-  fit: z.enum(["cover", "contain", "fill"]).optional().default("cover"),
-});
+// Thin serving/redirect route since the Cloudinary migration. Transforms
+// happen on the CDN; this route only ever hands out original bytes:
+//
+// - cloudinary provider + provider-stored row → 302 to the delivery URL
+//   (legacy links out in the wild: OG scrapers, cached pages)
+// - local provider → stream the stored file from disk
+// - legacy blob-only row (not yet backfilled) → stream the original bytes,
+//   sharp-free — the phase 1 interim path
+//
+// Old transform query params (w/h/fit) are ignored. The route stays off the
+// lazy user context — keep it auth-cost-free.
 
-type SearchParams = z.infer<typeof SearchParamsSchema>;
-
-type ImageInputProps = {
-  imageId: string;
-  width: number;
-  height: number;
-} & Partial<Pick<SearchParams, "fit">>;
-
-type ImageProps = Omit<ComponentProps<"img">, "width" | "height" | "src"> &
-  ImageInputProps;
-
-export function OptimizedImage({
-  imageId,
-  width,
-  height,
-  fit = "cover",
-  ...props
-}: ImageProps) {
-  const breakPoints = [432, 648, 864, 1080];
-  const imageUrl = getImageUrl(imageId);
-  const aspect = width / height;
-
-  const searchParams = new URLSearchParams({
-    w: `${width}`,
-    h: `${height}`,
-    fit,
-  });
-
-  const srcSetUrls = breakPoints.map((w) => {
-    const h = w / aspect;
-    const searchParams = new URLSearchParams({
-      w: `${w}`,
-      h: `${h}`,
-      fit,
-    });
-
-    return `${imageUrl + "?" + searchParams.toString()} ${w}w`;
-  });
-
-  return (
-    <picture>
-      <img
-        srcSet={srcSetUrls.join(", ")}
-        src={imageUrl + "?" + searchParams.toString()}
-        width={width}
-        height={height}
-        {...props}
-      />
-    </picture>
-  );
+function imageConfigFromEnv(): ImageProviderConfig {
+  return {
+    imageProvider:
+      process.env.IMAGE_PROVIDER === "cloudinary" ? "cloudinary" : "local",
+    cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME ?? null,
+  };
 }
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  const url = new URL(request.url);
-  const searchParams = url.searchParams;
-  const { fileId } = params;
-
-  const options = SearchParamsSchema.safeParse({
-    width: searchParams.get("w"),
-    height: searchParams.get("h"),
-    fit: searchParams.get("fit"),
-  });
-
-  logger.info(JSON.stringify(options));
-
-  if (!options.success) {
-    // Params were malformed
-    throw new Response("Bad request", {
-      status: 400,
-    });
-  }
-
-  invariant(typeof fileId === "string", "Parameter fileId must be provided");
-
-  const { width, height, fit } = options.data;
-  const cacheKey = getCacheKey(`${fileId}-${width}-${height}-${fit}`);
-
-  logger.info(`Checking cache with: ${cacheKey}`);
-
-  if (await cache.has(cacheKey)) {
-    const fileStream = await cache.get(cacheKey);
-    if (!fileStream) {
-      // Key exists but no file.
-      // Continue as if no cache exists
-      logger.info(`Cache miss with: ${cacheKey}`);
-    } else {
-      // Cache hit successful
-      logger.info(`Cache hit with: ${cacheKey}`);
-      return new Response(fileStream.stream(), {
-        headers: {
-          "Content-Type": "image/webp",
-          "Content-Disposition": `inline; filename="${params.fileId}"`,
-          "Cache-Control": "public, max-age=31536000, immutable",
-          "Transfer-Encoding": "chunked",
-        },
-      });
-    }
-  } else {
-    logger.info(`Cache miss with: ${cacheKey}`);
-  }
-
-  const file = await prisma.image.findUnique({ where: { id: fileId } });
-  if (!file) throw new Response("Not found", { status: 404 });
-
-  const optimizedImage = await sharp(file.blob)
-    .webp()
-    .resize({
-      ...(width && { width: Number(width) }),
-      ...(height && { height: Number(height) }),
-      fit: isAllowedFit(fit) ? fit : "cover",
-    })
-    .toBuffer();
-
-  const test = new Uint8Array(optimizedImage);
-  const testFile = new File([test], fileId);
-
-  // @ts-ignore
-  return new Response((await cache.put(cacheKey, testFile)).stream(), {
+// Streaming keeps image bytes out of memory; LazyFile (fs storage) no longer
+// implements File, so responses are built from the stream + size metadata.
+function createImageResponse(
+  body: BodyInit,
+  {
+    contentType,
+    size,
+    fileId,
+  }: { contentType: string; size: number; fileId: string },
+) {
+  return new Response(body, {
     headers: {
-      "Content-Type": "image/webp",
-      "Content-Disposition": `inline; filename="${params.fileId}"`,
+      "Content-Type": contentType,
+      "Content-Disposition": `inline; filename="${fileId}"`,
+      "Content-Length": String(size),
+      // replaced covers get fresh row ids, rows never mutate — safe to pin
       "Cache-Control": "public, max-age=31536000, immutable",
-      "Transfer-Encoding": "chunked",
     },
   });
 }
 
-function isAllowedFit(s: string | null): s is FitEnum[keyof FitEnum] {
-  const allowedFits: FitEnum[keyof FitEnum][] = ["contain", "cover", "fill"];
-  if (!s) return false;
-  // @ts-ignore
-  return allowedFits.includes(s);
+export async function loader({ params }: Route.LoaderArgs) {
+  const { fileId } = params;
+
+  const image = requireFound(await getImageById(fileId));
+  const config = imageConfigFromEnv();
+
+  if (image.storageKey) {
+    if (config.imageProvider === "cloudinary" && config.cloudinaryCloudName) {
+      return redirect(getImageUrl(image, config), 302);
+    }
+
+    // missing file (e.g. a cloudinary-stored row during a provider rollback)
+    // falls through to the legacy blob
+    const file = await getLocalImageFile(image.storageKey);
+    if (file) {
+      return createImageResponse(file.stream(), {
+        contentType: image.contentType,
+        size: file.size,
+        fileId,
+      });
+    }
+  }
+
+  const blob = requireFound(image.blob);
+  const bytes = new Uint8Array(blob);
+  return createImageResponse(bytes, {
+    contentType: image.contentType,
+    size: bytes.byteLength,
+    fileId,
+  });
 }

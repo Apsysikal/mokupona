@@ -2,67 +2,35 @@ import path from "node:path";
 
 import sharp from "sharp";
 
+import { RESPONSIVE_IMAGE_WIDTHS } from "~/shared/image";
+
 const __dirname = import.meta.dirname;
 
-const landingPageImagePath = path.join(
-  __dirname,
-  "..",
-  "public",
-  "hero-image-original.jpg",
-);
+const publicDir = path.join(__dirname, "..", "public");
 
-const accentImagePath = path.join(
-  __dirname,
-  "..",
-  "public",
-  "accent-image-original.png",
-);
+async function optimizeResponsiveImage(source: string, outputStem: string) {
+  for (const width of RESPONSIVE_IMAGE_WIDTHS) {
+    await sharp(source)
+      .resize({ width })
+      .webp({ quality: 60 })
+      .toFile(path.join(publicDir, `${outputStem}-${width}.webp`));
+  }
+
+  await sharp(source)
+    .resize({ width: RESPONSIVE_IMAGE_WIDTHS[0] })
+    .jpeg()
+    .toFile(path.join(publicDir, `${outputStem}.jpg`));
+}
 
 async function optimize() {
-  const variants = [
-    { size: "1080", width: 1080 },
-    { size: "864", width: 864 },
-    { size: "648", width: 648 },
-    { size: "432", width: 432 },
-  ];
-
-  variants.forEach(async ({ size, width }) => {
-    const optimizedPath = path.join(
-      __dirname,
-      "..",
-      "public",
-      `hero-image-${size}.webp`,
-    );
-
-    await sharp(landingPageImagePath)
-      .resize({ width })
-      .webp({ quality: 60 })
-      .toFile(optimizedPath);
-  });
-
-  await sharp(landingPageImagePath)
-    .resize({ width: 432 })
-    .jpeg()
-    .toFile(path.join(__dirname, "..", "public", "hero-image.jpg"));
-
-  variants.forEach(async ({ size, width }) => {
-    const optimizedPath = path.join(
-      __dirname,
-      "..",
-      "public",
-      `accent-image-${size}.webp`,
-    );
-
-    await sharp(accentImagePath)
-      .resize({ width })
-      .webp({ quality: 60 })
-      .toFile(optimizedPath);
-  });
-
-  await sharp(accentImagePath)
-    .resize({ width: 432 })
-    .jpeg()
-    .toFile(path.join(__dirname, "..", "public", "accent-image.jpg"));
+  await optimizeResponsiveImage(
+    path.join(publicDir, "hero-image-original.jpg"),
+    "hero-image",
+  );
+  await optimizeResponsiveImage(
+    path.join(publicDir, "accent-image-original.png"),
+    "accent-image",
+  );
 }
 
 optimize().catch((e) => {

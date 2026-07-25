@@ -1,98 +1,60 @@
 import {
+  createDinnerViaAdminForm,
   dinnerFormValues,
+  expectHandlerLimitRejection,
   FILE_TOO_LARGE_ERROR,
+  fillDinnerForm,
+  getFirstAddressId,
+  oversizedZodUpload,
   runUploadDbCommand,
-  submitMultipartRequest,
-  UPLOAD_HANDLER_LIMIT_BYTES,
-  uploadFileInput,
+  saveDinnerAndCaptureId,
+  uploadDinnerCover,
   VALID_UPLOAD_FIXTURE_PATH,
   type DinnerRecord,
-  ZOD_LIMIT_BYTES,
+  type ImageRecord,
 } from "../support/upload-test-utils";
 
-type DinnerCleanup = {
-  id: string;
-  extraImageIds?: string[];
-};
+describe("admin dinner uploads", () => {
+  let dinnerIdsToCleanup: string[];
 
-function getFirstAddressId() {
-  return cy
-    .findByLabelText(/^address$/i)
-    .find("option")
-    .first()
-    .then(($option) => {
-      const addressId = $option.val();
+  function createDinnerAndOpenEdit(record: {
+    title: string;
+    description?: string;
+  }) {
+    return runUploadDbCommand<DinnerRecord>("create-dinner", record).then(
+      (dinner) => {
+        dinnerIdsToCleanup.push(dinner.id);
 
-      if (typeof addressId !== "string") {
-        throw new Error("Address value missing from dinner form");
-      }
-
-      return addressId;
-    });
-}
-
-function selectFirstAddress() {
-  getFirstAddressId().then((addressId) => {
-    cy.findByLabelText(/^address$/i).select(addressId);
-  });
-}
-
-function fillDinnerForm(values: ReturnType<typeof dinnerFormValues>) {
-  cy.findByLabelText(/^title$/i)
-    .clear()
-    .type(values.title);
-  cy.findByLabelText(/^description$/i)
-    .clear()
-    .type(values.description);
-  cy.findByLabelText(/^menu$/i)
-    .clear()
-    .type(values.menuDescription);
-  cy.findByLabelText(/^donation$/i)
-    .clear()
-    .type(values.donationDescription);
-  cy.findByLabelText(/^date$/i)
-    .clear()
-    .type(values.date);
-  cy.findByLabelText(/^slots$/i)
-    .clear()
-    .type(values.slots);
-  cy.findByLabelText(/^price$/i)
-    .clear()
-    .type(values.price);
-  cy.findByLabelText(/^discounts$/i)
-    .clear()
-    .type(values.discounts);
-  selectFirstAddress();
-}
-
-function uploadDinnerCover(file: string | Cypress.FileReferenceObject) {
-  cy.findByLabelText(/^cover$/i).selectFile(file, { force: true });
-}
-
-function getDinnerIdFromPathname(pathname: string) {
-  const dinnerId = pathname.match(
-    /\/admin\/dinners\/([^/.]+)(?:\.data)?$/,
-  )?.[1];
-
-  if (!dinnerId) {
-    throw new Error(`Unable to determine dinner id from pathname: ${pathname}`);
+        cy.visitAndCheck(`/admin/dinners/${dinner.id}/edit`);
+        return cy.wrap(dinner);
+      },
+    );
   }
 
-  return dinnerId;
-}
+  function saveEditAndFetch(id: string) {
+    cy.findByRole("button", { name: /save dinner/i }).click();
+    cy.location("pathname").should("eq", `/admin/dinners/${id}`);
 
-describe("admin dinner uploads", () => {
-  let dinnersToCleanup: DinnerCleanup[];
+    return runUploadDbCommand<DinnerRecord>("get-dinner", { id });
+  }
+
+  function submitOversizedCoverExpectingError(pathname: string) {
+    uploadDinnerCover(oversizedZodUpload());
+    cy.findByRole("button", { name: /save dinner/i }).click();
+
+    cy.findByText(FILE_TOO_LARGE_ERROR).should("be.visible");
+    cy.location("pathname").should("eq", pathname);
+  }
 
   beforeEach(() => {
-    dinnersToCleanup = [];
+    dinnerIdsToCleanup = [];
     cy.loginAsRole("moderator");
   });
 
   afterEach(() => {
     cy.then(() => {
-      dinnersToCleanup.forEach(({ id, extraImageIds }) => {
-        runUploadDbCommand("delete-dinner", { id, extraImageIds });
+      dinnerIdsToCleanup.forEach((id) => {
+        runUploadDbCommand("delete-dinner", { id });
       });
     });
   });
@@ -100,26 +62,23 @@ describe("admin dinner uploads", () => {
   it("creates a dinner with a valid uploaded cover", () => {
     const values = dinnerFormValues("new-success");
 
-    cy.visitAndCheck("/admin/dinners/new");
-    fillDinnerForm(values);
-    uploadDinnerCover(VALID_UPLOAD_FIXTURE_PATH);
-    cy.findByRole("button", { name: /create dinner/i }).click();
+    createDinnerViaAdminForm(values);
+    saveDinnerAndCaptureId(values.title).then((dinnerId) => {
+      dinnerIdsToCleanup.push(dinnerId);
 
-    cy.findByRole("heading", { name: values.title }).should("be.visible");
-
-    cy.location("pathname")
-      .should("match", /\/admin\/dinners\/[^/.]+$/)
-      .then((pathname) => {
-        const dinnerId = getDinnerIdFromPathname(pathname);
-        dinnersToCleanup.push({ id: dinnerId });
-
-        runUploadDbCommand<DinnerRecord>("get-dinner", { id: dinnerId }).then(
-          (dinner) => {
-            expect(dinner.title).to.equal(values.title);
-            expect(dinner.imageId).to.be.a("string").and.not.be.empty;
-          },
-        );
-      });
+      runUploadDbCommand<DinnerRecord>("get-dinner", { id: dinnerId }).then(
+        (dinner) => {
+          expect(dinner.title).to.equal(values.title);
+          expect(dinner.imageId).to.be.a("string").and.not.be.empty;
+          // uploads persist provider scalars now, never blob bytes
+          expect(dinner.imageStorageKey).to.be.a("string").and.not.be.empty;
+          // the stored file must be servable back by the app — this pins the
+          // cross-process IMAGE_UPLOAD_FOLDER contract between the db helper
+          // and the server
+          cy.request(`/file/${dinner.imageId}`).its("status").should("eq", 200);
+        },
+      );
+    });
   });
 
   it("shows a validation error when the uploaded cover is larger than the Zod limit", () => {
@@ -127,13 +86,7 @@ describe("admin dinner uploads", () => {
 
     cy.visitAndCheck("/admin/dinners/new");
     fillDinnerForm(values);
-    uploadDinnerCover(
-      uploadFileInput(ZOD_LIMIT_BYTES + 1, { fileName: "zod-too-large.jpg" }),
-    );
-    cy.findByRole("button", { name: /create dinner/i }).click();
-
-    cy.findByText(FILE_TOO_LARGE_ERROR).should("be.visible");
-    cy.location("pathname").should("eq", "/admin/dinners/new");
+    submitOversizedCoverExpectingError("/admin/dinners/new");
   });
 
   it("returns a server-side error when the uploaded cover exceeds the upload handler limit", () => {
@@ -141,122 +94,86 @@ describe("admin dinner uploads", () => {
 
     cy.visitAndCheck("/admin/dinners/new");
     getFirstAddressId().then((addressId) => {
-      submitMultipartRequest({
+      expectHandlerLimitRejection({
         action: "/admin/dinners/new",
         fields: {
           ...values,
           addressId,
         },
         fileFieldName: "cover",
-        file: {
-          size: UPLOAD_HANDLER_LIMIT_BYTES + 1,
-          name: "handler-too-large.jpg",
-        },
-      }).then((response) => {
-        expect(response.status).to.not.equal(500);
-        expect(response.body).to.include(FILE_TOO_LARGE_ERROR);
       });
     });
   });
 
   it("updates non-file fields without overriding the existing dinner image", () => {
-    runUploadDbCommand<DinnerRecord>("create-dinner", {
+    createDinnerAndOpenEdit({
       title: "Dinner edit keep image",
       description: "Original dinner description",
     }).then((dinner) => {
-      dinnersToCleanup.push({ id: dinner.id });
-
       const updatedTitle = "Dinner edit keep image updated";
 
-      cy.visitAndCheck(`/admin/dinners/${dinner.id}/edit`);
       cy.findByLabelText(/^title$/i)
         .clear()
         .type(updatedTitle);
-      cy.findByRole("button", { name: /update dinner/i }).click();
-      cy.location("pathname").should("eq", `/admin/dinners/${dinner.id}`);
-
-      runUploadDbCommand<DinnerRecord>("get-dinner", { id: dinner.id }).then(
-        (updatedDinner) => {
-          expect(updatedDinner.title).to.equal(updatedTitle);
-          expect(updatedDinner.imageId).to.equal(dinner.imageId);
-        },
-      );
+      saveEditAndFetch(dinner.id).then((updatedDinner) => {
+        expect(updatedDinner.title).to.equal(updatedTitle);
+        expect(updatedDinner.imageId).to.equal(dinner.imageId);
+      });
     });
   });
 
   it("replaces the dinner image when a new cover is uploaded during edit", () => {
-    runUploadDbCommand<DinnerRecord>("create-dinner", {
+    createDinnerAndOpenEdit({
       title: "Dinner edit replace image",
       description: "Original dinner description",
     }).then((dinner) => {
-      const cleanup = { id: dinner.id } as DinnerCleanup;
-      dinnersToCleanup.push(cleanup);
       const updatedTitle = "Dinner edit replace image updated";
 
-      cy.visitAndCheck(`/admin/dinners/${dinner.id}/edit`);
       cy.findByLabelText(/^title$/i)
         .clear()
         .type(updatedTitle);
       uploadDinnerCover(VALID_UPLOAD_FIXTURE_PATH);
-      cy.findByRole("button", { name: /update dinner/i }).click();
-      cy.location("pathname").should("eq", `/admin/dinners/${dinner.id}`);
-
-      runUploadDbCommand<DinnerRecord>("get-dinner", { id: dinner.id }).then(
-        (updatedDinner) => {
-          expect(updatedDinner.title).to.equal(updatedTitle);
-          expect(updatedDinner.imageId).to.not.equal(dinner.imageId);
-          cleanup.extraImageIds = [dinner.imageId];
-        },
-      );
+      saveEditAndFetch(dinner.id).then((updatedDinner) => {
+        expect(updatedDinner.title).to.equal(updatedTitle);
+        expect(updatedDinner.imageId).to.not.equal(dinner.imageId);
+        // updateEvent deletes the replaced cover row in-transaction — no
+        // orphan row survives, so no defensive extra-image cleanup either
+        runUploadDbCommand<ImageRecord | null>("get-image", {
+          id: dinner.imageId,
+        }).then((oldImage) => {
+          expect(oldImage).to.equal(null);
+        });
+      });
     });
   });
 
   it("shows a validation error on dinner edit when the uploaded cover is larger than the Zod limit", () => {
-    runUploadDbCommand<DinnerRecord>("create-dinner", {
-      title: "Dinner edit zod error",
-    }).then((dinner) => {
-      dinnersToCleanup.push({ id: dinner.id });
-
-      cy.visitAndCheck(`/admin/dinners/${dinner.id}/edit`);
-      uploadDinnerCover(
-        uploadFileInput(ZOD_LIMIT_BYTES + 1, { fileName: "zod-too-large.jpg" }),
-      );
-      cy.findByRole("button", { name: /update dinner/i }).click();
-
-      cy.findByText(FILE_TOO_LARGE_ERROR).should("be.visible");
-      cy.location("pathname").should("eq", `/admin/dinners/${dinner.id}/edit`);
-    });
+    createDinnerAndOpenEdit({ title: "Dinner edit zod error" }).then(
+      (dinner) => {
+        submitOversizedCoverExpectingError(`/admin/dinners/${dinner.id}/edit`);
+      },
+    );
   });
 
   it("returns a server-side error on dinner edit when the uploaded cover exceeds the upload handler limit", () => {
-    runUploadDbCommand<DinnerRecord>("create-dinner", {
-      title: "Dinner edit handler error",
-    }).then((dinner) => {
-      dinnersToCleanup.push({ id: dinner.id });
-
-      cy.visitAndCheck(`/admin/dinners/${dinner.id}/edit`);
-      submitMultipartRequest({
-        action: `/admin/dinners/${dinner.id}/edit`,
-        fields: {
-          title: dinner.title,
-          description: dinner.description,
-          menuDescription: dinner.menuDescription ?? "",
-          donationDescription: dinner.donationDescription ?? "",
-          date: dinner.date.slice(0, 16),
-          slots: String(dinner.slots),
-          price: String(dinner.price),
-          discounts: dinner.discounts ?? "",
-          addressId: dinner.addressId,
-        },
-        fileFieldName: "cover",
-        file: {
-          size: UPLOAD_HANDLER_LIMIT_BYTES + 1,
-          name: "handler-too-large.jpg",
-        },
-      }).then((response) => {
-        expect(response.status).to.not.equal(500);
-        expect(response.body).to.include(FILE_TOO_LARGE_ERROR);
-      });
-    });
+    createDinnerAndOpenEdit({ title: "Dinner edit handler error" }).then(
+      (dinner) => {
+        expectHandlerLimitRejection({
+          action: `/admin/dinners/${dinner.id}/edit`,
+          fields: {
+            title: dinner.title,
+            description: dinner.description,
+            menuDescription: dinner.menuDescription ?? "",
+            donationDescription: dinner.donationDescription ?? "",
+            date: dinner.date.slice(0, 16),
+            slots: String(dinner.slots),
+            price: String(dinner.price),
+            discounts: dinner.discounts ?? "",
+            addressId: dinner.addressId,
+          },
+          fileFieldName: "cover",
+        });
+      },
+    );
   });
 });

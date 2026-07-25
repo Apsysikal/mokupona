@@ -1,61 +1,55 @@
-import { Form, Link, useLoaderData } from "react-router";
-import invariant from "tiny-invariant";
+import { Form, Link } from "react-router";
 
 import type { Route } from "./+types/admin.dinners.$dinnerId";
 
-import { DinnerView } from "~/components/dinner-view";
 import { Button } from "~/components/ui/button";
+import { EventView } from "~/features/events/components/event-view";
+import { toEventDetailModel } from "~/features/events/view-models";
 import { getEventById } from "~/models/event.server";
-import { requireUserWithRole } from "~/utils/session.server";
+import { requireFound } from "~/shared/http.server";
 
-export async function loader({ params, request }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
+export async function loader({ params }: Route.LoaderArgs) {
+  const event = requireFound(await getEventById(params.dinnerId));
 
-  const { dinnerId } = params;
-  invariant(typeof dinnerId === "string", "Parameter dinnerId is missing");
-
-  const event = await getEventById(dinnerId);
-
-  if (!event) throw new Response("Not found", { status: 404 });
-
-  return { event };
+  // the route ships the detail model, not the Prisma entity — the preview
+  // components and the meta title consume nothing else
+  return { event: toEventDetailModel(event) };
 }
 
-export const meta: Route.MetaFunction = ({ data }) => {
-  if (!data) return [{ title: "Admin - Dinner" }];
-
-  const { event } = data;
-  if (!event) return [{ title: "Admin - Dinner" }];
-
-  return [{ title: `Dinner - ${event.title}` }];
+export const meta: Route.MetaFunction = ({ loaderData }) => {
+  return [
+    {
+      title: loaderData ? `Dinner - ${loaderData.event.title}` : "Dinner",
+    },
+  ];
 };
 
-export default function DinnerPage() {
-  const { event } = useLoaderData<typeof loader>();
+export default function DinnerPage({ loaderData }: Route.ComponentProps) {
+  const { event } = loaderData;
 
   return (
     <main className="mx-auto flex max-w-4xl grow flex-col gap-5">
-      <div className="bg-secondary text-secondary-foreground flex items-center justify-between gap-2 rounded-md p-4">
+      <div className="bg-secondary text-secondary-foreground flex flex-col gap-3 rounded-lg p-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm leading-none font-medium">
           You are viewing the admin view of this dinner.
         </p>
 
-        <span className="flex gap-2">
-          <Button variant="ghost" asChild>
+        <span className="flex flex-wrap gap-2">
+          <Button variant="ghost" size="sm" asChild>
             <Link to="signups">View Signups</Link>
           </Button>
-          <Button variant="ghost" asChild>
+          <Button variant="ghost" size="sm" asChild>
             <Link to="edit">Edit</Link>
           </Button>
           <Form method="POST" action="delete">
-            <Button type="submit" variant="destructive">
+            <Button type="submit" variant="destructive" size="sm">
               Delete
             </Button>
           </Form>
         </span>
       </div>
 
-      <DinnerView event={event} />
+      <EventView event={event} />
     </main>
   );
 }

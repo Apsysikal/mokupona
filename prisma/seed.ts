@@ -5,9 +5,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { faker } from "@faker-js/faker";
-import bcrypt from "bcryptjs";
 
 import { prisma } from "~/db.server";
+import { createUserViaAuth } from "~/features/auth/create-user.server";
+import { ROLE_NAMES } from "~/features/auth/roles";
+import { storeImage } from "~/features/images/image-storage.server";
+import { createEvent } from "~/models/event.server";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -29,6 +32,19 @@ async function seed() {
     /** */
   });
 
+  // forms after events: Event.formId restricts deleting a referenced form
+  await prisma.formSubmission.deleteMany().catch(() => {
+    /** */
+  });
+
+  await prisma.formVersion.deleteMany().catch(() => {
+    /** */
+  });
+
+  await prisma.form.deleteMany().catch(() => {
+    /** */
+  });
+
   await prisma.address.deleteMany().catch(() => {
     /** */
   });
@@ -37,54 +53,34 @@ async function seed() {
     /** */
   });
 
-  const hashedPassword = await bcrypt.hash("mokupona", 10);
+  for (const role of ROLE_NAMES) {
+    await prisma.role.create({ data: { name: role } });
+  }
 
-  const roleNames = ["user", "moderator", "admin"];
-
-  const roles = await Promise.all(
-    roleNames.map((role) => {
-      return prisma.role.create({
-        data: {
-          name: role,
-        },
-      });
-    }),
-  );
-
-  await prisma.user.create({
-    data: {
-      email: userEmail,
-      roleId: roles[0].id,
-      password: {
-        create: {
-          hash: hashedPassword,
-        },
-      },
-    },
+  // through better-auth's API so hashes/accounts are shape-correct; the demo
+  // accounts are pre-verified so they can log in straight away
+  await createUserViaAuth({
+    email: userEmail,
+    password: "mokupona",
+    name: "demo user",
+    roleName: "user",
+    emailVerified: true,
   });
 
-  const moderator = await prisma.user.create({
-    data: {
-      email: moderatorEmail,
-      roleId: roles[1].id,
-      password: {
-        create: {
-          hash: hashedPassword,
-        },
-      },
-    },
+  const moderator = await createUserViaAuth({
+    email: moderatorEmail,
+    password: "mokupona",
+    name: "demo moderator",
+    roleName: "moderator",
+    emailVerified: true,
   });
 
-  await prisma.user.create({
-    data: {
-      email: adminEmail,
-      roleId: roles[2].id,
-      password: {
-        create: {
-          hash: hashedPassword,
-        },
-      },
-    },
+  await createUserViaAuth({
+    email: adminEmail,
+    password: "mokupona",
+    name: "demo admin",
+    roleName: "admin",
+    emailVerified: true,
   });
 
   const address = await prisma.address.create({
@@ -97,44 +93,32 @@ async function seed() {
   });
 
   const defaultImage = await readFile(path.join(__dirname, "default.jpg"));
-  const image = await prisma.image.create({
-    data: {
-      contentType: "image/jpg",
-      blob: Buffer.from(defaultImage.buffer),
-    },
-  });
-  const image2 = await prisma.image.create({
-    data: {
-      contentType: "image/jpg",
-      blob: Buffer.from(defaultImage.buffer),
-    },
-  });
 
-  const event = await prisma.event.create({
-    data: {
+  // createEvent (not prisma.event.create) so every seeded event gets its
+  // form + first version and its own cover image row, like production
+  // writes; each event's cover is stored through the image provider (the
+  // local one under dev/e2e — offline), one stored file per event so a
+  // cover replacement can never orphan a sibling's file
+  const seedEvent = async () =>
+    createEvent({
       title: faker.lorem.sentence({ min: 3, max: 7 }),
       description: faker.lorem.paragraphs({ min: 3, max: 7 }),
       date: faker.date.soon({ days: 3 }),
       slots: faker.number.int({ min: 10, max: 20 }),
       price: faker.number.int({ min: 15, max: 30 }),
-      imageId: image.id,
+      image: {
+        contentType: "image/jpeg",
+        ...(await storeImage(
+          new File([defaultImage], "default.jpg", { type: "image/jpeg" }),
+          "dinners",
+        )),
+      },
       addressId: address.id,
       createdById: moderator.id,
-    },
-  });
+    });
 
-  await prisma.event.create({
-    data: {
-      title: faker.lorem.sentence({ min: 3, max: 7 }),
-      description: faker.lorem.paragraphs({ min: 3, max: 7 }),
-      date: faker.date.soon({ days: 3 }),
-      slots: faker.number.int({ min: 10, max: 20 }),
-      price: faker.number.int({ min: 15, max: 30 }),
-      imageId: image2.id,
-      addressId: address.id,
-      createdById: moderator.id,
-    },
-  });
+  const event = await seedEvent();
+  await seedEvent();
 
   for (let i = 0; i < event.slots - 5; i++) {
     await prisma.eventResponse.create({

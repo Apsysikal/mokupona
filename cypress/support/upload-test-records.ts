@@ -2,6 +2,11 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { prisma } from "~/db.server";
+import {
+  storeImage,
+  type ImageFolder,
+} from "~/features/images/image-storage.server";
+import { createEvent, deleteEvent } from "~/models/event.server";
 import { getUserByEmail } from "~/models/user.server";
 
 const defaultImagePath = path.resolve(process.cwd(), "prisma/default.jpg");
@@ -31,13 +36,26 @@ type CommandInput =
       action: "delete-dinner";
       payload: {
         id: string;
-        extraImageIds?: string[];
+      };
+    }
+  | {
+      action: "get-image";
+      payload: {
+        id: string;
       };
     }
   | {
       action: "delete-image";
       payload: {
         id: string;
+      };
+    }
+  | {
+      action: "create-legacy-response";
+      payload: {
+        eventId: string;
+        name: string;
+        email?: string;
       };
     }
   | {
@@ -77,7 +95,8 @@ type DinnerResult = {
   price: number;
   discounts: string | null;
   addressId: string;
-  imageId: string;
+  imageId: string | null;
+  imageStorageKey: string | null;
 };
 
 type BoardMemberResult = {
@@ -85,15 +104,76 @@ type BoardMemberResult = {
   name: string;
   position: string;
   imageId: string | null;
+  imageStorageKey: string | null;
   imageCount: number;
 };
 
-async function getDefaultImageInput() {
-  const blob = await readFile(defaultImagePath);
+type ImageResult = {
+  id: string;
+  contentType: string;
+  storageKey: string | null;
+} | null;
 
+function toDinnerResult(
+  event: {
+    id: string;
+    title: string;
+    description: string;
+    menuDescription: string | null;
+    donationDescription: string | null;
+    date: Date;
+    slots: number;
+    price: number;
+    discounts: string | null;
+    addressId: string;
+  },
+  // the cover FK lives on Image (eventId), so these arrive via the relation
+  image: { id: string; storageKey: string | null } | null,
+): DinnerResult {
+  return {
+    id: event.id,
+    title: event.title,
+    description: event.description,
+    menuDescription: event.menuDescription,
+    donationDescription: event.donationDescription,
+    date: event.date.toISOString(),
+    slots: event.slots,
+    price: event.price,
+    discounts: event.discounts,
+    addressId: event.addressId,
+    imageId: image?.id ?? null,
+    imageStorageKey: image?.storageKey ?? null,
+  };
+}
+
+function toBoardMemberResult(
+  boardMember: {
+    id: string;
+    name: string;
+    position: string;
+    image: { id: string; storageKey: string | null } | null;
+  },
+  imageCount: number,
+): BoardMemberResult {
+  return {
+    id: boardMember.id,
+    name: boardMember.name,
+    position: boardMember.position,
+    imageId: boardMember.image?.id ?? null,
+    imageStorageKey: boardMember.image?.storageKey ?? null,
+    imageCount,
+  };
+}
+
+async function getDefaultImageInput(folder: ImageFolder) {
+  const bytes = await readFile(defaultImagePath);
+  const file = new File([bytes], "default.jpg", { type: "image/jpeg" });
+
+  // through the (local) image provider, like production writes — the dev
+  // server serves the stored file back via /file/:fileId
   return {
     contentType: "image/jpeg",
-    blob: Buffer.from(blob),
+    ...(await storeImage(file, folder)),
   };
 }
 
@@ -129,49 +209,38 @@ async function createDinner(
   const [moderatorId, addressId, imageData] = await Promise.all([
     requireModeratorId(),
     requireAddressId(),
-    getDefaultImageInput(),
+    getDefaultImageInput("dinners"),
   ]);
 
-  const image = await prisma.image.create({
-    data: imageData,
+  // createEvent (not prisma.event.create) so the event gets its form and its
+  // cover image row in one transaction
+  const event = await createEvent({
+    title: payload.payload.title,
+    description:
+      payload.payload.description ?? `${payload.payload.title} description`,
+    menuDescription:
+      payload.payload.menuDescription ?? `${payload.payload.title} menu`,
+    donationDescription:
+      payload.payload.donationDescription ??
+      `${payload.payload.title} donation`,
+    date: payload.payload.date
+      ? new Date(payload.payload.date)
+      : new Date("2035-01-01T18:30:00.000Z"),
+    slots: payload.payload.slots ?? 16,
+    price: payload.payload.price ?? 25,
+    discounts:
+      payload.payload.discounts ?? `${payload.payload.title} discounts`,
+    addressId,
+    createdById: moderatorId,
+    image: imageData,
   });
 
-  const event = await prisma.event.create({
-    data: {
-      title: payload.payload.title,
-      description:
-        payload.payload.description ?? `${payload.payload.title} description`,
-      menuDescription:
-        payload.payload.menuDescription ?? `${payload.payload.title} menu`,
-      donationDescription:
-        payload.payload.donationDescription ??
-        `${payload.payload.title} donation`,
-      date: payload.payload.date
-        ? new Date(payload.payload.date)
-        : new Date("2035-01-01T18:30:00.000Z"),
-      slots: payload.payload.slots ?? 16,
-      price: payload.payload.price ?? 25,
-      discounts:
-        payload.payload.discounts ?? `${payload.payload.title} discounts`,
-      addressId,
-      createdById: moderatorId,
-      imageId: image.id,
-    },
+  const cover = await prisma.image.findUnique({
+    where: { eventId: event.id },
+    select: { id: true, storageKey: true },
   });
 
-  return outputJson<DinnerResult>({
-    id: event.id,
-    title: event.title,
-    description: event.description,
-    menuDescription: event.menuDescription,
-    donationDescription: event.donationDescription,
-    date: event.date.toISOString(),
-    slots: event.slots,
-    price: event.price,
-    discounts: event.discounts,
-    addressId: event.addressId,
-    imageId: event.imageId,
-  });
+  return outputJson<DinnerResult>(toDinnerResult(event, cover));
 }
 
 async function getDinner(
@@ -179,25 +248,14 @@ async function getDinner(
 ) {
   const event = await prisma.event.findUnique({
     where: { id: payload.payload.id },
+    include: { image: { select: { id: true, storageKey: true } } },
   });
 
   if (!event) {
     return outputJson<null>(null);
   }
 
-  return outputJson<DinnerResult>({
-    id: event.id,
-    title: event.title,
-    description: event.description,
-    menuDescription: event.menuDescription,
-    donationDescription: event.donationDescription,
-    date: event.date.toISOString(),
-    slots: event.slots,
-    price: event.price,
-    discounts: event.discounts,
-    addressId: event.addressId,
-    imageId: event.imageId,
-  });
+  return outputJson<DinnerResult>(toDinnerResult(event, event.image));
 }
 
 async function deleteDinner(
@@ -205,33 +263,35 @@ async function deleteDinner(
 ) {
   const event = await prisma.event.findUnique({
     where: { id: payload.payload.id },
-    select: { id: true, imageId: true },
+    select: { id: true },
   });
-
-  const imageIds = [
-    event?.imageId,
-    ...(payload.payload.extraImageIds ?? []),
-  ].filter((imageId): imageId is string => Boolean(imageId));
 
   if (event) {
-    await prisma.event.delete({ where: { id: event.id } });
+    // deleteEvent (not prisma.event.delete) so the form data goes with it;
+    // the cover cascades at the DB level (Image.eventId), and replaced
+    // covers are deleted in-transaction by updateEvent — no orphan cleanup
+    await deleteEvent(event.id);
   }
 
-  if (imageIds.length > 0) {
-    await prisma.image.deleteMany({
-      where: { id: { in: imageIds } },
-    });
-  }
+  return outputJson({ deleted: Boolean(event) });
+}
 
-  return outputJson({
-    deleted: Boolean(event),
-    deletedImageIds: imageIds,
+async function getImage(
+  payload: Extract<CommandInput, { action: "get-image" }>,
+) {
+  const image = await prisma.image.findUnique({
+    where: { id: payload.payload.id },
+    select: { id: true, contentType: true, storageKey: true },
   });
+
+  return outputJson<ImageResult>(image);
 }
 
 async function deleteImage(
   payload: Extract<CommandInput, { action: "delete-image" }>,
 ) {
+  // The FK lives on Image, so deleting an image never touches an event —
+  // an attached event simply loses its cover.
   await prisma.image.deleteMany({
     where: { id: payload.payload.id },
   });
@@ -239,10 +299,28 @@ async function deleteImage(
   return outputJson({ deleted: true, id: payload.payload.id });
 }
 
+// Legacy EventResponse rows can no longer be produced through the app (the
+// write path moved to FormSubmission); tests exercising the legacy merge
+// insert them directly.
+async function createLegacyResponse(
+  payload: Extract<CommandInput, { action: "create-legacy-response" }>,
+) {
+  const response = await prisma.eventResponse.create({
+    data: {
+      eventId: payload.payload.eventId,
+      name: payload.payload.name,
+      email: payload.payload.email ?? "legacy@example.com",
+      phone: "000",
+    },
+  });
+
+  return outputJson({ id: response.id, name: response.name });
+}
+
 async function createBoardMember(
   payload: Extract<CommandInput, { action: "create-board-member" }>,
 ) {
-  const imageData = await getDefaultImageInput();
+  const imageData = await getDefaultImageInput("board-members");
 
   const boardMember = await prisma.boardMember.create({
     data: {
@@ -254,18 +332,14 @@ async function createBoardMember(
     },
     include: {
       image: {
-        select: { id: true },
+        select: { id: true, storageKey: true },
       },
     },
   });
 
-  return outputJson<BoardMemberResult>({
-    id: boardMember.id,
-    name: boardMember.name,
-    position: boardMember.position,
-    imageId: boardMember.image?.id ?? null,
-    imageCount: boardMember.image ? 1 : 0,
-  });
+  return outputJson<BoardMemberResult>(
+    toBoardMemberResult(boardMember, boardMember.image ? 1 : 0),
+  );
 }
 
 async function getBoardMember(
@@ -275,7 +349,7 @@ async function getBoardMember(
     where: { id: payload.payload.id },
     include: {
       image: {
-        select: { id: true },
+        select: { id: true, storageKey: true },
       },
     },
   });
@@ -288,13 +362,9 @@ async function getBoardMember(
     where: { boardMemberId: boardMember.id },
   });
 
-  return outputJson<BoardMemberResult>({
-    id: boardMember.id,
-    name: boardMember.name,
-    position: boardMember.position,
-    imageId: boardMember.image?.id ?? null,
-    imageCount,
-  });
+  return outputJson<BoardMemberResult>(
+    toBoardMemberResult(boardMember, imageCount),
+  );
 }
 
 async function getBoardMemberByName(
@@ -305,7 +375,7 @@ async function getBoardMemberByName(
     orderBy: { createdAt: "desc" },
     include: {
       image: {
-        select: { id: true },
+        select: { id: true, storageKey: true },
       },
     },
   });
@@ -318,13 +388,9 @@ async function getBoardMemberByName(
     where: { boardMemberId: boardMember.id },
   });
 
-  return outputJson<BoardMemberResult>({
-    id: boardMember.id,
-    name: boardMember.name,
-    position: boardMember.position,
-    imageId: boardMember.image?.id ?? null,
-    imageCount,
-  });
+  return outputJson<BoardMemberResult>(
+    toBoardMemberResult(boardMember, imageCount),
+  );
 }
 
 async function deleteBoardMember(
@@ -347,7 +413,9 @@ function parseCommand(): CommandInput {
     case "create-dinner":
     case "get-dinner":
     case "delete-dinner":
+    case "get-image":
     case "delete-image":
+    case "create-legacy-response":
     case "create-board-member":
     case "get-board-member":
     case "get-board-member-by-name":
@@ -372,8 +440,12 @@ async function main() {
       return getDinner(command);
     case "delete-dinner":
       return deleteDinner(command);
+    case "get-image":
+      return getImage(command);
     case "delete-image":
       return deleteImage(command);
+    case "create-legacy-response":
+      return createLegacyResponse(command);
     case "create-board-member":
       return createBoardMember(command);
     case "get-board-member":

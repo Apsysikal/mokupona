@@ -1,29 +1,13 @@
-import { getFormProps, getInputProps, useForm } from "@conform-to/react";
-import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import type { MetaFunction } from "react-router";
-import { Form, redirect, useActionData } from "react-router";
+import { parseWithZod } from "@conform-to/zod/v4";
+import { redirect } from "react-router";
 
 import type { Route } from "./+types/admin.locations.new";
 
-import { Field } from "~/components/forms";
-import { Button } from "~/components/ui/button";
+import { AdminLocationRouteForm } from "~/components/admin-location-route-form";
 import { createAddress } from "~/models/address.server";
-import { AddressSchema } from "~/utils/address-validation";
-import { requireUserWithRole } from "~/utils/session.server";
-
-export async function loader({ request }: Route.LoaderArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
-  return {};
-}
-
-export const meta: MetaFunction<typeof loader> = () => {
-  return [{ title: "Admin - Create Location" }];
-};
+import { AddressSchema, toAddressData } from "~/utils/address-validation";
 
 export async function action({ request }: Route.ActionArgs) {
-  await requireUserWithRole(request, ["moderator", "admin"]);
-
   const formData = await request.formData();
   const submission = parseWithZod(formData, { schema: AddressSchema });
 
@@ -31,66 +15,23 @@ export async function action({ request }: Route.ActionArgs) {
     return submission.reply();
   }
 
-  const { streetName, houseNumber, zipCode, city } = submission.value;
-
-  await createAddress({
-    streetName,
-    houseNumber,
-    zip: zipCode,
-    city,
-  });
+  await createAddress(toAddressData(submission.value));
 
   return redirect("/admin/locations");
 }
 
-export default function DinnersPage() {
-  const lastResult = useActionData<typeof action>();
-  const [form, fields] = useForm({
-    lastResult,
-    shouldValidate: "onBlur",
-    constraint: getZodConstraint(AddressSchema),
-    onValidate({ formData }) {
-      return parseWithZod(formData, { schema: AddressSchema });
-    },
-  });
+export const meta: Route.MetaFunction = () => {
+  return [{ title: "Admin - Create Location" }];
+};
 
+export default function AdminLocationNewPage({
+  actionData,
+}: Route.ComponentProps) {
   return (
-    <>
-      <div>Create a new location</div>
-      <Form
-        method="POST"
-        replace
-        className="flex flex-col gap-2"
-        {...getFormProps(form)}
-      >
-        <Field
-          labelProps={{ children: "Street Name" }}
-          inputProps={{ ...getInputProps(fields.streetName, { type: "text" }) }}
-          errors={fields.streetName.errors}
-        />
-
-        <Field
-          labelProps={{ children: "House Number" }}
-          inputProps={{
-            ...getInputProps(fields.houseNumber, { type: "text" }),
-          }}
-          errors={fields.houseNumber.errors}
-        />
-
-        <Field
-          labelProps={{ children: "Zip Code" }}
-          inputProps={{ ...getInputProps(fields.zipCode, { type: "text" }) }}
-          errors={fields.zipCode.errors}
-        />
-
-        <Field
-          labelProps={{ children: "City Name" }}
-          inputProps={{ ...getInputProps(fields.city, { type: "text" }) }}
-          errors={fields.city.errors}
-        />
-
-        <Button type="submit">Create Location</Button>
-      </Form>
-    </>
+    <AdminLocationRouteForm
+      lastResult={actionData}
+      submitText="Create location"
+      pageTitle="New location"
+    />
   );
 }
