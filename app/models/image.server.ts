@@ -11,7 +11,7 @@ export type { Image };
  */
 export interface ImageMetadata {
   id: string;
-  storageKey: string | null;
+  storageKey: string;
   version: number | null;
   width: number | null;
   height: number | null;

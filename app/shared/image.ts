@@ -10,8 +10,8 @@ export type ImageFit = (typeof IMAGE_FITS)[number];
  */
 export interface ImageUrlSource {
   id?: string | null;
-  /** Cloudinary public_id / local file key; null until a row is backfilled. */
-  storageKey?: string | null;
+  /** Cloudinary public_id / local file key — required on every row. */
+  storageKey: string;
   /** Cloudinary asset version — versioned URLs make CDN invalidation moot. */
   version?: number | null;
 }
@@ -67,9 +67,9 @@ function cloudinaryTransform({
  * - Cloudinary: a plain `res.cloudinary.com` URL — the app is not in the
  *   serving path. Static assets (no `id`) use it whenever a cloud name is
  *   configured, independent of `imageProvider` (delivery needs no secrets).
- * - Local provider, no storage key, or no cloud name: the `/file/:fileId`
- *   resource route, which serves original bytes (transforms are dropped —
- *   only the CDN resizes).
+ * - Local provider or no cloud name: the `/file/:fileId` resource route,
+ *   which serves original bytes (transforms are dropped — only the CDN
+ *   resizes).
  * - A static asset without a cloud name renders nothing (offline dev hero).
  */
 export function getImageUrl(
@@ -81,9 +81,7 @@ export function getImageUrl(
   const { imageProvider, cloudinaryCloudName } = config;
 
   const cloudinaryEligible =
-    storageKey &&
-    cloudinaryCloudName &&
-    (imageProvider === "cloudinary" || !id);
+    cloudinaryCloudName && (imageProvider === "cloudinary" || !id);
 
   if (cloudinaryEligible) {
     const versionSegment = version == null ? "" : `v${version}/`;

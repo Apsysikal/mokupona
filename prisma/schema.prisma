@@ -215,9 +215,9 @@ model Image {
   id          String  @id @default(cuid())
   altText     String?
   contentType String
-  // provider key (Cloudinary public_id / local file key); nullable only for
-  // rows predating the migration backfill — every write sets it
-  storageKey  String?
+  // provider key (Cloudinary public_id / local file key) — the row's only
+  // link to its bytes since `blob` was dropped, so it is required
+  storageKey  String
   // Cloudinary asset version — versioned delivery URLs
   version     Int?
   // intrinsic pixels, from the upload response

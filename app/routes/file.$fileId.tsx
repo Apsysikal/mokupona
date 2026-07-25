@@ -51,7 +51,6 @@ export async function loader({ params }: Route.LoaderArgs) {
 
   const image = requireFound(await getImageById(fileId));
   const config = imageConfigFromEnv();
-  const storageKey = requireFound(image.storageKey);
 
   if (config.imageProvider === "cloudinary" && config.cloudinaryCloudName) {
     return redirect(getImageUrl(image, config), 302);
@@ -59,7 +58,7 @@ export async function loader({ params }: Route.LoaderArgs) {
 
   // 404 rather than a stale body when the row points at a file this provider
   // does not hold (e.g. a cloudinary-stored row read back under `local`).
-  const file = requireFound(await getLocalImageFile(storageKey));
+  const file = requireFound(await getLocalImageFile(image.storageKey));
   return createImageResponse(file.stream(), {
     contentType: image.contentType,
     size: file.size,

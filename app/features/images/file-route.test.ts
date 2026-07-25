@@ -96,17 +96,6 @@ describe("image resource route", () => {
     await expect(loadImage()).rejects.toMatchObject({ status: 404 });
   });
 
-  it("404s a keyless row instead of serving an empty body", async () => {
-    mocks.getImageById.mockResolvedValue({
-      id: "image-id",
-      contentType: "image/jpeg",
-      storageKey: null,
-      version: null,
-    });
-
-    await expect(loadImage()).rejects.toMatchObject({ status: 404 });
-  });
-
   it("does not redirect to cloudinary without a cloud name", async () => {
     vi.stubEnv("IMAGE_PROVIDER", "cloudinary");
     vi.stubEnv("CLOUDINARY_CLOUD_NAME", "");

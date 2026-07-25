@@ -81,29 +81,38 @@ Companion to [design.md](design.md). Phases are shippable increments; phases 1 a
 - [x] Keep `/file/:fileId` as the local-provider route + legacy 302 redirect.
 - [x] Retire the completed backfill script — `backfillBlobRows` cannot compile once `Image.blob` is gone. Its static-asset upload is the only non-one-shot part; keep that as its own script so a fresh Cloudinary account can be seeded from the retained `public/*-original.*` files.
 
-## Phase 3 appendix — the nullability/route cleanup (follow-up pass)
+## Phase 3 appendix — the nullability/route cleanup — **done 2026-07-25**
 
 Deliberately **not** part of the Phase 3 pass above: it kept `Image.storageKey`
 nullable so the release stayed a pure deletion. Dropping `blob` makes a
 null-key row unrenderable garbage, which turns the leftover nullability into
-dead defensive surface. Do this as a second, self-contained pass once Phase 3
-has been deployed and verified.
+dead defensive surface.
 
-**1. `storageKey` → `NOT NULL`** (the schema comment always anticipated this)
+**1. `storageKey` → `NOT NULL`** — done (the schema comment always anticipated
+this)
 
-- Migration: the SQLite table rebuild fails loudly if any row still holds a
-  null key — that is the desired failure, not something to guard around. Check
-  `SELECT count(*) FROM Image WHERE storageKey IS NULL` on both envs first.
-- Ripple: `ImageUrlSource.storageKey` / `ImageMetadata.storageKey` lose
-  `| null`, which deletes the null branches in
-  [`getImageUrl`](../../app/shared/image.ts), the components' fallbacks, and
-  the "404s a keyless row" case in
-  [`file-route.test.ts`](../../app/features/images/file-route.test.ts).
-- The sibling test ("404s when the storage key has no local file") **stays** —
-  it pins 404-not-500 for a row whose file is missing from disk, which is
-  reachable whenever a dev DB is restored from a Cloudinary-backed dump.
-
-**2. What is actually left of `/file/:fileId`**
+- [x] Migration `20260725201500_require_image_storage_key`. The pre-check the
+      plan asked for turned up **38 null-key rows on prod, 24 on staging, 2 in
+      local dev** — every one of them an orphan (`eventId` and `boardMemberId`
+      both null), i.e. the pre-FK-rework replace flow's abandoned rows that the
+      retired `sweep:orphan-images` script used to clear. Nothing referenced
+      them, which is why staging's phase 3 deploy dropped their bytes without
+      anything breaking. The migration therefore opens with a **narrow** delete
+      — orphaned AND keyless — and lets the table rebuild fail loudly on
+      anything else, which was the original intent.
+- [x] Ripple: `ImageUrlSource.storageKey` / `ImageMetadata.storageKey` lost
+      `| null`, deleting the null branches in
+      [`getImageUrl`](../../app/shared/image.ts), the `requireFound` on the key
+      in [`file.$fileId.tsx`](../../app/routes/file.$fileId.tsx), and the "404s
+      a keyless row" case in
+      [`file-route.test.ts`](../../app/features/images/file-route.test.ts).
+      `destroyImages` keeps its nullable input — a null there now means "the
+      owner had no image", not "a legacy blob-only row".
+- [x] The sibling test ("404s when the storage key has no local file")
+      **stayed** — it pins 404-not-500 for a row whose file is missing from
+      disk, which is reachable whenever a dev DB is restored from a
+      Cloudinary-backed dump.
+**2. What is actually left of `/file/:fileId`** — **decided: `local` stays**
 
 Under `cloudinary` + a NOT NULL `storageKey`, `getImageUrl` returns a
 `res.cloudinary.com` URL for every row, so **the app stops emitting
@@ -123,16 +132,30 @@ decision gates everything else:
 | `Image.contentType` stays (it sets `Content-Type` on the streamed response)                 | `contentType` becomes dead — the CDN sets its own; drop the column too                                                                          |
 | Route shrinks to the 302 + stream branches (already true after Phase 3)                     | Route degrades to a pure legacy redirect, deletable once the link window closes                                                                 |
 
-**Constraint that likely settles it:** Cypress e2e and `npm run dev` both run
-with `IMAGE_PROVIDER` unset (it defaults to `local`), and CI holds no
-Cloudinary credentials. Dropping `local` means giving the e2e suite a real
-Cloudinary test account or a stubbed provider — decide that before touching
-anything in the right-hand column.
+**Constraint that settled it:** Cypress e2e and `npm run dev` both run with
+`IMAGE_PROVIDER` unset (it defaults to `local`), and CI holds no Cloudinary
+credentials. Replacing `local` with a fake was considered and rejected: the
+`mocks/` MSW setup cannot do the job as it stands, because it runs as a
+**separate process** (`node ./mocks/index.js &`), whereas `setupServer` only
+patches HTTP inside its own process — so it currently intercepts nothing, and
+mail is mocked at the app layer via `MAIL_PROVIDER=capture` instead. Making it
+work would mean (a) loading an interceptor into all three processes that touch
+storage — the app server, the Cypress node process where
+`cypress/support/upload-test-records.ts` calls `storeImage`, and the seed —
+with shared on-disk state so an upload made by `cy.task` is visible to the
+server rendering the page, and (b) something to answer the browser's
+`res.cloudinary.com` `<img>` requests, which a node-side mock cannot intercept
+at all. That is a standalone fake-Cloudinary HTTP server, not a mock — strictly
+more machinery than the local provider it would replace.
 
-**3. The legacy 302 branch** can go once published pre-cutover `/file/:id`
-links have aged out of caches and scrapers. It is ~5 lines; there is no cost
-to leaving it indefinitely, and no way to know the window has closed except by
-watching for 404s on the route.
+So the **left-hand column stands**: the route, `providers/local.server.ts`,
+`createFsFolderStorage`, `IMAGE_UPLOAD_FOLDER` and `Image.contentType` all
+stay. Revisit only if `local` ever stops paying for itself.
+
+**3. The legacy 302 branch** — **kept.** It can go once published pre-cutover
+`/file/:id` links have aged out of caches and scrapers. It is ~5 lines; there
+is no cost to leaving it indefinitely, and no way to know the window has closed
+except by watching for 404s on the route.
 
 ## Cross-cutting
 

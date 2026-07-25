@@ -43,8 +43,8 @@ export function storeImage(
  * Destroy the provider assets behind storage keys a model captured in its
  * transaction (design §3.4). Runs strictly AFTER the DB commit; a destroy
  * failure is logged, never rethrown — a leaked asset is acceptable, failing
- * the user's already-committed action is not. Nulls (legacy blob-only rows)
- * are skipped.
+ * the user's already-committed action is not. Nulls (the owner had no image
+ * to begin with) are skipped.
  */
 export async function destroyImages(
   storageKeys: (string | null | undefined)[],

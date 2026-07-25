@@ -1,6 +1,6 @@
 # Cloudinary Migration — Rollout Status & Runbook
 
-**Last updated:** 2026-07-25 · **Phases 1–3 complete.** Both envs live on Cloudinary (staging 2026-07-20, prod 2026-07-25); phase 3 cleanup landed on `chore/cloudinary-phase-3`. Steps 1–4 below are kept as the historical record of how the cutover ran — the only work left is [Deploying phase 3](#deploying-phase-3).
+**Last updated:** 2026-07-25 · **Phases 1–3 and the appendix follow-up are code-complete.** Both envs live on Cloudinary (staging 2026-07-20, prod 2026-07-25); phase 3 is deployed on staging only. Steps 1–4 below are kept as the historical record of how the cutover ran — the only work left is [Deploying phase 3](#deploying-phase-3) to prod.
 
 ## Done
 
@@ -60,10 +60,22 @@ Verify: pages emit `res.cloudinary.com` URLs with working srcset variants; blur-
 
 Phase 3 is **code-complete** on `chore/cloudinary-phase-3`: `Image.blob` dropped,
 the sharp stack and memory mitigations deleted, `features/uploads` folded into
-`features/images`, orphan sweep and the completed backfill script retired. See
-implementation-plan.md Phase 3 for the item list and its **appendix** for the
-deliberately deferred follow-up (`storageKey` NOT NULL, `/file/:fileId`'s
-remaining scope).
+`features/images`, orphan sweep and the completed backfill script retired.
+**Staging has it** (deployed 2026-07-25); prod does not yet.
+
+The **appendix follow-up is also done** (2026-07-25) and rides along in the same
+release: `storageKey` is now `NOT NULL`, `local` stays a supported provider, and
+the legacy 302 stays. See implementation-plan.md's appendix for the reasoning.
+
+Two things that migration adds to the deploy:
+
+- It **deletes orphaned keyless `Image` rows** — 38 on prod, 24 on staging.
+  They are the pre-FK-rework replace flow's abandoned rows; nothing has
+  referenced them for a long time and no page renders them. On prod they still
+  hold ~21.8 MB of blobs (of a 48.4 MB database file), so they are most of what
+  `VACUUM` in step 3 will hand back.
+- Prod goes from "blob column present" to "blob dropped **and** key required" in
+  one deploy, since prod never received phase 3 on its own.
 
 **This release is not rollback-safe by redeploy.** Phases 1–2 could be undone by
 flipping `IMAGE_PROVIDER` back, because the blobs were still in the database.
@@ -102,7 +114,7 @@ After this migration they are gone — the only way back is a **volume snapshot*
 ## Later
 
 - Optional hygiene: rotate the API key pair used during local testing (Settings → API Keys supports concurrent pairs).
-- The phase 3 appendix in implementation-plan.md — a self-contained follow-up pass, not a prerequisite for anything.
+- Drop the legacy 302 branch in `/file/:fileId` once pre-cutover links have aged out of caches and scrapers — no way to know except by watching for 404s on the route.
 
 ## Corrections to design.md / implementation-plan.md (found while implementing)
 
