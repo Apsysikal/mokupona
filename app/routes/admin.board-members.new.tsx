@@ -4,8 +4,8 @@ import type { Route } from "./+types/admin.board-members.new";
 
 import { AdminBoardMemberForm } from "~/features/board-members/admin-board-member-form";
 import { MemberSchema } from "~/features/board-members/schema";
+import { withParsedImageForm } from "~/features/images/image-form-action.server";
 import { storeImage } from "~/features/images/image-storage.server";
-import { withParsedImageForm } from "~/features/uploads/image-form-action.server";
 import { createBoardMember } from "~/models/board-member.server";
 
 export async function action({ request }: Route.ActionArgs) {

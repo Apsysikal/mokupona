@@ -7,12 +7,12 @@ import { AdminEventRouteForm } from "~/features/events/components/admin-event-ro
 import { EventSchema } from "~/features/events/event-schema";
 import { toUtcEventDate } from "~/features/events/event-timezone.server";
 import { toAddressOptions } from "~/features/events/view-models";
+import { withParsedImageForm } from "~/features/images/image-form-action.server";
 import { storeImage } from "~/features/images/image-storage.server";
 import {
   builderRowsToDescriptors,
   defaultBuilderRows,
 } from "~/features/signup-form/builder";
-import { withParsedImageForm } from "~/features/uploads/image-form-action.server";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
 
