@@ -147,9 +147,8 @@ function NextDinnerCard({ dinner }: { dinner: NextDinner }) {
       <CoverImage
         image={dinner.image}
         alt=""
-        width={236}
-        height={236}
-        className="border-border h-32 w-full rounded-lg border object-cover md:size-28"
+        sizes="144px"
+        className="border-border w-36 shrink-0 rounded-lg border"
       />
 
       <div className="flex min-w-0 flex-1 basis-56 flex-col gap-3">

@@ -41,9 +41,8 @@ export function EventStory({ event }: EventViewProps) {
       <CoverImage
         image={event.image}
         alt=""
-        width={640}
-        height={480}
-        className="h-64 w-full rounded-2xl object-cover md:h-96"
+        sizes="(min-width: 768px) 500px, 100vw"
+        className="w-full rounded-2xl"
       />
 
       <div className="flex flex-col gap-3">

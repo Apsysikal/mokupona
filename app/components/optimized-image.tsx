@@ -68,15 +68,7 @@ export function OptimizedImage({
   return (
     <div
       className={cn("relative overflow-hidden", className)}
-      // the intrinsic ratio wins when known; consumers that fix both
-      // dimensions via className are unaffected
-      style={{
-        aspectRatio:
-          image.width && image.height
-            ? `${image.width} / ${image.height}`
-            : `${width} / ${height}`,
-        ...style,
-      }}
+      style={{ aspectRatio: `${width} / ${height}`, ...style }}
     >
       {image.blurDataUrl ? (
         <>

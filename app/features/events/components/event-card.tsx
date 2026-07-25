@@ -26,30 +26,29 @@ export function FeaturedEventCard({
   isNext?: boolean;
 }) {
   return (
-    <article className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border md:flex-row">
-      <div className="relative min-h-44 md:min-h-80 md:w-[46%]">
+    <article className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border lg:flex-row">
+      <div className="relative lg:w-[62%] lg:shrink-0">
         <CoverImage
           image={event.image}
           alt=""
-          width={640}
-          height={480}
-          className="absolute inset-0 size-full object-cover"
+          sizes="(min-width: 1024px) 584px, 100vw"
+          className="w-full"
         />
         {isNext ? (
-          <Badge pill className="absolute top-4 left-4 md:top-5 md:left-5">
+          <Badge pill className="absolute top-4 left-4 lg:top-5 lg:left-5">
             next dinner
           </Badge>
         ) : null}
       </div>
 
-      <div className="flex flex-col justify-center gap-3 p-5 md:w-[54%] md:gap-4 md:p-10">
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-3 p-5 lg:p-8">
         <EventDateHeading date={event.date} />
 
-        <h2 className="text-2xl font-light tracking-tight md:text-3xl">
+        <h2 className="line-clamp-2 text-2xl font-light tracking-tight">
           {event.title}
         </h2>
 
-        <p className="text-foreground/80 line-clamp-3 text-sm leading-relaxed font-light md:text-base">
+        <p className="text-foreground/80 line-clamp-3 text-sm leading-relaxed font-light lg:line-clamp-2 lg:text-base">
           {event.description}
         </p>
 
@@ -84,9 +83,8 @@ export function PastEventCard({ event }: { event: EventCardModel }) {
       <CoverImage
         image={event.image}
         alt=""
-        width={640}
-        height={480}
-        className="h-28 w-full rounded-2xl object-cover md:h-32"
+        sizes="(min-width: 768px) 300px, 45vw"
+        className="w-full rounded-2xl"
       />
       <span className="text-foreground/50 text-xs">
         <time dateTime={eventDate.toISOString()} suppressHydrationWarning>

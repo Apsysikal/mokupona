@@ -90,9 +90,28 @@ describe("OptimizedImage blur-up", () => {
     restore();
   });
 
-  it("reserves the intrinsic aspect ratio on the frame", () => {
+  it("reserves the requested crop's aspect ratio on the frame", () => {
     const restore = stubImageComplete(false);
     const { container } = renderImage();
+
+    expect(container.firstElementChild).toHaveStyle({
+      aspectRatio: "640 / 480",
+    });
+
+    restore();
+  });
+
+  it("lets a caller override the reserved ratio via style", () => {
+    const restore = stubImageComplete(false);
+    const { container } = render(
+      <OptimizedImage
+        image={image}
+        width={640}
+        height={480}
+        style={{ aspectRatio: "1200 / 800" }}
+        alt="A dinner table"
+      />,
+    );
 
     expect(container.firstElementChild).toHaveStyle({
       aspectRatio: "1200 / 800",
