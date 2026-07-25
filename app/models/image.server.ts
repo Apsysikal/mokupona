@@ -31,8 +31,8 @@ export const IMAGE_METADATA_SELECT = {
 
 /**
  * What owning models persist for a provider-stored image: the upload's MIME
- * type plus the `StoredImage` scalars the provider returned. Bytes no longer
- * cross this boundary — `Image.blob` is legacy and is not written anymore.
+ * type plus the `StoredImage` scalars the provider returned. Bytes never
+ * cross this boundary — the provider owns the file, the row owns the key.
  */
 export interface ImageCreateData {
   contentType: string;

@@ -28,7 +28,6 @@ const storedImage = {
   contentType: "image/jpeg",
   storageKey: "dinners/uuid",
   version: 12,
-  blob: null,
 };
 
 function loadImage(query = "") {
@@ -87,44 +86,22 @@ describe("image resource route", () => {
     await expect(response.text()).resolves.toBe("stored-bytes");
   });
 
-  it("streams the original blob of a not-yet-backfilled row, sharp-free", async () => {
-    mocks.getImageById.mockResolvedValue({
-      id: "image-id",
-      contentType: "image/png",
-      storageKey: null,
-      version: null,
-      blob: new TextEncoder().encode("legacy-blob"),
-    });
-
-    const response = await loadImage();
-
-    expect(mocks.getLocalImageFile).not.toHaveBeenCalled();
-    expectImageHeaders(response, "image/png");
-    expect(response.headers.get("Content-Length")).toBe("11");
-    await expect(response.text()).resolves.toBe("legacy-blob");
-  });
-
-  it("falls back to the blob when the storage key has no local file (provider rollback)", async () => {
+  it("404s when the storage key has no local file (e.g. a cloudinary row read back under local)", async () => {
     mocks.getImageById.mockResolvedValue({
       ...storedImage,
       storageKey: "prod/cloudinary-key",
-      blob: new TextEncoder().encode("rollback-blob"),
     });
     mocks.getLocalImageFile.mockResolvedValue(null);
 
-    const response = await loadImage();
-
-    expectImageHeaders(response, "image/jpeg");
-    await expect(response.text()).resolves.toBe("rollback-blob");
+    await expect(loadImage()).rejects.toMatchObject({ status: 404 });
   });
 
-  it("404s a keyless, blobless row instead of serving an empty body", async () => {
+  it("404s a keyless row instead of serving an empty body", async () => {
     mocks.getImageById.mockResolvedValue({
       id: "image-id",
       contentType: "image/jpeg",
       storageKey: null,
       version: null,
-      blob: null,
     });
 
     await expect(loadImage()).rejects.toMatchObject({ status: 404 });

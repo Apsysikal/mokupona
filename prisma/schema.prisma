@@ -215,7 +215,8 @@ model Image {
   id          String  @id @default(cuid())
   altText     String?
   contentType String
-  // provider key (Cloudinary public_id / local file key); required post-backfill
+  // provider key (Cloudinary public_id / local file key); nullable only for
+  // rows predating the migration backfill — every write sets it
   storageKey  String?
   // Cloudinary asset version — versioned delivery URLs
   version     Int?
@@ -224,8 +225,6 @@ model Image {
   height      Int?
   // base64 blur-up placeholder (~1–2 KB), generated at store/backfill time
   blurDataUrl String?
-  // legacy — nullable since the Cloudinary migration (phase 1), dropped in phase 3
-  blob        Bytes?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
