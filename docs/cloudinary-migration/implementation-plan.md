@@ -112,7 +112,7 @@ this)
       **stayed** — it pins 404-not-500 for a row whose file is missing from
       disk, which is reachable whenever a dev DB is restored from a
       Cloudinary-backed dump.
-**2. What is actually left of `/file/:fileId`** — **decided: `local` stays**
+      **2. What is actually left of `/file/:fileId`** — **decided: `local` stays**
 
 Under `cloudinary` + a NOT NULL `storageKey`, `getImageUrl` returns a
 `res.cloudinary.com` URL for every row, so **the app stops emitting

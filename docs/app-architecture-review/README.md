@@ -17,18 +17,18 @@ the codebase more workable.
 The one place tracking execution state; the other documents keep their detail but do
 not repeat this inventory.
 
-| Work                                                                | Status                                                                                                                          |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| Phase 0 — standalone fixes and safe deletions                       | complete                                                                                                                         |
-| Phase 1 — auth/event vocabulary (`RoleName`, `requireFound`, meta)  | complete                                                                                                                         |
-| Phase 2 — admin authentication middleware                           | complete (all baseline role-guard call sites replaced)                                                                           |
-| Phase 3 — event image lifecycle                                     | complete (image bytes move inside model transactions; the four unsafe upload blocks are gone)                                    |
-| Phase 4 — `features/events` extraction                              | complete (events own their schema, date formats, status rules, view models, and UI)                                              |
-| Phase 5 — domain-adjacent cleanup                                   | partial (roster/CSV shaping deferred per plan §5.6; visual primitives handed to `docs/design-harmonization` per §5.7)            |
-| DRY follow-up steps 1–3 (presentation, errors/fixtures, small wins) | complete                                                                                                                         |
-| Phase 6 — independent structural decisions                          | deferred (each item needs its own decision)                                                                                      |
-| Forms/signup-form restructuring, generic `formAction`, factories    | deferred or rejected — see plan “Explicitly deferred or rejected”                                                                |
-| Client-hints removal                                                | complete (Phase 5)                                                                                                               |
+| Work                                                                | Status                                                                                                                |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Phase 0 — standalone fixes and safe deletions                       | complete                                                                                                              |
+| Phase 1 — auth/event vocabulary (`RoleName`, `requireFound`, meta)  | complete                                                                                                              |
+| Phase 2 — admin authentication middleware                           | complete (all baseline role-guard call sites replaced)                                                                |
+| Phase 3 — event image lifecycle                                     | complete (image bytes move inside model transactions; the four unsafe upload blocks are gone)                         |
+| Phase 4 — `features/events` extraction                              | complete (events own their schema, date formats, status rules, view models, and UI)                                   |
+| Phase 5 — domain-adjacent cleanup                                   | partial (roster/CSV shaping deferred per plan §5.6; visual primitives handed to `docs/design-harmonization` per §5.7) |
+| DRY follow-up steps 1–3 (presentation, errors/fixtures, small wins) | complete                                                                                                              |
+| Phase 6 — independent structural decisions                          | deferred (each item needs its own decision)                                                                           |
+| Forms/signup-form restructuring, generic `formAction`, factories    | deferred or rejected — see plan “Explicitly deferred or rejected”                                                     |
+| Client-hints removal                                                | complete (Phase 5)                                                                                                    |
 
 ## Intentional non-DRY decisions
 

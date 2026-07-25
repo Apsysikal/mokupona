@@ -1,77 +1,245 @@
 <!-- @dsCard group="Foundations" title="Type ramp" -->
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>mokupona — Type ramp</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  :root {
-    --background: #15110E; --card: #1B1511; --foreground: rgb(245 241 236);
-    --border: rgb(245 241 236 / 0.15);
-  }
-  body {
-    background: var(--background); color: var(--foreground);
-    font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
-    padding: 32px; -webkit-font-smoothing: antialiased;
-  }
-  .eyebrow { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgb(245 241 236 / 0.5); }
-  h1 { font-size: 24px; font-weight: 300; letter-spacing: -0.025em; margin: 6px 0 4px; }
-  .note { font-size: 14px; line-height: 1.5; color: rgb(245 241 236 / 0.65); max-width: 640px; }
-  section { margin-top: 28px; }
-  h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgb(245 241 236 / 0.5); margin-bottom: 12px; }
-  .panel { border: 1px solid var(--border); border-radius: 16px; background: var(--card); padding: 24px; }
-  .row { display: flex; align-items: baseline; gap: 20px; padding: 10px 0; border-bottom: 1px solid var(--border); }
-  .row:last-child { border-bottom: none; }
-  .spec { flex: 0 0 240px; font-size: 12px; color: rgb(245 241 236 / 0.4); font-variant-numeric: tabular-nums; }
-  .spec b { color: rgb(245 241 236 / 0.65); font-weight: 600; display: block; font-size: 13px; }
-  .rules { font-size: 14px; line-height: 1.7; color: rgb(245 241 236 / 0.65); }
-  .rules b { color: var(--foreground); font-weight: 600; }
-  code { font-size: 13px; }
-</style>
-</head>
-<body>
-  <p class="eyebrow">Foundations</p>
-  <h1>Type ramp</h1>
-  <p class="note">All native <code>text-*</code> utilities with their built-in line-heights — the
-  custom px ramp (11/13/15/17, 26/28/34…) is gone. One typeface (Open Sans), <b>one display weight:
-  <code>font-light</code></b> in both registers. Display tracking is native
-  <code>tracking-tight</code> (−0.025em). No <code>lowercase</code> transform (call #5).</p>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mokupona — Type ramp</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      :root {
+        --background: #15110e;
+        --card: #1b1511;
+        --foreground: rgb(245 241 236);
+        --border: rgb(245 241 236 / 0.15);
+      }
+      body {
+        background: var(--background);
+        color: var(--foreground);
+        font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+        padding: 32px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .eyebrow {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgb(245 241 236 / 0.5);
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: 300;
+        letter-spacing: -0.025em;
+        margin: 6px 0 4px;
+      }
+      .note {
+        font-size: 14px;
+        line-height: 1.5;
+        color: rgb(245 241 236 / 0.65);
+        max-width: 640px;
+      }
+      section {
+        margin-top: 28px;
+      }
+      h2 {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgb(245 241 236 / 0.5);
+        margin-bottom: 12px;
+      }
+      .panel {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--card);
+        padding: 24px;
+      }
+      .row {
+        display: flex;
+        align-items: baseline;
+        gap: 20px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .row:last-child {
+        border-bottom: none;
+      }
+      .spec {
+        flex: 0 0 240px;
+        font-size: 12px;
+        color: rgb(245 241 236 / 0.4);
+        font-variant-numeric: tabular-nums;
+      }
+      .spec b {
+        color: rgb(245 241 236 / 0.65);
+        font-weight: 600;
+        display: block;
+        font-size: 13px;
+      }
+      .rules {
+        font-size: 14px;
+        line-height: 1.7;
+        color: rgb(245 241 236 / 0.65);
+      }
+      .rules b {
+        color: var(--foreground);
+        font-weight: 600;
+      }
+      code {
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <p class="eyebrow">Foundations</p>
+    <h1>Type ramp</h1>
+    <p class="note">
+      All native <code>text-*</code> utilities with their built-in line-heights
+      — the custom px ramp (11/13/15/17, 26/28/34…) is gone. One typeface (Open
+      Sans), <b>one display weight: <code>font-light</code></b> in both
+      registers. Display tracking is native
+      <code>tracking-tight</code> (−0.025em). No
+      <code>lowercase</code> transform (call #5).
+    </p>
 
-  <section>
-    <h2>Body ramp — native steps</h2>
-    <div class="panel">
-      <div class="row"><div class="spec"><b>text-xs</b>12px · fine print, badges, eyebrows<br>absorbs 11px</div><span style="font-size:12px; line-height:1.35; color:rgb(245 241 236 / 0.4)">Doors open fifteen minutes before we sit down.</span></div>
-      <div class="row"><div class="spec"><b>text-sm</b>14px · labels, meta, inputs<br>absorbs 13px</div><span style="font-size:14px; line-height:1.43; color:rgb(245 241 236 / 0.65)">Hosted by Marta — Friday, 21 June, 19:00</span></div>
-      <div class="row"><div class="spec"><b>text-base</b>16px · body copy, buttons<br>absorbs 15px</div><span style="font-size:16px; line-height:1.5; color:rgb(245 241 236 / 0.8)">A long table, one menu, and whoever shows up. We cook, you bring the conversation.</span></div>
-      <div class="row"><div class="spec"><b>text-lg</b>18px · lead body<br>absorbs 17px and md:19px</div><span style="font-size:18px; line-height:1.56; color:rgb(245 241 236 / 0.8)">Twelve strangers, one kitchen, no menu choices.</span></div>
-    </div>
-  </section>
+    <section>
+      <h2>Body ramp — native steps</h2>
+      <div class="panel">
+        <div class="row">
+          <div class="spec">
+            <b>text-xs</b>12px · fine print, badges, eyebrows<br />absorbs 11px
+          </div>
+          <span
+            style="
+              font-size: 12px;
+              line-height: 1.35;
+              color: rgb(245 241 236 / 0.4);
+            "
+            >Doors open fifteen minutes before we sit down.</span
+          >
+        </div>
+        <div class="row">
+          <div class="spec">
+            <b>text-sm</b>14px · labels, meta, inputs<br />absorbs 13px
+          </div>
+          <span
+            style="
+              font-size: 14px;
+              line-height: 1.43;
+              color: rgb(245 241 236 / 0.65);
+            "
+            >Hosted by Marta — Friday, 21 June, 19:00</span
+          >
+        </div>
+        <div class="row">
+          <div class="spec">
+            <b>text-base</b>16px · body copy, buttons<br />absorbs 15px
+          </div>
+          <span
+            style="
+              font-size: 16px;
+              line-height: 1.5;
+              color: rgb(245 241 236 / 0.8);
+            "
+            >A long table, one menu, and whoever shows up. We cook, you bring
+            the conversation.</span
+          >
+        </div>
+        <div class="row">
+          <div class="spec">
+            <b>text-lg</b>18px · lead body<br />absorbs 17px and md:19px
+          </div>
+          <span
+            style="
+              font-size: 18px;
+              line-height: 1.56;
+              color: rgb(245 241 236 / 0.8);
+            "
+            >Twelve strangers, one kitchen, no menu choices.</span
+          >
+        </div>
+      </div>
+    </section>
 
-  <section>
-    <h2>Display ramp — native steps, base → md, tracking-tight, font-light</h2>
-    <div class="panel">
-      <div class="row"><div class="spec"><b>text-xl</b>20px · card/panel h3</div><span style="font-size:20px; line-height:1.4; font-weight:600">What's cooking</span></div>
-      <div class="row"><div class="spec"><b>text-2xl → md:text-3xl</b>24 → 30px · section h2<br>was 26 → 34</div><span style="font-size:24px; line-height:1.33; letter-spacing:-0.025em; font-weight:300">Gatherings worth staying late for</span></div>
-      <div class="row"><div class="spec"><b>text-3xl → md:text-4xl</b>30 → 36px · page h1<br>was 28 → 44</div><span style="font-size:30px; line-height:1.2; letter-spacing:-0.025em; font-weight:300">Upcoming dinners</span></div>
-      <div class="row"><div class="spec"><b>text-4xl → md:text-5xl</b>36 → 48px · hero h1<br>was 34 → 52</div><span style="font-size:36px; line-height:1.11; letter-spacing:-0.025em; font-weight:300">Dinner with strangers</span></div>
-    </div>
-  </section>
+    <section>
+      <h2>
+        Display ramp — native steps, base → md, tracking-tight, font-light
+      </h2>
+      <div class="panel">
+        <div class="row">
+          <div class="spec"><b>text-xl</b>20px · card/panel h3</div>
+          <span style="font-size: 20px; line-height: 1.4; font-weight: 600"
+            >What's cooking</span
+          >
+        </div>
+        <div class="row">
+          <div class="spec">
+            <b>text-2xl → md:text-3xl</b>24 → 30px · section h2<br />was 26 → 34
+          </div>
+          <span
+            style="
+              font-size: 24px;
+              line-height: 1.33;
+              letter-spacing: -0.025em;
+              font-weight: 300;
+            "
+            >Gatherings worth staying late for</span
+          >
+        </div>
+        <div class="row">
+          <div class="spec">
+            <b>text-3xl → md:text-4xl</b>30 → 36px · page h1<br />was 28 → 44
+          </div>
+          <span
+            style="
+              font-size: 30px;
+              line-height: 1.2;
+              letter-spacing: -0.025em;
+              font-weight: 300;
+            "
+            >Upcoming dinners</span
+          >
+        </div>
+        <div class="row">
+          <div class="spec">
+            <b>text-4xl → md:text-5xl</b>36 → 48px · hero h1<br />was 34 → 52
+          </div>
+          <span
+            style="
+              font-size: 36px;
+              line-height: 1.11;
+              letter-spacing: -0.025em;
+              font-weight: 300;
+            "
+            >Dinner with strangers</span
+          >
+        </div>
+      </div>
+    </section>
 
-  <section>
-    <h2>Rulings</h2>
-    <div class="panel rules">
-      <b>Line-height:</b> the utilities' built-in values (text-5xl is already leading-none) — the five
-      custom tight leadings and both body leadings are deleted.<br>
-      <b>Tracking:</b> one value, native <code>tracking-tight</code> (−0.025em) on display text —
-      absorbs −0.01em and −0.02em.<br>
-      <b>Weight:</b> <code>font-light</code> for the display family in <b>both</b> registers — the
-      admin <code>font-extrabold</code> headings converge onto it. <code>font-semibold</code> is
-      body-level emphasis (buttons, card-row titles), also register-independent.<br>
-      <b>md ladder:</b> each role steps up exactly one native size at md — 2xl→3xl, 3xl→4xl, 4xl→5xl —
-      keeping the three roles distinct at every breakpoint.
-    </div>
-  </section>
-</body>
+    <section>
+      <h2>Rulings</h2>
+      <div class="panel rules">
+        <b>Line-height:</b> the utilities' built-in values (text-5xl is already
+        leading-none) — the five custom tight leadings and both body leadings
+        are deleted.<br />
+        <b>Tracking:</b> one value, native
+        <code>tracking-tight</code> (−0.025em) on display text — absorbs −0.01em
+        and −0.02em.<br />
+        <b>Weight:</b> <code>font-light</code> for the display family in
+        <b>both</b> registers — the admin <code>font-extrabold</code> headings
+        converge onto it. <code>font-semibold</code> is body-level emphasis
+        (buttons, card-row titles), also register-independent.<br />
+        <b>md ladder:</b> each role steps up exactly one native size at md —
+        2xl→3xl, 3xl→4xl, 4xl→5xl — keeping the three roles distinct at every
+        breakpoint.
+      </div>
+    </section>
+  </body>
 </html>

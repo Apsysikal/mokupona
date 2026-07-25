@@ -10,7 +10,7 @@ cover. This is the brief for Phase 2 (distillation).
 > parallel layer of drift** the audit never saw — most importantly a **sixth card radius
 > `rounded-[14px]`**, **raw hex colors inside the canonical `Button`**, and **three new eyebrow
 > tracking values**. One audit finding is now **resolved** (the `bg-gray-950/85` SaveBar).
-> Net: the divergence is *wider* than the audit reported, and the admin surface is now a
+> Net: the divergence is _wider_ than the audit reported, and the admin surface is now a
 > distinct design dialect that Phase 2 must explicitly rule on.
 
 Legend: ✅ confirmed as-is · ↔ confirmed but line/value drifted · ✳️ **new** (not in audit) ·
@@ -23,14 +23,14 @@ Legend: ✅ confirmed as-is · ↔ confirmed but line/value drifted · ✳️ **
 ### A1. Buttons (audit §1)
 
 - ✅ Base still `rounded-lg text-[15px] font-semibold` ([button.tsx:8](app/components/ui/button.tsx:8)); sizes unchanged (`default h-11 px-6`, `sm h-9.5 px-4.5 text-sm`, `lg h-12 px-6`, `icon h-9 w-9`).
-- ✳️ **New `destructive-outline` variant hardcodes a raw hex** `text-[#E0899A]` ([button.tsx:16](app/components/ui/button.tsx:16)). This is a *second* home for the "hand-tinted red" the audit flagged only in signup-form-builder — and it's now in the canonical component.
+- ✳️ **New `destructive-outline` variant hardcodes a raw hex** `text-[#E0899A]` ([button.tsx:16](app/components/ui/button.tsx:16)). This is a _second_ home for the "hand-tinted red" the audit flagged only in signup-form-builder — and it's now in the canonical component.
 - ✳️ **`outline` variant border is an arbitrary opacity** `border-foreground/[0.22]` ([button.tsx:18](app/components/ui/button.tsx:18)) — yet another hairline value competing with `--border`.
 - ↔ `w-full rounded-[9px]` submit buttons: still 4× — [dinners_.$dinnerId.tsx:309](app/routes/dinners_.$dinnerId.tsx:309), [login.tsx:141](app/routes/login.tsx:141), [join.tsx:174](app/routes/join.tsx:174), [dinners._index.tsx:94](app/routes/dinners._index.tsx:94).
 - ↔ `rounded-[10px]` nav CTA still at [site-nav.tsx:206](app/components/site-nav.tsx:206) (also `h-13 text-base`).
 - ↔ Destructive-tinted icon button now at [signup-form-builder.tsx:517](app/components/signup-form-builder.tsx:517) (was :516) — still raw `text-red-300 hover:text-red-200`.
 - ✅ Segmented control `rounded-[7px]` still at [auth-layout.tsx:88](app/components/auth-layout.tsx:88), inside a `rounded-[10px]` shell ([:95](app/components/auth-layout.tsx:95)).
 - ✅ Border-b "secondary CTA" still duplicated verbatim: [dinner-card.tsx:79](app/components/dinner-card.tsx:79) and [hero/view.tsx:65](app/features/cms/blocks/hero/view.tsx:65).
-- ✳️ **New chip idiom** — admin `FilterChip` `h-9 rounded-full border px-3.75 text-[13px] font-semibold` + active `border-primary/35 bg-primary/12 text-accent-light` ([admin-ui.tsx:78](app/components/admin-ui.tsx:78)). A *third* pill/chip pattern alongside `section-nav` chips and the dinner-card pill.
+- ✳️ **New chip idiom** — admin `FilterChip` `h-9 rounded-full border px-3.75 text-[13px] font-semibold` + active `border-primary/35 bg-primary/12 text-accent-light` ([admin-ui.tsx:78](app/components/admin-ui.tsx:78)). A _third_ pill/chip pattern alongside `section-nav` chips and the dinner-card pill.
 
 ### A2. Badges / eyebrows (audit §2)
 
@@ -62,7 +62,7 @@ Legend: ✅ confirmed as-is · ↔ confirmed but line/value drifted · ✳️ **
 
 - **Radii:** all audit entries confirmed; **add `rounded-[14px]` (8×)** and `rounded-[10px]` icon tiles at [admin.locations._index.tsx:73](app/routes/admin.locations._index.tsx:73) / [admin._index.tsx:159](app/routes/admin._index.tsx:159).
 - **Colors:** add `text-[#E0899A]` ([button.tsx:16](app/components/ui/button.tsx:16)), `text-[#E0A87F]`/`bg-[#E0A87F]/15` ([admin-ui.tsx:121](app/components/admin-ui.tsx:121)), `border-foreground/[0.22]` ([button.tsx:18](app/components/ui/button.tsx:18)), `bg-foreground/3` ([admin-ui.tsx:50](app/components/admin-ui.tsx:50)), `bg-primary/12` (admin chips/tiles). **Remove `bg-gray-950/85`** (resolved). Teal oklch + radial-gradient glow (3×, opacities `.16`/`.20`) unchanged.
-- **Max-widths:** audit's `1040`(×3)/`1080` confirmed; **add `max-w-[1160px]` and `max-w-[420px]`** — now *three* competing page widths (1040 / 1080 / 1160) plus prose widths `760/560/520/460/420/400/340/320`.
+- **Max-widths:** audit's `1040`(×3)/`1080` confirmed; **add `max-w-[1160px]` and `max-w-[420px]`** — now _three_ competing page widths (1040 / 1080 / 1160) plus prose widths `760/560/520/460/420/400/340/320`.
 - **Percent splits:** `44/56`, `46/54`, `47/53` all confirmed (three near-half splits). Grid templates `1fr_1.6fr` / `1.55fr_1fr` confirmed.
 - **Off-grid spacing:** audit set confirmed; admin **adds** `py-3.25`, `py-2.75`, `py-3.75`, `px-3.75`, `size-6.5`, `size-8.5`, `pt-9.5`, `pb-4.5`, `py-15`, plus fixed `h-[7px]`, `h-[132px]`, `md:size-[118px]`, `md:h-[86px]`, `md:w-[104px]`. Most-used off-grid: `px-4.5` (11×), `gap-4.5` (10×), `p-5.5`/`py-3.25`/`gap-5.5` (5× each).
 
@@ -74,14 +74,14 @@ Legend: ✅ confirmed as-is · ↔ confirmed but line/value drifted · ✳️ **
 
 **Focus is the biggest inconsistency in the app.** Four different focus languages coexist:
 
-| Element | Focus treatment | File |
-|---|---|---|
+| Element                                | Focus treatment                                                             | File                                                                                                                                                |
+| -------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Input / Textarea / fallback `<select>` | `focus-visible:border-0 focus-visible:inset-ring-2 focus-visible:ring-ring` | [input.tsx:16](app/components/ui/input.tsx:16), [textarea.tsx:13](app/components/ui/textarea.tsx:13), [forms.tsx:120](app/components/forms.tsx:120) |
-| Button | `focus-visible:ring-1 focus-visible:ring-ring` (outer ring) | [button.tsx:8](app/components/ui/button.tsx:8) |
-| Checkbox | `focus-visible:ring-1 focus-visible:ring-ring` | [checkbox.tsx:14](app/components/ui/checkbox.tsx:14) |
-| Select trigger | **`focus:`** (not `focus-visible:`) `inset-ring-2` | [select.tsx:30](app/components/ui/select.tsx:30) |
-| Dropdown / Select items | `focus:bg-accent` (no ring) | [dropdown-menu.tsx:108](app/components/ui/dropdown-menu.tsx:108), [select.tsx:153](app/components/ui/select.tsx:153) |
-| Badge | `focus:ring-2 focus:ring-offset-2` | [badge.tsx:7](app/components/ui/badge.tsx:7) |
+| Button                                 | `focus-visible:ring-1 focus-visible:ring-ring` (outer ring)                 | [button.tsx:8](app/components/ui/button.tsx:8)                                                                                                      |
+| Checkbox                               | `focus-visible:ring-1 focus-visible:ring-ring`                              | [checkbox.tsx:14](app/components/ui/checkbox.tsx:14)                                                                                                |
+| Select trigger                         | **`focus:`** (not `focus-visible:`) `inset-ring-2`                          | [select.tsx:30](app/components/ui/select.tsx:30)                                                                                                    |
+| Dropdown / Select items                | `focus:bg-accent` (no ring)                                                 | [dropdown-menu.tsx:108](app/components/ui/dropdown-menu.tsx:108), [select.tsx:153](app/components/ui/select.tsx:153)                                |
+| Badge                                  | `focus:ring-2 focus:ring-offset-2`                                          | [badge.tsx:7](app/components/ui/badge.tsx:7)                                                                                                        |
 
 - Ring width drifts `ring-1` / `inset-ring-2` / `ring-2`; some use `focus:` (mouse+keyboard) vs `focus-visible:` (keyboard only) — an **a11y inconsistency**, not just cosmetic.
 - **Hover:** admin list cards share `hover:border-primary/30` (4×, consistent); public "read-more" links use `hover:border-foreground` **without** `transition-colors` (abrupt) at [dinner-card.tsx:79](app/components/dinner-card.tsx:79), [hero/view.tsx:65](app/features/cms/blocks/hero/view.tsx:65). Nav hover is inconsistent: `section-nav` and `admin-tabs` transition; `site-nav` desktop links and `footer` links change color with **no** transition.
@@ -145,7 +145,7 @@ reconciliation hinges on it:
 8. **Copy-pasted page-entrance animation** across 6 routes.
 9. **New chip idiom** (`FilterChip`, `rounded-full h-9 px-3.75`) — third chip pattern.
 
-Positives worth preserving (admin got *more* consistent internally): a shared `admin-ui.tsx`
+Positives worth preserving (admin got _more_ consistent internally): a shared `admin-ui.tsx`
 component kit (`AdminPageHeader`, `AdminSearchField`, `FilterChip`, `SeatProgress`,
 `InitialsAvatar`, `AdminEmptyState`), one card hover pattern, and the removal of `bg-gray-950/85`.
 

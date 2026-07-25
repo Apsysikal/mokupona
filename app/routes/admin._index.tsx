@@ -151,8 +151,8 @@ function NextDinnerCard({ dinner }: { dinner: NextDinner }) {
         className="border-border w-36 shrink-0 rounded-lg border"
       />
 
-      <div className="flex min-w-0 flex-1 basis-56 flex-col gap-3">
-        <div className="min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col gap-3">
+        <div>
           <p className="text-foreground/50 text-xs font-semibold tracking-widest uppercase">
             Next dinner
           </p>

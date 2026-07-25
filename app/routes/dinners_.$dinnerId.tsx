@@ -203,7 +203,7 @@ export default function DinnerPage({
   const signupFields = eventIsPast ? null : formFields;
 
   return (
-    <main className="mx-auto w-full max-w-5xl grow px-5 pt-6 pb-20 md:px-10 md:pt-9">
+    <main className="mx-auto w-full max-w-5xl grow px-5 pt-7 pb-20 md:px-10 md:pt-9">
       <Link
         to="/dinners"
         className="text-foreground/50 hover:text-foreground mb-6 inline-flex items-center gap-2 text-sm transition-colors"
@@ -211,12 +211,12 @@ export default function DinnerPage({
         ← all dinners
       </Link>
 
-      <div className="grid items-start gap-8 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] md:gap-11">
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
         <EventStory event={event} />
 
         <aside
           id="sign-up"
-          className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-5 md:sticky md:top-6 md:p-7"
+          className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-5 lg:sticky lg:top-6 lg:p-7"
         >
           <EventFactList event={event} />
 

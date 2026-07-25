@@ -18,17 +18,17 @@ Each card is a complete standalone HTML document whose first line is a
 `<!-- @dsCard group="…" title="…" -->` marker. No external requests — CSS inline, icons as
 inline SVG/data URIs. Fonts fall back from Open Sans to system sans.
 
-| File | Group | Shows |
-|---|---|---|
-| tokens-colors.html | Foundations | surfaces, the one foreground/15 hairline, text tiers as foreground/80·65·50·40, accent, red-300/sky-300 semantics, .glow-primary |
-| type-ramp.html | Foundations | native body ramp (text-xs→lg) + display ladder (2xl→5xl, one step up at md), tracking-tight, one font-light display weight |
-| spacing-radius.html | Foundations | rounded-lg/2xl/full tiers (+xs/sm decorative), no-fractions mapping table, density presets, max-w-5xl/2xl/md/xs |
-| headings.html | Foundations | one voice, two densities — the extrabold admin fork harmonized away |
-| buttons.html | Components | text-base base, 6 variants, whole-step sizes h-12/11/9 + size-9/size-7, text-red-300 destructive-outline |
-| badges-pills.html | Components | badge variants + pill variant + unified Chip, sky-300 info chip |
-| eyebrows.html | Components | tracked (text-xs uppercase tracking-widest) / kicker (text-sm), tones on foreground opacities |
-| cards.html | Components | rounded-2xl, comfortable vs compact+interactive, empty state, no shadow |
-| form-fields.html | Components | input/textarea/select/checkbox family, **file-upload zone + file row**, one focus recipe, one hairline |
+| File                | Group       | Shows                                                                                                                            |
+| ------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| tokens-colors.html  | Foundations | surfaces, the one foreground/15 hairline, text tiers as foreground/80·65·50·40, accent, red-300/sky-300 semantics, .glow-primary |
+| type-ramp.html      | Foundations | native body ramp (text-xs→lg) + display ladder (2xl→5xl, one step up at md), tracking-tight, one font-light display weight       |
+| spacing-radius.html | Foundations | rounded-lg/2xl/full tiers (+xs/sm decorative), no-fractions mapping table, density presets, max-w-5xl/2xl/md/xs                  |
+| headings.html       | Foundations | one voice, two densities — the extrabold admin fork harmonized away                                                              |
+| buttons.html        | Components  | text-base base, 6 variants, whole-step sizes h-12/11/9 + size-9/size-7, text-red-300 destructive-outline                         |
+| badges-pills.html   | Components  | badge variants + pill variant + unified Chip, sky-300 info chip                                                                  |
+| eyebrows.html       | Components  | tracked (text-xs uppercase tracking-widest) / kicker (text-sm), tones on foreground opacities                                    |
+| cards.html          | Components  | rounded-2xl, comfortable vs compact+interactive, empty state, no shadow                                                          |
+| form-fields.html    | Components  | input/textarea/select/checkbox family, **file-upload zone + file row**, one focus recipe, one hairline                           |
 
 ## Baked-in decisions (2026-07-06)
 

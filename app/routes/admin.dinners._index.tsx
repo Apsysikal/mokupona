@@ -153,12 +153,12 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
       <CoverImage
         image={dinner.image}
         alt=""
-        sizes="112px"
-        className="border-border w-28 shrink-0 rounded-lg border md:w-26"
+        sizes="160px"
+        className="border-border w-40 shrink-0 rounded-lg border"
       />
 
-      <div className="flex min-w-0 flex-1 basis-56 flex-col gap-2">
-        <div className="min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <div>
           <p
             className={cn(
               "text-xs font-bold tracking-wide",

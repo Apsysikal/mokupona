@@ -33,7 +33,7 @@ Auth pages 1–7 all live inside `AuthShell`. Decide and show how the shell's le
 6. **`/reset-password`.** New password + confirm; success state (→ login); invalid/expired-token state (→ request a new link).
 7. **`/invite/$token`** — four states:
    - **Dead end**: invalid / expired / already used — friendly, distinct explanation per case is fine as copy variants of one layout.
-   - **Logged out**: an invitation framing ("you've been invited to join as *moderator*"), signup form with the **email prefilled and locked**, name + password fields, or Google as alternative; note that Google must return the invited address.
+   - **Logged out**: an invitation framing ("you've been invited to join as _moderator_"), signup form with the **email prefilled and locked**, name + password fields, or Google as alternative; note that Google must return the invited address.
    - **Logged in, email matches**: confirmation screen ("accept invite → your role becomes moderator") with a single confirm action.
    - **Logged in, email differs**: explain the mismatch, offer "log out and retry".
 8. **`/me` account page** (currently a disabled stub — free rein, but it's a content page with the site nav, not an AuthShell page). Sections: profile (editable name, email read-only, role display), **password** (change with current-password field — or "set a password" variant without one, shown when the user signed up with Google only), **connected accounts** (Google row: linked state with unlink, unlink disabled with explanation when it's the only way in; not-linked state with link action), **sessions** ("sign out other sessions" with count). No account deletion. Max-width content page, works on mobile.

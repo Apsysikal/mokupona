@@ -30,7 +30,7 @@ Key fact for the next session: **Claude Design does not read the repo.** A desig
 - Scope: `app/components/**`, `app/routes/**`, `app/features/**`; theme lives in `app/tailwind.css`
 - Output: [drift-inventory.md](./drift-inventory.md) ✅
 
-**Key Phase 1 outcomes:** the audit predated the admin redesign, so drift is *wider* than reported —
+**Key Phase 1 outcomes:** the audit predated the admin redesign, so drift is _wider_ than reported —
 a 6th card radius `rounded-[14px]` (8×), raw hex in the canonical Button (`#E0899A`) and avatar tints
 (`#E0A87F`), 3 new eyebrow tracking values (8 total), and an admin `font-extrabold` heading voice vs
 public `font-light`. One finding resolved: the `bg-gray-950/85` SaveBar is gone. Focus-ring treatment
@@ -52,7 +52,7 @@ Output: [design-system-spec.md](./design-system-spec.md) (opinionated spec + pro
 
 **6 reversible calls — ✅ all resolved 2026-07-06**, see spec §11 for outcomes: radius 16 · width `max-w-5xl` 1024 · tracking `tracking-widest` 0.1em · drop `--color-tan` · drop `lowercase` · keep+document dark plumbing.
 
-## Phase 3 — Build bundle & sync to Claude Design  ✅ complete (2026-07-06)
+## Phase 3 — Build bundle & sync to Claude Design ✅ complete (2026-07-06)
 
 - [x] Generated 9 self-contained preview cards with `@dsCard` markers + README + spec copy in `docs/design-harmonization/ds-bundle/`
 - [x] User reviewed round 1 → ruled the round-2 native-token harmonization (spec §12) → bundle revised → approved

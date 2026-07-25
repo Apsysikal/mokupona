@@ -41,7 +41,7 @@ export function EventStory({ event }: EventViewProps) {
       <CoverImage
         image={event.image}
         alt=""
-        sizes="(min-width: 768px) 500px, 100vw"
+        sizes="(min-width: 1024px) 520px, 100vw"
         className="w-full rounded-2xl"
       />
 
@@ -61,7 +61,7 @@ export function EventStory({ event }: EventViewProps) {
           type="single"
           collapsible
           defaultValue="menu"
-          className="border-border mt-2 w-full border-t"
+          className="border-border mt-2 border-t"
         >
           {menuLines?.length ? (
             <AccordionItem value="menu" className="border-border">
