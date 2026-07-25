@@ -46,11 +46,11 @@ Verify: pages emit `res.cloudinary.com` URLs with working srcset variants; blur-
 
 ### 4. Prod (after the staging soak, one merge)
 
-1. **Before merging `dev` → `main`**: set the four `CLOUDINARY_*` secrets on prod (`fly secrets set … CLOUDINARY_FOLDER_PREFIX=prod`). At minimum the cloud name must exist or the landing hero renders as an empty frame after deploy.
-2. Merge `dev` → `main` → prod deploys release 1 (inert: blob serving continues; window uploads go to the volume).
-3. Backfill prod: `fly ssh console` → `npx tsx scripts/backfill-images-to-cloudinary.ts`.
-4. Flip prod: `fly secrets set IMAGE_PROVIDER=cloudinary`. Same verification list as staging. **Never flip before the secrets exist** — the provider invariants on boot and the app crashes.
-5. Set the Cloudinary usage alert (~50% of 25 credits) if not done yet.
+1. **Before merging `dev` → `main`**: set the four `CLOUDINARY_*` secrets on prod (`fly secrets set … CLOUDINARY_FOLDER_PREFIX=prod`). At minimum the cloud name must exist or the landing hero renders as an empty frame after deploy. — **Done 2026-07-25.**
+2. Merge `dev` → `main` → prod deploys release 1 (inert: blob serving continues; window uploads go to the volume). — **Done 2026-07-25 (PR #417).**
+3. Backfill prod: `fly ssh console` → `npx tsx scripts/backfill-images-to-cloudinary.ts`. — **Done 2026-07-25.**
+4. Flip prod: `fly secrets set IMAGE_PROVIDER=cloudinary`. Same verification list as staging. **Never flip before the secrets exist** — the provider invariants on boot and the app crashes. — **Done 2026-07-25; verified: /dinners covers and landing hero/accent serve `res.cloudinary.com` URLs, no legacy `/file/` links, health checks passing.** Prod is live on Cloudinary; Phase 3 waits for the verification window. Note: `GOOGLE_CLIENT_ID/SECRET` are still unset on prod, so the Google login buttons stay hidden until they're added (unrelated to images).
+5. Usage alerts: **resolved 2026-07-25 — relying on Cloudinary's built-in defaults** (email to the account admin at 90% and 100% of quota). Custom thresholds (the originally planned ~50%) are Enterprise-only; no console setting exists for them on the free plan, and no custom monitoring is set up.
 
 ### 5. Later
 

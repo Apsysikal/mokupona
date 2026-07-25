@@ -8,8 +8,8 @@ Companion to [design.md](design.md). Phases are shippable increments; phases 1 a
 
 - [x] Create the Cloudinary account (free plan). Note the **cloud name** (`mokupona`); the account will be in _dynamic folder mode_.
 - [x] Generate API key + secret (console → Settings → Access Keys).
-- [ ] Set a usage alert at ~50% of the 25 monthly credits.
-- [ ] Fly secrets on **both** apps — **staging done 2026-07-19, prod pending** (do before the `main` merge):
+- [x] ~~Set a usage alert at ~50% of the 25 monthly credits.~~ **Resolved 2026-07-25: not possible on the free plan** — custom thresholds are Enterprise-only. Relying on Cloudinary's built-in defaults instead (admin email at 90% and 100% of quota); no custom monitoring.
+- [x] Fly secrets on **both** apps — **staging done 2026-07-19, prod done 2026-07-25**:
       `fly secrets set CLOUDINARY_CLOUD_NAME=… CLOUDINARY_API_KEY=… CLOUDINARY_API_SECRET=… CLOUDINARY_FOLDER_PREFIX=… [-a <staging-app>]`
 - [x] ~~`fly.toml [env]`: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_FOLDER_PREFIX`~~ **Superseded (rollout.md): all `CLOUDINARY_*` values live as per-app Fly secrets, never in fly.toml.** `IMAGE_UPLOAD_FOLDER=/data/image-uploads` is in `[env]`; `IMAGE_PROVIDER` stays **unset until the Phase 2 flip** — Phase 1 code defaults safely.
 - [x] `.env` / `.env.example`: document `IMAGE_PROVIDER`, `CLOUDINARY_*` group ("only needed when `IMAGE_PROVIDER=cloudinary`").
@@ -67,9 +67,9 @@ Companion to [design.md](design.md). Phases are shippable increments; phases 1 a
 
 ## Phase 2 — Backfill & cutover (config only)
 
-- [ ] Deploy release 1 to staging; run backfill via `fly ssh console -a <staging-app>` → `npx tsx scripts/backfill-images-to-cloudinary.ts`.
-- [ ] Flip staging `IMAGE_PROVIDER=cloudinary`. Verify: pages render CDN images, srcset variants + OG image resolve, upload/replace/delete round-trips (asset disappears in the Cloudinary console), memory graphs flat during an image-heavy crawl.
-- [ ] Repeat on prod (backfill → flip → verify). Watch credit usage after the one-time transform generation.
+- [x] Deploy release 1 to staging; run backfill via `fly ssh console -a <staging-app>` → `npx tsx scripts/backfill-images-to-cloudinary.ts`. **Done 2026-07-20.**
+- [x] Flip staging `IMAGE_PROVIDER=cloudinary`. Verify: pages render CDN images, srcset variants + OG image resolve, upload/replace/delete round-trips (asset disappears in the Cloudinary console), memory graphs flat during an image-heavy crawl. **Done 2026-07-20.**
+- [x] Repeat on prod (backfill → flip → verify). Watch credit usage after the one-time transform generation. **Done 2026-07-25** (dev→main merged via PR #417, backfilled, flipped; /dinners and landing serve `res.cloudinary.com` URLs, no legacy `/file/` links).
 
 ## Phase 3 — Cleanup (release 2, after verification window)
 
