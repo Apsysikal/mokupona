@@ -29,14 +29,7 @@ export interface EventViewProps {
   event: EventDetailModel;
 }
 
-// the editorial left column of the dinner detail page: photo, date, title,
-// story, and the menu/donation accordions (design handoff §3)
 export function EventStory({ event }: EventViewProps) {
-  const menuLines = event.menuDescription
-    ?.split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-
   return (
     <div className="flex min-w-0 flex-col gap-5 md:gap-6">
       <CoverImage
@@ -55,32 +48,20 @@ export function EventStory({ event }: EventViewProps) {
         <AutoLink text={event.description} />
       </p>
 
-      {menuLines?.length || event.donationDescription ? (
+      {event.menuDescription || event.donationDescription ? (
         <Accordion
           type="single"
           collapsible
           defaultValue="menu"
           className="mt-2 border-t"
         >
-          {menuLines?.length ? (
+          {event.menuDescription ? (
             <AccordionItem value="menu">
               <AccordionTrigger className="text-primary">menu</AccordionTrigger>
               <AccordionContent className="pb-6">
-                <div className="flex flex-col gap-3">
-                  {menuLines.map((line, index) => (
-                    <div
-                      key={index}
-                      className="text-foreground/80 flex gap-3 text-base font-light"
-                    >
-                      <span className="text-foreground/50 pt-1 font-mono text-sm">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                      <span>
-                        <AutoLink text={line} />
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                <p className="text-foreground/80 text-base font-light whitespace-pre-line">
+                  <AutoLink text={event.menuDescription} />
+                </p>
               </AccordionContent>
             </AccordionItem>
           ) : null}
@@ -103,8 +84,6 @@ export function EventStory({ event }: EventViewProps) {
   );
 }
 
-// date / location / price / seats rows used in the booking card and the
-// admin preview
 export function EventFactList({ event }: EventViewProps) {
   const eventDate = new Date(event.date);
 
