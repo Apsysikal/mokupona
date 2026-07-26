@@ -68,6 +68,10 @@ function createLogger() {
 
 const { logger, flush } = createLogger();
 
+// long enough for a sink that was still opening to finish and drain, far
+// shorter than fly.toml's 5 s kill_timeout
+const DRAIN_GRACE_MS = 250;
+
 let closing = false;
 
 function shutdown(signal: NodeJS.Signals) {
@@ -77,13 +81,20 @@ function shutdown(signal: NodeJS.Signals) {
 
   if (flush()) {
     process.exit(0);
-  } else {
-    // A signal within the first milliseconds of a short-lived script, before
-    // the file sink finished opening. Exiting now would rethrow out of pino's
-    // own exit hook and lose the buffered lines; draining the event loop
-    // instead lets that hook flush them on "beforeExit".
-    process.exitCode = 0;
+    return;
   }
+
+  // A signal within the first milliseconds of a process, before the file sink
+  // finished opening. Exiting now would lose the buffered lines and rethrow out
+  // of pino's own exit hook, so let the sink open and write them first. The
+  // timer is unref'd — a script with nothing left to do still exits at once —
+  // and it must exist at all because an event loop held open by a listening
+  // server would otherwise ignore this signal and every one after it.
+  process.exitCode = 0;
+  setTimeout(() => {
+    flush();
+    process.exit(0);
+  }, DRAIN_GRACE_MS).unref();
 }
 
 if (!TEST) {
