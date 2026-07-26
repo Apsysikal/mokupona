@@ -1,7 +1,6 @@
 @import "tailwindcss" source(".");
 
 @plugin "tailwindcss-animate";
-@plugin "@tailwindcss/typography";
 
 /* moku pona is intentionally single-theme (dark-only) by design — see
    docs/design-harmonization. This `dark` variant + the .dark-scoped plumbing
