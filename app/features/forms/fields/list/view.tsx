@@ -45,7 +45,7 @@ export function ListField({
             return (
               <li
                 key={item.key}
-                className="border-border bg-background flex flex-col gap-3 rounded-lg border p-4"
+                className="bg-background flex flex-col gap-3 rounded-lg border p-4"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-foreground/50 text-xs font-semibold tracking-widest">

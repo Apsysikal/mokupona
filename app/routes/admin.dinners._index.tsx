@@ -154,7 +154,7 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
         image={dinner.image}
         alt=""
         sizes="160px"
-        className="border-border w-40 shrink-0 rounded-lg border"
+        className="w-40 shrink-0 rounded-lg border"
       />
 
       <div className="flex min-w-0 flex-1 flex-col gap-2">

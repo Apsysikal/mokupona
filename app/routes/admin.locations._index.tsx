@@ -84,7 +84,7 @@ function LocationCard({ address }: { address: AddressWithEventCount }) {
           </p>
         </div>
       </div>
-      <div className="border-border mt-4 flex gap-2 border-t pt-4">
+      <div className="mt-4 flex gap-2 border-t pt-4">
         <Button size="sm" variant="outline" asChild>
           <Link to={`${id}/edit`}>Edit</Link>
         </Button>

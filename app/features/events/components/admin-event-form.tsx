@@ -95,7 +95,7 @@ function SaveBar({
   const form = useFormMetadata();
 
   return (
-    <div className="border-border bg-background/90 sticky bottom-0 z-10 -mx-2 border-t px-4 py-3 backdrop-blur md:bottom-2 md:mx-0 md:rounded-2xl md:border">
+    <div className="bg-background/90 sticky bottom-0 z-10 -mx-2 border-t px-4 py-3 backdrop-blur md:bottom-2 md:mx-0 md:rounded-2xl md:border">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p
           className={cn(

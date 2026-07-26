@@ -67,7 +67,7 @@ export default function AdminBoardMembersPage({
       )}
 
       {formOpen ? (
-        <div className="border-border mt-8 border-t pt-8">
+        <div className="mt-8 border-t pt-8">
           <Outlet />
         </div>
       ) : (

@@ -298,7 +298,7 @@ function RolePicker({ meta }: { meta: FieldMetadata<InvitableRole> }) {
       <div
         role="radiogroup"
         aria-labelledby={labelId}
-        className="bg-foreground/5 border-border flex rounded-lg border p-1"
+        className="bg-foreground/5 flex rounded-lg border p-1"
       >
         {getCollectionProps(meta, {
           type: "radio",

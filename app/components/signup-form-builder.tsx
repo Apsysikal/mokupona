@@ -383,7 +383,7 @@ function RowCard({
         <CollapsibleContent forceMount className="data-[state=closed]:hidden">
           <div
             className={cn(
-              "border-border border-t",
+              "border-t",
               small ? "p-3" : "p-3 sm:p-4",
             )}
           >

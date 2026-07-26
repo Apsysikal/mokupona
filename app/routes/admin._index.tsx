@@ -107,7 +107,7 @@ export default function AdminOverviewPage({
               {recentSignups.map((signup, index) => (
                 <div
                   key={`${signup.email}-${index}`}
-                  className="border-border flex items-center gap-3 border-b py-3"
+                  className="flex items-center gap-3 border-b py-3"
                 >
                   <InitialsAvatar name={signup.name} seed={index} />
                   <div className="min-w-0 flex-1">
@@ -148,7 +148,7 @@ function NextDinnerCard({ dinner }: { dinner: NextDinner }) {
         image={dinner.image}
         alt=""
         sizes="144px"
-        className="border-border w-36 shrink-0 rounded-lg border"
+        className="w-36 shrink-0 rounded-lg border"
       />
 
       <div className="flex min-w-0 flex-1 flex-col gap-3">

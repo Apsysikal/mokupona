@@ -48,7 +48,7 @@ export function AuthShell({
 }: AuthShellProps) {
   return (
     <div className="flex grow flex-col md:flex-row">
-      <div className="bg-card border-border relative hidden flex-col justify-center overflow-hidden border-r p-12 md:flex md:w-1/2">
+      <div className="bg-card relative hidden flex-col justify-center overflow-hidden border-r p-12 md:flex md:w-1/2">
         <CornerGlow className="-top-30 -right-24 size-80" />
         <div className="relative flex flex-col gap-4">
           <Eyebrow variant="kicker" tone="light">
@@ -66,7 +66,7 @@ export function AuthShell({
       </div>
 
       {/* mobile brand header */}
-      <div className="bg-card border-border relative flex flex-col overflow-hidden border-b px-6 pt-6 pb-7 md:hidden">
+      <div className="bg-card relative flex flex-col overflow-hidden border-b px-6 pt-6 pb-7 md:hidden">
         <CornerGlow className="-top-24 -right-16 size-56" />
         <div className="relative flex flex-col gap-2">
           <span className="text-accent-light text-xs font-semibold">
@@ -98,7 +98,7 @@ function ModeToggle({ mode, search }: Pick<AuthShellProps, "mode" | "search">) {
     );
 
   return (
-    <div className="bg-card border-border flex rounded-lg border p-1">
+    <div className="bg-card flex rounded-lg border p-1">
       <Link
         to={{ pathname: "/login", search }}
         className={segmentClasses(mode === "login")}

@@ -110,7 +110,7 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
 
   return (
     <>
-      <nav className="border-border border-b">
+      <nav className="border-b">
         {/* desktop */}
         <div className="flex h-16 items-center justify-between px-10 max-md:hidden">
           <BrandLockup to="/" />
@@ -204,7 +204,7 @@ function MobileMenu({
         className="glow-primary-strong pointer-events-none absolute -top-10 -right-10 size-72 rounded-full"
       />
 
-      <div className="border-border relative border-b">
+      <div className="relative border-b">
         <div className="flex h-14 items-center justify-between px-5">
           <BrandLockup to="/" />
           <button
@@ -277,7 +277,7 @@ function MobileMenuLink(props: MobileMenuLinkProps) {
   return (
     <Component
       className={cn(
-        "border-border flex items-center justify-between border-b py-4 text-xl tracking-tight",
+        "flex items-center justify-between border-b py-4 text-xl tracking-tight",
         className,
       )}
       {...rest}

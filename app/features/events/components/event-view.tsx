@@ -61,7 +61,7 @@ export function EventStory({ event }: EventViewProps) {
           type="single"
           collapsible
           defaultValue="menu"
-          className="border-border mt-2 border-t"
+          className="mt-2 border-t"
         >
           {menuLines?.length ? (
             <AccordionItem value="menu" className="border-border">

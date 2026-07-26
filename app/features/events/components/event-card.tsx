@@ -52,7 +52,7 @@ export function FeaturedEventCard({
           {event.description}
         </p>
 
-        <div className="text-foreground/80 border-border flex flex-wrap gap-4 border-y py-3 text-sm md:gap-6">
+        <div className="text-foreground/80 flex flex-wrap gap-4 border-y py-3 text-sm md:gap-6">
           <EventLocationFact addressLine={event.addressLine} />
           <EventPriceFact price={event.price} />
           <EventSeatsFact slots={event.slots} />
