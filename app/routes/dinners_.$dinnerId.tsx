@@ -145,7 +145,7 @@ export async function action({ params, request }: Route.ActionArgs) {
         ip: getClientIPAddress(request),
         dinner: dinner.id,
         email,
-        reason: reason,
+        error: reason,
       },
       "Failed to persist dinner signup",
     );

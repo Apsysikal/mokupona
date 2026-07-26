@@ -25,6 +25,7 @@ The instance is a plain `pino.Logger`, constructed with:
 | ---------------------- | ----------------------------------------------- |
 | `timestamp`            | `pino.stdTimeFunctions.isoTime`                 |
 | `formatters.level`     | `(label) => ({ level: label })`                 |
+| `serializers.error`    | `pino.stdSerializers.err`                       |
 | `level`                | `LOG_LEVEL`, see below                          |
 | stdout sink (prod)     | `pino.destination(1)` — raw JSON                |
 | stdout sink (non-prod) | `pino-pretty`, colorized, `ignore` pid/hostname |
@@ -107,6 +108,9 @@ Rules:
 - `email` and `ip` are **never** child-logger bindings. The request child
   carries `requestId` only.
 - Paths are case-sensitive, and a redaction path is never built from user input.
+- A caught throwable goes under `error` and nowhere else: `serializers.error` is
+  what turns it into `{ type, message, stack }`. Under any other key an `Error`
+  serializes to `{}`, because its own properties are not enumerable.
 - New fields are added to this table before they are added to a call site.
 
 ## Test stub

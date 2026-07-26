@@ -9,6 +9,7 @@ const options = {
   level: LEVEL,
   timestamp: pino.stdTimeFunctions.isoTime,
   formatters: { level: (label: string) => ({ level: label }) },
+  serializers: { error: pino.stdSerializers.err },
 };
 
 function createLogger() {
