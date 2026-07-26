@@ -388,7 +388,7 @@ function InviteSignup({
               type="email"
               value={email}
               disabled
-              className="text-foreground/55 pr-10"
+              className="text-foreground/65 pr-10"
             />
             <LockClosedIcon
               aria-hidden
@@ -429,7 +429,7 @@ function InviteSignup({
           {googleEnabled ? (
             <>
               google must return{" "}
-              <strong className="text-foreground/70 font-semibold">
+              <strong className="text-foreground/80 font-semibold">
                 {email}
               </strong>{" "}
               to accept.{" "}

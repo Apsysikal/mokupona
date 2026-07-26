@@ -25,7 +25,7 @@ export function AuthStatus({
           "flex size-16 items-center justify-center rounded-full",
           tone === "positive"
             ? "bg-primary/10 text-primary"
-            : "bg-foreground/6 text-foreground/60",
+            : "bg-foreground/5 text-foreground/65",
         )}
       >
         {icon}

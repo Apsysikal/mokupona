@@ -350,10 +350,10 @@ function PendingInviteRow({ invite }: { invite: InviteRow }) {
   const { expired, text } = inviteMeta(invite);
 
   return (
-    <div className="border-foreground/22 bg-foreground/2 flex items-center gap-3 rounded-2xl border border-dashed px-4 py-3">
+    <div className="border-foreground/20 bg-foreground/5 flex items-center gap-3 rounded-2xl border border-dashed px-4 py-3">
       <span
         aria-hidden
-        className="bg-foreground/8 text-foreground/60 flex size-10 shrink-0 items-center justify-center rounded-full"
+        className="bg-foreground/10 text-foreground/65 flex size-10 shrink-0 items-center justify-center rounded-full"
       >
         <EnvelopeClosedIcon className="size-4.5" />
       </span>
@@ -362,7 +362,7 @@ function PendingInviteRow({ invite }: { invite: InviteRow }) {
         <p
           className={cn(
             "mt-0.5 text-sm",
-            expired ? "text-red-300" : "text-foreground/50",
+            expired ? "text-destructive-light" : "text-foreground/50",
           )}
         >
           {text}

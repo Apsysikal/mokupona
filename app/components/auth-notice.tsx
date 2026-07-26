@@ -25,7 +25,7 @@ export function AuthNotice({
         role="alert"
         className={cn(
           baseClasses,
-          "border-destructive/50 bg-destructive/15 text-red-300",
+          "border-destructive/50 bg-destructive/15 text-destructive-light",
         )}
       >
         <ExclamationTriangleIcon className="mt-0.5 size-5 shrink-0" />

@@ -492,7 +492,7 @@ function RowHeader({
         <Button
           variant="outline"
           size={iconSize}
-          className="border-destructive/50 bg-destructive/10 hover:bg-destructive/30 shrink-0 text-red-300 hover:text-red-200"
+          className="border-destructive/50 bg-destructive/10 hover:bg-destructive/30 shrink-0 text-destructive-light"
           aria-label="Remove"
           {...form.remove.getButtonProps({ name: listName, index })}
           onClick={

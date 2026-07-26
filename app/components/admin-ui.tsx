@@ -119,7 +119,7 @@ export function SeatProgress({
 // two rotating tints so neighbouring avatars read as distinct (the third,
 // tan, tint was dropped in the native-token harmonization — design system §2)
 const AVATAR_TINTS = [
-  "text-accent-light bg-primary/15",
+  "text-accent-light bg-primary/10",
   "text-foreground/80 bg-foreground/10",
 ];
 

@@ -28,10 +28,10 @@ export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
 
   return (
     <section
-      className="mx-auto flex max-w-7xl flex-col md:min-h-130 md:flex-row"
+      className="mx-auto flex max-w-7xl flex-col md:grid md:min-h-130 md:grid-cols-[46fr_54fr]"
       {...rest}
     >
-      <div className="flex flex-col justify-center gap-5 px-6 py-8 md:w-[46%] md:gap-6 md:px-14 md:py-16">
+      <div className="flex flex-col justify-center gap-5 px-6 py-8 md:gap-6 md:px-14 md:py-16">
         {eyebrow ? (
           <Eyebrow variant="kicker" tone="primary">
             {eyebrow}
@@ -81,8 +81,7 @@ export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
         ) : null}
       </div>
 
-      <div className="relative h-72 max-md:order-first md:h-auto md:w-[54%]">
-        {/* the LCP element — blur-up matters most here (design §3.3) */}
+      <div className="relative h-72 max-md:order-first md:h-auto">
         <OptimizedImage
           image={{ storageKey: src, blurDataUrl }}
           width={width ?? 1080}

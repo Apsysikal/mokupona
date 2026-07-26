@@ -78,7 +78,6 @@ const eyebrowVariants = cva("font-semibold", {
       primary: "text-primary",
       light: "text-accent-light",
       label: "text-foreground/50",
-      faint: "text-foreground/40",
     },
   },
   defaultVariants: {
@@ -137,7 +136,7 @@ export function SecondaryCTA({
     <Link
       to={to}
       className={cn(
-        "border-foreground/35 hover:border-foreground w-fit border-b pb-0.5 text-base transition-colors",
+        "border-foreground/40 hover:border-foreground w-fit border-b pb-0.5 text-base transition-colors",
         className,
       )}
     >

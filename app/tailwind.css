@@ -26,6 +26,7 @@
   --accent-foreground: rgb(21 17 14);
   --destructive: rgb(167 29 49);
   --destructive-foreground: rgb(245 241 236);
+  --destructive-light: oklch(80.8% 0.114 19.571);
   /* the one hairline: --border and the old --input merged onto a single
      native opacity step (foreground/15), the brighter of the two kept */
   --border: rgb(245 241 236 / 0.15);
@@ -47,6 +48,7 @@
 
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-light: var(--destructive-light);
 
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);

@@ -236,7 +236,7 @@ function ProfileCard({
         <InitialsAvatar
           name={user.name}
           seed={0}
-          className="size-13 text-base"
+          className="size-12 text-base"
         />
         <div className="min-w-0 flex-1">
           <p className="truncate text-lg font-semibold">{user.name}</p>
@@ -271,7 +271,7 @@ function ProfileCard({
 
       <div className="flex flex-col gap-2">
         <span className="text-sm font-medium">email</span>
-        <div className="border-border bg-foreground/3 text-foreground/70 flex h-11 items-center justify-between rounded-lg border px-3 text-sm">
+        <div className="bg-foreground/5 text-foreground/65 flex h-11 items-center justify-between rounded-lg border px-3 text-sm">
           <span className="truncate">{user.email}</span>
           {user.emailVerified ? (
             <Badge variant="info" pill className="ml-2 shrink-0 gap-1">
@@ -383,11 +383,11 @@ function ConnectedAccountsCard({
       title="connected accounts"
       subtitle="sign in faster by linking a provider."
     >
-      <div className="border-border flex items-center gap-3.5 rounded-xl border px-4 py-3.5">
-        <GoogleMark className="size-5.5 shrink-0" />
+      <div className="flex items-center gap-3.5 rounded-xl border px-4 py-3.5">
+        <GoogleMark className="size-5 shrink-0" />
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-semibold">google</p>
-          <p className="text-foreground/55 truncate text-[13px]">
+          <p className="text-base font-semibold">google</p>
+          <p className="text-foreground/50 truncate text-sm">
             {googleLinked ? `linked as ${email}` : "not linked"}
           </p>
         </div>
