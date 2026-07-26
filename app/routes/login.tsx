@@ -58,10 +58,13 @@ export const action = async ({ request }: Route.ActionArgs) => {
       returnHeaders: true,
     });
 
-    logger.info("Successful login request", {
-      ip: getClientIPAddress(request),
-      email: obscureEmail(email),
-    });
+    logger.info(
+      {
+        ip: getClientIPAddress(request),
+        email: obscureEmail(email),
+      },
+      "Successful login request",
+    );
 
     return redirect(redirectTo, { headers });
   } catch (error) {
@@ -70,11 +73,14 @@ export const action = async ({ request }: Route.ActionArgs) => {
         ? (error as { body?: { code?: string } }).body?.code
         : undefined;
 
-    logger.info("Failed login request", {
-      ip: getClientIPAddress(request),
-      email: obscureEmail(email),
-      reason: code ?? "unknown",
-    });
+    logger.info(
+      {
+        ip: getClientIPAddress(request),
+        email: obscureEmail(email),
+        reason: code ?? "unknown",
+      },
+      "Failed login request",
+    );
 
     if (code === "EMAIL_NOT_VERIFIED") {
       // better-auth already re-sent the verification link (sendOnSignIn)

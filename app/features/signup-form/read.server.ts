@@ -150,10 +150,13 @@ function flattenSubmission(
 ): Attendee[] {
   const answers = asRecord(submission.answers);
   if (!answers) {
-    logger.error("Stored submission answers are not an object", {
-      submission: submission.id,
-      formVersion: submission.formVersionId,
-    });
+    logger.error(
+      {
+        submission: submission.id,
+        formVersion: submission.formVersionId,
+      },
+      "Stored submission answers are not an object",
+    );
     return [];
   }
 

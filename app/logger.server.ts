@@ -1,31 +1,30 @@
-import winston from "winston";
+import pino from "pino";
+import pretty from "pino-pretty";
 
 const PRODUCTION = process.env.NODE_ENV === "production";
+const TEST = process.env.NODE_ENV === "test";
+const LEVEL = process.env.LOG_LEVEL ?? (PRODUCTION ? "info" : "debug");
 
-const logger = winston.createLogger({
-  level: PRODUCTION ? "info" : "debug",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json(),
-  ),
-  transports: PRODUCTION
-    ? [
-        new winston.transports.File({
-          filename: "./logs/error.log",
-          level: "error",
-        }),
-        new winston.transports.File({ filename: "./logs/combined.log" }),
-        new winston.transports.Console({ format: winston.format.simple() }),
-      ]
-    : [
-        new winston.transports.Console({
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.colorize({ all: true }),
-            winston.format.simple(),
-          ),
-        }),
-      ],
-});
+const options = {
+  level: LEVEL,
+  timestamp: pino.stdTimeFunctions.isoTime,
+  formatters: { level: (label: string) => ({ level: label }) },
+};
+
+function createLogger() {
+  if (TEST) return pino({ level: "silent" });
+
+  const stdout = PRODUCTION
+    ? pino.destination(1)
+    : pretty({
+        colorize: true,
+        translateTime: "SYS:HH:MM:ss.l",
+        ignore: "pid,hostname",
+      });
+
+  return pino(options, stdout);
+}
+
+const logger = createLogger();
 
 export { logger };

@@ -47,10 +47,13 @@ export async function destroyImages(
     try {
       await providerOverride.destroy(storageKey);
     } catch (error) {
-      logger.warn("Failed to destroy stored image after DB commit", {
-        storageKey,
-        error,
-      });
+      logger.warn(
+        {
+          storageKey,
+          error,
+        },
+        "Failed to destroy stored image after DB commit",
+      );
     }
   }
 }

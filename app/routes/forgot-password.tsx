@@ -33,10 +33,13 @@ export const action = async ({ request }: Route.ActionArgs) => {
     headers: request.headers,
   });
 
-  logger.info("Password reset requested", {
-    ip: getClientIPAddress(request),
-    email: obscureEmail(email),
-  });
+  logger.info(
+    {
+      ip: getClientIPAddress(request),
+      email: obscureEmail(email),
+    },
+    "Password reset requested",
+  );
 
   return data({ result: submission.reply(), sentTo: email });
 };

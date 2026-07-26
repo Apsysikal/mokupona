@@ -14,7 +14,8 @@ export type ValidatedUser = User & { role: Role & { name: RoleName } };
 function validateRoleName(user: User & { role: Role }): ValidatedUser {
   if (!isRoleName(user.role.name)) {
     logger.error(
-      `User ${user.id} has role "${user.role.name}" outside the role vocabulary`,
+      { userId: user.id, role: user.role.name },
+      "User has a role outside the role vocabulary",
     );
   }
   return user as ValidatedUser;

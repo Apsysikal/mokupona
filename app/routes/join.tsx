@@ -67,13 +67,16 @@ export const action = async ({ request }: Route.ActionArgs) => {
   });
 
   if (submission.status !== "success" || !submission.value) {
-    logger.info("Failed signup request", {
-      ip: getClientIPAddress(request),
-      email: obscureEmail(
-        submission.payload["email"]?.toString() ?? "unknown@no-domain.com",
-      ),
-      reason: submission.status === "error" ? submission.error : null,
-    });
+    logger.info(
+      {
+        ip: getClientIPAddress(request),
+        email: obscureEmail(
+          submission.payload["email"]?.toString() ?? "unknown@no-domain.com",
+        ),
+        reason: submission.status === "error" ? submission.error : null,
+      },
+      "Failed signup request",
+    );
 
     return submission.reply();
   }
@@ -93,10 +96,13 @@ export const action = async ({ request }: Route.ActionArgs) => {
     headers: request.headers,
   });
 
-  logger.info("Successful signup request", {
-    ip: getClientIPAddress(request),
-    email: obscureEmail(email),
-  });
+  logger.info(
+    {
+      ip: getClientIPAddress(request),
+      email: obscureEmail(email),
+    },
+    "Successful signup request",
+  );
 
   const search = new URLSearchParams({ email });
   if (redirectTo) search.set("redirectTo", redirectTo);

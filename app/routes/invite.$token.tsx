@@ -136,11 +136,14 @@ export const action = async ({
       return redirect(`/invite/${params.token}`);
     }
     await acceptCurrentInvite(invite, user.id, params.token);
-    logger.info("Invite accepted (existing user)", {
-      ip: getClientIPAddress(request),
-      email: obscureEmail(user.email),
-      role: invite.roleName,
-    });
+    logger.info(
+      {
+        ip: getClientIPAddress(request),
+        email: obscureEmail(user.email),
+        role: invite.roleName,
+      },
+      "Invite accepted (existing user)",
+    );
     return redirect(landingPath);
   }
 
@@ -177,11 +180,14 @@ export const action = async ({
       returnHeaders: true,
     });
 
-    logger.info("Invite accepted (new user)", {
-      ip: getClientIPAddress(request),
-      email: obscureEmail(invite.email),
-      role: invite.roleName,
-    });
+    logger.info(
+      {
+        ip: getClientIPAddress(request),
+        email: obscureEmail(invite.email),
+        role: invite.roleName,
+      },
+      "Invite accepted (new user)",
+    );
 
     return redirect(landingPath, { headers });
   }

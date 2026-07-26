@@ -56,15 +56,21 @@ export const action = async ({ request }: Route.ActionArgs) => {
       body: { newPassword: password, token },
     });
   } catch {
-    logger.info("Password reset failed (stale token)", {
-      ip: getClientIPAddress(request),
-    });
+    logger.info(
+      {
+        ip: getClientIPAddress(request),
+      },
+      "Password reset failed (stale token)",
+    );
     return redirect("/reset-password?error=INVALID_TOKEN");
   }
 
-  logger.info("Password reset completed", {
-    ip: getClientIPAddress(request),
-  });
+  logger.info(
+    {
+      ip: getClientIPAddress(request),
+    },
+    "Password reset completed",
+  );
 
   return redirect("/reset-password?done");
 };

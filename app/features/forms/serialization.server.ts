@@ -12,10 +12,13 @@ export function parseStoredFormSchemaOrLog(version: {
   const parsed = parseStoredFormSchema(version.schema);
 
   if (!parsed.success) {
-    logger.error("Stored form schema failed to parse", {
-      formVersion: version.id,
-      error: parsed.error,
-    });
+    logger.error(
+      {
+        formVersion: version.id,
+        error: parsed.error,
+      },
+      "Stored form schema failed to parse",
+    );
     return null;
   }
 

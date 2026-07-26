@@ -86,24 +86,30 @@ export async function action({ params, request }: Route.ActionArgs) {
   // actually saw — a schema change in between would silently strip answers
   // to removed fields
   if (formData.get("formVersionId") !== version.id) {
-    logger.info("Dinner signup submitted against an outdated form version", {
-      dinner: dinner.id,
-      submittedVersion: formData.get("formVersionId"),
-      currentVersion: version.id,
-    });
+    logger.info(
+      {
+        dinner: dinner.id,
+        submittedVersion: formData.get("formVersionId"),
+        currentVersion: version.id,
+      },
+      "Dinner signup submitted against an outdated form version",
+    );
 
     return submission.reply({ formErrors: [FORM_CHANGED_ERROR] });
   }
 
   if (submission.status !== "success" || !submission.value) {
-    logger.info("Failed submission for dinner signup", {
-      ip: getClientIPAddress(request),
-      dinner: dinner.id,
-      email: obscureEmail(
-        submission.payload["email"]?.toString() ?? "unknown@no-domain.com",
-      ),
-      reason: submission.status === "error" ? submission.error : null,
-    });
+    logger.info(
+      {
+        ip: getClientIPAddress(request),
+        dinner: dinner.id,
+        email: obscureEmail(
+          submission.payload["email"]?.toString() ?? "unknown@no-domain.com",
+        ),
+        reason: submission.status === "error" ? submission.error : null,
+      },
+      "Failed submission for dinner signup",
+    );
 
     return submission.reply();
   }
@@ -123,31 +129,40 @@ export async function action({ params, request }: Route.ActionArgs) {
     });
   } catch (reason) {
     if (reason instanceof FormVersionChangedError) {
-      logger.info("Dinner signup raced an in-place form update", {
-        dinner: dinner.id,
-        formVersion: version.id,
-      });
+      logger.info(
+        {
+          dinner: dinner.id,
+          formVersion: version.id,
+        },
+        "Dinner signup raced an in-place form update",
+      );
 
       return submission.reply({ formErrors: [FORM_CHANGED_ERROR] });
     }
 
-    logger.error("Failed to persist dinner signup", {
-      ip: getClientIPAddress(request),
-      dinner: dinner.id,
-      email,
-      reason: reason,
-    });
+    logger.error(
+      {
+        ip: getClientIPAddress(request),
+        dinner: dinner.id,
+        email,
+        reason: reason,
+      },
+      "Failed to persist dinner signup",
+    );
 
     return submission.reply({
       formErrors: ["Your signup could not be saved. Please try again."],
     });
   }
 
-  logger.info("Successful submission for dinner signup", {
-    ip: getClientIPAddress(request),
-    dinner: dinner.id,
-    email,
-  });
+  logger.info(
+    {
+      ip: getClientIPAddress(request),
+      dinner: dinner.id,
+      email,
+    },
+    "Successful submission for dinner signup",
+  );
 
   return redirectWithToast("/dinners", {
     title: "Signup complete",
