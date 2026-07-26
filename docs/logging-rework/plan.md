@@ -221,11 +221,112 @@ window. Request logging (§5) raises that. The bound that protects the SQLite
 volume is `rotate 45` × `maxsize 5M` compressed, ~25 MB worst case.
 
 Retention is "30 days, plus up to an hour" — logrotate only evaluates when cron
-fires.
+fires. **This does not hold as shipped**; see §2a for why the `daily` clock never
+elapses and what the window actually depends on.
 
 **Escalation if `copytruncate` ever loses lines:** switch to `postrotate` +
 `SIGHUP` + `dest.reopen()`. That mode additionally requires a pidfile holding
 `process.pid` (not PID 1 — see §5), a `SIGHUP` handler, and `delaycompress`.
+§2a removes all three requirements by making node the scheduler.
+
+---
+
+## 2a. Option: node-driven rotation
+
+Not implemented. Proposed 2026-07-26, after §2 shipped, as the resolution to two
+defects §2 has in production.
+
+Keep `logrotate` — it is the battle-tested part, and the four directive traps
+above stay exactly as they are. Replace only the **scheduler**: an unref'd hourly
+`setInterval` in the app `execFile`s
+
+```
+/usr/sbin/logrotate --state /data/logrotate.status /myapp/logrotate.conf
+```
+
+then calls the file destination's `reopen()`. It runs once at boot as well, so a
+machine redeployed more often than the interval still rotates.
+
+### The two defects it fixes
+
+- **The state file is on the ephemeral rootfs.** `logrotate` in bullseye defaults
+  to `/var/lib/logrotate/status`, and Debian's `cron.daily/logrotate` invokes it
+  bare, so every deploy resets the `daily` clock. `maxage` pruning only executes
+  **as part of an actual rotation** — a run that decides "not due" cleans nothing.
+  Verified against fabricated 30-day-old files: on a fresh state file they all
+  survive. `maxsize` fires independently of state, so the real severity is not
+  "retention never runs" but **"`daily` is dead, and the 30-day window is enforced
+  solely as a side effect of `app.log` crossing 5 MB"** — roughly correct at
+  today's volume, and silently broken if volume ever drops. `--state` on `/data`
+  is the whole fix, and it is unavailable without replacing Debian's shipped
+  script, which hardcodes the bare invocation.
+- **A failed rotation is invisible.** `/dev/log` does not exist in the container,
+  so cron's `logger -t logrotate "ALERT exited abnormally"` writes to nothing, and
+  its stdout is mailed to an exim4 spool on the ephemeral rootfs that nothing
+  reads. Under node the failure goes through pino, so it reaches `fly logs` **and**
+  `app.log`.
+
+### The prize: `copytruncate` goes away
+
+The §2 escalation path needs a pidfile and a `SIGHUP` handler only because an
+external scheduler has to reach into node. When node invokes `logrotate` itself,
+`reopen()` is the next statement. `pino.destination()` returns a SonicBoom, which
+exposes `reopen()`.
+
+That converts the failure mode from lossy to lossless: under `copytruncate`, lines
+written between the copy and the truncate are destroyed; under rename +
+`delaycompress` + `reopen()` they land in the rotated file, misfiled by
+milliseconds. **`delaycompress` is load-bearing** — without it logrotate gzips and
+unlinks the renamed file immediately, and writes into the deleted inode really are
+lost.
+
+### Changes implied
+
+| File                   | Change                                                                                                               |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `Dockerfile`           | drop `cron`, add `--no-install-recommends`, drop the `cron.hourly` move, `COPY logrotate.conf /myapp/logrotate.conf` |
+| `start.sh`             | drop the `cron` line; `exec npm run start` untouched, so §8 Q1 is unaffected                                         |
+| `logrotate.conf`       | `copytruncate` → `delaycompress`; the four load-bearing directives unchanged                                         |
+| `app/logger.server.ts` | `createLogger()` returns the file SonicBoom so the rotation module can `reopen()` it                                 |
+| new module             | the interval, the `execFile`, non-zero exit and stderr logged at `error`                                             |
+| deleted                | `app/logger/cron-check.server.ts` + test, and the `isCronRunning()` boot warn                                        |
+
+`fly.toml` does not change.
+
+`--no-install-recommends` is worth doing either way: `cron` Recommends an MTA,
+which apt resolves to 46 packages including exim4, `libpython3.9-stdlib` and
+MariaDB client libraries. Measured rootfs delta **+83 MB**, against **+5 MB** with
+the flag.
+
+### Why not Fly's schedulers
+
+Fly's [task-scheduling blueprint](https://fly.io/docs/blueprints/task-scheduling/)
+configures supercronic as a `[processes]` group. Process groups run on **separate
+Machines**, and a volume attaches to exactly one Machine — so the scheduler would
+not be able to see `/data/logs/app.log`. The same constraint rules out Cron
+Manager and scheduled Machines. Every scheduler the blueprint offers is
+out-of-container; this work is in-container because it operates on a volume owned
+by one Machine.
+
+Running supercronic as a sidecar instead is a configuration Fly does not document,
+and it costs memory this machine does not have — measured idle RSS **20.3 MB** on
+the v0.2.29 that Fly's own snippet pins, **56.3 MB** on current v0.2.48, against
+**5.1 MB** for Debian cron. It also creates a supervision problem that does not
+exist today: Debian cron daemonizes and re-parents to PID 1, supercronic
+deliberately stays in the foreground.
+
+### Before adopting
+
+- Soak-test rename + `delaycompress` + `reopen()` under concurrent writes. It
+  follows from SonicBoom's `reopen()` and standard logrotate semantics, but the
+  sequence has not been exercised end to end.
+- All footprint figures above are from local Docker on `linux/amd64`, not from
+  `mokupona-stack-b568`.
+
+**Smaller fallback, if the interval is not wanted:** keep cron, but replace the
+moved Debian script with one that passes `--state /data/logrotate.status` and
+redirects to `>> /proc/1/fd/1 2>&1`. That fixes both defects at 5 MB, and forgoes
+the `copytruncate` removal.
 
 ---
 
@@ -577,8 +678,12 @@ nothing in CI can assert it.
 2. **Custom Express server?** Would remove morgan duplication and give an ordered
    shutdown hook. Deferred — revisit if the flush proves flaky in phase 6.
 3. **Who notices if cron dies?** (§2) Rotation stops, retention silently exceeds
-   30 days, and the volume fills with SQLite on it. Decide in phase 2 whether a
-   boot-time check and a size alarm are worth the code.
+   30 days, and the volume fills with SQLite on it. Answered in phase 2 with a
+   boot-time check (`app/logger/cron-check.server.ts`); no size alarm. §2a
+   dissolves the question instead — with node as the scheduler there is no
+   separate daemon to die, and the check is deleted.
+4. **Adopt §2a?** It is the only proposal that fixes the ephemeral state file,
+   and the `daily` directive is inert until something does.
 
 ---
 
