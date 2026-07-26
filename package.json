@@ -21,9 +21,7 @@
     "test:e2e:run": "cross-env PORT=8811 MAIL_PROVIDER=capture CYPRESS_SUPPORT=true BETTER_AUTH_URL=http://localhost:8811 start-server-and-test start:mocks http://localhost:8811 \"npx cypress run\"",
     "typecheck": "prisma generate &&react-router typegen && tsc && tsc -p cypress",
     "validate": "run-p \"test -- --run\" lint typecheck test:e2e:run",
-    "prisma:studio": "prisma studio",
-    "optimize:images": "tsx app/optimize-images.ts",
-    "sweep:orphan-images": "tsx app/sweep-orphan-images.ts"
+    "prisma:studio": "prisma studio"
   },
   "prettier": {
     "plugins": [
@@ -58,7 +56,6 @@
     "react-dom": "^19.2.7",
     "react-router": "^8.2.0",
     "resend": "^6.17.2",
-    "sharp": "^0.35.3",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
     "tailwindcss-animate": "^1.0.7",
@@ -69,15 +66,12 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^10.5.0",
-    "@mdx-js/rollup": "^3.1.1",
     "@react-router/dev": "^8.2.0",
     "@remix-run/lazy-file": "^5.0.6",
-    "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/cypress": "^10.1.3",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
-    "@types/mdx": "^2.0.14",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

@@ -7,19 +7,19 @@ lives in the [`README.md`](./README.md) implementation matrix.
 
 ## Completed commits
 
-| Commit | Change |
-| --- | --- |
-| `021d8aa` | Shared multipart image-form action lifecycle with focused cleanup tests |
-| `7c5276b` | Central image fits, widths, byte limits, and validation messages |
-| `a3a9909` | Bounded image transforms, one cache lookup, one response builder |
-| `a3d8542` | Combined event/address/current-form reads and next-event projection |
-| `5ac612a` | Shared event and board-member admin form shells |
-| `6e3ad6f` | Moved the image route test outside `app/routes` |
-| `0d82889` | One request-scoped optional-user resolution for root/admin/invite |
-| `617b02a` | Shared event view-model base, fact leaves, ordering, and formatters |
-| `26fbe37` | Shared location/delete UI, protected user deletion, auth vocabulary |
-| `566d64d` | Step 1: one streaming implementation, nav item model, responsive-image helper, shared transform URL, OG meta helper |
-| `96f919d` | Step 2: shared route-error content, event-test fixtures, auth sign-in factory, seed/cypress record builders |
+| Commit    | Change                                                                                                                   |
+| --------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `021d8aa` | Shared multipart image-form action lifecycle with focused cleanup tests                                                  |
+| `7c5276b` | Central image fits, widths, byte limits, and validation messages                                                         |
+| `a3a9909` | Bounded image transforms, one cache lookup, one response builder                                                         |
+| `a3d8542` | Combined event/address/current-form reads and next-event projection                                                      |
+| `5ac612a` | Shared event and board-member admin form shells                                                                          |
+| `6e3ad6f` | Moved the image route test outside `app/routes`                                                                          |
+| `0d82889` | One request-scoped optional-user resolution for root/admin/invite                                                        |
+| `617b02a` | Shared event view-model base, fact leaves, ordering, and formatters                                                      |
+| `26fbe37` | Shared location/delete UI, protected user deletion, auth vocabulary                                                      |
+| `566d64d` | Step 1: one streaming implementation, nav item model, responsive-image helper, shared transform URL, OG meta helper      |
+| `96f919d` | Step 2: shared route-error content, event-test fixtures, auth sign-in factory, seed/cypress record builders              |
 | `8064c1d` | Step 3: `unknownIntent()`, root headers passthrough, precomputed ids in `deleteEventsInTx`, derived legacy signer schema |
 
 ## 1. Deduplicate remaining runtime presentation/infrastructure

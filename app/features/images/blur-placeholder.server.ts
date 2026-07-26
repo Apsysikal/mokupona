@@ -1,7 +1,3 @@
-// Blur-up placeholder generation (design §3.3): a tiny blurred Cloudinary
-// variant fetched ONCE — at store/backfill time for uploads, once per server
-// boot for static assets — never in a render path per request.
-
 const BLUR_TRANSFORM = "w_100,q_auto,f_webp,e_blur:1000";
 
 export function buildBlurVariantUrl(

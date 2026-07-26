@@ -95,7 +95,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
         <Meta />
         <Links />
       </head>
-      <body className="dark bg-background text-foreground h-full">
+      <body className="dark h-full">
         <Document
           toast={loaderData.toast}
           nextDinnerId={loaderData.nextDinnerId}

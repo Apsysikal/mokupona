@@ -2,10 +2,8 @@ import { Resend } from "resend";
 
 import type { MailMessage, MailProvider } from "../types";
 
-// mail.mokupona.ch is the domain verified with Resend
 const DEFAULT_FROM = "moku pona <no-reply@mail.mokupona.ch>";
 
-// The only module that may import the Resend SDK (design §3.1).
 export function createResendProvider(
   env: NodeJS.ProcessEnv = process.env,
 ): MailProvider {

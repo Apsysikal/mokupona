@@ -16,11 +16,6 @@ function resolveStorage(env: NodeJS.ProcessEnv) {
   );
 }
 
-/**
- * The hermetic dev/CI provider: files on the local filesystem, no network,
- * no secrets. Intrinsic dimensions and blur placeholders are omitted — the
- * UI degrades gracefully (design §3.1).
- */
 export function createLocalProvider(
   env: NodeJS.ProcessEnv = process.env,
 ): ImageStorageProvider {

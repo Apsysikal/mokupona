@@ -1,12 +1,10 @@
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 
-import { chipVariants, Eyebrow } from "./section";
+import { chipVariants, Eyebrow, pageTitleClassName } from "./section";
+import { Card } from "./ui/card";
+import { fieldShellClassName } from "./ui/input";
 
 import { cn } from "~/lib/utils";
-
-// Shared building blocks of the admin surface: page headers, the search +
-// filter-chip toolbar, seat progress bars, initials avatars and the dashed
-// empty-state panel (design system §9).
 
 export function AdminPageHeader({
   eyebrow,
@@ -22,14 +20,12 @@ export function AdminPageHeader({
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <Eyebrow variant="tracked" tone="label" className="mb-2 block">
+        <Eyebrow variant="tracked" tone="label" className="mb-2">
           {eyebrow}
         </Eyebrow>
-        <h1 className="text-3xl font-light tracking-tight md:text-4xl">
-          {title}
-        </h1>
+        <h1 className={pageTitleClassName}>{title}</h1>
         {subtitle ? (
-          <p className="text-muted-foreground mt-2 text-base">{subtitle}</p>
+          <p className="text-foreground/65 mt-2 text-base">{subtitle}</p>
         ) : null}
       </div>
       {actions ? (
@@ -49,14 +45,19 @@ export function AdminSearchField({
   placeholder: string;
 }) {
   return (
-    <div className="border-border bg-foreground/5 flex h-11 items-center gap-2 rounded-lg border px-3 max-md:w-full md:w-72">
+    <div
+      className={cn(
+        fieldShellClassName,
+        "flex items-center gap-2 max-md:w-full md:w-72",
+      )}
+    >
       <MagnifyingGlassIcon className="text-foreground/50 size-4 shrink-0" />
       <input
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="placeholder:text-foreground/40 min-w-0 flex-1 bg-transparent text-sm outline-none"
+        className="placeholder:text-foreground/50 min-w-0 flex-1 bg-transparent text-sm outline-none"
       />
     </div>
   );
@@ -99,7 +100,7 @@ export function SeatProgress({
     total > 0 ? Math.min(100, Math.round((taken / total) * 100)) : 0;
 
   return (
-    <div className="bg-foreground/10 h-1.5 flex-1 overflow-hidden rounded-full">
+    <div className="bg-foreground/10 h-2 flex-1 overflow-hidden rounded-full">
       <div
         className={cn(
           "h-full rounded-full transition-[width] duration-500",
@@ -111,10 +112,8 @@ export function SeatProgress({
   );
 }
 
-// two rotating tints so neighbouring avatars read as distinct (the third,
-// tan, tint was dropped in the native-token harmonization — design system §2)
 const AVATAR_TINTS = [
-  "text-accent-light bg-primary/15",
+  "text-accent-light bg-primary/10",
   "text-foreground/80 bg-foreground/10",
 ];
 
@@ -139,7 +138,7 @@ export function InitialsAvatar({
     <span
       aria-hidden
       className={cn(
-        "flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+        "flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
         AVATAR_TINTS[seed % AVATAR_TINTS.length],
         className,
       )}
@@ -161,13 +160,13 @@ export function AdminEmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="border-border bg-card flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-14 text-center">
+    <Card className="flex flex-col items-center gap-3 border-dashed px-6 py-14 text-center">
       <div className="bg-primary/10 text-primary mb-1 flex size-14 items-center justify-center rounded-full">
         {icon}
       </div>
       <p className="text-lg font-semibold">{title}</p>
       <p className="text-foreground/50 max-w-xs text-sm">{description}</p>
       {action ? <div className="mt-1">{action}</div> : null}
-    </div>
+    </Card>
   );
 }

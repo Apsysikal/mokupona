@@ -1,7 +1,3 @@
-// The provider seam for image storage (design §3.1) — deliberately minimal.
-// Mirrors the mail layer: the app talks to this interface, never to a vendor
-// SDK; `app/features/images/providers/` is the only place an SDK may live.
-
 /** What a provider hands back after persisting an upload. */
 export interface StoredImage {
   /** Cloudinary public_id, or the local provider's file key. */

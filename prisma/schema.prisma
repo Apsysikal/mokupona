@@ -73,9 +73,6 @@ model Account {
   @@index([userId])
 }
 
-// Email-bound, single-use, role-carrying invite links — a custom feature
-// beside better-auth, NOT a plugin (design §6). Ceiling "moderator" is
-// enforced in code; "admin" stays a seed/DB-level role.
 model Invite {
   id         String    @id @default(cuid())
   // bound address — must match at acceptance
@@ -215,8 +212,9 @@ model Image {
   id          String  @id @default(cuid())
   altText     String?
   contentType String
-  // provider key (Cloudinary public_id / local file key); required post-backfill
-  storageKey  String?
+  // provider key (Cloudinary public_id / local file key) — the row's only
+  // link to its bytes since `blob` was dropped, so it is required
+  storageKey  String
   // Cloudinary asset version — versioned delivery URLs
   version     Int?
   // intrinsic pixels, from the upload response
@@ -224,8 +222,6 @@ model Image {
   height      Int?
   // base64 blur-up placeholder (~1–2 KB), generated at store/backfill time
   blurDataUrl String?
-  // legacy — nullable since the Cloudinary migration (phase 1), dropped in phase 3
-  blob        Bytes?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -12,7 +12,9 @@ import type { Route } from "./+types/dinners_.$dinnerId";
 
 import { CheckboxField, ErrorList } from "~/components/forms";
 import { RouteErrorContent } from "~/components/route-error-content";
+import { BackLink, PageContainer } from "~/components/section";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import {
   EventFactList,
   EventStory,
@@ -23,6 +25,7 @@ import { getViewForField, type FieldDescriptor } from "~/features/forms/fields";
 import { normalizeSubmissionValues } from "~/features/forms/normalize-submission";
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
 import { buildSignupSchema } from "~/features/signup-form/build-schema";
+import { cn } from "~/lib/utils";
 import { logger } from "~/logger.server";
 import { getEventWithCurrentFormVersion } from "~/models/event.server";
 import {
@@ -47,11 +50,7 @@ export async function loader({ params }: Route.LoaderArgs) {
   );
 
   return {
-    // the route ships the detail model, not the Prisma entity; it also covers
-    // the meta tags (title, imageId) and the past check (date)
     event: toEventDetailModel(event),
-    // null when the stored schema fails to parse — the signup section is
-    // hidden rather than rendered wrong (design §11)
     formFields: parseStoredFormSchemaOrLog(version),
     formVersionId: version.id,
   };
@@ -63,8 +62,6 @@ const FORM_CHANGED_ERROR =
 export async function action({ params, request }: Route.ActionArgs) {
   const { dinnerId } = params;
 
-  // the action never trusts client descriptors: re-read the current version
-  // from the DB and rebuild the identical schema server-side (design §6.1)
   const { event: dinner, version } = requireFound(
     await getEventWithCurrentFormVersion(dinnerId),
   );
@@ -111,9 +108,6 @@ export async function action({ params, request }: Route.ActionArgs) {
     return submission.reply();
   }
 
-  // acceptedPrivacy is a legal control, never a stored answer (design §5);
-  // normalization stores explicit false for unchecked checkboxes and [] for
-  // empty lists instead of absent keys.
   const { acceptedPrivacy: _acceptedPrivacy, ...values } = submission.value;
   const answers = normalizeSubmissionValues(formFields, values);
 
@@ -122,9 +116,6 @@ export async function action({ params, request }: Route.ActionArgs) {
   );
 
   try {
-    // one row per party — the version the loader rendered & this action
-    // re-read (design §7). The updatedAt guard rejects the write if an
-    // in-place schema update raced this request.
     await createFormSubmission({
       formVersionId: version.id,
       answers,
@@ -198,29 +189,29 @@ export default function DinnerPage({
   const { event, formFields, formVersionId } = loaderData;
 
   const eventIsPast = isPastEvent(new Date(event.date), new Date());
-  // formFields is null when the stored schema failed to parse — the signup
-  // section is hidden rather than rendered wrong (design §11)
   const signupFields = eventIsPast ? null : formFields;
+  const gridClasses = cn(
+    "grid items-start gap-8",
+    !eventIsPast && "lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]",
+  );
 
   return (
-    <main className="mx-auto w-full max-w-5xl grow px-5 pt-6 pb-20 md:px-10 md:pt-9">
-      <Link
-        to="/dinners"
-        className="text-foreground/50 hover:text-foreground mb-6 inline-flex items-center gap-2 text-sm transition-colors"
-      >
-        ← all dinners
-      </Link>
+    <PageContainer className="grow pt-7 pb-20">
+      <BackLink to="/dinners" className="mb-6">
+        all dinners
+      </BackLink>
 
-      <div className="grid items-start gap-8 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] md:gap-11">
+      <div className={gridClasses}>
         <EventStory event={event} />
 
-        <aside
-          id="sign-up"
-          className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-5 md:sticky md:top-6 md:p-7"
-        >
-          <EventFactList event={event} />
+        {signupFields ? (
+          <Card
+            as="aside"
+            id="sign-up"
+            className="flex flex-col gap-4 p-5 lg:sticky lg:top-6 lg:p-7"
+          >
+            <EventFactList event={event} />
 
-          {signupFields ? (
             <>
               <div aria-hidden className="bg-border h-px" />
 
@@ -236,10 +227,10 @@ export default function DinnerPage({
                 lastResult={actionData}
               />
             </>
-          ) : null}
-        </aside>
+          </Card>
+        ) : null}
       </div>
-    </main>
+    </PageContainer>
   );
 }
 
@@ -295,7 +286,6 @@ function SignupForm({
         })}
 
         <CheckboxField
-          className="mt-0.5"
           labelProps={{
             children: (
               <span className="text-sm">
@@ -320,7 +310,7 @@ function SignupForm({
           join this dinner
         </Button>
 
-        <p className="text-foreground/40 text-center text-xs leading-normal">
+        <p className="text-foreground/50 text-center text-xs leading-normal">
           we&apos;ll email you to confirm if a seat is yours.
         </p>
       </Form>

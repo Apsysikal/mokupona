@@ -1,121 +1,327 @@
 <!-- @dsCard group="Foundations" title="Spacing, radius & layout" -->
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>mokupona — Spacing, radius &amp; layout</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  :root {
-    --background: #15110E; --card: #1B1511; --foreground: rgb(245 241 236);
-    --primary: #ED825E;
-    --border: rgb(245 241 236 / 0.15);
-  }
-  body {
-    background: var(--background); color: var(--foreground);
-    font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
-    padding: 32px; -webkit-font-smoothing: antialiased;
-  }
-  .eyebrow { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgb(245 241 236 / 0.5); }
-  h1 { font-size: 24px; font-weight: 300; letter-spacing: -0.025em; margin: 6px 0 4px; }
-  .note { font-size: 14px; line-height: 1.5; color: rgb(245 241 236 / 0.65); max-width: 640px; }
-  section { margin-top: 28px; }
-  h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgb(245 241 236 / 0.5); margin-bottom: 12px; }
-  .tiers { display: flex; gap: 16px; flex-wrap: wrap; }
-  .tier { text-align: center; }
-  .tier .shape { width: 140px; height: 88px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 12px; color: rgb(245 241 236 / 0.65); }
-  .tier .cap { font-size: 12px; color: rgb(245 241 236 / 0.4); margin-top: 8px; line-height: 1.5; }
-  .tier .cap b { color: var(--foreground); font-weight: 600; display: block; font-size: 13px; }
-  .bar-row { display: flex; align-items: center; gap: 14px; padding: 6px 0; font-size: 12px; }
-  .bar-row .label { flex: 0 0 240px; color: rgb(245 241 236 / 0.65); font-variant-numeric: tabular-nums; }
-  .bar { height: 14px; background: var(--primary); border-radius: 3px; opacity: 0.85; }
-  .panel { border: 1px solid var(--border); border-radius: 16px; background: var(--card); padding: 24px; }
-  .density { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .density .demo-card { border: 1px solid var(--border); border-radius: 16px; background: var(--card); }
-  .density h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-  .density p { font-size: 14px; line-height: 1.5; color: rgb(245 241 236 / 0.65); }
-  .density .cap { font-size: 12px; color: rgb(245 241 236 / 0.4); margin-top: 6px; }
-  .rules { font-size: 14px; line-height: 1.7; color: rgb(245 241 236 / 0.65); }
-  .rules b { color: var(--foreground); font-weight: 600; }
-  code { font-size: 13px; }
-  table { border-collapse: collapse; font-size: 13px; width: 100%; }
-  th, td { text-align: left; padding: 6px 12px 6px 0; border-bottom: 1px solid var(--border); }
-  th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: rgb(245 241 236 / 0.5); font-weight: 600; }
-  td s { color: rgb(245 241 236 / 0.4); }
-  @media (max-width: 640px) { .density { grid-template-columns: 1fr; } }
-</style>
-</head>
-<body>
-  <p class="eyebrow">Foundations</p>
-  <h1>Spacing, radius &amp; layout</h1>
-  <p class="note">Tailwind-native tokens only, <b>no fractional steps</b>. Every shipped half- and
-  quarter-step rounds to a whole step (halves round down, quarters to nearest). Three radius tiers,
-  all native utilities. One page width: <code>max-w-5xl</code>.</p>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mokupona — Spacing, radius &amp; layout</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      :root {
+        --background: #15110e;
+        --card: #1b1511;
+        --foreground: rgb(245 241 236);
+        --primary: #ed825e;
+        --border: rgb(245 241 236 / 0.15);
+      }
+      body {
+        background: var(--background);
+        color: var(--foreground);
+        font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+        padding: 32px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .eyebrow {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgb(245 241 236 / 0.5);
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: 300;
+        letter-spacing: -0.025em;
+        margin: 6px 0 4px;
+      }
+      .note {
+        font-size: 14px;
+        line-height: 1.5;
+        color: rgb(245 241 236 / 0.65);
+        max-width: 640px;
+      }
+      section {
+        margin-top: 28px;
+      }
+      h2 {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgb(245 241 236 / 0.5);
+        margin-bottom: 12px;
+      }
+      .tiers {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .tier {
+        text-align: center;
+      }
+      .tier .shape {
+        width: 140px;
+        height: 88px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: rgb(245 241 236 / 0.65);
+      }
+      .tier .cap {
+        font-size: 12px;
+        color: rgb(245 241 236 / 0.4);
+        margin-top: 8px;
+        line-height: 1.5;
+      }
+      .tier .cap b {
+        color: var(--foreground);
+        font-weight: 600;
+        display: block;
+        font-size: 13px;
+      }
+      .bar-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 6px 0;
+        font-size: 12px;
+      }
+      .bar-row .label {
+        flex: 0 0 240px;
+        color: rgb(245 241 236 / 0.65);
+        font-variant-numeric: tabular-nums;
+      }
+      .bar {
+        height: 14px;
+        background: var(--primary);
+        border-radius: 3px;
+        opacity: 0.85;
+      }
+      .panel {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--card);
+        padding: 24px;
+      }
+      .density {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      .density .demo-card {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--card);
+      }
+      .density h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .density p {
+        font-size: 14px;
+        line-height: 1.5;
+        color: rgb(245 241 236 / 0.65);
+      }
+      .density .cap {
+        font-size: 12px;
+        color: rgb(245 241 236 / 0.4);
+        margin-top: 6px;
+      }
+      .rules {
+        font-size: 14px;
+        line-height: 1.7;
+        color: rgb(245 241 236 / 0.65);
+      }
+      .rules b {
+        color: var(--foreground);
+        font-weight: 600;
+      }
+      code {
+        font-size: 13px;
+      }
+      table {
+        border-collapse: collapse;
+        font-size: 13px;
+        width: 100%;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 6px 12px 6px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      th {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgb(245 241 236 / 0.5);
+        font-weight: 600;
+      }
+      td s {
+        color: rgb(245 241 236 / 0.4);
+      }
+      @media (max-width: 640px) {
+        .density {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <p class="eyebrow">Foundations</p>
+    <h1>Spacing, radius &amp; layout</h1>
+    <p class="note">
+      Tailwind-native tokens only, <b>no fractional steps</b>. Every shipped
+      half- and quarter-step rounds to a whole step (halves round down, quarters
+      to nearest). Three radius tiers, all native utilities. One page width:
+      <code>max-w-5xl</code>.
+    </p>
 
-  <section>
-    <h2>Radius — three tiers, all native</h2>
-    <div class="tiers">
-      <div class="tier"><div class="shape" style="border-radius:8px">rounded-lg</div><div class="cap"><b>control · 8px</b>buttons, inputs, segmented control</div></div>
-      <div class="tier"><div class="shape" style="border-radius:16px">rounded-2xl</div><div class="cap"><b>card · 16px</b>all cards, panels, empty states<br>(kills [10px] / [14px] / xl cards)</div></div>
-      <div class="tier"><div class="shape" style="border-radius:44px; width:200px">rounded-full</div><div class="cap"><b>pill</b>badges-as-pills, chips, avatars</div></div>
-    </div>
-    <p class="note" style="margin-top:10px">Decorative one-offs also go native: text-section band
-    <code>rounded-[3px]</code> → <code>rounded-xs</code>, checkbox <code>rounded-[5px]</code> →
-    <code>rounded-sm</code>.</p>
-  </section>
-
-  <section>
-    <h2>Spacing — no fractions</h2>
-    <div class="panel">
-      <table>
-        <tr><th>Shipped</th><th>Becomes</th><th>Role</th></tr>
-        <tr><td><s>gap-3.5</s>, <s>py-3.25/3.75</s></td><td>gap-3 / py-3</td><td>compact rows (admin)</td></tr>
-        <tr><td><s>gap-4.5</s>, <s>px-4.5</s>, <s>size-4.5</s></td><td>gap-4 / px-4 / size-4</td><td>standard gaps, icons</td></tr>
-        <tr><td><s>p-5.5</s>, <s>gap-5.5</s></td><td>p-5 / gap-5</td><td>section gaps</td></tr>
-        <tr><td><s>gap-6.5</s></td><td>gap-6</td><td>large gaps</td></tr>
-        <tr><td><s>h-9.5</s></td><td>h-9</td><td>sm button</td></tr>
-        <tr><td><s>h-13</s>, <s>h-[58px]</s></td><td>h-12 / h-14</td><td>nav CTA, nav bar</td></tr>
-        <tr><td><s>py-15</s>, <s>h-72.5</s></td><td>py-14 / h-72</td><td>hero</td></tr>
-        <tr><td><s>h-[250px]</s>, <s>md:h-[400px]</s></td><td>h-64 / md:h-96</td><td>image heights</td></tr>
-      </table>
-      <div class="bar-row" style="margin-top:16px"><span class="label">gap-3 · compact rhythm</span><div class="bar" style="width:12px"></div></div>
-      <div class="bar-row"><span class="label">gap-4 · standard rhythm</span><div class="bar" style="width:16px"></div></div>
-      <div class="bar-row"><span class="label">gap-5 / p-5 · section rhythm</span><div class="bar" style="width:20px"></div></div>
-      <div class="bar-row"><span class="label">p-6 · card padding</span><div class="bar" style="width:24px"></div></div>
-      <div class="bar-row"><span class="label">p-7 · card padding (md)</span><div class="bar" style="width:28px"></div></div>
-    </div>
-  </section>
-
-  <section>
-    <h2>Density presets — the two registers</h2>
-    <div class="density">
-      <div>
-        <div class="demo-card" style="padding:24px">
-          <h3>Comfortable — public</h3>
-          <p>Airy, editorial. Card padding p-6 → md:p-7, gaps gap-4 → md:gap-5.</p>
+    <section>
+      <h2>Radius — three tiers, all native</h2>
+      <div class="tiers">
+        <div class="tier">
+          <div class="shape" style="border-radius: 8px">rounded-lg</div>
+          <div class="cap">
+            <b>control · 8px</b>buttons, inputs, segmented control
+          </div>
         </div>
-        <p class="cap">p-6 md:p-7 · gap-4 md:gap-5</p>
-      </div>
-      <div>
-        <div class="demo-card" style="padding:16px">
-          <h3>Compact — admin</h3>
-          <p>Dense, utilitarian. Card padding p-4, row gaps gap-3.</p>
+        <div class="tier">
+          <div class="shape" style="border-radius: 16px">rounded-2xl</div>
+          <div class="cap">
+            <b>card · 16px</b>all cards, panels, empty states<br />(kills [10px]
+            / [14px] / xl cards)
+          </div>
         </div>
-        <p class="cap">p-4 · gap-3</p>
+        <div class="tier">
+          <div class="shape" style="border-radius: 44px; width: 200px">
+            rounded-full
+          </div>
+          <div class="cap"><b>pill</b>badges-as-pills, chips, avatars</div>
+        </div>
       </div>
-    </div>
-  </section>
+      <p class="note" style="margin-top: 10px">
+        Decorative one-offs also go native: text-section band
+        <code>rounded-[3px]</code> → <code>rounded-xs</code>, checkbox
+        <code>rounded-[5px]</code> → <code>rounded-sm</code>.
+      </p>
+    </section>
 
-  <section>
-    <h2>Layout constants — native max-w scale</h2>
-    <div class="panel rules">
-      <b>Page width:</b> <code>max-w-5xl</code> (1024px) — collapses 1040 / 1080 / 1160.<br>
-      <b>Prose widths:</b> <code>max-w-2xl</code> (672px, long text — was 720/760) ·
-      <code>max-w-md</code> (448px, forms &amp; CTAs — was 460) ·
-      <code>max-w-xs</code> (320px, captions &amp; empty states — was 340). No custom width tokens.<br>
-      <b>Image/text split:</b> one <b>46 / 54</b> split everywhere (absorbs 44/56 and 47/53).
-    </div>
-  </section>
-</body>
+    <section>
+      <h2>Spacing — no fractions</h2>
+      <div class="panel">
+        <table>
+          <tr>
+            <th>Shipped</th>
+            <th>Becomes</th>
+            <th>Role</th>
+          </tr>
+          <tr>
+            <td><s>gap-3.5</s>, <s>py-3.25/3.75</s></td>
+            <td>gap-3 / py-3</td>
+            <td>compact rows (admin)</td>
+          </tr>
+          <tr>
+            <td><s>gap-4.5</s>, <s>px-4.5</s>, <s>size-4.5</s></td>
+            <td>gap-4 / px-4 / size-4</td>
+            <td>standard gaps, icons</td>
+          </tr>
+          <tr>
+            <td><s>p-5.5</s>, <s>gap-5.5</s></td>
+            <td>p-5 / gap-5</td>
+            <td>section gaps</td>
+          </tr>
+          <tr>
+            <td><s>gap-6.5</s></td>
+            <td>gap-6</td>
+            <td>large gaps</td>
+          </tr>
+          <tr>
+            <td><s>h-9.5</s></td>
+            <td>h-9</td>
+            <td>sm button</td>
+          </tr>
+          <tr>
+            <td><s>h-13</s>, <s>h-[58px]</s></td>
+            <td>h-12 / h-14</td>
+            <td>nav CTA, nav bar</td>
+          </tr>
+          <tr>
+            <td><s>py-15</s>, <s>h-72.5</s></td>
+            <td>py-14 / h-72</td>
+            <td>hero</td>
+          </tr>
+          <tr>
+            <td><s>h-[250px]</s>, <s>md:h-[400px]</s></td>
+            <td>h-64 / md:h-96</td>
+            <td>image heights</td>
+          </tr>
+        </table>
+        <div class="bar-row" style="margin-top: 16px">
+          <span class="label">gap-3 · compact rhythm</span>
+          <div class="bar" style="width: 12px"></div>
+        </div>
+        <div class="bar-row">
+          <span class="label">gap-4 · standard rhythm</span>
+          <div class="bar" style="width: 16px"></div>
+        </div>
+        <div class="bar-row">
+          <span class="label">gap-5 / p-5 · section rhythm</span>
+          <div class="bar" style="width: 20px"></div>
+        </div>
+        <div class="bar-row">
+          <span class="label">p-6 · card padding</span>
+          <div class="bar" style="width: 24px"></div>
+        </div>
+        <div class="bar-row">
+          <span class="label">p-7 · card padding (md)</span>
+          <div class="bar" style="width: 28px"></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Density presets — the two registers</h2>
+      <div class="density">
+        <div>
+          <div class="demo-card" style="padding: 24px">
+            <h3>Comfortable — public</h3>
+            <p>
+              Airy, editorial. Card padding p-6 → md:p-7, gaps gap-4 → md:gap-5.
+            </p>
+          </div>
+          <p class="cap">p-6 md:p-7 · gap-4 md:gap-5</p>
+        </div>
+        <div>
+          <div class="demo-card" style="padding: 16px">
+            <h3>Compact — admin</h3>
+            <p>Dense, utilitarian. Card padding p-4, row gaps gap-3.</p>
+          </div>
+          <p class="cap">p-4 · gap-3</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Layout constants — native max-w scale</h2>
+      <div class="panel rules">
+        <b>Page width:</b> <code>max-w-5xl</code> (1024px) — collapses 1040 /
+        1080 / 1160.<br />
+        <b>Prose widths:</b> <code>max-w-2xl</code> (672px, long text — was
+        720/760) · <code>max-w-md</code> (448px, forms &amp; CTAs — was 460) ·
+        <code>max-w-xs</code> (320px, captions &amp; empty states — was 340). No
+        custom width tokens.<br />
+        <b>Image/text split:</b> one <b>46 / 54</b> split everywhere (absorbs
+        44/56 and 47/53).
+      </div>
+    </section>
+  </body>
 </html>

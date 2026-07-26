@@ -1,7 +1,8 @@
+import { ChevronDownIcon } from "@radix-ui/react-icons";
 import React, { useId } from "react";
 
 import { Checkbox } from "./ui/checkbox";
-import { Input } from "./ui/input";
+import { fieldShellClassName, Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 
@@ -9,9 +10,6 @@ import { cn } from "~/lib/utils";
 
 export type ListOfErrors = (string | null | undefined)[] | null | undefined;
 
-// One dropzone treatment shared by every file-upload field (design system §9):
-// a dashed hairline over the field fill that warms to the accent on hover.
-// Pass it as a file Field's `inputProps.className`.
 export const fileFieldClassName =
   "h-auto cursor-pointer rounded-lg border-dashed border-foreground/20 py-6 text-center transition-colors hover:border-primary/35 file:font-semibold";
 
@@ -40,7 +38,7 @@ export function ErrorList({
   return (
     <ul id={id} className="flex flex-col gap-1">
       {errorsToRender.map((e) => (
-        <li key={e} className="text-sm text-red-300">
+        <li key={e} className="text-destructive-light text-sm">
           {e}
         </li>
       ))}
@@ -118,22 +116,29 @@ export function SelectField({
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <Label htmlFor={id} {...labelProps} />
-      <select
-        id={id}
-        aria-invalid={errorId ? true : undefined}
-        aria-describedby={errorId}
-        className={cn(
-          "border-border bg-foreground/5 placeholder:text-foreground/40 file:placeholder:text-foreground focus-visible:inset-ring-ring flex h-11 w-full appearance-none rounded-lg border px-3 py-1 transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:border-0 focus-visible:inset-ring-2 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
-          selectClassName,
-        )}
-        {...props}
-      >
-        {options?.map(({ label, value }) => (
-          <option key={value} value={value}>
-            {label}
-          </option>
-        )) ?? children}
-      </select>
+      <div className="relative">
+        <select
+          id={id}
+          aria-invalid={errorId ? true : undefined}
+          aria-describedby={errorId}
+          className={cn(
+            fieldShellClassName,
+            "focus-visible:inset-ring-ring flex w-full appearance-none py-1 pr-9 focus-visible:border-0 focus-visible:inset-ring-2 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
+            selectClassName,
+          )}
+          {...props}
+        >
+          {options?.map(({ label, value }) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          )) ?? children}
+        </select>
+        <ChevronDownIcon
+          aria-hidden
+          className="text-foreground/50 pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2"
+        />
+      </div>
       {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
     </div>
   );

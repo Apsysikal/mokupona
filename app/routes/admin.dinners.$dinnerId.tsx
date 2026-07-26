@@ -28,9 +28,9 @@ export default function DinnerPage({ loaderData }: Route.ComponentProps) {
   const { event } = loaderData;
 
   return (
-    <main className="mx-auto flex max-w-4xl grow flex-col gap-5">
-      <div className="bg-secondary text-secondary-foreground flex flex-col gap-3 rounded-lg p-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm leading-none font-medium">
+    <main className="flex grow flex-col gap-5">
+      <div className="bg-card text-card-foreground flex flex-col gap-3 rounded-lg p-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm leading-none font-semibold">
           You are viewing the admin view of this dinner.
         </p>
 

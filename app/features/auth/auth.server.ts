@@ -15,7 +15,11 @@ const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 const googleProvider =
   googleClientId && googleClientSecret
-    ? { clientId: googleClientId, clientSecret: googleClientSecret }
+    ? {
+        prompt: "select_account" as const,
+        clientId: googleClientId,
+        clientSecret: googleClientSecret,
+      }
     : undefined;
 
 export const googleAuthEnabled = Boolean(googleProvider);
@@ -36,8 +40,6 @@ export const auth = singleton("better-auth", () =>
     account: {
       accountLinking: {
         enabled: true,
-        // safe to auto-link by email: password accounts are always verified
-        // (design §2 — closes the pre-registration takeover attack)
         trustedProviders: ["google"],
       },
     },
@@ -46,17 +48,13 @@ export const auth = singleton("better-auth", () =>
       requireEmailVerification: true,
       sendResetPassword: ({ user, url }) =>
         sendTemplate("resetPassword", user.email, { url }),
-      // completing a reset proves mailbox ownership — this is how force-reset
-      // migrated users get verified (design §7); deliberate, don't "fix" it
       onPasswordReset: ({ user }) => setUserEmailVerified(user.id),
     },
     emailVerification: {
-      // explicit false — unset falls back to requireEmailVerification (true).
-      // join.tsx sends the initial mail itself; invite signup must send
-      // nothing, the invite link already proved mailbox control (design §6)
+      // We send the mail manually after users self-signup.
+      // On the invite-flow the email should not be sent, as
+      // the reception of the invite-mail proves ownership.
       sendOnSignUp: false,
-      // an unverified login attempt re-sends the link — this IS the resend
-      // path; the UI deliberately has no resend button (design §5)
       sendOnSignIn: true,
       autoSignInAfterVerification: false,
       sendVerificationEmail: ({ user, url }) =>

@@ -14,6 +14,7 @@ import type { Route } from "./+types/invite.$token";
 import { AuthShell } from "~/components/auth-layout";
 import { AuthStatus } from "~/components/auth-status";
 import { ErrorList, Field } from "~/components/forms";
+import { pillVariants } from "~/components/section";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -25,7 +26,6 @@ import { optionalUserContext } from "~/features/auth/middleware.server";
 import { passwordSchema } from "~/features/auth/password-schema";
 import { landingPathForRole } from "~/features/auth/roles";
 import { normalizeInvitableRole } from "~/features/users/invite.shared";
-import { cn } from "~/lib/utils";
 import { logger } from "~/logger.server";
 import {
   acceptInvite,
@@ -61,9 +61,6 @@ async function acceptCurrentInvite(
   }
 }
 
-// /invite/$token — email-bound, role-carrying link (design §6). Four states:
-// dead-end (invalid/expired/used), logged-out signup with locked email,
-// logged-in match (confirm upgrade), logged-in mismatch.
 export const loader = async ({ params, context }: Route.LoaderArgs) => {
   const invite = await getInviteByToken(params.token);
   const validity = inviteValidity(invite);
@@ -223,7 +220,7 @@ export default function InvitePage({
         </Button>
         <Link
           to="/login"
-          className="text-primary text-sm font-medium hover:underline"
+          className="text-primary text-sm font-semibold hover:underline"
         >
           go to log in
         </Link>
@@ -250,9 +247,9 @@ export default function InvitePage({
         {upgrades ? (
           <div className="flex items-center gap-3" aria-hidden>
             <RolePill>{currentRole}</RolePill>
-            <ArrowRightIcon className="text-foreground/50 size-4.5" />
+            <ArrowRightIcon className="text-foreground/50 size-4" />
             <RolePill accent>
-              <LockClosedIcon className="size-3.5" />
+              <LockClosedIcon className="size-3" />
               {roleName}
             </RolePill>
           </div>
@@ -265,7 +262,7 @@ export default function InvitePage({
         </Form>
         <Link
           to="/"
-          className="text-primary text-sm font-medium hover:underline"
+          className="text-primary text-sm font-semibold hover:underline"
         >
           not now
         </Link>
@@ -303,7 +300,7 @@ export default function InvitePage({
         </Form>
         <Link
           to="/"
-          className="text-primary text-sm font-medium hover:underline"
+          className="text-primary text-sm font-semibold hover:underline"
         >
           stay signed in
         </Link>
@@ -327,18 +324,7 @@ function RolePill({
   accent?: boolean;
   children: React.ReactNode;
 }) {
-  return (
-    <span
-      className={cn(
-        "flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[13px] font-semibold",
-        accent
-          ? "border-primary/35 bg-primary/10 text-accent-light"
-          : "border-border text-foreground/60",
-      )}
-    >
-      {children}
-    </span>
-  );
+  return <span className={pillVariants({ accent })}>{children}</span>;
 }
 
 function InviteSignup({
@@ -377,7 +363,9 @@ function InviteSignup({
         body: brandBody,
       }}
     >
-      <h1 className="mt-1 text-3xl font-light">accept your invite</h1>
+      <h1 className="mt-1 text-3xl leading-tight font-light tracking-tight">
+        accept your invite
+      </h1>
 
       <Form
         method="post"
@@ -398,11 +386,11 @@ function InviteSignup({
               type="email"
               value={email}
               disabled
-              className="text-foreground/55 pr-10"
+              className="text-foreground/65 pr-10"
             />
             <LockClosedIcon
               aria-hidden
-              className="text-foreground/40 absolute top-1/2 right-3 size-4 -translate-y-1/2"
+              className="text-foreground/50 absolute top-1/2 right-3 size-4 -translate-y-1/2"
             />
           </div>
           <p className="text-foreground/50 text-sm">
@@ -427,7 +415,7 @@ function InviteSignup({
           errors={fields.password.errors}
         />
 
-        <Button type="submit" size="lg" className="mt-0.5 w-full">
+        <Button type="submit" size="lg" className="w-full">
           accept &amp; create account
         </Button>
 
@@ -439,7 +427,7 @@ function InviteSignup({
           {googleEnabled ? (
             <>
               google must return{" "}
-              <strong className="text-foreground/70 font-semibold">
+              <strong className="text-foreground/80 font-semibold">
                 {email}
               </strong>{" "}
               to accept.{" "}

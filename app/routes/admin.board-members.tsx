@@ -40,7 +40,7 @@ export default function AdminBoardMembersPage({
         actions={
           <Button asChild>
             <Link to="new">
-              <PlusIcon className="mr-2 size-4" />
+              <PlusIcon className="size-4" />
               Add member
             </Link>
           </Button>
@@ -67,7 +67,7 @@ export default function AdminBoardMembersPage({
       )}
 
       {formOpen ? (
-        <div className="border-border mt-8 border-t pt-8">
+        <div className="mt-8 border-t pt-8">
           <Outlet />
         </div>
       ) : (
@@ -96,16 +96,14 @@ function BoardMemberCard({
           alt={`Portrait of ${name}`}
           width={96}
           height={96}
-          className="size-12 shrink-0 rounded-full object-cover"
+          className="size-10 shrink-0 rounded-full"
         />
       ) : (
-        <InitialsAvatar name={name} seed={seed} className="size-12 text-sm" />
+        <InitialsAvatar name={name} seed={seed} />
       )}
       <div className="min-w-0 flex-1">
         <h2 className="truncate text-base font-semibold">{name}</h2>
-        <p className="text-muted-foreground mt-0.5 truncate text-sm">
-          {position}
-        </p>
+        <p className="text-foreground/65 mt-1 truncate text-sm">{position}</p>
       </div>
       <div className="flex shrink-0 gap-2">
         <Button size="sm" variant="outline" asChild>

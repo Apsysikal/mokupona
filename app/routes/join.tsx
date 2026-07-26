@@ -100,7 +100,9 @@ export default function Join({ loaderData, actionData }: Route.ComponentProps) {
 
   return (
     <AuthShell mode="join" search={searchParams.toString()}>
-      <h1 className="mt-1 text-3xl font-light">sign up</h1>
+      <h1 className="mt-1 text-3xl leading-tight font-light tracking-tight">
+        sign up
+      </h1>
 
       <Form
         method="post"
@@ -150,7 +152,7 @@ export default function Join({ loaderData, actionData }: Route.ComponentProps) {
           </Link>
         </p>
 
-        <Button type="submit" size="lg" className="mt-0.5 w-full">
+        <Button type="submit" size="lg" className="w-full">
           create account
         </Button>
 
@@ -165,7 +167,7 @@ export default function Join({ loaderData, actionData }: Route.ComponentProps) {
               pathname: "/login",
               search: searchParams.toString(),
             }}
-            className="text-primary font-medium hover:underline"
+            className="text-primary font-semibold hover:underline"
           >
             log in
           </Link>

@@ -97,7 +97,9 @@ export default function DinnersPage({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-col gap-4">
-        <h1 className="text-4xl">User Information</h1>
+        <h1 className="text-4xl leading-tight font-light tracking-tight">
+          User Information
+        </h1>
         <p>
           Information for <span className="text-primary">{user.email}</span>
         </p>

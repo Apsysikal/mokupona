@@ -9,16 +9,25 @@ import { z } from "zod";
 import type { Route } from "./+types/me";
 
 import { InitialsAvatar } from "~/components/admin-ui";
-import { Field } from "~/components/forms";
-import { Eyebrow } from "~/components/section";
+import { ErrorList, Field } from "~/components/forms";
+import {
+  Eyebrow,
+  PageContainer,
+  pageTitleClassName,
+  pillVariants,
+} from "~/components/section";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
+import { fieldShellClassName, Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { authClient } from "~/features/auth/auth.client";
 import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { GoogleMark } from "~/features/auth/components/google-button";
 import { displayNameSchema } from "~/features/auth/form-schemas";
 import { requireResolvedUser } from "~/features/auth/middleware.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
+import { cn } from "~/lib/utils";
 import { getUserAuthOverview, updateUserName } from "~/models/user.server";
 import { unknownIntent } from "~/shared/http.server";
 
@@ -160,14 +169,12 @@ export default function MeRoute({ loaderData }: Route.ComponentProps) {
     loaderData;
 
   return (
-    <main className="animate-page-in mx-auto flex w-full max-w-2xl flex-col gap-5 px-6 py-10 md:py-14">
+    <PageContainer className="animate-page-in flex grow flex-col gap-5 pt-7 pb-20">
       <div className="mb-1">
-        <Eyebrow variant="tracked" tone="label" className="mb-2 block">
+        <Eyebrow variant="tracked" tone="label" className="mb-2">
           account
         </Eyebrow>
-        <h1 className="text-3xl font-light tracking-tight md:text-4xl">
-          your account
-        </h1>
+        <h1 className={pageTitleClassName}>your account</h1>
       </div>
 
       <ProfileCard user={user} />
@@ -183,7 +190,7 @@ export default function MeRoute({ loaderData }: Route.ComponentProps) {
       ) : null}
 
       <SessionsCard sessionCount={sessionCount} />
-    </main>
+    </PageContainer>
   );
 }
 
@@ -192,20 +199,22 @@ function SectionCard({
   subtitle,
   children,
 }: {
-  title: string;
+  title?: string;
   subtitle?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="border-border bg-card flex flex-col gap-5 rounded-2xl border p-6 md:p-7">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-lg font-semibold">{title}</h2>
-        {subtitle ? (
-          <p className="text-foreground/55 text-sm">{subtitle}</p>
-        ) : null}
-      </div>
+    <Card as="section" className="flex flex-col gap-5 p-6 md:p-7">
+      {title ? (
+        <div className="flex flex-col gap-1">
+          <h2 className="text-lg font-semibold">{title}</h2>
+          {subtitle ? (
+            <p className="text-foreground/50 text-sm">{subtitle}</p>
+          ) : null}
+        </div>
+      ) : null}
       {children}
-    </section>
+    </Card>
   );
 }
 
@@ -228,19 +237,17 @@ function ProfileCard({
   useActionToast(fetcher.data, state, "name", "name updated");
 
   return (
-    <section className="border-border bg-card flex flex-col gap-5 rounded-2xl border p-6 md:p-7">
+    <SectionCard>
       <div className="flex items-center gap-4">
         <InitialsAvatar
           name={user.name}
           seed={0}
-          className="size-13 text-base"
+          className="size-12 text-base"
         />
         <div className="min-w-0 flex-1">
           <p className="truncate text-lg font-semibold">{user.name}</p>
         </div>
-        <span className="border-primary/35 bg-primary/10 text-accent-light rounded-full border px-3.5 py-1.5 text-[13px] font-semibold">
-          {user.role.name}
-        </span>
+        <span className={pillVariants({ accent: true })}>{user.role.name}</span>
       </div>
 
       <fetcher.Form
@@ -249,32 +256,33 @@ function ProfileCard({
         {...getFormProps(form)}
       >
         <input type="hidden" name="intent" value="update-name" />
-        <div className="flex items-end gap-2">
-          <Field
-            className="flex-1"
-            labelProps={{ children: "name" }}
-            inputProps={{ ...getInputProps(fields.name, { type: "text" }) }}
-            errors={fields.name.errors}
-          />
-          <Button
-            type="submit"
-            variant="outline"
-            disabled={state !== "idle"}
-            // keeps the button aligned with the input when an error renders
-            className={fields.name.errors?.length ? "mb-8" : undefined}
-          >
-            save
-          </Button>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={fields.name.id}>name</Label>
+          <div className="flex gap-2">
+            <Input
+              className="flex-1"
+              {...getInputProps(fields.name, { type: "text" })}
+            />
+            <Button type="submit" variant="outline" disabled={state !== "idle"}>
+              save
+            </Button>
+          </div>
+          <ErrorList id={fields.name.errorId} errors={fields.name.errors} />
         </div>
       </fetcher.Form>
 
       <div className="flex flex-col gap-2">
-        <span className="text-sm font-medium">email</span>
-        <div className="border-border bg-foreground/3 text-foreground/70 flex h-11 items-center justify-between rounded-lg border px-3 text-sm">
+        <span className="text-sm font-semibold">email</span>
+        <div
+          className={cn(
+            fieldShellClassName,
+            "text-foreground/65 flex items-center justify-between text-sm",
+          )}
+        >
           <span className="truncate">{user.email}</span>
           {user.emailVerified ? (
             <Badge variant="info" pill className="ml-2 shrink-0 gap-1">
-              <CheckIcon className="size-3.5" /> verified
+              <CheckIcon className="size-3" /> verified
             </Badge>
           ) : null}
         </div>
@@ -282,7 +290,7 @@ function ProfileCard({
           your email is your login and can&apos;t be changed here.
         </p>
       </div>
-    </section>
+    </SectionCard>
   );
 }
 
@@ -382,11 +390,11 @@ function ConnectedAccountsCard({
       title="connected accounts"
       subtitle="sign in faster by linking a provider."
     >
-      <div className="border-border flex items-center gap-3.5 rounded-xl border px-4 py-3.5">
-        <GoogleMark className="size-5.5 shrink-0" />
+      <div className="flex items-center gap-4 rounded-lg border px-4 py-4">
+        <GoogleMark className="size-5 shrink-0" />
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-semibold">google</p>
-          <p className="text-foreground/55 truncate text-[13px]">
+          <p className="text-base font-semibold">google</p>
+          <p className="text-foreground/50 truncate text-sm">
             {googleLinked ? `linked as ${email}` : "not linked"}
           </p>
         </div>

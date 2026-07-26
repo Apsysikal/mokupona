@@ -15,6 +15,7 @@ import {
 import { CoverImage } from "~/components/cover-image";
 import { UtensilsIcon } from "~/components/icons";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { formatAdminDateLine } from "~/features/events/date-format";
 import {
   isPastEvent,
@@ -88,7 +89,7 @@ export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
         actions={
           <Button asChild>
             <Link to="new">
-              <PlusIcon className="mr-2 size-4" />
+              <PlusIcon className="size-4" />
               New dinner
             </Link>
           </Button>
@@ -144,25 +145,25 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
   const date = new Date(dinner.date);
 
   return (
-    <div
+    <Card
+      interactive
       className={cn(
-        "border-border bg-card hover:border-primary/30 flex flex-wrap items-center gap-4 rounded-2xl border p-4 transition-colors",
+        "flex flex-wrap items-center gap-3 p-4",
         dinner.past && "opacity-60",
       )}
     >
       <CoverImage
         image={dinner.image}
         alt=""
-        width={208}
-        height={172}
-        className="border-border h-24 w-full rounded-lg border object-cover md:h-20 md:w-26"
+        sizes="160px"
+        className="w-40 shrink-0 rounded-lg border"
       />
 
-      <div className="flex min-w-0 flex-1 basis-56 flex-col gap-2">
-        <div className="min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <div>
           <p
             className={cn(
-              "text-xs font-bold tracking-wide",
+              "text-xs font-semibold tracking-wide",
               dinner.past ? "text-foreground/50" : "text-accent-light",
             )}
           >
@@ -170,15 +171,13 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
               {formatAdminDateLine(date)}
             </time>
           </p>
-          <h2 className="mt-0.5 truncate text-base font-semibold">
+          <h2 className="mt-1 truncate text-base font-semibold">
             {dinner.title}
           </h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {dinner.location}
-          </p>
+          <p className="text-foreground/65 mt-1 text-sm">{dinner.location}</p>
         </div>
         <div className="max-w-xs">
-          <div className="mb-1.5 flex justify-between text-xs">
+          <div className="mb-2 flex justify-between text-xs">
             <span className="text-foreground/80">{dinner.signups} signups</span>
             <span className="text-foreground/50">
               {dinner.signups} / {dinner.slots}
@@ -193,12 +192,7 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          variant="ghost"
-          className="text-foreground/80"
-          asChild
-        >
+        <Button size="sm" variant="ghost" asChild>
           <Link to={`${dinner.id}/signups`}>Signups</Link>
         </Button>
         <Button size="sm" variant="outline" asChild>
@@ -206,6 +200,6 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
         </Button>
         <AdminDeleteButton action={`${dinner.id}/delete`} />
       </div>
-    </div>
+    </Card>
   );
 }

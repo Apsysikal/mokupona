@@ -39,14 +39,14 @@ const DialogContent = ({
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "border-border bg-card data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-2xl border p-7 shadow-lg outline-hidden",
+        "bg-card data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-2xl border p-7 shadow-lg outline-hidden",
         className,
       )}
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="text-foreground/50 hover:text-foreground focus-visible:ring-ring absolute top-5 right-5 rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-hidden">
-        <Cross2Icon className="size-4.5" />
+      <DialogPrimitive.Close className="text-foreground/50 hover:text-foreground focus-visible:ring-ring absolute top-5 right-5 rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-hidden">
+        <Cross2Icon className="size-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>

@@ -32,7 +32,7 @@ export default function AdminLocationsPage({
         actions={
           <Button asChild>
             <Link to="new">
-              <PlusIcon className="mr-2 size-4" />
+              <PlusIcon className="size-4" />
               New location
             </Link>
           </Button>
@@ -79,18 +79,18 @@ function LocationCard({ address }: { address: AddressWithEventCount }) {
           <h2 className="truncate text-base font-semibold">
             {streetName} {houseNumber}
           </h2>
-          <p className="text-muted-foreground mt-0.5 text-sm">
+          <p className="text-foreground/65 mt-1 text-sm">
             {zip} {city}
           </p>
         </div>
       </div>
-      <div className="border-border mt-4 flex gap-2 border-t pt-4">
+      <div className="mt-4 flex gap-2 border-t pt-4">
         <Button size="sm" variant="outline" asChild>
           <Link to={`${id}/edit`}>Edit</Link>
         </Button>
         <AdminDeleteButton action={`${id}/delete`} disabled={inUse} />
         {inUse ? (
-          <span className="text-muted-foreground self-center text-xs">
+          <span className="text-foreground/50 self-center text-xs">
             hosts {eventCount} {eventCount === 1 ? "dinner" : "dinners"}
           </span>
         ) : null}

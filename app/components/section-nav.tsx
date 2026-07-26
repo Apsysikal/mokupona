@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { cn } from "~/lib/utils";
+import { chipVariants } from "./section";
 
 export interface SectionNavSection {
   id: string;
@@ -43,7 +43,7 @@ export function SectionNav({ sections }: { sections: SectionNavSection[] }) {
       // still masking content scrolling underneath
       className="bg-background/85 sticky top-0 z-10 -mx-2 px-2 py-2 backdrop-blur md:top-8 md:z-auto md:mx-0 md:w-48 md:shrink-0 md:self-start md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none"
     >
-      <ul className="flex scrollbar-none gap-2 overflow-x-auto whitespace-nowrap md:flex-col md:gap-1 md:overflow-visible md:whitespace-normal [&::-webkit-scrollbar]:hidden">
+      <ul className="scrollbar-hidden flex gap-2 overflow-x-auto whitespace-nowrap md:flex-col md:gap-1 md:overflow-visible md:whitespace-normal">
         {sections.map((section) => {
           const active = section.id === activeId;
 
@@ -61,12 +61,7 @@ export function SectionNav({ sections }: { sections: SectionNavSection[] }) {
                   window.history.replaceState(null, "", `#${section.id}`);
                 }}
                 aria-current={active ? "true" : undefined}
-                className={cn(
-                  "block rounded-full border px-3 py-1.5 text-sm transition-colors md:rounded-lg md:py-2",
-                  active
-                    ? "border-primary/35 bg-primary/10 text-accent-light font-semibold"
-                    : "text-foreground/65 hover:text-foreground border-border md:hover:bg-foreground/5 md:border-transparent",
-                )}
+                className={chipVariants({ active, size: "nav" })}
               >
                 {section.label}
               </a>

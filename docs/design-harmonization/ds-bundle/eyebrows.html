@@ -1,75 +1,195 @@
 <!-- @dsCard group="Components" title="Eyebrow / kicker" -->
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>mokupona — Eyebrow / kicker</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  :root {
-    --background: #15110E; --card: #1B1511; --foreground: rgb(245 241 236);
-    --primary: #ED825E; --accent-light: #F1B48C;
-    --border: rgb(245 241 236 / 0.15);
-  }
-  body {
-    background: var(--background); color: var(--foreground);
-    font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
-    padding: 32px; -webkit-font-smoothing: antialiased;
-  }
-  .page-eyebrow { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgb(245 241 236 / 0.5); }
-  h1 { font-size: 24px; font-weight: 300; letter-spacing: -0.025em; margin: 6px 0 4px; }
-  .note { font-size: 14px; line-height: 1.5; color: rgb(245 241 236 / 0.65); max-width: 640px; }
-  section { margin-top: 28px; }
-  h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgb(245 241 236 / 0.5); margin-bottom: 12px; }
-  .panel { border: 1px solid var(--border); border-radius: 16px; background: var(--card); padding: 24px; display: flex; flex-direction: column; gap: 18px; }
-  .tracked { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; }
-  .kicker { font-size: 14px; font-weight: 600; }
-  .demo { display: flex; align-items: baseline; gap: 20px; }
-  .demo .spec { flex: 0 0 220px; font-size: 12px; color: rgb(245 241 236 / 0.4); }
-  .divider { display: flex; align-items: center; gap: 16px; }
-  .divider hr { flex: 1; border: none; border-top: 1px solid var(--border); }
-  .compose h3 { font-size: 30px; font-weight: 300; letter-spacing: -0.025em; margin-top: 6px; }
-  .cap { font-size: 12px; color: rgb(245 241 236 / 0.4); margin-top: 8px; line-height: 1.6; }
-  code { font-size: 13px; }
-</style>
-</head>
-<body>
-  <p class="page-eyebrow">Components</p>
-  <h1>Eyebrow / kicker</h1>
-  <p class="note">Eight shipped tracking values collapse into <b>one component, two variants</b>,
-  built entirely from native utilities: the tracked variant is <code>text-xs font-semibold uppercase
-  tracking-widest</code> (0.1em — call #3), the kicker is <code>text-sm font-semibold</code>.</p>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mokupona — Eyebrow / kicker</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      :root {
+        --background: #15110e;
+        --card: #1b1511;
+        --foreground: rgb(245 241 236);
+        --primary: #ed825e;
+        --accent-light: #f1b48c;
+        --border: rgb(245 241 236 / 0.15);
+      }
+      body {
+        background: var(--background);
+        color: var(--foreground);
+        font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+        padding: 32px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .page-eyebrow {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgb(245 241 236 / 0.5);
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: 300;
+        letter-spacing: -0.025em;
+        margin: 6px 0 4px;
+      }
+      .note {
+        font-size: 14px;
+        line-height: 1.5;
+        color: rgb(245 241 236 / 0.65);
+        max-width: 640px;
+      }
+      section {
+        margin-top: 28px;
+      }
+      h2 {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgb(245 241 236 / 0.5);
+        margin-bottom: 12px;
+      }
+      .panel {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--card);
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+      .tracked {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+      .kicker {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .demo {
+        display: flex;
+        align-items: baseline;
+        gap: 20px;
+      }
+      .demo .spec {
+        flex: 0 0 220px;
+        font-size: 12px;
+        color: rgb(245 241 236 / 0.4);
+      }
+      .divider {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .divider hr {
+        flex: 1;
+        border: none;
+        border-top: 1px solid var(--border);
+      }
+      .compose h3 {
+        font-size: 30px;
+        font-weight: 300;
+        letter-spacing: -0.025em;
+        margin-top: 6px;
+      }
+      .cap {
+        font-size: 12px;
+        color: rgb(245 241 236 / 0.4);
+        margin-top: 8px;
+        line-height: 1.6;
+      }
+      code {
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <p class="page-eyebrow">Components</p>
+    <h1>Eyebrow / kicker</h1>
+    <p class="note">
+      Eight shipped tracking values collapse into
+      <b>one component, two variants</b>, built entirely from native utilities:
+      the tracked variant is
+      <code>text-xs font-semibold uppercase tracking-widest</code> (0.1em — call
+      #3), the kicker is <code>text-sm font-semibold</code>.
+    </p>
 
-  <section>
-    <h2>variant="tracked" — text-xs uppercase tracking-widest</h2>
-    <div class="panel">
-      <div class="demo"><span class="spec">tone="primary" · text-primary</span><span class="tracked" style="color:var(--primary)">GATHERINGS</span></div>
-      <div class="demo"><span class="spec">tone="label" · text-foreground/50</span><span class="tracked" style="color:rgb(245 241 236 / 0.5)">HOW IT WORKS</span></div>
-      <div class="demo"><span class="spec">tone="faint" · text-foreground/40</span><span class="tracked" style="color:rgb(245 241 236 / 0.4)">ARCHIVE</span></div>
-    </div>
-    <p class="cap">absorbs the admin .02/.04/.06em eyebrows and the public .16–.28em spread — one native value</p>
-  </section>
-
-  <section>
-    <h2>variant="kicker" — text-sm, sentence-case, no tracking</h2>
-    <div class="panel">
-      <div class="demo"><span class="spec">tone="primary" · text-primary</span><span class="kicker" style="color:var(--primary)">The next dinner</span></div>
-      <div class="demo"><span class="spec">tone="light" · text-accent-light</span><span class="kicker" style="color:var(--accent-light)">Save your seat</span></div>
-    </div>
-    <p class="cap">absorbs the idiom-B spans (dinner-view, dinner-card, hero, auth-layout)</p>
-  </section>
-
-  <section>
-    <h2>In composition</h2>
-    <div class="panel">
-      <div class="divider"><hr><span class="tracked" style="color:rgb(245 241 236 / 0.5)">UPCOMING</span><hr></div>
-      <div class="compose">
-        <span class="tracked" style="color:var(--primary)">GATHERINGS</span>
-        <h3>Dinner with strangers</h3>
+    <section>
+      <h2>variant="tracked" — text-xs uppercase tracking-widest</h2>
+      <div class="panel">
+        <div class="demo">
+          <span class="spec">tone="primary" · text-primary</span
+          ><span class="tracked" style="color: var(--primary)">GATHERINGS</span>
+        </div>
+        <div class="demo">
+          <span class="spec">tone="label" · text-foreground/50</span
+          ><span class="tracked" style="color: rgb(245 241 236 / 0.5)"
+            >HOW IT WORKS</span
+          >
+        </div>
+        <div class="demo">
+          <span class="spec">tone="faint" · text-foreground/40</span
+          ><span class="tracked" style="color: rgb(245 241 236 / 0.4)"
+            >ARCHIVE</span
+          >
+        </div>
       </div>
-    </div>
-    <p class="cap">SectionDivider keeps its hairline rule; its label becomes Eyebrow variant="tracked" tone="label". Heading below: text-3xl font-light tracking-tight.</p>
-  </section>
-</body>
+      <p class="cap">
+        absorbs the admin .02/.04/.06em eyebrows and the public .16–.28em spread
+        — one native value
+      </p>
+    </section>
+
+    <section>
+      <h2>variant="kicker" — text-sm, sentence-case, no tracking</h2>
+      <div class="panel">
+        <div class="demo">
+          <span class="spec">tone="primary" · text-primary</span
+          ><span class="kicker" style="color: var(--primary)"
+            >The next dinner</span
+          >
+        </div>
+        <div class="demo">
+          <span class="spec">tone="light" · text-accent-light</span
+          ><span class="kicker" style="color: var(--accent-light)"
+            >Save your seat</span
+          >
+        </div>
+      </div>
+      <p class="cap">
+        absorbs the idiom-B spans (dinner-view, dinner-card, hero, auth-layout)
+      </p>
+    </section>
+
+    <section>
+      <h2>In composition</h2>
+      <div class="panel">
+        <div class="divider">
+          <hr />
+          <span class="tracked" style="color: rgb(245 241 236 / 0.5)"
+            >UPCOMING</span
+          >
+          <hr />
+        </div>
+        <div class="compose">
+          <span class="tracked" style="color: var(--primary)">GATHERINGS</span>
+          <h3>Dinner with strangers</h3>
+        </div>
+      </div>
+      <p class="cap">
+        SectionDivider keeps its hairline rule; its label becomes Eyebrow
+        variant="tracked" tone="label". Heading below: text-3xl font-light
+        tracking-tight.
+      </p>
+    </section>
+  </body>
 </html>

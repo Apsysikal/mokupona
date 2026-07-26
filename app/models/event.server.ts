@@ -158,16 +158,6 @@ export async function createEvent(
   });
 }
 
-// When formFields or a new cover image are provided, everything persists in
-// ONE transaction (the create path is atomic too) — a failure must not leave
-// the event updated but its form unchanged, nor leak an image row. A cover
-// swap deletes the old image row and creates the new one in the same
-// transaction (the updateBoardMember pattern).
-//
-// Capture-and-destroy (design §3.4): the replaced cover's storageKey is read
-// inside the transaction — the delete would otherwise erase it unseen — and
-// returned as a scalar; the CALLER destroys the provider asset strictly
-// after this commit. Null when no cover was replaced.
 export async function updateEvent(
   id: string,
   data: EventUpdateData,
@@ -205,14 +195,6 @@ export async function updateEvent(
   });
 }
 
-// The FK points Event -> Form (Restrict), so deleting an event does not
-// cascade to its form data — the cover does cascade (Image.eventId). All
-// event deletes must go through here (design §3.2): submissions and versions
-// first, then the events, then the forms — the Restrict FKs force the event
-// rows to go before their forms.
-//
-// Each returned entry carries the doomed cover's storageKey (or null),
-// captured before the cascade erases it — capture-and-destroy, design §3.4.
 export async function deleteEventsInTx(
   tx: Prisma.TransactionClient,
   where: Prisma.EventWhereInput,

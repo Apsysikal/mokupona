@@ -167,8 +167,6 @@ describe("event image lifecycle", () => {
     });
     expect(image.contentType).toBe(data.image.contentType);
     expect(image.storageKey).toBe(data.image.storageKey);
-    // provider scalars only — the legacy blob column is no longer written
-    expect(image.blob).toBeNull();
   });
 
   it("leaves no image row when the create transaction fails after the image write", async () => {
@@ -260,10 +258,6 @@ describe("event image lifecycle", () => {
       prisma.image.findUnique({ where: { id: cover.id } }),
     ).resolves.toBeNull();
   });
-
-  // capture-and-destroy (design §3.4): the models must hand the doomed
-  // storageKey out of their transactions so callers can destroy the provider
-  // asset after commit — the cascade would otherwise erase it unseen
 
   it("deleteEvent returns the captured cover storageKey", async () => {
     const data = await buildEventData();

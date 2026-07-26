@@ -14,10 +14,6 @@ import {
 } from "~/models/form-submission.server";
 import { getCurrentFormVersionForEvent } from "~/models/form.server";
 
-// The one place that knows signup semantics on the read side (design §8).
-// The admin signups table and the CSV export consume this — never the
-// FormSubmission/EventResponse tables directly.
-
 export interface Attendee {
   submissionId: string; // groups a party; legacy rows use the row id
   isSigner: boolean | null; // null = legacy row (signer-ness was never recorded)
@@ -148,15 +144,6 @@ type StoredSubmission = Awaited<
   ReturnType<typeof getFormSubmissionsForEvent>
 >[number];
 
-// Design §8: the signer is one Attendee built from the top-level answers;
-// each friends[i] item is one Attendee. A top-level field whose name also
-// exists in the friends itemFields is the signer's personal answer; one with
-// no counterpart is submission-level and is replicated onto every attendee.
-//
-// Extraction is structural (typeof-filtered against the pinned version's
-// descriptors), NOT a strict re-validation: answers were validated when
-// written, and a reader stricter than any writer would silently drop whole
-// parties from the roster.
 function flattenSubmission(
   submission: StoredSubmission,
   descriptors: StoredFormSchema,

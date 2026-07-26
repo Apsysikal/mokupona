@@ -76,10 +76,12 @@ describe("getImageUrl — cloudinary provider", () => {
     );
   });
 
-  it("falls back to the resource route for a not-yet-backfilled row", () => {
-    // phase 1 interim: blob-only rows keep serving through /file/:fileId
+  it("falls back to the resource route without a configured cloud name", () => {
     expect(
-      getImageUrl({ id: "img-1", storageKey: null }, cloudinaryConfig),
+      getImageUrl(
+        { id: "img-1", storageKey: "abc123" },
+        { imageProvider: "cloudinary", cloudinaryCloudName: null },
+      ),
     ).toBe("/file/img-1");
   });
 });

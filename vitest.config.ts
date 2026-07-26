@@ -3,7 +3,7 @@
 /// <reference types="vitest" />
 /// <reference types="vite/client" />
 
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [],
@@ -13,6 +13,11 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "happy-dom",
+    // Agent worktrees are full checkouts of this repo living under the project
+    // root. Without this they contribute a second (stale) copy of every test
+    // file, and because all copies share the one test.db their fixtures
+    // cross-contaminate the real suite's assertions.
+    exclude: [...configDefaults.exclude, "**/.claude/worktrees/**"],
     setupFiles: ["./test/setup-test-env.ts"],
     // DB-backed model tests run against a throwaway SQLite file that
     // setup-db.ts recreates from the migrations on every run (dotenv does not

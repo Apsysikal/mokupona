@@ -19,31 +19,31 @@ Note: the base itself already uses two off-scale values (`text-[15px]`, and size
 
 ### `<Button>` usages that override visuals
 
-| Location | variant/size | Override | Effect |
-|---|---|---|---|
-| `app/routes/dinners_.$dinnerId.tsx:309` | lg | `w-full rounded-[9px]` | radius 8px→9px |
-| `app/routes/login.tsx:141` | lg | `mt-0.5 w-full rounded-[9px]` | radius 8px→9px |
-| `app/routes/join.tsx:174` | lg | `mt-0.5 w-full rounded-[9px]` | radius 8px→9px |
-| `app/routes/dinners._index.tsx:94` | outline, lg | `relative mt-1.5 rounded-[9px]` | radius 8px→9px |
-| `app/components/site-nav.tsx:206` | lg | `mt-8 h-13 rounded-[10px] text-base` | h-12→h-13, radius→10px, text 15px→16px |
-| `app/features/cms/blocks/hero/view.tsx:70` | default | `h-11.5` | h-11→h-11.5 |
-| `app/components/signup-form-builder.tsx:487,501` | outline, icon | `compactButton` = `h-7 w-7` | icon 36px→28px |
-| `app/components/signup-form-builder.tsx:516` | outline, icon | `compactButton` + `border-destructive/50 bg-destructive/10 text-red-300 hover:bg-destructive/30 hover:text-red-200` | ad-hoc destructive-tinted icon button (uses raw `text-red-300/200`) |
-| `app/components/signup-form-builder.tsx:538` | ghost, icon (via `buttonVariants`) | `compactButton` + `data-[state=open]:text-primary` | shrunken trigger |
+| Location                                         | variant/size                       | Override                                                                                                            | Effect                                                              |
+| ------------------------------------------------ | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `app/routes/dinners_.$dinnerId.tsx:309`          | lg                                 | `w-full rounded-[9px]`                                                                                              | radius 8px→9px                                                      |
+| `app/routes/login.tsx:141`                       | lg                                 | `mt-0.5 w-full rounded-[9px]`                                                                                       | radius 8px→9px                                                      |
+| `app/routes/join.tsx:174`                        | lg                                 | `mt-0.5 w-full rounded-[9px]`                                                                                       | radius 8px→9px                                                      |
+| `app/routes/dinners._index.tsx:94`               | outline, lg                        | `relative mt-1.5 rounded-[9px]`                                                                                     | radius 8px→9px                                                      |
+| `app/components/site-nav.tsx:206`                | lg                                 | `mt-8 h-13 rounded-[10px] text-base`                                                                                | h-12→h-13, radius→10px, text 15px→16px                              |
+| `app/features/cms/blocks/hero/view.tsx:70`       | default                            | `h-11.5`                                                                                                            | h-11→h-11.5                                                         |
+| `app/components/signup-form-builder.tsx:487,501` | outline, icon                      | `compactButton` = `h-7 w-7`                                                                                         | icon 36px→28px                                                      |
+| `app/components/signup-form-builder.tsx:516`     | outline, icon                      | `compactButton` + `border-destructive/50 bg-destructive/10 text-red-300 hover:bg-destructive/30 hover:text-red-200` | ad-hoc destructive-tinted icon button (uses raw `text-red-300/200`) |
+| `app/components/signup-form-builder.tsx:538`     | ghost, icon (via `buttonVariants`) | `compactButton` + `data-[state=open]:text-primary`                                                                  | shrunken trigger                                                    |
 
 Unmodified `<Button>` usages exist throughout the admin routes (`admin._index`, `admin.dinners.*`, `admin.locations.*`, `admin.users.*`, `admin.board-members.*`), `dinner-card.tsx:74`, `site-nav.tsx:96`, and `admin-dinner-form.tsx:121,124`.
 
 ### Ad-hoc button-like elements (not `<Button>`)
 
-| Location | What | Classes |
-|---|---|---|
-| `app/components/auth-layout.tsx:86-103` | Segmented control (login/join tabs) | `h-9.5 rounded-[7px] text-sm` + active `bg-primary text-primary-foreground font-semibold` — a third radius (7px) inside a `rounded-[10px]` container |
-| `app/components/section-nav.tsx:52,64-69` | Nav chips | `rounded-full border px-3 py-1.5 text-sm md:rounded-md md:py-2` + active `border-primary/40 bg-primary/10 text-primary` — pill on mobile, rounded-md on desktop |
-| `app/components/dinner-card.tsx:77` | Secondary CTA ("underline link") | `border-foreground/35 hover:border-foreground w-fit border-b pb-0.5 text-[15px]` |
-| `app/features/cms/blocks/hero/view.tsx:62-65` | Secondary CTA — same pattern, duplicated | `border-foreground/35 hover:border-foreground w-fit border-b pb-0.5 text-[15px]` |
-| `app/features/forms/fields/list/view.tsx:56` | Remove action | `text-primary text-xs lowercase hover:underline` |
-| `app/features/forms/fields/list/view.tsx:87` | Add action | `text-primary text-[13px] font-medium lowercase hover:underline` |
-| `app/components/site-nav.tsx:81` | Logout | `text-fg-secondary hover:text-foreground` (plain text link) |
+| Location                                      | What                                     | Classes                                                                                                                                                         |
+| --------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/components/auth-layout.tsx:86-103`       | Segmented control (login/join tabs)      | `h-9.5 rounded-[7px] text-sm` + active `bg-primary text-primary-foreground font-semibold` — a third radius (7px) inside a `rounded-[10px]` container            |
+| `app/components/section-nav.tsx:52,64-69`     | Nav chips                                | `rounded-full border px-3 py-1.5 text-sm md:rounded-md md:py-2` + active `border-primary/40 bg-primary/10 text-primary` — pill on mobile, rounded-md on desktop |
+| `app/components/dinner-card.tsx:77`           | Secondary CTA ("underline link")         | `border-foreground/35 hover:border-foreground w-fit border-b pb-0.5 text-[15px]`                                                                                |
+| `app/features/cms/blocks/hero/view.tsx:62-65` | Secondary CTA — same pattern, duplicated | `border-foreground/35 hover:border-foreground w-fit border-b pb-0.5 text-[15px]`                                                                                |
+| `app/features/forms/fields/list/view.tsx:56`  | Remove action                            | `text-primary text-xs lowercase hover:underline`                                                                                                                |
+| `app/features/forms/fields/list/view.tsx:87`  | Add action                               | `text-primary text-[13px] font-medium lowercase hover:underline`                                                                                                |
+| `app/components/site-nav.tsx:81`              | Logout                                   | `text-fg-secondary hover:text-foreground` (plain text link)                                                                                                     |
 
 **Button findings**
 
@@ -64,12 +64,12 @@ Variants: `default`, `secondary`, `destructive`, `outline`
 
 ### Usages & deviations
 
-| Location | What | Classes / deviation |
-|---|---|---|
-| `app/components/signup-form-builder.tsx:75-76,287` | `FRIENDS_CHIP_CLASSES` on `<Badge variant="outline">` | `border-[oklch(75%_0.09_220/0.4)] bg-[oklch(75%_0.09_220/0.16)] text-[oklch(75%_0.09_220)]` — raw oklch color, not a theme token |
-| `app/components/signup-form-builder.tsx:281` | Row card teal tint | `border-[oklch(75%_0.09_220/0.4)] bg-[oklch(75%_0.09_220/0.05)]` — same raw color again |
-| `app/components/dinner-card.tsx:34` | "next dinner" pill | `bg-primary text-primary-foreground h-6.5 rounded-full px-3 text-xs font-bold md:h-7.5` — badge-shaped but `rounded-full` + `font-bold`, doesn't use `<Badge>` |
-| `app/components/signup-form-builder.tsx:331,333,776` | Plain `<Badge>` / `variant="secondary"` | no overrides |
+| Location                                             | What                                                  | Classes / deviation                                                                                                                                            |
+| ---------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/components/signup-form-builder.tsx:75-76,287`   | `FRIENDS_CHIP_CLASSES` on `<Badge variant="outline">` | `border-[oklch(75%_0.09_220/0.4)] bg-[oklch(75%_0.09_220/0.16)] text-[oklch(75%_0.09_220)]` — raw oklch color, not a theme token                               |
+| `app/components/signup-form-builder.tsx:281`         | Row card teal tint                                    | `border-[oklch(75%_0.09_220/0.4)] bg-[oklch(75%_0.09_220/0.05)]` — same raw color again                                                                        |
+| `app/components/dinner-card.tsx:34`                  | "next dinner" pill                                    | `bg-primary text-primary-foreground h-6.5 rounded-full px-3 text-xs font-bold md:h-7.5` — badge-shaped but `rounded-full` + `font-bold`, doesn't use `<Badge>` |
+| `app/components/signup-form-builder.tsx:331,333,776` | Plain `<Badge>` / `variant="secondary"`               | no overrides                                                                                                                                                   |
 
 ### Eyebrow / kicker labels (title-adjacent micro-labels)
 
@@ -79,26 +79,26 @@ Two coexisting idioms:
 
 **A. Uppercase + letter-spaced** — tracking varies `.16em` / `.18em` / `.2em` / `.24em` / `.28em`:
 
-| Location | Classes |
-|---|---|
-| `app/components/section.tsx:16` (Eyebrow) | `text-primary text-xs font-semibold tracking-[.24em] uppercase` |
-| `app/components/section.tsx:35` (SectionDivider) | same but `text-fg-label` |
-| `app/routes/dinners._index.tsx:30` | `<Eyebrow className="tracking-[.28em]">` — overrides its own component |
-| `app/components/footer.tsx:5` | `text-[11px] tracking-[.2em] uppercase text-fg-faint` |
-| `app/features/cms/blocks/text-section/view.tsx:29` | `text-xs font-bold tracking-[.24em] uppercase opacity-70` |
-| `app/features/cms/blocks/hero/view.tsx:79` | `text-fg-faint text-xs tracking-[.18em] uppercase` |
-| `app/features/forms/fields/list/view.tsx:53` | `text-fg-label text-xs font-semibold tracking-[.16em] lowercase` (lowercase!) |
+| Location                                           | Classes                                                                       |
+| -------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `app/components/section.tsx:16` (Eyebrow)          | `text-primary text-xs font-semibold tracking-[.24em] uppercase`               |
+| `app/components/section.tsx:35` (SectionDivider)   | same but `text-fg-label`                                                      |
+| `app/routes/dinners._index.tsx:30`                 | `<Eyebrow className="tracking-[.28em]">` — overrides its own component        |
+| `app/components/footer.tsx:5`                      | `text-[11px] tracking-[.2em] uppercase text-fg-faint`                         |
+| `app/features/cms/blocks/text-section/view.tsx:29` | `text-xs font-bold tracking-[.24em] uppercase opacity-70`                     |
+| `app/features/cms/blocks/hero/view.tsx:79`         | `text-fg-faint text-xs tracking-[.18em] uppercase`                            |
+| `app/features/forms/fields/list/view.tsx:53`       | `text-fg-label text-xs font-semibold tracking-[.16em] lowercase` (lowercase!) |
 
 **B. Plain `text-primary` kicker, no uppercase, no tracking:**
 
-| Location | Classes |
-|---|---|
-| `app/components/dinner-view.tsx:49` | `text-primary text-xs font-semibold md:text-[13px]` |
-| `app/components/dinner-card.tsx:41` | identical |
-| `app/routes/dinners._index.tsx:81` | `text-primary text-[13px] font-semibold` |
-| `app/features/cms/blocks/hero/view.tsx:37` | `text-primary text-[13px] font-semibold` |
-| `app/components/auth-layout.tsx:40` | `text-accent-light text-[13px] font-semibold` |
-| `app/components/auth-layout.tsx:66` | `text-accent-light text-xs font-semibold` |
+| Location                                   | Classes                                             |
+| ------------------------------------------ | --------------------------------------------------- |
+| `app/components/dinner-view.tsx:49`        | `text-primary text-xs font-semibold md:text-[13px]` |
+| `app/components/dinner-card.tsx:41`        | identical                                           |
+| `app/routes/dinners._index.tsx:81`         | `text-primary text-[13px] font-semibold`            |
+| `app/features/cms/blocks/hero/view.tsx:37` | `text-primary text-[13px] font-semibold`            |
+| `app/components/auth-layout.tsx:40`        | `text-accent-light text-[13px] font-semibold`       |
+| `app/components/auth-layout.tsx:66`        | `text-accent-light text-xs font-semibold`           |
 
 **Badge/label findings**
 
@@ -119,18 +119,18 @@ Two coexisting idioms:
 
 ### Ad-hoc card-like containers
 
-| Location | What | Classes | Radius |
-|---|---|---|---|
-| `app/components/dinner-card.tsx:24` | Dinner card | `border-foreground/12 bg-card overflow-hidden border` | **rounded-2xl** |
-| `app/routes/dinners._index.tsx:76` | CTA panel | `border-foreground/12 bg-card border px-6 py-9.5 md:px-14 md:py-19` | **rounded-2xl** |
-| `app/routes/dinners_.$dinnerId.tsx:209` | Reservation sidebar | `border-foreground/12 bg-card border p-5.5 md:p-7` | **rounded-2xl** |
-| `app/features/forms/fields/list/view.tsx:50` | Form list panel | `border-foreground/12 bg-background border p-4` | **rounded-[10px]** |
-| `app/components/signup-form-builder.tsx:388-390` | Builder row card | `border`, no bg | **rounded-lg / rounded-[10px]** (small vs normal) |
-| `app/components/auth-layout.tsx:36` | Auth brand panel (desktop) | `bg-card border-foreground/8 border-r p-12` | — |
-| `app/components/auth-layout.tsx:57` | Auth brand header (mobile) | `bg-card border-foreground/8 border-b px-6 pt-6.5 pb-7` | — |
-| `app/components/auth-layout.tsx:95` | Segmented control shell | `bg-card border-foreground/12 border p-1` | **rounded-[10px]** |
-| `app/components/admin-dinner-form.tsx:110` | Sticky SaveBar | `border-white/10 bg-gray-950/85 backdrop-blur md:rounded-xl` | md:rounded-xl |
-| `app/routes/admin.dinners.$dinnerId.tsx:31`, `admin.dinners.$dinnerId_.signups.tsx:48` | Info banner | `bg-secondary rounded-md p-4`, no border | rounded-md |
+| Location                                                                               | What                       | Classes                                                             | Radius                                            |
+| -------------------------------------------------------------------------------------- | -------------------------- | ------------------------------------------------------------------- | ------------------------------------------------- |
+| `app/components/dinner-card.tsx:24`                                                    | Dinner card                | `border-foreground/12 bg-card overflow-hidden border`               | **rounded-2xl**                                   |
+| `app/routes/dinners._index.tsx:76`                                                     | CTA panel                  | `border-foreground/12 bg-card border px-6 py-9.5 md:px-14 md:py-19` | **rounded-2xl**                                   |
+| `app/routes/dinners_.$dinnerId.tsx:209`                                                | Reservation sidebar        | `border-foreground/12 bg-card border p-5.5 md:p-7`                  | **rounded-2xl**                                   |
+| `app/features/forms/fields/list/view.tsx:50`                                           | Form list panel            | `border-foreground/12 bg-background border p-4`                     | **rounded-[10px]**                                |
+| `app/components/signup-form-builder.tsx:388-390`                                       | Builder row card           | `border`, no bg                                                     | **rounded-lg / rounded-[10px]** (small vs normal) |
+| `app/components/auth-layout.tsx:36`                                                    | Auth brand panel (desktop) | `bg-card border-foreground/8 border-r p-12`                         | —                                                 |
+| `app/components/auth-layout.tsx:57`                                                    | Auth brand header (mobile) | `bg-card border-foreground/8 border-b px-6 pt-6.5 pb-7`             | —                                                 |
+| `app/components/auth-layout.tsx:95`                                                    | Segmented control shell    | `bg-card border-foreground/12 border p-1`                           | **rounded-[10px]**                                |
+| `app/components/admin-dinner-form.tsx:110`                                             | Sticky SaveBar             | `border-white/10 bg-gray-950/85 backdrop-blur md:rounded-xl`        | md:rounded-xl                                     |
+| `app/routes/admin.dinners.$dinnerId.tsx:31`, `admin.dinners.$dinnerId_.signups.tsx:48` | Info banner                | `bg-secondary rounded-md p-4`, no border                            | rounded-md                                        |
 
 **Card findings**
 
@@ -149,45 +149,45 @@ Two coexisting idioms:
 
 Public/marketing/auth (pixel sizes + `font-light`):
 
-| Location | Classes |
-|---|---|
-| `app/features/cms/blocks/hero/view.tsx:42` | `text-[34px] leading-[1.06] font-light tracking-[-.02em] md:text-[52px]` |
-| `app/routes/dinners._index.tsx:31` | `text-[34px] font-light tracking-[-.01em] md:text-[44px]` |
-| `app/components/dinner-view.tsx:55` | `text-[30px] leading-[1.08] font-light lowercase md:text-[42px]` |
-| `app/routes/join.tsx:126` / `login.tsx:108` | `text-[30px] font-light` |
-| `app/components/auth-layout.tsx:69` | `text-[28px] leading-[1.12] font-light` (mobile) |
+| Location                                    | Classes                                                                  |
+| ------------------------------------------- | ------------------------------------------------------------------------ |
+| `app/features/cms/blocks/hero/view.tsx:42`  | `text-[34px] leading-[1.06] font-light tracking-[-.02em] md:text-[52px]` |
+| `app/routes/dinners._index.tsx:31`          | `text-[34px] font-light tracking-[-.01em] md:text-[44px]`                |
+| `app/components/dinner-view.tsx:55`         | `text-[30px] leading-[1.08] font-light lowercase md:text-[42px]`         |
+| `app/routes/join.tsx:126` / `login.tsx:108` | `text-[30px] font-light`                                                 |
+| `app/components/auth-layout.tsx:69`         | `text-[28px] leading-[1.12] font-light` (mobile)                         |
 
 Admin/utility (Tailwind scale + heavy/no weight):
 
-| Location | Classes |
-|---|---|
-| `app/routes/admin.board-members.tsx:27`, `admin.users.$userId_.edit.tsx:106` | `text-4xl` (no weight) |
-| `app/routes/me.tsx:29` | `text-2xl font-extrabold` |
-| `app/components/admin-dinner-form.tsx:142` | `text-xl font-bold md:text-2xl` |
-| `app/routes/dinners_.$dinnerId.tsx:325,334,341` | `font-semibold` (error boundary, no size) |
+| Location                                                                     | Classes                                   |
+| ---------------------------------------------------------------------------- | ----------------------------------------- |
+| `app/routes/admin.board-members.tsx:27`, `admin.users.$userId_.edit.tsx:106` | `text-4xl` (no weight)                    |
+| `app/routes/me.tsx:29`                                                       | `text-2xl font-extrabold`                 |
+| `app/components/admin-dinner-form.tsx:142`                                   | `text-xl font-bold md:text-2xl`           |
+| `app/routes/dinners_.$dinnerId.tsx:325,334,341`                              | `font-semibold` (error boundary, no size) |
 
 Same role spans `font-light` → `font-extrabold` and 20px → 36px+ with no system.
 
 ### Section titles (h2)
 
-| Location | Classes |
-|---|---|
-| `app/components/auth-layout.tsx:43` | `text-[38px] leading-[1.12] font-light` |
-| `app/routes/dinners._index.tsx:84` | `text-[28px] leading-[1.1] font-light md:text-[38px]` |
-| `app/components/dinner-card.tsx:48` | `text-[26px] leading-[1.1] font-light lowercase md:text-[34px]` |
-| `app/features/cms/blocks/text-section/view.tsx:51` | `text-[26px] leading-[1.15] font-light md:text-[32px]` |
-| `app/features/cms/blocks/text-section/view.tsx:33` | `text-2xl leading-tight font-normal md:text-[32px]` (same block type, different weight) |
-| `app/routes/dinners_.$dinnerId.tsx:217` | `text-xl font-normal` |
-| `app/routes/admin.board-members.new.tsx:95`, `admin.board-members.$userId.edit.tsx:119` | `text-3xl` |
+| Location                                                                                | Classes                                                                                 |
+| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `app/components/auth-layout.tsx:43`                                                     | `text-[38px] leading-[1.12] font-light`                                                 |
+| `app/routes/dinners._index.tsx:84`                                                      | `text-[28px] leading-[1.1] font-light md:text-[38px]`                                   |
+| `app/components/dinner-card.tsx:48`                                                     | `text-[26px] leading-[1.1] font-light lowercase md:text-[34px]`                         |
+| `app/features/cms/blocks/text-section/view.tsx:51`                                      | `text-[26px] leading-[1.15] font-light md:text-[32px]`                                  |
+| `app/features/cms/blocks/text-section/view.tsx:33`                                      | `text-2xl leading-tight font-normal md:text-[32px]` (same block type, different weight) |
+| `app/routes/dinners_.$dinnerId.tsx:217`                                                 | `text-xl font-normal`                                                                   |
+| `app/routes/admin.board-members.new.tsx:95`, `admin.board-members.$userId.edit.tsx:119` | `text-3xl`                                                                              |
 
 ### Card/item titles
 
-| Location | Classes |
-|---|---|
-| `app/components/ui/card.tsx:39` (CardTitle) | `leading-none font-semibold tracking-tight` — overridden in its only usage |
-| `app/components/dinner-card.tsx:110` | h4 `text-[15px] font-normal lowercase md:text-[17px]` |
-| `app/components/signup-form-builder.tsx:469` | span `truncate font-semibold text-xs/text-sm` |
-| `app/routes/admin.board-members.tsx:52` | p `text-sm/6 font-semibold` |
+| Location                                     | Classes                                                                    |
+| -------------------------------------------- | -------------------------------------------------------------------------- |
+| `app/components/ui/card.tsx:39` (CardTitle)  | `leading-none font-semibold tracking-tight` — overridden in its only usage |
+| `app/components/dinner-card.tsx:110`         | h4 `text-[15px] font-normal lowercase md:text-[17px]`                      |
+| `app/components/signup-form-builder.tsx:469` | span `truncate font-semibold text-xs/text-sm`                              |
+| `app/routes/admin.board-members.tsx:52`      | p `text-sm/6 font-semibold`                                                |
 
 **Title findings**
 

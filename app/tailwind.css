@@ -1,7 +1,6 @@
-@import "tailwindcss";
+@import "tailwindcss" source(".");
 
 @plugin "tailwindcss-animate";
-@plugin "@tailwindcss/typography";
 
 /* moku pona is intentionally single-theme (dark-only) by design — see
    docs/design-harmonization. This `dark` variant + the .dark-scoped plumbing
@@ -19,14 +18,11 @@
   --popover-foreground: rgb(245 241 236);
   --primary: rgb(237 130 94); /* accent #ED825E */
   --primary-foreground: rgb(21 17 14); /* on-accent */
-  --secondary: rgb(27 21 17);
-  --secondary-foreground: rgb(245 241 236);
-  --muted: rgb(27 21 17);
-  --muted-foreground: rgb(167 158 149); /* text muted #A79E95 */
   --accent: rgb(237 130 94);
   --accent-foreground: rgb(21 17 14);
   --destructive: rgb(167 29 49);
   --destructive-foreground: rgb(245 241 236);
+  --destructive-light: oklch(80.8% 0.114 19.571);
   /* the one hairline: --border and the old --input merged onto a single
      native opacity step (foreground/15), the brighter of the two kept */
   --border: rgb(245 241 236 / 0.15);
@@ -43,14 +39,9 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
 
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive-light: var(--destructive-light);
 
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
@@ -127,10 +118,15 @@
   );
 }
 
-/* the admin page-entrance, from one source (design system §8). Motion stays a
-   register signal: admin animates in, the public site is static. */
 @utility animate-page-in {
   animation: page-in 300ms ease-out;
+}
+
+@utility scrollbar-hidden {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @keyframes page-in {
@@ -144,26 +140,12 @@
   }
 }
 
-/*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
 @layer base {
   *,
   ::after,
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-gray-200, currentColor);
-  }
-}
-
-@layer base {
-  * {
     @apply border-border;
   }
   body {

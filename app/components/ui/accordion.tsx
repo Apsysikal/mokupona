@@ -30,7 +30,7 @@ const AccordionTrigger = ({
     <AccordionPrimitive.Trigger
       ref={ref}
       className={cn(
-        "flex flex-1 items-center justify-between py-5 text-left text-base font-semibold transition-all [&[data-state=open]>svg]:rotate-180",
+        "flex flex-1 items-center justify-between py-5 text-left text-base font-semibold transition-colors [&[data-state=open]>svg]:rotate-180",
         className,
       )}
       {...props}
@@ -54,7 +54,7 @@ const AccordionContent = ({
     className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden"
     {...props}
   >
-    <div className={cn("pt-0 pb-4", className)}>{children}</div>
+    <div className={cn("pb-4", className)}>{children}</div>
   </AccordionPrimitive.Content>
 );
 

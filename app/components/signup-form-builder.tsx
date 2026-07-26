@@ -45,13 +45,6 @@ import {
 } from "~/features/signup-form/schema";
 import { cn } from "~/lib/utils";
 
-// The admin "Signup form" section (design §10): a field array of descriptor
-// rows rendered as collapsible cards. The friends list and the
-// name/email/phone identity fields are pinned — rendered without
-// type/key/remove controls — everything else is free.
-
-// derived from the profile so the pin set can't drift from what the server
-// actually requires
 const PINNED_IDENTITY_KEYS = new Set<string>(
   FIXED_IDENTITY_FIELDS.map((field) => field.name),
 );
@@ -82,11 +75,8 @@ const REMOVE_RESPONDED_FIELD_MESSAGE =
 
 type RowMetadata = FieldMetadata<BuilderRowInput>;
 type ItemRowMetadata = FieldMetadata<BuilderItemRowInput>;
-// EditableRowView renders the keys the two row shapes share
 type EditableRowMetadata = RowMetadata | ItemRowMetadata;
 
-// The sync nudge's target: the other scope's field list and the keys it
-// already holds (twins share name + type — the roster merge link, design §10)
 interface TwinTarget {
   listName: string;
   existingKeys: Set<string>;
@@ -272,8 +262,7 @@ function BuilderRowView({
     return (
       <RowCard
         row={row}
-        // friends card carries the sky "info" tint (design system §2)
-        className="border-sky-300/40 bg-sky-300/5"
+        className="border-sky-300/35 bg-sky-300/10"
         isRowOpen={isRowOpen}
         toggleRow={toggleRow}
         header={
@@ -309,7 +298,7 @@ function BuilderRowView({
       row={row}
       // pinned identity cards carry the design's orange tint
       className={
-        isPinnedIdentity ? "border-primary/35 bg-primary/5" : "border-border"
+        isPinnedIdentity ? "border-primary/35 bg-primary/10" : undefined
       }
       isRowOpen={isRowOpen}
       toggleRow={toggleRow}
@@ -381,12 +370,7 @@ function RowCard({
         {header}
         <RowErrors id={row.errorId} errors={row.errors} />
         <CollapsibleContent forceMount className="data-[state=closed]:hidden">
-          <div
-            className={cn(
-              "border-border border-t",
-              small ? "p-3" : "p-3 sm:p-4",
-            )}
-          >
+          <div className={cn("border-t", small ? "p-3" : "p-3 sm:p-4")}>
             {children}
           </div>
         </CollapsibleContent>
@@ -490,9 +474,9 @@ function RowHeader({
       </Button>
       {removable ? (
         <Button
-          variant="outline"
+          variant="destructive-outline"
           size={iconSize}
-          className="border-destructive/50 bg-destructive/10 hover:bg-destructive/30 shrink-0 text-red-300 hover:text-red-200"
+          className="shrink-0"
           aria-label="Remove"
           {...form.remove.getButtonProps({ name: listName, index })}
           onClick={
@@ -539,7 +523,7 @@ function PinnedIdentityRowView({ row }: { row: RowMetadata }) {
         inputProps={{ ...getInputProps(rowFields.label, { type: "text" }) }}
         errors={rowFields.label.errors}
       />
-      <p className="text-muted-foreground text-xs">
+      <p className="text-foreground/65 text-xs">
         Type and field key are fixed for identity fields — only the label guests
         see can change. Always required.
       </p>
@@ -645,8 +629,6 @@ function EditableRowView({
           errors={rowFields.required.errors}
         />
         {showTwinButton ? (
-          // sync nudge (design §10): create the twin with the same key and
-          // type so the answers merge into one roster column
           <Button
             variant="outline"
             size="sm"
@@ -724,7 +706,7 @@ function FriendsRowView({
       </div>
 
       <div className="flex flex-col gap-3">
-        <span className="text-sm font-medium">Questions per friend</span>
+        <span className="text-sm font-semibold">Questions per friend</span>
         <ErrorList
           id={rowFields.itemFields.errorId}
           errors={rowFields.itemFields.errors}
@@ -740,7 +722,6 @@ function FriendsRowView({
               <RowCard
                 key={itemRow.key}
                 row={itemRow as ItemRowMetadata}
-                className="border-border"
                 small
                 isRowOpen={isRowOpen}
                 toggleRow={toggleRow}

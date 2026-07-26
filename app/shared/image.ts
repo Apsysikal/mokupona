@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const IMAGE_FITS = ["cover", "contain", "fill"] as const;
+const IMAGE_FITS = ["cover", "contain", "fill"] as const;
 export type ImageFit = (typeof IMAGE_FITS)[number];
 
 /**
@@ -10,8 +10,8 @@ export type ImageFit = (typeof IMAGE_FITS)[number];
  */
 export interface ImageUrlSource {
   id?: string | null;
-  /** Cloudinary public_id / local file key; null until a row is backfilled. */
-  storageKey?: string | null;
+  /** Cloudinary public_id / local file key — required on every row. */
+  storageKey: string;
   /** Cloudinary asset version — versioned URLs make CDN invalidation moot. */
   version?: number | null;
 }
@@ -39,8 +39,7 @@ export interface ImageTransformOptions {
   fit?: ImageFit;
 }
 
-// c_fill,g_auto replaces the old sharp fit=cover; the CSS-ish contain/fill
-// map to Cloudinary's fit/scale crops
+// The CSS-ish fit names map onto Cloudinary's crop modes
 const CLOUDINARY_CROPS: Record<ImageFit, string> = {
   cover: "c_fill,g_auto",
   contain: "c_fit",
@@ -62,17 +61,6 @@ function cloudinaryTransform({
   return parts.join(",");
 }
 
-/**
- * Client-safe, isomorphic delivery-URL builder (design §3.2).
- *
- * - Cloudinary: a plain `res.cloudinary.com` URL — the app is not in the
- *   serving path. Static assets (no `id`) use it whenever a cloud name is
- *   configured, independent of `imageProvider` (delivery needs no secrets).
- * - Local provider, no storage key yet (pre-backfill row), or no cloud name:
- *   the `/file/:fileId` resource route. Transforms are dropped — dev and the
- *   interim blob path serve original bytes.
- * - A static asset without a cloud name renders nothing (offline dev hero).
- */
 export function getImageUrl(
   image: ImageUrlSource,
   config: ImageProviderConfig,
@@ -82,9 +70,7 @@ export function getImageUrl(
   const { imageProvider, cloudinaryCloudName } = config;
 
   const cloudinaryEligible =
-    storageKey &&
-    cloudinaryCloudName &&
-    (imageProvider === "cloudinary" || !id);
+    cloudinaryCloudName && (imageProvider === "cloudinary" || !id);
 
   if (cloudinaryEligible) {
     const versionSegment = version == null ? "" : `v${version}/`;
@@ -94,22 +80,12 @@ export function getImageUrl(
   return id ? `/file/${id}` : "";
 }
 
-export function isImageFit(value: unknown): value is ImageFit {
-  return typeof value === "string" && IMAGE_FITS.some((fit) => fit === value);
-}
-
 export const RESPONSIVE_IMAGE_WIDTHS = [432, 648, 864, 1080] as const;
 
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
 export const MAX_STAGED_IMAGE_BYTES = 4 * 1024 * 1024;
 export const IMAGE_SIZE_ERROR = "File cannot be greater than 3MB";
-
-// Client-safe: the accepted types back every image input's `accept`
-// attribute AND the schema's server-side allowlist below. (This reverses the
-// earlier size-only decision: bytes used to stay in our own DB, but uploads
-// are now forwarded to a third-party provider — design §2.)
 export const VALID_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-
 export const IMAGE_TYPE_ERROR = "File must be a JPEG, PNG or WebP image";
 
 /**

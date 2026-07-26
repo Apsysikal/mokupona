@@ -18,14 +18,14 @@ export function AuthStatus({
   children?: ReactNode;
 }) {
   const content = (
-    <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-5 text-center">
+    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-5 text-center">
       <div
         aria-hidden
         className={cn(
           "flex size-16 items-center justify-center rounded-full",
           tone === "positive"
             ? "bg-primary/10 text-primary"
-            : "bg-foreground/6 text-foreground/60",
+            : "bg-foreground/5 text-foreground/65",
         )}
       >
         {icon}
@@ -33,7 +33,7 @@ export function AuthStatus({
       <h1 className="text-3xl leading-tight font-light tracking-tight">
         {heading}
       </h1>
-      <p className="text-foreground/65 leading-relaxed font-light">{body}</p>
+      <p className="text-foreground/80 font-light">{body}</p>
       {children}
     </div>
   );

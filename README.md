@@ -90,7 +90,6 @@ Optional:
 - `npm run start`: serve production build
 - `npm run setup`: generate Prisma client, apply migrations, seed database
 - `npm run prisma:studio`: open Prisma Studio
-- `npm run optimize:images`: run image optimization helper
 - `npm run test`: run unit tests
 - `npm run test:e2e:dev`: open Cypress against dev server
 - `npm run test:e2e:ci`: run the CI-oriented Cypress command against a prebuilt app

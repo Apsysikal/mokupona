@@ -1,91 +1,236 @@
 <!-- @dsCard group="Components" title="Button" -->
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>mokupona — Button</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  :root {
-    --background: #15110E; --card: #1B1511; --foreground: rgb(245 241 236);
-    --primary: #ED825E; --on-primary: #15110E;
-    --destructive: #A71D31; --red-300: #FCA5A5;
-    --border: rgb(245 241 236 / 0.15); --ring: #ED825E;
-  }
-  body {
-    background: var(--background); color: var(--foreground);
-    font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
-    padding: 32px; -webkit-font-smoothing: antialiased;
-  }
-  .eyebrow { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgb(245 241 236 / 0.5); }
-  h1 { font-size: 24px; font-weight: 300; letter-spacing: -0.025em; margin: 6px 0 4px; }
-  .note { font-size: 14px; line-height: 1.5; color: rgb(245 241 236 / 0.65); max-width: 640px; }
-  section { margin-top: 28px; }
-  h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgb(245 241 236 / 0.5); margin-bottom: 12px; }
-  .row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; border: 1px solid var(--border); border-radius: 16px; background: var(--card); padding: 24px; }
-  .btn {
-    display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;
-    border-radius: 8px; font-size: 16px; font-weight: 600; font-family: inherit;
-    height: 44px; padding: 0 24px; border: none; background: none; color: var(--foreground);
-    cursor: pointer; transition: background-color 150ms, border-color 150ms, color 150ms;
-  }
-  .btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--ring); }
-  .btn-default { background: var(--primary); color: var(--on-primary); }
-  .btn-default:hover { background: rgb(237 130 94 / 0.9); }
-  .btn-outline { border: 1px solid rgb(245 241 236 / 0.2); font-weight: 500; }
-  .btn-outline:hover { background: rgb(245 241 236 / 0.05); }
-  .btn-destructive { background: var(--destructive); }
-  .btn-destructive:hover { background: rgb(167 29 49 / 0.9); }
-  .btn-destructive-outline { border: 1px solid rgb(167 29 49 / 0.4); font-weight: 500; color: var(--red-300); }
-  .btn-destructive-outline:hover { background: rgb(167 29 49 / 0.15); }
-  .btn-ghost { font-weight: 500; }
-  .btn-ghost:hover { background: rgb(245 241 236 / 0.05); }
-  .btn-link { font-weight: 500; color: var(--primary); padding: 0; height: auto; }
-  .btn-link:hover { text-decoration: underline; text-underline-offset: 4px; }
-  .sz-sm { height: 36px; padding: 0 16px; font-size: 14px; }
-  .sz-lg { height: 48px; }
-  .sz-icon { width: 36px; height: 36px; padding: 0; }
-  .sz-icon-sm { width: 28px; height: 28px; padding: 0; }
-  .btn[disabled] { pointer-events: none; opacity: 0.5; }
-  .cap { font-size: 12px; color: rgb(245 241 236 / 0.4); margin-top: 8px; line-height: 1.6; }
-  .cap b { color: rgb(245 241 236 / 0.65); }
-  svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
-  code { font-size: 13px; }
-</style>
-</head>
-<body>
-  <p class="eyebrow">Components</p>
-  <h1>Button</h1>
-  <p class="note">Base: <code>rounded-lg text-base font-semibold transition-colors</code>. Focus:
-  <code>focus-visible:ring-2 ring-ring</code> — the one ring recipe. All sizes are whole native
-  steps. <code>destructive-outline</code> text is native <code>text-red-300</code> (no hex);
-  <code>outline</code> border is <code>border-foreground/20</code>.</p>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mokupona — Button</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      :root {
+        --background: #15110e;
+        --card: #1b1511;
+        --foreground: rgb(245 241 236);
+        --primary: #ed825e;
+        --on-primary: #15110e;
+        --destructive: #a71d31;
+        --red-300: #fca5a5;
+        --border: rgb(245 241 236 / 0.15);
+        --ring: #ed825e;
+      }
+      body {
+        background: var(--background);
+        color: var(--foreground);
+        font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+        padding: 32px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .eyebrow {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgb(245 241 236 / 0.5);
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: 300;
+        letter-spacing: -0.025em;
+        margin: 6px 0 4px;
+      }
+      .note {
+        font-size: 14px;
+        line-height: 1.5;
+        color: rgb(245 241 236 / 0.65);
+        max-width: 640px;
+      }
+      section {
+        margin-top: 28px;
+      }
+      h2 {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgb(245 241 236 / 0.5);
+        margin-bottom: 12px;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--card);
+        padding: 24px;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        font-family: inherit;
+        height: 44px;
+        padding: 0 24px;
+        border: none;
+        background: none;
+        color: var(--foreground);
+        cursor: pointer;
+        transition:
+          background-color 150ms,
+          border-color 150ms,
+          color 150ms;
+      }
+      .btn:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px var(--ring);
+      }
+      .btn-default {
+        background: var(--primary);
+        color: var(--on-primary);
+      }
+      .btn-default:hover {
+        background: rgb(237 130 94 / 0.9);
+      }
+      .btn-outline {
+        border: 1px solid rgb(245 241 236 / 0.2);
+        font-weight: 500;
+      }
+      .btn-outline:hover {
+        background: rgb(245 241 236 / 0.05);
+      }
+      .btn-destructive {
+        background: var(--destructive);
+      }
+      .btn-destructive:hover {
+        background: rgb(167 29 49 / 0.9);
+      }
+      .btn-destructive-outline {
+        border: 1px solid rgb(167 29 49 / 0.4);
+        font-weight: 500;
+        color: var(--red-300);
+      }
+      .btn-destructive-outline:hover {
+        background: rgb(167 29 49 / 0.15);
+      }
+      .btn-ghost {
+        font-weight: 500;
+      }
+      .btn-ghost:hover {
+        background: rgb(245 241 236 / 0.05);
+      }
+      .btn-link {
+        font-weight: 500;
+        color: var(--primary);
+        padding: 0;
+        height: auto;
+      }
+      .btn-link:hover {
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+      .sz-sm {
+        height: 36px;
+        padding: 0 16px;
+        font-size: 14px;
+      }
+      .sz-lg {
+        height: 48px;
+      }
+      .sz-icon {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+      }
+      .sz-icon-sm {
+        width: 28px;
+        height: 28px;
+        padding: 0;
+      }
+      .btn[disabled] {
+        pointer-events: none;
+        opacity: 0.5;
+      }
+      .cap {
+        font-size: 12px;
+        color: rgb(245 241 236 / 0.4);
+        margin-top: 8px;
+        line-height: 1.6;
+      }
+      .cap b {
+        color: rgb(245 241 236 / 0.65);
+      }
+      svg {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+      }
+      code {
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <p class="eyebrow">Components</p>
+    <h1>Button</h1>
+    <p class="note">
+      Base: <code>rounded-lg text-base font-semibold transition-colors</code>.
+      Focus: <code>focus-visible:ring-2 ring-ring</code> — the one ring recipe.
+      All sizes are whole native steps. <code>destructive-outline</code> text is
+      native <code>text-red-300</code> (no hex); <code>outline</code> border is
+      <code>border-foreground/20</code>.
+    </p>
 
-  <section>
-    <h2>Variants</h2>
-    <div class="row">
-      <button class="btn btn-default">Reserve a seat</button>
-      <button class="btn btn-outline">View menu</button>
-      <button class="btn btn-ghost">Cancel</button>
-      <button class="btn btn-link">Learn more</button>
-      <button class="btn btn-destructive">Delete dinner</button>
-      <button class="btn btn-destructive-outline">Remove guest</button>
-      <button class="btn btn-default" disabled>Sold out</button>
-    </div>
-    <p class="cap">default · outline · ghost · link · destructive (surface red) · destructive-outline (text-red-300) · disabled (opacity-50)</p>
-  </section>
+    <section>
+      <h2>Variants</h2>
+      <div class="row">
+        <button class="btn btn-default">Reserve a seat</button>
+        <button class="btn btn-outline">View menu</button>
+        <button class="btn btn-ghost">Cancel</button>
+        <button class="btn btn-link">Learn more</button>
+        <button class="btn btn-destructive">Delete dinner</button>
+        <button class="btn btn-destructive-outline">Remove guest</button>
+        <button class="btn btn-default" disabled>Sold out</button>
+      </div>
+      <p class="cap">
+        default · outline · ghost · link · destructive (surface red) ·
+        destructive-outline (text-red-300) · disabled (opacity-50)
+      </p>
+    </section>
 
-  <section>
-    <h2>Sizes — whole steps only</h2>
-    <div class="row">
-      <button class="btn btn-default sz-lg">lg · h-12</button>
-      <button class="btn btn-default">default · h-11</button>
-      <button class="btn btn-outline sz-sm">sm · h-9</button>
-      <button class="btn btn-outline sz-icon" aria-label="Edit"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button>
-      <button class="btn btn-outline sz-icon-sm" aria-label="Edit"><svg viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button>
-    </div>
-    <p class="cap">lg h-12 px-6 · default h-11 px-6 · sm h-9 px-4 text-sm (<b>was h-9.5 px-4.5</b>) · icon size-9 · <b>icon-sm size-7 (new — absorbs the 4× ad-hoc compactButton)</b></p>
-  </section>
-</body>
+    <section>
+      <h2>Sizes — whole steps only</h2>
+      <div class="row">
+        <button class="btn btn-default sz-lg">lg · h-12</button>
+        <button class="btn btn-default">default · h-11</button>
+        <button class="btn btn-outline sz-sm">sm · h-9</button>
+        <button class="btn btn-outline sz-icon" aria-label="Edit">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" />
+          </svg>
+        </button>
+        <button class="btn btn-outline sz-icon-sm" aria-label="Edit">
+          <svg viewBox="0 0 24 24" style="width: 14px; height: 14px">
+            <path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" />
+          </svg>
+        </button>
+      </div>
+      <p class="cap">
+        lg h-12 px-6 · default h-11 px-6 · sm h-9 px-4 text-sm (<b
+          >was h-9.5 px-4.5</b
+        >) · icon size-9 ·
+        <b>icon-sm size-7 (new — absorbs the 4× ad-hoc compactButton)</b>
+      </p>
+    </section>
+  </body>
 </html>

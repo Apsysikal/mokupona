@@ -1,11 +1,7 @@
-import { action, compose, note, paragraph } from "./compose";
 import type { MailBody } from "./compose";
+import { action, compose, note, paragraph } from "./compose";
 
 import type { InvitableRole } from "~/features/users/invite.shared";
-
-// Every transactional mail we send, in one place. Copy is deliberately neutral
-// English, not the lowercase site brand voice, and the HTML stays text-first
-// with no designed layout (design §3.1).
 
 export const mailTemplates = {
   verifyEmail: ({ url }: { url: string }) =>

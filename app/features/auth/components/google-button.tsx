@@ -18,7 +18,7 @@ function GoogleButton({
     <button
       type={type}
       className={cn(
-        "focus-visible:ring-ring flex h-12 w-full items-center justify-center gap-2.5 rounded-lg border border-[#8e918f] bg-[#131314] text-sm font-medium tracking-[0.25px] whitespace-nowrap text-[#e3e3e3] transition-colors hover:bg-[#1f2020] focus-visible:ring-2 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50",
+        "focus-visible:ring-ring flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-[#8e918f] bg-[#131314] text-sm font-medium tracking-[0.25px] whitespace-nowrap text-[#e3e3e3] transition-colors hover:bg-[#1f2020] focus-visible:ring-2 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50",
         className,
       )}
       {...props}
@@ -34,7 +34,7 @@ export function GoogleSignInButton({ callbackURL }: { callbackURL: string }) {
     <>
       <div className="flex items-center gap-3" aria-hidden>
         <span className="bg-border h-px flex-1" />
-        <span className="text-foreground/40 text-xs">or</span>
+        <span className="text-foreground/50 text-xs">or</span>
         <span className="bg-border h-px flex-1" />
       </div>
       <GoogleButton

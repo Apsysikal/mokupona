@@ -12,6 +12,7 @@ import {
 
 import { AutoLink } from "~/components/auto-link";
 import { CoverImage } from "~/components/cover-image";
+import { pageTitleClassName } from "~/components/section";
 import {
   Accordion,
   AccordionContent,
@@ -28,72 +29,50 @@ export interface EventViewProps {
   event: EventDetailModel;
 }
 
-// the editorial left column of the dinner detail page: photo, date, title,
-// story, and the menu/donation accordions (design handoff §3)
 export function EventStory({ event }: EventViewProps) {
-  const menuLines = event.menuDescription
-    ?.split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-
   return (
     <div className="flex min-w-0 flex-col gap-5 md:gap-6">
       <CoverImage
         image={event.image}
         alt=""
-        width={640}
-        height={480}
-        className="h-64 w-full rounded-2xl object-cover md:h-96"
+        sizes="(min-width: 1024px) 520px, 100vw"
+        className="w-full rounded-2xl"
       />
 
       <div className="flex flex-col gap-3">
         <EventDateHeading date={event.date} />
-        <h1 className="text-3xl font-light tracking-tight md:text-4xl">
-          {event.title}
-        </h1>
+        <h1 className={pageTitleClassName}>{event.title}</h1>
       </div>
 
-      <p className="text-foreground/80 text-base leading-relaxed font-light whitespace-pre-line md:text-lg">
+      <p className="text-foreground/80 text-base font-light whitespace-pre-line md:text-lg">
         <AutoLink text={event.description} />
       </p>
 
-      {menuLines?.length || event.donationDescription ? (
+      {event.menuDescription || event.donationDescription ? (
         <Accordion
           type="single"
           collapsible
           defaultValue="menu"
-          className="border-border mt-2 w-full border-t"
+          className="mt-2 border-t"
         >
-          {menuLines?.length ? (
-            <AccordionItem value="menu" className="border-border">
+          {event.menuDescription ? (
+            <AccordionItem value="menu">
               <AccordionTrigger className="text-primary">menu</AccordionTrigger>
               <AccordionContent className="pb-6">
-                <div className="flex flex-col gap-3">
-                  {menuLines.map((line, index) => (
-                    <div
-                      key={index}
-                      className="text-foreground/80 flex gap-3 text-base leading-relaxed font-light"
-                    >
-                      <span className="text-foreground/40 pt-0.5 font-mono text-sm">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                      <span>
-                        <AutoLink text={line} />
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                <p className="text-foreground/80 text-base font-light whitespace-pre-line">
+                  <AutoLink text={event.menuDescription} />
+                </p>
               </AccordionContent>
             </AccordionItem>
           ) : null}
 
           {event.donationDescription ? (
-            <AccordionItem value="donation" className="border-border">
+            <AccordionItem value="donation">
               <AccordionTrigger className="text-primary">
                 donation
               </AccordionTrigger>
               <AccordionContent className="pb-6">
-                <p className="text-foreground/80 text-base leading-relaxed font-light whitespace-pre-line">
+                <p className="text-foreground/80 text-base font-light whitespace-pre-line">
                   <AutoLink text={event.donationDescription} />
                 </p>
               </AccordionContent>
@@ -105,8 +84,6 @@ export function EventStory({ event }: EventViewProps) {
   );
 }
 
-// date / location / price / seats rows used in the booking card and the
-// admin preview
 export function EventFactList({ event }: EventViewProps) {
   const eventDate = new Date(event.date);
 

@@ -1,128 +1,357 @@
 <!-- @dsCard group="Components" title="Form fields" -->
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>mokupona — Form fields</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  :root {
-    --background: #15110E; --card: #1B1511; --foreground: rgb(245 241 236);
-    --primary: #ED825E; --red-300: #FCA5A5;
-    --border: rgb(245 241 236 / 0.15); --ring: #ED825E;
-  }
-  body {
-    background: var(--background); color: var(--foreground);
-    font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
-    padding: 32px; -webkit-font-smoothing: antialiased;
-  }
-  .eyebrow { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgb(245 241 236 / 0.5); }
-  h1 { font-size: 24px; font-weight: 300; letter-spacing: -0.025em; margin: 6px 0 4px; }
-  .note { font-size: 14px; line-height: 1.5; color: rgb(245 241 236 / 0.65); max-width: 640px; }
-  section { margin-top: 28px; }
-  h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgb(245 241 236 / 0.5); margin-bottom: 12px; }
-  .panel { border: 1px solid var(--border); border-radius: 16px; background: var(--card); padding: 24px; max-width: 448px; display: flex; flex-direction: column; gap: 20px; }
-  .field { display: flex; flex-direction: column; gap: 6px; }
-  label { font-size: 14px; color: rgb(245 241 236 / 0.65); font-weight: 600; }
-  input[type="text"], input[type="email"], textarea, select {
-    height: 44px; border-radius: 8px; border: 1px solid var(--border);
-    background: rgb(245 241 236 / 0.05); color: var(--foreground);
-    font-family: inherit; font-size: 14px; padding: 0 12px;
-    transition: border-color 150ms;
-  }
-  textarea { height: auto; min-height: 96px; padding: 12px; line-height: 1.43; resize: vertical; }
-  ::placeholder { color: rgb(245 241 236 / 0.4); }
-  input:focus-visible, textarea:focus-visible, select:focus-visible {
-    outline: none; box-shadow: inset 0 0 0 2px var(--ring); border-color: transparent;
-  }
-  select { appearance: none; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23A79E95' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
-  .check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: rgb(245 241 236 / 0.65); }
-  .check input { appearance: none; width: 16px; height: 16px; border: 1px solid var(--border); border-radius: 4px; background: rgb(245 241 236 / 0.05); cursor: pointer; display: grid; place-content: center; margin: 0; transition: background-color 150ms, border-color 150ms; }
-  .check input:checked { background: var(--primary); border-color: var(--primary); }
-  .check input:checked::before { content: ""; width: 10px; height: 10px; background: #15110E; clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%); }
-  .check input:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--ring); }
-  .upload {
-    border: 1px dashed rgb(245 241 236 / 0.2); border-radius: 8px;
-    background: rgb(245 241 236 / 0.05); padding: 24px 16px;
-    display: flex; flex-direction: column; align-items: center; gap: 8px;
-    text-align: center; cursor: pointer; transition: border-color 150ms, background-color 150ms;
-  }
-  .upload:hover, .upload:focus-visible { border-color: rgb(237 130 94 / 0.35); background: rgb(237 130 94 / 0.05); outline: none; }
-  .upload:focus-visible { box-shadow: 0 0 0 2px var(--ring); }
-  .upload svg { width: 20px; height: 20px; stroke: rgb(245 241 236 / 0.5); stroke-width: 2; fill: none; }
-  .upload .prompt { font-size: 14px; color: rgb(245 241 236 / 0.8); }
-  .upload .prompt b { color: var(--primary); font-weight: 600; }
-  .upload .hint { font-size: 12px; color: rgb(245 241 236 / 0.4); }
-  .file-row { display: flex; align-items: center; gap: 8px; font-size: 14px; color: rgb(245 241 236 / 0.65); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; }
-  .file-row .x { margin-left: auto; color: var(--red-300); font-size: 12px; font-weight: 600; cursor: pointer; background: none; border: none; font-family: inherit; }
-  .error { font-size: 14px; color: var(--red-300); }
-  .cap { font-size: 12px; color: rgb(245 241 236 / 0.4); margin-top: 8px; line-height: 1.6; max-width: 448px; }
-  .rules { border: 1px solid var(--border); border-radius: 16px; background: var(--card); padding: 24px; font-size: 14px; line-height: 1.7; color: rgb(245 241 236 / 0.65); max-width: 640px; }
-  .rules b { color: var(--foreground); font-weight: 600; }
-  code { font-size: 13px; }
-</style>
-</head>
-<body>
-  <p class="eyebrow">Components</p>
-  <h1>Form fields</h1>
-  <p class="note">One field family in native tokens: <code>h-11 rounded-lg text-sm px-3</code>,
-  surface <code>bg-foreground/5</code>, border = the one <code>border-foreground/15</code> hairline
-  (the separate input-border token is merged away). Focus: <code>focus-visible:</code> only, ring
-  width 2, <code>ring-ring</code>. Labels: <code>text-sm font-semibold text-foreground/65</code>,
-  never lowercase.</p>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mokupona — Form fields</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      :root {
+        --background: #15110e;
+        --card: #1b1511;
+        --foreground: rgb(245 241 236);
+        --primary: #ed825e;
+        --red-300: #fca5a5;
+        --border: rgb(245 241 236 / 0.15);
+        --ring: #ed825e;
+      }
+      body {
+        background: var(--background);
+        color: var(--foreground);
+        font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+        padding: 32px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .eyebrow {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgb(245 241 236 / 0.5);
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: 300;
+        letter-spacing: -0.025em;
+        margin: 6px 0 4px;
+      }
+      .note {
+        font-size: 14px;
+        line-height: 1.5;
+        color: rgb(245 241 236 / 0.65);
+        max-width: 640px;
+      }
+      section {
+        margin-top: 28px;
+      }
+      h2 {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgb(245 241 236 / 0.5);
+        margin-bottom: 12px;
+      }
+      .panel {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--card);
+        padding: 24px;
+        max-width: 448px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      label {
+        font-size: 14px;
+        color: rgb(245 241 236 / 0.65);
+        font-weight: 600;
+      }
+      input[type="text"],
+      input[type="email"],
+      textarea,
+      select {
+        height: 44px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: rgb(245 241 236 / 0.05);
+        color: var(--foreground);
+        font-family: inherit;
+        font-size: 14px;
+        padding: 0 12px;
+        transition: border-color 150ms;
+      }
+      textarea {
+        height: auto;
+        min-height: 96px;
+        padding: 12px;
+        line-height: 1.43;
+        resize: vertical;
+      }
+      ::placeholder {
+        color: rgb(245 241 236 / 0.4);
+      }
+      input:focus-visible,
+      textarea:focus-visible,
+      select:focus-visible {
+        outline: none;
+        box-shadow: inset 0 0 0 2px var(--ring);
+        border-color: transparent;
+      }
+      select {
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23A79E95' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+      }
+      .check {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: rgb(245 241 236 / 0.65);
+      }
+      .check input {
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: rgb(245 241 236 / 0.05);
+        cursor: pointer;
+        display: grid;
+        place-content: center;
+        margin: 0;
+        transition:
+          background-color 150ms,
+          border-color 150ms;
+      }
+      .check input:checked {
+        background: var(--primary);
+        border-color: var(--primary);
+      }
+      .check input:checked::before {
+        content: "";
+        width: 10px;
+        height: 10px;
+        background: #15110e;
+        clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+      }
+      .check input:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px var(--ring);
+      }
+      .upload {
+        border: 1px dashed rgb(245 241 236 / 0.2);
+        border-radius: 8px;
+        background: rgb(245 241 236 / 0.05);
+        padding: 24px 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        text-align: center;
+        cursor: pointer;
+        transition:
+          border-color 150ms,
+          background-color 150ms;
+      }
+      .upload:hover,
+      .upload:focus-visible {
+        border-color: rgb(237 130 94 / 0.35);
+        background: rgb(237 130 94 / 0.05);
+        outline: none;
+      }
+      .upload:focus-visible {
+        box-shadow: 0 0 0 2px var(--ring);
+      }
+      .upload svg {
+        width: 20px;
+        height: 20px;
+        stroke: rgb(245 241 236 / 0.5);
+        stroke-width: 2;
+        fill: none;
+      }
+      .upload .prompt {
+        font-size: 14px;
+        color: rgb(245 241 236 / 0.8);
+      }
+      .upload .prompt b {
+        color: var(--primary);
+        font-weight: 600;
+      }
+      .upload .hint {
+        font-size: 12px;
+        color: rgb(245 241 236 / 0.4);
+      }
+      .file-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: rgb(245 241 236 / 0.65);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px 12px;
+      }
+      .file-row .x {
+        margin-left: auto;
+        color: var(--red-300);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        background: none;
+        border: none;
+        font-family: inherit;
+      }
+      .error {
+        font-size: 14px;
+        color: var(--red-300);
+      }
+      .cap {
+        font-size: 12px;
+        color: rgb(245 241 236 / 0.4);
+        margin-top: 8px;
+        line-height: 1.6;
+        max-width: 448px;
+      }
+      .rules {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--card);
+        padding: 24px;
+        font-size: 14px;
+        line-height: 1.7;
+        color: rgb(245 241 236 / 0.65);
+        max-width: 640px;
+      }
+      .rules b {
+        color: var(--foreground);
+        font-weight: 600;
+      }
+      code {
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <p class="eyebrow">Components</p>
+    <h1>Form fields</h1>
+    <p class="note">
+      One field family in native tokens:
+      <code>h-11 rounded-lg text-sm px-3</code>, surface
+      <code>bg-foreground/5</code>, border = the one
+      <code>border-foreground/15</code> hairline (the separate input-border
+      token is merged away). Focus: <code>focus-visible:</code> only, ring width
+      2, <code>ring-ring</code>. Labels:
+      <code>text-sm font-semibold text-foreground/65</code>, never lowercase.
+    </p>
 
-  <section>
-    <h2>Field family</h2>
-    <div class="panel">
-      <div class="field">
-        <label for="name">Dinner title</label>
-        <input type="text" id="name" placeholder="Late summer, long table">
-      </div>
-      <div class="field">
-        <label for="menu">Menu notes</label>
-        <textarea id="menu" placeholder="Seven courses, market-driven…"></textarea>
-      </div>
-      <div class="field">
-        <label for="zone">Dining zone</label>
-        <select id="zone"><option>Long table</option><option>Kitchen bar</option><option>Garden</option></select>
-      </div>
-      <div class="field">
-        <label for="cover">Cover image</label>
-        <div class="upload" tabindex="0" role="button" aria-label="Upload cover image">
-          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-          <span class="prompt"><b>Browse</b> or drop an image</span>
-          <span class="hint">PNG or JPG, up to 5 MB</span>
+    <section>
+      <h2>Field family</h2>
+      <div class="panel">
+        <div class="field">
+          <label for="name">Dinner title</label>
+          <input type="text" id="name" placeholder="Late summer, long table" />
         </div>
-        <div class="file-row">
-          <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:rgb(245 241 236 / 0.5);stroke-width:2;fill:none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6"/></svg>
-          long-table.jpg · 1.2 MB
-          <button class="x" aria-label="Remove file">REMOVE</button>
+        <div class="field">
+          <label for="menu">Menu notes</label>
+          <textarea
+            id="menu"
+            placeholder="Seven courses, market-driven…"
+          ></textarea>
+        </div>
+        <div class="field">
+          <label for="zone">Dining zone</label>
+          <select id="zone">
+            <option>Long table</option>
+            <option>Kitchen bar</option>
+            <option>Garden</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="cover">Cover image</label>
+          <div
+            class="upload"
+            tabindex="0"
+            role="button"
+            aria-label="Upload cover image"
+          >
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"
+              />
+            </svg>
+            <span class="prompt"><b>Browse</b> or drop an image</span>
+            <span class="hint">PNG or JPG, up to 5 MB</span>
+          </div>
+          <div class="file-row">
+            <svg
+              viewBox="0 0 24 24"
+              style="
+                width: 16px;
+                height: 16px;
+                stroke: rgb(245 241 236 / 0.5);
+                stroke-width: 2;
+                fill: none;
+              "
+            >
+              <path
+                d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6"
+              />
+            </svg>
+            long-table.jpg · 1.2 MB
+            <button class="x" aria-label="Remove file">REMOVE</button>
+          </div>
+        </div>
+        <div class="check">
+          <input type="checkbox" id="veg" checked />
+          <label for="veg" style="font-weight: 400"
+            >Vegetarian option available</label
+          >
+        </div>
+        <div class="field">
+          <label for="mail">Email</label>
+          <input
+            type="email"
+            id="mail"
+            value="not-an-email"
+            style="border-color: rgb(167 29 49 / 0.5)"
+          />
+          <span class="error">Enter a valid email address.</span>
         </div>
       </div>
-      <div class="check">
-        <input type="checkbox" id="veg" checked>
-        <label for="veg" style="font-weight:400">Vegetarian option available</label>
-      </div>
-      <div class="field">
-        <label for="mail">Email</label>
-        <input type="email" id="mail" value="not-an-email" style="border-color: rgb(167 29 49 / 0.5)">
-        <span class="error">Enter a valid email address.</span>
-      </div>
-    </div>
-    <p class="cap">Tab through to see the one focus-visible ring. Upload zone: rounded-lg border-dashed
-    border-foreground/20 bg-foreground/5, hover/focus border-primary/35 — file row uses the hairline +
-    text-red-300 remove action. Checkbox: size-4 rounded-sm. Errors: text-sm text-red-300.</p>
-  </section>
+      <p class="cap">
+        Tab through to see the one focus-visible ring. Upload zone: rounded-lg
+        border-dashed border-foreground/20 bg-foreground/5, hover/focus
+        border-primary/35 — file row uses the hairline + text-red-300 remove
+        action. Checkbox: size-4 rounded-sm. Errors: text-sm text-red-300.
+      </p>
+    </section>
 
-  <section>
-    <h2>Rulings</h2>
-    <div class="rules">
-      <b>Select → Input alignment:</b> h-11, rounded-lg, bg-foreground/5, focus-visible (was focus:), drop its shadow-xs.<br>
-      <b>Border:</b> inputs use the same border-foreground/15 as every other hairline — no separate --input token.<br>
-      <b>Focus:</b> always focus-visible: · one recipe: ring-2 ring-ring · inputs may keep the inset-ring flavor at width 2 · Badge drops ring-offset-2.<br>
-      <b>Labels &amp; errors:</b> text-sm font-semibold text-foreground/65; errors and destructive row actions are native text-red-300.
-    </div>
-  </section>
-</body>
+    <section>
+      <h2>Rulings</h2>
+      <div class="rules">
+        <b>Select → Input alignment:</b> h-11, rounded-lg, bg-foreground/5,
+        focus-visible (was focus:), drop its shadow-xs.<br />
+        <b>Border:</b> inputs use the same border-foreground/15 as every other
+        hairline — no separate --input token.<br />
+        <b>Focus:</b> always focus-visible: · one recipe: ring-2 ring-ring ·
+        inputs may keep the inset-ring flavor at width 2 · Badge drops
+        ring-offset-2.<br />
+        <b>Labels &amp; errors:</b> text-sm font-semibold text-foreground/65;
+        errors and destructive row actions are native text-red-300.
+      </div>
+    </section>
+  </body>
 </html>

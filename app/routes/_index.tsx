@@ -13,14 +13,10 @@ import { getBlurDataUrl } from "~/features/images/blur-placeholder.server";
 import { getNextEvent } from "~/models/event.server";
 import { withOpenGraphUrls } from "~/shared/meta";
 
-// fixed public_ids in the shared, non-env-prefixed static/ folder — the
-// originals stay in the repo (public/*-original.*) as source of truth
 const HERO_IMAGE_ID = "static/hero-image";
 const ACCENT_IMAGE_ID = "static/accent-image";
 
 export const loader = async () => {
-  // the blur placeholders are module-cached — one Cloudinary fetch per
-  // server boot per asset, never a per-request cost (design §3.3)
   const [nextEvent, heroBlurDataUrl, accentBlurDataUrl] = await Promise.all([
     getNextEvent(),
     getBlurDataUrl(HERO_IMAGE_ID),

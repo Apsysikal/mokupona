@@ -21,18 +21,18 @@ drift-inventory finding.
 
 ---
 
-## 1. Two voices, one system — the central ruling  **[call]**
+## 1. Two voices, one system — the central ruling **[call]**
 
-The app has two typographic registers and Phase 1 confirmed they're now *shipped*, not accidental:
+The app has two typographic registers and Phase 1 confirmed they're now _shipped_, not accidental:
 
-| | **Public** (marketing, dinners, auth) | **Admin** (dashboard, CRUD) |
-|---|---|---|
-| Display weight | `font-light` (300) | `font-extrabold` (800) |
-| Voice | editorial, airy, lowercase flourishes | utilitarian, dense, confident |
-| Cards | `rounded-2xl`, generous padding, hover-less | `rounded-[14px]`, compact, `hover:border-primary/30` |
-| Motion | none | page-entrance `fade-in slide-in-from-bottom` |
+|                | **Public** (marketing, dinners, auth)       | **Admin** (dashboard, CRUD)                          |
+| -------------- | ------------------------------------------- | ---------------------------------------------------- |
+| Display weight | `font-light` (300)                          | `font-extrabold` (800)                               |
+| Voice          | editorial, airy, lowercase flourishes       | utilitarian, dense, confident                        |
+| Cards          | `rounded-2xl`, generous padding, hover-less | `rounded-[14px]`, compact, `hover:border-primary/30` |
+| Motion         | none                                        | page-entrance `fade-in slide-in-from-bottom`         |
 
-**Ruling (revised in round 2): one voice, two densities.** The registers share *all* typography —
+**Ruling (revised in round 2): one voice, two densities.** The registers share _all_ typography —
 including display weight. The shipped admin `font-extrabold` headings (admin-ui.tsx:26,
 admin-dinner-form.tsx:154, me.tsx:29) do **not** become a system rule; they converge onto the
 public `font-light`. What remains register-specific:
@@ -47,23 +47,23 @@ public `font-light`. What remains register-specific:
 
 ---
 
-## 2. Color tokens  **[decided — revised round 2: native + subtractive]**
+## 2. Color tokens **[decided — revised round 2: native + subtractive]**
 
-Round 2 inverted the approach: instead of *adding* tokens, express everything possible in native
-Tailwind colors and opacity steps, and *delete* custom tokens. Custom stays only for the brand:
+Round 2 inverted the approach: instead of _adding_ tokens, express everything possible in native
+Tailwind colors and opacity steps, and _delete_ custom tokens. Custom stays only for the brand:
 `background` #15110E, `card` #1B1511, `foreground` #F5F1EC, `primary` #ED825E, `accent-light`
 #F1B48C, `destructive` #A71D31.
 
-| Was | Becomes | Notes |
-|---|---|---|
-| `--color-info` (new oklch) | **native `sky-300`** | "friends" chip: `border-sky-300/40 bg-sky-300/15 text-sky-300` |
-| `--color-danger-text` #E0899A | **native `red-300`** | nearest native; signup-form-builder :517 already uses `text-red-300` — button.tsx:16's hex joins it |
+| Was                                         | Becomes                           | Notes                                                                                                       |
+| ------------------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `--color-info` (new oklch)                  | **native `sky-300`**              | "friends" chip: `border-sky-300/40 bg-sky-300/15 text-sky-300`                                              |
+| `--color-danger-text` #E0899A               | **native `red-300`**              | nearest native; signup-form-builder :517 already uses `text-red-300` — button.tsx:16's hex joins it         |
 | `--border` fg/0.1 **and** `--input` fg/0.16 | **one hairline: `foreground/15`** | merged (user: keep the brighter), nearest native opacity step; absorbs /8, /12, /[0.22], white/10, white/20 |
-| `--color-fg-secondary` #C9C2BB | **`foreground/80`** | composited over the background these opacity |
-| `--color-fg-muted` #A79E95 | **`foreground/65`** | steps match the shipped hexes to within |
-| `--color-fg-label` #8A817A | **`foreground/50`** | a few RGB points — one source color, |
-| `--color-fg-faint` #6B635B | **`foreground/40`** | native non-fractional opacities |
-| ~~`--color-tan`~~ #E0A87F | dropped (call #4) | avatars rotate `accent-light` / `foreground/80` |
+| `--color-fg-secondary` #C9C2BB              | **`foreground/80`**               | composited over the background these opacity                                                                |
+| `--color-fg-muted` #A79E95                  | **`foreground/65`**               | steps match the shipped hexes to within                                                                     |
+| `--color-fg-label` #8A817A                  | **`foreground/50`**               | a few RGB points — one source color,                                                                        |
+| `--color-fg-faint` #6B635B                  | **`foreground/40`**               | native non-fractional opacities                                                                             |
+| ~~`--color-tan`~~ #E0A87F                   | dropped (call #4)                 | avatars rotate `accent-light` / `foreground/80`                                                             |
 
 **Rule of thumb:** saturated deep colors (`destructive`, `primary`) are **surfaces**; `*-300`
 native shades are **text on dark** (`red-300` errors/destructive text, `sky-300` info).
@@ -76,7 +76,7 @@ native shades are **text on dark** (`red-300` errors/destructive text, `sky-300`
 
 ---
 
-## 3. Type scale  **[decided — revised round 2: all native, zero custom tokens]**
+## 3. Type scale **[decided — revised round 2: all native, zero custom tokens]**
 
 The custom `--text-*` ramp is gone. Every role maps to the nearest native `text-*` utility with its
 **built-in line-height**. Kills every `text-[Npx]`, every `leading-[1.0x]`, both negative trackings —
@@ -84,23 +84,24 @@ and the six token candidates from round 1.
 
 ### Body ramp
 
-| Utility | px | Role | Absorbs |
-|---|---|---|---|
-| `text-xs` | 12 | fine print, badges, eyebrows | `text-[11px]` |
-| `text-sm` | 14 | labels, meta, inputs, dense UI | `text-[13px]` (the 11×+ workhorse) |
-| `text-base` | 16 | body copy, **buttons** | `text-[15px]` |
-| `text-lg` | 18 | lead body | `text-[17px]`, `md:text-[19px]` |
+| Utility     | px  | Role                           | Absorbs                            |
+| ----------- | --- | ------------------------------ | ---------------------------------- |
+| `text-xs`   | 12  | fine print, badges, eyebrows   | `text-[11px]`                      |
+| `text-sm`   | 14  | labels, meta, inputs, dense UI | `text-[13px]` (the 11×+ workhorse) |
+| `text-base` | 16  | body copy, **buttons**         | `text-[15px]`                      |
+| `text-lg`   | 18  | lead body                      | `text-[17px]`, `md:text-[19px]`    |
 
 ### Display ramp — one native step up at md, roles stay distinct
 
-| Utility | px | Role | Absorbs |
-|---|---|---|---|
-| `text-xl` | 20 | card/panel h3 (subheading) | `text-xl` (unchanged) |
-| `text-2xl → md:text-3xl` | 24 → 30 | section h2 | `26 → 32/34` |
-| `text-3xl → md:text-4xl` | 30 → 36 | page h1 | `28/30 → 42/44` |
-| `text-4xl → md:text-5xl` | 36 → 48 | hero h1 | `text-[34px] md:text-[52px]` |
+| Utility                  | px      | Role                       | Absorbs                      |
+| ------------------------ | ------- | -------------------------- | ---------------------------- |
+| `text-xl`                | 20      | card/panel h3 (subheading) | `text-xl` (unchanged)        |
+| `text-2xl → md:text-3xl` | 24 → 30 | section h2                 | `26 → 32/34`                 |
+| `text-3xl → md:text-4xl` | 30 → 36 | page h1                    | `28/30 → 42/44`              |
+| `text-4xl → md:text-5xl` | 36 → 48 | hero h1                    | `text-[34px] md:text-[52px]` |
 
 **Collapse rulings:**
+
 - Line-heights: the utilities' **built-in** values (text-5xl is already leading-none); all five
   custom tight leadings and both body leadings are deleted.
 - Tracking: one native value — **`tracking-tight`** (−0.025em) on display text; absorbs −.01/−.02em.
@@ -111,7 +112,7 @@ and the six token candidates from round 1.
 admin `font-extrabold` converges. `font-semibold` (600) is body-level emphasis, also shared. Weight
 is not a register signal.
 
-### `lowercase` brand device  **[RESOLVED: drop entirely]**
+### `lowercase` brand device **[RESOLVED: drop entirely]**
 
 Was on some public headings (dinner-view, dinner-card) but not siblings (hero, dinners._index).
 **User decision (2026-07-06): drop the `lowercase` device everywhere.** Headings render as typed.
@@ -120,15 +121,15 @@ labels were never lowercase and stay that way (§9).
 
 ---
 
-## 4. Radius  **[decided — card radius resolved: 16px]**
+## 4. Radius **[decided — card radius resolved: 16px]**
 
 Collapse **six** radii (`md 6 · lg 8 · [10] · [14] · xl 12 · 2xl 16`) to a **three-tier scale**:
 
-| Tier | Value | Utility | Applies to | Kills |
-|---|---|---|---|---|
-| control | 8px (`--radius`, 0.5rem) | `rounded-lg` | buttons, inputs, segmented control, small chips-as-rect | `rounded-[7px]`, `[9px]`, `[10px]` on controls |
-| card | **16px** (`rounded-2xl`) | `rounded-2xl` | all content/list cards, panels, empty states | `rounded-[10px]`, **`rounded-[14px]`**, `rounded-xl` cards |
-| pill | full | `rounded-full` | badges-as-pills, chips, avatars, progress | ad-hoc pills |
+| Tier    | Value                    | Utility        | Applies to                                              | Kills                                                      |
+| ------- | ------------------------ | -------------- | ------------------------------------------------------- | ---------------------------------------------------------- |
+| control | 8px (`--radius`, 0.5rem) | `rounded-lg`   | buttons, inputs, segmented control, small chips-as-rect | `rounded-[7px]`, `[9px]`, `[10px]` on controls             |
+| card    | **16px** (`rounded-2xl`) | `rounded-2xl`  | all content/list cards, panels, empty states            | `rounded-[10px]`, **`rounded-[14px]`**, `rounded-xl` cards |
+| pill    | full                     | `rounded-full` | badges-as-pills, chips, avatars, progress               | ad-hoc pills                                               |
 
 - Decorative one-offs go native too (round 2): `rounded-[3px]` (text-section band) → **`rounded-xs`**,
   `rounded-[5px]` (checkbox) → **`rounded-sm`**. No bracket radii anywhere.
@@ -138,7 +139,7 @@ Collapse **six** radii (`md 6 · lg 8 · [10] · [14] · xl 12 · 2xl 16`) to a 
 
 ---
 
-## 5. Eyebrow / kicker  **[decided — tracking resolved: native `tracking-widest`]**
+## 5. Eyebrow / kicker **[decided — tracking resolved: native `tracking-widest`]**
 
 Eight tracking values across two idioms → **one `<Eyebrow>` component, two variants, one tracking.**
 
@@ -159,21 +160,21 @@ Eight tracking values across two idioms → **one `<Eyebrow>` component, two var
 
 ---
 
-## 6. Spacing & density  **[decided — revised round 2: whole steps only]**
+## 6. Spacing & density **[decided — revised round 2: whole steps only]**
 
 Round 2 overturns the round-1 "bless the half-steps" ruling. **No fractional steps anywhere** —
 halves round **down**, quarters round to nearest:
 
-| Shipped | Becomes | Notes |
-|---|---|---|
-| `gap-3.5`, `py-3.25/3.75`, `py-2.75` | `gap-3` / `py-3` | compact admin rhythm |
-| `gap/px-4.5`, `size-4.5` | `gap-4` / `px-4` / `size-4` | rounding down keeps icons on the size-4 canon |
-| `p-5.5`, `gap-5.5` | `p-5` / `gap-5` | |
-| `gap-6.5` | `gap-6` | |
-| `h-9.5` (sm button) | `h-9` | matches the shadcn sm convention |
-| `h-13` nav CTA, `h-[58px]` nav | `h-12` / `h-14` | structural one-offs also go native |
-| `py-15`, `h-72.5` hero | `py-14` / `h-72` | |
-| `h-[250px] md:h-[400px]` images | `h-64 md:h-96` | no image-height tokens needed |
+| Shipped                              | Becomes                     | Notes                                         |
+| ------------------------------------ | --------------------------- | --------------------------------------------- |
+| `gap-3.5`, `py-3.25/3.75`, `py-2.75` | `gap-3` / `py-3`            | compact admin rhythm                          |
+| `gap/px-4.5`, `size-4.5`             | `gap-4` / `px-4` / `size-4` | rounding down keeps icons on the size-4 canon |
+| `p-5.5`, `gap-5.5`                   | `p-5` / `gap-5`             |                                               |
+| `gap-6.5`                            | `gap-6`                     |                                               |
+| `h-9.5` (sm button)                  | `h-9`                       | matches the shadcn sm convention              |
+| `h-13` nav CTA, `h-[58px]` nav       | `h-12` / `h-14`             | structural one-offs also go native            |
+| `py-15`, `h-72.5` hero               | `py-14` / `h-72`            |                                               |
+| `h-[250px] md:h-[400px]` images      | `h-64 md:h-96`              | no image-height tokens needed                 |
 
 - **Two density presets** back the two registers (§1):
   - `comfortable` (public): card padding `p-6`→`md:p-7`, gaps `gap-4`→`md:gap-5`.
@@ -181,7 +182,7 @@ halves round **down**, quarters round to nearest:
 
 ---
 
-## 7. Layout constants  **[decided — revised round 2: native max-w scale, no width tokens]**
+## 7. Layout constants **[decided — revised round 2: native max-w scale, no width tokens]**
 
 - **One page width.** Collapse `1040 / 1080 / 1160` → **`max-w-5xl` (1024px), RESOLVED 2026-07-06.**
   The native Tailwind step, chosen over a custom `--width-page` token; 16px narrower than the
@@ -195,9 +196,10 @@ halves round **down**, quarters round to nearest:
 
 ---
 
-## 8. Focus, motion & elevation  **[decided]** — new in Phase 1
+## 8. Focus, motion & elevation **[decided]** — new in Phase 1
 
 ### Focus — one ring, everywhere
+
 Four focus languages today (`focus:` vs `focus-visible:`, `ring-1`/`inset-ring-2`/`ring-2`,
 `bg-accent`). Ruling:
 
@@ -209,6 +211,7 @@ Four focus languages today (`focus:` vs `focus-visible:`, `ring-1`/`inset-ring-2
 - Menu/list items (`focus:bg-accent`) are a different, legitimate pattern (roving focus) — leave.
 
 ### Motion — three native duration utilities (round 2: no tokens)
+
 - **`duration-150`** (default color/border transitions), **`duration-300`** (chevrons, small
   transforms — absorbs 200/250/300), **`duration-500`** (progress bars — absorbs 400). All native
   steps; the round-1 `--duration-*` tokens are dropped.
@@ -219,6 +222,7 @@ Four focus languages today (`focus:` vs `focus-visible:`, `ring-1`/`inset-ring-2
 - Motion stays a **register signal**: admin animates in, public doesn't. Keep — but from one source.
 
 ### Elevation — borders, not shadows
+
 Surfaces use **hairline borders, not shadows** (no ad-hoc card carries a shadow). Shadows are reserved
 for **floating layers only** (popover/dropdown/select/tooltip/toast). Ruling: **remove `shadow-sm`
 from `Card`** and `shadow-xs` from Select trigger (align to Input, which has none). Keep the
@@ -227,28 +231,29 @@ from `Card`** and `shadow-xs` from Select trigger (align to Input, which has non
 
 ---
 
-## 9. Component canon  **[decided]**
+## 9. Component canon **[decided]**
 
-| Component | Ruling |
-|---|---|
-| **Button** | base `rounded-lg text-base font-semibold` (round 2: 16px native, was `text-[15px]`); sizes whole steps only — `default h-11 px-6` · `sm h-9 px-4 text-sm` (was h-9.5 px-4.5) · `lg h-12` · `icon size-9` · new **`icon-sm size-7`** for the 4× `compactButton`; `destructive-outline` text → native **`text-red-300`** (no hex); `outline` border → `border-foreground/20` (was /[0.22]). |
-| **Badge** | add **`pill`** variant (`rounded-full`) covering the dinner-card "next dinner" pill and admin `FilterChip`; `secondary` border → the one `border-foreground/15` hairline (drop `white/20`). Type stays native `text-xs font-semibold tracking-wide`. |
-| **Chip** | **one** chip primitive with pill shape, `active` state `border-primary/35 bg-primary/10 text-accent-light` (native opacities) — reconciles `section-nav` chips, `FilterChip`, and auth segmented control. |
-| **Eyebrow** | §5 — one component, two variants, all native utilities. |
-| **Card** | one radius (§4), no shadow (§8), one hairline, `comfortable`/`compact` density (§6). Admin hover-border is an `interactive` prop, not a fork. **No register weight fork** — display titles `font-light`, row titles `font-semibold`, both registers (§1). |
-| **SecondaryCTA** | extract the `border-b border-foreground/35 hover:border-foreground` link (duplicated in dinner-card + hero) into one component **with** `transition-colors`; border opacity → native `/35`. |
+| Component        | Ruling                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Button**       | base `rounded-lg text-base font-semibold` (round 2: 16px native, was `text-[15px]`); sizes whole steps only — `default h-11 px-6` · `sm h-9 px-4 text-sm` (was h-9.5 px-4.5) · `lg h-12` · `icon size-9` · new **`icon-sm size-7`** for the 4× `compactButton`; `destructive-outline` text → native **`text-red-300`** (no hex); `outline` border → `border-foreground/20` (was /[0.22]).                                                                                                        |
+| **Badge**        | add **`pill`** variant (`rounded-full`) covering the dinner-card "next dinner" pill and admin `FilterChip`; `secondary` border → the one `border-foreground/15` hairline (drop `white/20`). Type stays native `text-xs font-semibold tracking-wide`.                                                                                                                                                                                                                                             |
+| **Chip**         | **one** chip primitive with pill shape, `active` state `border-primary/35 bg-primary/10 text-accent-light` (native opacities) — reconciles `section-nav` chips, `FilterChip`, and auth segmented control.                                                                                                                                                                                                                                                                                        |
+| **Eyebrow**      | §5 — one component, two variants, all native utilities.                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **Card**         | one radius (§4), no shadow (§8), one hairline, `comfortable`/`compact` density (§6). Admin hover-border is an `interactive` prop, not a fork. **No register weight fork** — display titles `font-light`, row titles `font-semibold`, both registers (§1).                                                                                                                                                                                                                                        |
+| **SecondaryCTA** | extract the `border-b border-foreground/35 hover:border-foreground` link (duplicated in dinner-card + hero) into one component **with** `transition-colors`; border opacity → native `/35`.                                                                                                                                                                                                                                                                                                      |
 | **Field family** | align **Select trigger to Input**: `h-11 rounded-lg text-sm px-3`, surface `bg-foreground/5`, border = the one `border-foreground/15` hairline (no separate `--input` token), `focus-visible:`, drop its shadow. Labels: one recipe `text-sm font-semibold text-foreground/65`, **not** lowercase. **New: file-upload field** — `rounded-lg border-dashed border-foreground/20 bg-foreground/5`, hover/focus `border-primary/35`, file rows on the hairline with a `text-red-300` remove action. |
-| **Icon** | canonical sizes: `size-4` (16, default UI — also absorbs the size-4.5 half-step), `size-[15px]`→**`size-4`**, `size-[17px]/[19px]`→**`size-5`** (nav/action). Icon+label gap → whole steps: `gap-1` (tight) / `gap-2` (standard) — kills `gap-1.5`, `gap-1.75`, `gap-2.5`. |
+| **Icon**         | canonical sizes: `size-4` (16, default UI — also absorbs the size-4.5 half-step), `size-[15px]`→**`size-4`**, `size-[17px]/[19px]`→**`size-5`** (nav/action). Icon+label gap → whole steps: `gap-1` (tight) / `gap-2` (standard) — kills `gap-1.5`, `gap-1.75`, `gap-2.5`.                                                                                                                                                                                                                       |
 
 ---
 
-## 10. Proposed `@theme` changes  **[revised round 2: subtractive, not additive]**
+## 10. Proposed `@theme` changes **[revised round 2: subtractive, not additive]**
 
 After the round-2 native-token harmonization, the system needs **zero new tokens**. The `@theme`
-diff for [tailwind.css](app/tailwind.css) is now a *deletion* list — **proposal only; applied in
+diff for [tailwind.css](app/tailwind.css) is now a _deletion_ list — **proposal only; applied in
 the later code-convergence effort, not now.**
 
 **Delete:**
+
 ```css
 --input                    /* merged into --border */
 --color-fg-secondary       /* → text-foreground/80 */
@@ -258,8 +263,11 @@ the later code-convergence effort, not now.**
 ```
 
 **Change:**
+
 ```css
---border: rgb(245 241 236 / 0.15);   /* was 0.1 — merged hairline+input, brighter kept */
+--border: rgb(
+  245 241 236 / 0.15
+); /* was 0.1 — merged hairline+input, brighter kept */
 ```
 
 **Keep (the entire custom surface):** `background`, `card`, `foreground`, `primary` (+foreground),
@@ -301,13 +309,13 @@ tokens and dropped optional flourishes, but kept optionality where deletion woul
 
 On reviewing the first Phase 3 bundle, the user extended the native-first principle system-wide:
 
-1. **Native tokens everywhere, nearest to each shipped value** — and *talk* in Tailwind utility
+1. **Native tokens everywhere, nearest to each shipped value** — and _talk_ in Tailwind utility
    names, not px, throughout docs and bundle.
 2. **No fractional steps** (spacing, sizes): halves round down, quarters to nearest — overturns
    round 1's "bless the half-steps". Mapping table in §6.
 3. **Type ramp all native** (§3): text-xs/sm/base/lg body, xl–5xl display, built-in leadings,
    `tracking-tight`; buttons `text-base`.
-4. **One heading weight** (§1/§3): admin `font-extrabold` is *not* system canon — `font-light`
+4. **One heading weight** (§1/§3): admin `font-extrabold` is _not_ system canon — `font-light`
    display everywhere; weight is not a register signal. (The extrabold observation was real —
    admin-ui.tsx:26 et al. — but shipped ≠ blessed.)
 5. **One hairline** (§2): `--border` and `--input` merge at `foreground/15` (brighter kept, native

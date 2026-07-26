@@ -1,9 +1,9 @@
-import { ChevronLeftIcon, DownloadIcon } from "@radix-ui/react-icons";
-import { Link } from "react-router";
+import { DownloadIcon } from "@radix-ui/react-icons";
 
 import type { Route } from "./+types/admin.dinners.$dinnerId_.signups";
 
 import { AdminPageHeader, InitialsAvatar } from "~/components/admin-ui";
+import { BackLink } from "~/components/section";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import {
@@ -84,14 +84,9 @@ export default function DinnerSignupsPage({
 
   return (
     <main className="animate-page-in">
-      <Link
-        to="/admin/dinners"
-        prefetch="intent"
-        className="text-foreground/50 hover:text-foreground mb-3 inline-flex items-center gap-2 text-sm transition-colors"
-      >
-        <ChevronLeftIcon className="size-4" />
+      <BackLink to="/admin/dinners" prefetch="intent">
         Dinners
-      </Link>
+      </BackLink>
 
       <AdminPageHeader
         eyebrow={`${parties.length} signups · ${seatsTaken} / ${event.slots} seats`}
@@ -99,7 +94,7 @@ export default function DinnerSignupsPage({
         actions={
           <Button variant="outline" asChild>
             <a href="signups.csv">
-              <DownloadIcon className="mr-2 size-4" />
+              <DownloadIcon className="size-4" />
               Export CSV
             </a>
           </Button>
@@ -110,27 +105,16 @@ export default function DinnerSignupsPage({
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="text-foreground/50 h-auto px-4 py-3 text-xs font-semibold tracking-wide uppercase">
-                Guest
-              </TableHead>
-              <TableHead className="text-foreground/50 h-auto px-4 py-3 text-xs font-semibold tracking-wide uppercase">
-                Email
-              </TableHead>
-              <TableHead className="text-foreground/50 h-auto px-4 py-3 text-center text-xs font-semibold tracking-wide uppercase">
-                Party
-              </TableHead>
-              <TableHead className="text-foreground/50 h-auto px-4 py-3 text-right text-xs font-semibold tracking-wide uppercase">
-                Signed up
-              </TableHead>
+              <TableHead>Guest</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead className="text-center">Party</TableHead>
+              <TableHead className="text-right">Signed up</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {parties.map((party, index) => (
-              <TableRow
-                key={`${party.email}-${index}`}
-                className="hover:bg-foreground/5"
-              >
-                <TableCell className="px-4 py-4">
+              <TableRow key={`${party.email}-${index}`}>
+                <TableCell>
                   <div className="flex items-center gap-3">
                     <InitialsAvatar
                       name={party.name}
@@ -140,13 +124,11 @@ export default function DinnerSignupsPage({
                     <span className="font-semibold">{party.name}</span>
                   </div>
                 </TableCell>
-                <TableCell className="text-muted-foreground px-4 py-4">
+                <TableCell className="text-foreground/65">
                   {party.email}
                 </TableCell>
-                <TableCell className="px-4 py-4 text-center">
-                  {party.size}
-                </TableCell>
-                <TableCell className="px-4 py-4 text-right">
+                <TableCell className="text-center">{party.size}</TableCell>
+                <TableCell className="text-right">
                   <time
                     dateTime={new Date(party.createdAt).toISOString()}
                     suppressHydrationWarning
@@ -161,7 +143,7 @@ export default function DinnerSignupsPage({
               <TableRow className="hover:bg-transparent">
                 <TableCell
                   colSpan={4}
-                  className="text-foreground/50 px-4 py-8 text-center text-sm"
+                  className="text-foreground/50 py-8 text-center text-sm"
                 >
                   No signups yet.
                 </TableCell>

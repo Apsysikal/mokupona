@@ -10,11 +10,9 @@ import { getImageUrl, type ImageProviderConfig } from "~/shared/image";
 // Thin serving/redirect route since the Cloudinary migration. Transforms
 // happen on the CDN; this route only ever hands out original bytes:
 //
-// - cloudinary provider + provider-stored row → 302 to the delivery URL
-//   (legacy links out in the wild: OG scrapers, cached pages)
+// - cloudinary provider → 302 to the delivery URL (legacy links out in the
+//   wild: OG scrapers, cached pages)
 // - local provider → stream the stored file from disk
-// - legacy blob-only row (not yet backfilled) → stream the original bytes,
-//   sharp-free — the phase 1 interim path
 //
 // Old transform query params (w/h/fit) are ignored. The route stays off the
 // lazy user context — keep it auth-cost-free.
@@ -54,28 +52,16 @@ export async function loader({ params }: Route.LoaderArgs) {
   const image = requireFound(await getImageById(fileId));
   const config = imageConfigFromEnv();
 
-  if (image.storageKey) {
-    if (config.imageProvider === "cloudinary" && config.cloudinaryCloudName) {
-      return redirect(getImageUrl(image, config), 302);
-    }
-
-    // missing file (e.g. a cloudinary-stored row during a provider rollback)
-    // falls through to the legacy blob
-    const file = await getLocalImageFile(image.storageKey);
-    if (file) {
-      return createImageResponse(file.stream(), {
-        contentType: image.contentType,
-        size: file.size,
-        fileId,
-      });
-    }
+  if (config.imageProvider === "cloudinary" && config.cloudinaryCloudName) {
+    return redirect(getImageUrl(image, config), 302);
   }
 
-  const blob = requireFound(image.blob);
-  const bytes = new Uint8Array(blob);
-  return createImageResponse(bytes, {
+  // 404 rather than a stale body when the row points at a file this provider
+  // does not hold (e.g. a cloudinary-stored row read back under `local`).
+  const file = requireFound(await getLocalImageFile(image.storageKey));
+  return createImageResponse(file.stream(), {
     contentType: image.contentType,
-    size: bytes.byteLength,
+    size: file.size,
     fileId,
   });
 }

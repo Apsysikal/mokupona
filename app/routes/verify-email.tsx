@@ -68,7 +68,7 @@ export default function VerifyEmail({ loaderData }: Route.ComponentProps) {
         </Button>
         <Link
           to="/dinners"
-          className="text-primary text-sm font-medium hover:underline"
+          className="text-primary text-sm font-semibold hover:underline"
         >
           browse dinners instead
         </Link>

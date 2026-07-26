@@ -11,7 +11,7 @@ export type { Image };
  */
 export interface ImageMetadata {
   id: string;
-  storageKey: string | null;
+  storageKey: string;
   version: number | null;
   width: number | null;
   height: number | null;
@@ -31,8 +31,8 @@ export const IMAGE_METADATA_SELECT = {
 
 /**
  * What owning models persist for a provider-stored image: the upload's MIME
- * type plus the `StoredImage` scalars the provider returned. Bytes no longer
- * cross this boundary — `Image.blob` is legacy and is not written anymore.
+ * type plus the `StoredImage` scalars the provider returned. Bytes never
+ * cross this boundary — the provider owns the file, the row owns the key.
  */
 export interface ImageCreateData {
   contentType: string;
@@ -45,21 +45,4 @@ export interface ImageCreateData {
 
 export async function getImageById(id: string): Promise<Image | null> {
   return prisma.image.findUnique({ where: { id } });
-}
-
-// An image is an orphan iff neither owner FK holds: no board member and no
-// event. Both FKs live on Image, so deleting an image row — owned or not —
-// can never touch its owner; owned images are still skipped because covers
-// and portraits are current, not garbage.
-const ORPHAN_IMAGE_WHERE = {
-  boardMemberId: null,
-  eventId: null,
-} satisfies Prisma.ImageWhereInput;
-
-export async function countOrphanImages(): Promise<number> {
-  return prisma.image.count({ where: ORPHAN_IMAGE_WHERE });
-}
-
-export async function deleteOrphanImages(): Promise<{ count: number }> {
-  return prisma.image.deleteMany({ where: ORPHAN_IMAGE_WHERE });
 }

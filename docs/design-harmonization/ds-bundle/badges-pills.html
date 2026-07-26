@@ -1,91 +1,194 @@
 <!-- @dsCard group="Components" title="Badge, Pill & Chip" -->
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>mokupona — Badge, Pill &amp; Chip</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  :root {
-    --background: #15110E; --card: #1B1511; --foreground: rgb(245 241 236);
-    --primary: #ED825E; --on-primary: #15110E; --accent-light: #F1B48C;
-    --destructive: #A71D31; --sky-300: #7DD3FC;
-    --border: rgb(245 241 236 / 0.15);
-  }
-  body {
-    background: var(--background); color: var(--foreground);
-    font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
-    padding: 32px; -webkit-font-smoothing: antialiased;
-  }
-  .eyebrow { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgb(245 241 236 / 0.5); }
-  h1 { font-size: 24px; font-weight: 300; letter-spacing: -0.025em; margin: 6px 0 4px; }
-  .note { font-size: 14px; line-height: 1.5; color: rgb(245 241 236 / 0.65); max-width: 640px; }
-  section { margin-top: 28px; }
-  h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgb(245 241 236 / 0.5); margin-bottom: 12px; }
-  .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border: 1px solid var(--border); border-radius: 16px; background: var(--card); padding: 24px; }
-  .badge {
-    display: inline-flex; align-items: center; border: 1px solid transparent;
-    border-radius: 6px; padding: 2px 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.025em;
-  }
-  .badge-default { background: var(--primary); color: var(--on-primary); }
-  .badge-secondary { background: var(--card); border-color: var(--border); }
-  .badge-destructive { background: var(--destructive); }
-  .badge-outline { border-color: var(--border); }
-  .badge-info { border-color: rgb(125 211 252 / 0.4); background: rgb(125 211 252 / 0.15); color: var(--sky-300); }
-  .pill { border-radius: 999px; }
-  .chip {
-    display: inline-flex; align-items: center; border-radius: 999px;
-    border: 1px solid var(--border); background: none; color: rgb(245 241 236 / 0.65);
-    padding: 6px 16px; font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer;
-    transition: border-color 150ms, background-color 150ms, color 150ms;
-  }
-  .chip:hover { border-color: rgb(245 241 236 / 0.2); color: var(--foreground); }
-  .chip-active { border-color: rgb(237 130 94 / 0.35); background: rgb(237 130 94 / 0.1); color: var(--accent-light); }
-  .cap { font-size: 12px; color: rgb(245 241 236 / 0.4); margin-top: 8px; line-height: 1.6; }
-  code { font-size: 13px; }
-</style>
-</head>
-<body>
-  <p class="eyebrow">Components</p>
-  <h1>Badge, Pill &amp; Chip</h1>
-  <p class="note">Badge gains a <b>pill</b> variant (<code>rounded-full</code>) covering the
-  dinner-card "next dinner" pill and admin FilterChip. The <code>secondary</code> border drops
-  <code>white/20</code> for the one <code>border-foreground/15</code> hairline. One Chip primitive
-  reconciles section-nav chips, FilterChip, and the auth segmented control. Badge type stays native:
-  <code>text-xs font-semibold tracking-wide</code>.</p>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mokupona — Badge, Pill &amp; Chip</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      :root {
+        --background: #15110e;
+        --card: #1b1511;
+        --foreground: rgb(245 241 236);
+        --primary: #ed825e;
+        --on-primary: #15110e;
+        --accent-light: #f1b48c;
+        --destructive: #a71d31;
+        --sky-300: #7dd3fc;
+        --border: rgb(245 241 236 / 0.15);
+      }
+      body {
+        background: var(--background);
+        color: var(--foreground);
+        font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+        padding: 32px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .eyebrow {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgb(245 241 236 / 0.5);
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: 300;
+        letter-spacing: -0.025em;
+        margin: 6px 0 4px;
+      }
+      .note {
+        font-size: 14px;
+        line-height: 1.5;
+        color: rgb(245 241 236 / 0.65);
+        max-width: 640px;
+      }
+      section {
+        margin-top: 28px;
+      }
+      h2 {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgb(245 241 236 / 0.5);
+        margin-bottom: 12px;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--card);
+        padding: 24px;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        padding: 2px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.025em;
+      }
+      .badge-default {
+        background: var(--primary);
+        color: var(--on-primary);
+      }
+      .badge-secondary {
+        background: var(--card);
+        border-color: var(--border);
+      }
+      .badge-destructive {
+        background: var(--destructive);
+      }
+      .badge-outline {
+        border-color: var(--border);
+      }
+      .badge-info {
+        border-color: rgb(125 211 252 / 0.4);
+        background: rgb(125 211 252 / 0.15);
+        color: var(--sky-300);
+      }
+      .pill {
+        border-radius: 999px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: none;
+        color: rgb(245 241 236 / 0.65);
+        padding: 6px 16px;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition:
+          border-color 150ms,
+          background-color 150ms,
+          color 150ms;
+      }
+      .chip:hover {
+        border-color: rgb(245 241 236 / 0.2);
+        color: var(--foreground);
+      }
+      .chip-active {
+        border-color: rgb(237 130 94 / 0.35);
+        background: rgb(237 130 94 / 0.1);
+        color: var(--accent-light);
+      }
+      .cap {
+        font-size: 12px;
+        color: rgb(245 241 236 / 0.4);
+        margin-top: 8px;
+        line-height: 1.6;
+      }
+      code {
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <p class="eyebrow">Components</p>
+    <h1>Badge, Pill &amp; Chip</h1>
+    <p class="note">
+      Badge gains a <b>pill</b> variant (<code>rounded-full</code>) covering the
+      dinner-card "next dinner" pill and admin FilterChip. The
+      <code>secondary</code> border drops <code>white/20</code> for the one
+      <code>border-foreground/15</code> hairline. One Chip primitive reconciles
+      section-nav chips, FilterChip, and the auth segmented control. Badge type
+      stays native: <code>text-xs font-semibold tracking-wide</code>.
+    </p>
 
-  <section>
-    <h2>Badge variants</h2>
-    <div class="row">
-      <span class="badge badge-default">NEW</span>
-      <span class="badge badge-secondary">DRAFT</span>
-      <span class="badge badge-outline">VEGETARIAN</span>
-      <span class="badge badge-destructive">CANCELLED</span>
-      <span class="badge badge-info">FRIENDS</span>
-    </div>
-    <p class="cap">default · secondary (border-foreground/15) · outline · destructive · info — native sky-300: border-sky-300/40 bg-sky-300/15 text-sky-300</p>
-  </section>
+    <section>
+      <h2>Badge variants</h2>
+      <div class="row">
+        <span class="badge badge-default">NEW</span>
+        <span class="badge badge-secondary">DRAFT</span>
+        <span class="badge badge-outline">VEGETARIAN</span>
+        <span class="badge badge-destructive">CANCELLED</span>
+        <span class="badge badge-info">FRIENDS</span>
+      </div>
+      <p class="cap">
+        default · secondary (border-foreground/15) · outline · destructive ·
+        info — native sky-300: border-sky-300/40 bg-sky-300/15 text-sky-300
+      </p>
+    </section>
 
-  <section>
-    <h2>Pill variant — rounded-full</h2>
-    <div class="row">
-      <span class="badge badge-default pill">next dinner</span>
-      <span class="badge badge-secondary pill">6 seats left</span>
-      <span class="badge badge-outline pill">Jun 21</span>
-    </div>
-    <p class="cap">absorbs the ad-hoc dinner-card pill and the admin FilterChip shape</p>
-  </section>
+    <section>
+      <h2>Pill variant — rounded-full</h2>
+      <div class="row">
+        <span class="badge badge-default pill">next dinner</span>
+        <span class="badge badge-secondary pill">6 seats left</span>
+        <span class="badge badge-outline pill">Jun 21</span>
+      </div>
+      <p class="cap">
+        absorbs the ad-hoc dinner-card pill and the admin FilterChip shape
+      </p>
+    </section>
 
-  <section>
-    <h2>Chip — one primitive, active state</h2>
-    <div class="row">
-      <button class="chip chip-active">All dinners</button>
-      <button class="chip">Upcoming</button>
-      <button class="chip">Past</button>
-      <button class="chip">Drafts</button>
-    </div>
-    <p class="cap">active: border-primary/35 bg-primary/10 text-accent-light — same recipe for section-nav, filters, segmented control</p>
-  </section>
-</body>
+    <section>
+      <h2>Chip — one primitive, active state</h2>
+      <div class="row">
+        <button class="chip chip-active">All dinners</button>
+        <button class="chip">Upcoming</button>
+        <button class="chip">Past</button>
+        <button class="chip">Drafts</button>
+      </div>
+      <p class="cap">
+        active: border-primary/35 bg-primary/10 text-accent-light — same recipe
+        for section-nav, filters, segmented control
+      </p>
+    </section>
+  </body>
 </html>

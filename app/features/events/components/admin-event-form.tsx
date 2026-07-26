@@ -5,7 +5,6 @@ import {
   getTextareaProps,
   useFormMetadata,
 } from "@conform-to/react";
-import { ChevronLeftIcon } from "@radix-ui/react-icons";
 import { Link } from "react-router";
 import type z from "zod";
 
@@ -18,6 +17,7 @@ import {
   SelectField,
   TextareaField,
 } from "~/components/forms";
+import { BackLink, pageTitleClassName } from "~/components/section";
 import { SectionNav } from "~/components/section-nav";
 import { SignupFormBuilder } from "~/components/signup-form-builder";
 import { Button } from "~/components/ui/button";
@@ -70,17 +70,11 @@ function SectionCard({
       // scroll-mt clears the sticky chip nav when jumping via anchor links
       className="scroll-mt-16 md:scroll-mt-8"
     >
-      <CardHeader className="p-5 pb-4">
-        <CardTitle className="text-base font-semibold">{title}</CardTitle>
-        {description ? (
-          <CardDescription className="text-foreground/50 text-sm">
-            {description}
-          </CardDescription>
-        ) : null}
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        {description ? <CardDescription>{description}</CardDescription> : null}
       </CardHeader>
-      <CardContent className="flex flex-col gap-6 p-5 pt-0">
-        {children}
-      </CardContent>
+      <CardContent className="flex flex-col gap-6">{children}</CardContent>
     </Card>
   );
 }
@@ -95,7 +89,7 @@ function SaveBar({
   const form = useFormMetadata();
 
   return (
-    <div className="border-border bg-background/90 sticky bottom-0 z-10 -mx-2 border-t px-4 py-3 backdrop-blur md:bottom-2 md:mx-0 md:rounded-2xl md:border">
+    <div className="bg-background/90 sticky bottom-0 z-10 -mx-2 border-t px-4 py-3 backdrop-blur md:bottom-2 md:mx-0 md:rounded-2xl md:border">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p
           className={cn(
@@ -127,17 +121,10 @@ export function AdminEventForm({
   return (
     <div className="flex flex-col gap-4 md:gap-6">
       <div>
-        <Link
-          to="/admin/dinners"
-          prefetch="intent"
-          className="text-foreground/50 hover:text-foreground mb-3 inline-flex items-center gap-2 text-sm transition-colors"
-        >
-          <ChevronLeftIcon className="size-4" />
+        <BackLink to="/admin/dinners" prefetch="intent">
           Dinners
-        </Link>
-        <h1 className="text-3xl font-light tracking-tight md:text-4xl">
-          {pageTitle}
-        </h1>
+        </BackLink>
+        <h1 className={pageTitleClassName}>{pageTitle}</h1>
       </div>
 
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-7">
@@ -243,7 +230,6 @@ export function AdminEventForm({
                 ...getInputProps(fields.cover, { type: "file" }),
                 tabIndex: 0,
                 accept: VALID_IMAGE_TYPES.join(","),
-                // reads as a dashed dropzone (design system §9 file-upload)
                 className: fileFieldClassName,
               }}
               errors={fields.cover.errors}

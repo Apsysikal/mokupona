@@ -1,73 +1,173 @@
 <!-- @dsCard group="Foundations" title="Headings — one voice, two densities" -->
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>mokupona — Headings: one voice, two densities</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  :root {
-    --background: #15110E; --card: #1B1511; --foreground: rgb(245 241 236);
-    --primary: #ED825E;
-    --border: rgb(245 241 236 / 0.15);
-  }
-  body {
-    background: var(--background); color: var(--foreground);
-    font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
-    padding: 32px; -webkit-font-smoothing: antialiased;
-  }
-  .eyebrow { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgb(245 241 236 / 0.5); }
-  h1 { font-size: 24px; font-weight: 300; letter-spacing: -0.025em; margin: 6px 0 4px; }
-  .note { font-size: 14px; line-height: 1.5; color: rgb(245 241 236 / 0.65); max-width: 640px; }
-  .registers { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px; }
-  .register { border: 1px solid var(--border); border-radius: 16px; background: var(--card); }
-  .register .tag { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--primary); margin-bottom: 18px; }
-  .register .display { font-size: 36px; line-height: 1.11; letter-spacing: -0.025em; font-weight: 300; }
-  .register .title { font-size: 30px; line-height: 1.2; letter-spacing: -0.025em; font-weight: 300; margin-top: 20px; }
-  .register .body { font-size: 16px; line-height: 1.5; color: rgb(245 241 236 / 0.8); margin-top: 14px; }
-  .register .cap { font-size: 12px; color: rgb(245 241 236 / 0.4); margin-top: 18px; line-height: 1.6; }
-  .comfortable { padding: 28px; }
-  .compact { padding: 16px; }
-  .rules { border: 1px solid var(--border); border-radius: 16px; background: var(--card); padding: 24px; margin-top: 16px; font-size: 14px; line-height: 1.7; color: rgb(245 241 236 / 0.65); }
-  .rules b { color: var(--foreground); font-weight: 600; }
-  code { font-size: 13px; }
-  @media (max-width: 700px) { .registers { grid-template-columns: 1fr; } }
-</style>
-</head>
-<body>
-  <p class="eyebrow">Foundations</p>
-  <h1>Headings — one voice, two densities</h1>
-  <p class="note">One typographic voice: the display family is <code>font-light tracking-tight</code>
-  everywhere. The shipped admin <code>font-extrabold</code> headings converge onto it — weight is
-  <b>not</b> a register signal. The registers differ only in <b>density</b> (padding/gap presets)
-  and <b>motion</b> (admin page-entrance).</p>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mokupona — Headings: one voice, two densities</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      :root {
+        --background: #15110e;
+        --card: #1b1511;
+        --foreground: rgb(245 241 236);
+        --primary: #ed825e;
+        --border: rgb(245 241 236 / 0.15);
+      }
+      body {
+        background: var(--background);
+        color: var(--foreground);
+        font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+        padding: 32px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .eyebrow {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgb(245 241 236 / 0.5);
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: 300;
+        letter-spacing: -0.025em;
+        margin: 6px 0 4px;
+      }
+      .note {
+        font-size: 14px;
+        line-height: 1.5;
+        color: rgb(245 241 236 / 0.65);
+        max-width: 640px;
+      }
+      .registers {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 28px;
+      }
+      .register {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--card);
+      }
+      .register .tag {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--primary);
+        margin-bottom: 18px;
+      }
+      .register .display {
+        font-size: 36px;
+        line-height: 1.11;
+        letter-spacing: -0.025em;
+        font-weight: 300;
+      }
+      .register .title {
+        font-size: 30px;
+        line-height: 1.2;
+        letter-spacing: -0.025em;
+        font-weight: 300;
+        margin-top: 20px;
+      }
+      .register .body {
+        font-size: 16px;
+        line-height: 1.5;
+        color: rgb(245 241 236 / 0.8);
+        margin-top: 14px;
+      }
+      .register .cap {
+        font-size: 12px;
+        color: rgb(245 241 236 / 0.4);
+        margin-top: 18px;
+        line-height: 1.6;
+      }
+      .comfortable {
+        padding: 28px;
+      }
+      .compact {
+        padding: 16px;
+      }
+      .rules {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--card);
+        padding: 24px;
+        margin-top: 16px;
+        font-size: 14px;
+        line-height: 1.7;
+        color: rgb(245 241 236 / 0.65);
+      }
+      .rules b {
+        color: var(--foreground);
+        font-weight: 600;
+      }
+      code {
+        font-size: 13px;
+      }
+      @media (max-width: 700px) {
+        .registers {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <p class="eyebrow">Foundations</p>
+    <h1>Headings — one voice, two densities</h1>
+    <p class="note">
+      One typographic voice: the display family is
+      <code>font-light tracking-tight</code> everywhere. The shipped admin
+      <code>font-extrabold</code> headings converge onto it — weight is
+      <b>not</b> a register signal. The registers differ only in
+      <b>density</b> (padding/gap presets) and <b>motion</b> (admin
+      page-entrance).
+    </p>
 
-  <div class="registers">
-    <div class="register comfortable">
-      <div class="tag">Public — comfortable</div>
-      <div class="display">Dinner with strangers</div>
-      <div class="title">Upcoming dinners</div>
-      <p class="body">Marketing, dinners, auth. Same type, comfortable density, no entrance motion.</p>
-      <p class="cap">font-light · p-6 md:p-7 · gap-4 md:gap-5 · hover-less cards</p>
+    <div class="registers">
+      <div class="register comfortable">
+        <div class="tag">Public — comfortable</div>
+        <div class="display">Dinner with strangers</div>
+        <div class="title">Upcoming dinners</div>
+        <p class="body">
+          Marketing, dinners, auth. Same type, comfortable density, no entrance
+          motion.
+        </p>
+        <p class="cap">
+          font-light · p-6 md:p-7 · gap-4 md:gap-5 · hover-less cards
+        </p>
+      </div>
+      <div class="register compact">
+        <div class="tag">Admin — compact</div>
+        <div class="display">Dashboard</div>
+        <div class="title">Manage dinners</div>
+        <p class="body">
+          Dashboard, CRUD. Same type, compact density, page-entrance motion,
+          interactive card hover.
+        </p>
+        <p class="cap">
+          font-light · p-4 · gap-3 · animate-page-in · hover:border-primary/30
+        </p>
+      </div>
     </div>
-    <div class="register compact">
-      <div class="tag">Admin — compact</div>
-      <div class="display">Dashboard</div>
-      <div class="title">Manage dinners</div>
-      <p class="body">Dashboard, CRUD. Same type, compact density, page-entrance motion, interactive card hover.</p>
-      <p class="cap">font-light · p-4 · gap-3 · animate-page-in · hover:border-primary/30</p>
-    </div>
-  </div>
 
-  <div class="rules">
-    <b>Shared (everything typographic):</b> native size ladder (hero text-4xl md:text-5xl · page
-    text-3xl md:text-4xl · section text-2xl md:text-3xl), <code>font-light</code>,
-    <code>tracking-tight</code>, built-in line-heights, same eyebrow, same card radius, same hairline,
-    same focus ring.<br>
-    <b>Divergent (by design):</b> comfortable vs compact density · motion (admin only).<br>
-    <b>Dropped:</b> the <s>lowercase</s> transform (call #5) and the <s>font-extrabold</s> admin
-    heading weight — both registers read as one system.
-  </div>
-</body>
+    <div class="rules">
+      <b>Shared (everything typographic):</b> native size ladder (hero text-4xl
+      md:text-5xl · page text-3xl md:text-4xl · section text-2xl md:text-3xl),
+      <code>font-light</code>, <code>tracking-tight</code>, built-in
+      line-heights, same eyebrow, same card radius, same hairline, same focus
+      ring.<br />
+      <b>Divergent (by design):</b> comfortable vs compact density · motion
+      (admin only).<br />
+      <b>Dropped:</b> the <s>lowercase</s> transform (call #5) and the
+      <s>font-extrabold</s> admin heading weight — both registers read as one
+      system.
+    </div>
+  </body>
 </html>

@@ -1,8 +1,5 @@
 import type { RoleName } from "~/features/auth/roles";
 
-// Client-safe invite constants (the admin dialog validates against them in
-// the browser). Ceiling "moderator": admin is a seed/DB-level role and can
-// never be granted by invite — the server re-enforces this (design §6).
 export const INVITABLE_ROLES = [
   "user",
   "moderator",

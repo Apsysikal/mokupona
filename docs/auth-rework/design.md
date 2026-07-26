@@ -29,18 +29,18 @@ Replace the hand-rolled cookie/bcrypt auth with **better-auth as the authenticat
 
 ## 2. Decision record
 
-| Decision | Choice | Why |
-| --- | --- | --- |
-| Auth library | better-auth, **authn only** | Covers OAuth/reset/verification/DB sessions on our stack (React Router, Prisma, SQLite); scoping it away from authz caps the blast radius of a young dependency |
-| Signup model | Open signup + role invites | Community site; invites exist to onboard elevated roles, not to gate entry |
-| Providers | Google only | Highest coverage, one consent screen + redirect URI per env |
-| Email | Resend, behind a provider-agnostic mail layer | Verification, reset, invite mail; needs DNS records on mokupona.ch. The Resend SDK is confined to one provider module so it can be swapped without touching the app (§3.1) |
-| Account linking | Auto-link by email **and** require verification for password signups | Google emails are verified; mandatory verification closes the pre-registration takeover attack |
-| Invites | Email-bound, single-use, ~7-day expiry; admins only; ceiling `moderator` | `admin` remains a seed/DB-level role, preserving immutability invariants |
-| Migration | Force-reset, one-time global logout | <20 prod users; avoids a bcrypt compatibility shim |
-| Privacy consent | "By continuing you accept…" notice on login/signup pages | Covers both password and Google paths; replaces the join-only checkbox |
-| `name` | Mandatory on `User` | Google supplies it anyway; join form gains a required field; migrated users backfilled from email local-part |
-| Roles in phase 1 | Untouched | `Role` table, guards, admin UI, immutability rules all survive as-is |
+| Decision         | Choice                                                                   | Why                                                                                                                                                                        |
+| ---------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth library     | better-auth, **authn only**                                              | Covers OAuth/reset/verification/DB sessions on our stack (React Router, Prisma, SQLite); scoping it away from authz caps the blast radius of a young dependency            |
+| Signup model     | Open signup + role invites                                               | Community site; invites exist to onboard elevated roles, not to gate entry                                                                                                 |
+| Providers        | Google only                                                              | Highest coverage, one consent screen + redirect URI per env                                                                                                                |
+| Email            | Resend, behind a provider-agnostic mail layer                            | Verification, reset, invite mail; needs DNS records on mokupona.ch. The Resend SDK is confined to one provider module so it can be swapped without touching the app (§3.1) |
+| Account linking  | Auto-link by email **and** require verification for password signups     | Google emails are verified; mandatory verification closes the pre-registration takeover attack                                                                             |
+| Invites          | Email-bound, single-use, ~7-day expiry; admins only; ceiling `moderator` | `admin` remains a seed/DB-level role, preserving immutability invariants                                                                                                   |
+| Migration        | Force-reset, one-time global logout                                      | <20 prod users; avoids a bcrypt compatibility shim                                                                                                                         |
+| Privacy consent  | "By continuing you accept…" notice on login/signup pages                 | Covers both password and Google paths; replaces the join-only checkbox                                                                                                     |
+| `name`           | Mandatory on `User`                                                      | Google supplies it anyway; join form gains a required field; migrated users backfilled from email local-part                                                               |
+| Roles in phase 1 | Untouched                                                                | `Role` table, guards, admin UI, immutability rules all survive as-is                                                                                                       |
 
 ---
 
@@ -67,7 +67,7 @@ Replace the hand-rolled cookie/bcrypt auth with **better-auth as the authenticat
 
 - **Handler route:** one catch-all `api.auth.$.ts` forwards loader/action requests to `auth.handler`. Client-side calls go through `createAuthClient` (`better-auth/react`).
 - **Guard shim:** `guards.server.ts` re-implements the exact API of [`session.server.ts`](../../app/utils/session.server.ts) (`getUserId`, `getUser`, `getUserWithRole`, `requireUserId`, `requireUser`, `requireUserWithRole`, `logout`) on top of `auth.api.getSession({ headers })`. The ~21 admin routes and [`root.tsx`](../../app/root.tsx) keep their call sites; only the import path changes. This is the load-bearing trick that keeps the cutover small.
-- **better-auth learns nothing about roles.** `roleId` is populated by a `databaseHooks.user.create.before` hook (default role `user`, or the invite's role — §6). All role *checks* stay in our guards.
+- **better-auth learns nothing about roles.** `roleId` is populated by a `databaseHooks.user.create.before` hook (default role `user`, or the invite's role — §6). All role _checks_ stay in our guards.
 
 ### 3.1 Mail provider abstraction
 
@@ -75,8 +75,15 @@ Outbound mail is its own small feature, `app/features/mail/`, so no vendor SDK l
 
 ```ts
 // app/features/mail/types.ts — deliberately minimal (no cc/attachments until needed)
-export interface MailMessage { to: string; subject: string; text: string; html?: string }
-export interface MailProvider { send(message: MailMessage): Promise<void> }
+export interface MailMessage {
+  to: string;
+  subject: string;
+  text: string;
+  html?: string;
+}
+export interface MailProvider {
+  send(message: MailMessage): Promise<void>;
+}
 ```
 
 - **Providers** (one module each, selected once at startup by `MAIL_PROVIDER`):
@@ -139,7 +146,7 @@ Custom feature — no better-auth plugin. Creation lives **inline on `/admin/use
 Acceptance at `/invite/$token`:
 
 1. Token invalid / expired / already accepted → friendly dead-end page.
-2. **Not logged in:** show signup (password form, email prefilled and locked, or Google). After the account exists *with the invite's email address*, apply the role and stamp `acceptedAt`. A Google login returning a different address than the invite's → explain and offer retry.
+2. **Not logged in:** show signup (password form, email prefilled and locked, or Google). After the account exists _with the invite's email address_, apply the role and stamp `acceptedAt`. A Google login returning a different address than the invite's → explain and offer retry.
 3. **Logged in, email matches:** confirm screen → upgrade role via the existing [`updateNonAdminUserRole`](../../app/models/user.server.ts) guard (admins are never touched — immutability preserved). Downgrades are not performed (moderator invited as user is a no-op).
 4. **Logged in, email differs:** explain, offer logout-and-retry.
 

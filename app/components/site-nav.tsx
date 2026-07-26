@@ -12,6 +12,7 @@ import {
 import { Form, Link, useLocation } from "react-router";
 
 import { BrandLockup } from "./brand-lockup";
+import { Glow } from "./section";
 import { Button } from "./ui/button";
 
 import { ADMIN_ROLE_NAMES } from "~/features/auth/roles";
@@ -104,13 +105,13 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
 
   const sectionLinkClasses = (active: boolean) =>
     cn(
-      "hover:text-foreground pb-0.5",
-      active ? "text-foreground border-b border-primary" : "text-foreground/80",
+      "hover:text-foreground pb-1",
+      active && "text-foreground border-b border-primary",
     );
 
   return (
     <>
-      <nav className="border-border border-b">
+      <nav className="border-b">
         {/* desktop */}
         <div className="flex h-16 items-center justify-between px-10 max-md:hidden">
           <BrandLockup to="/" />
@@ -147,9 +148,7 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
                 case "logout":
                   return (
                     <Form key="logout" action="/logout" method="POST">
-                      <button className="text-foreground/80 hover:text-foreground">
-                        logout
-                      </button>
+                      <button className="hover:text-foreground">logout</button>
                     </Form>
                   );
               }
@@ -199,12 +198,9 @@ function MobileMenu({
 }) {
   return (
     <div className="bg-background fixed inset-0 z-50 flex flex-col overflow-hidden md:hidden">
-      <div
-        aria-hidden
-        className="glow-primary-strong pointer-events-none absolute -top-10 -right-10 size-72 rounded-full"
-      />
+      <Glow strong className="-top-10 -right-10 size-72" />
 
-      <div className="border-border relative border-b">
+      <div className="relative border-b">
         <div className="flex h-14 items-center justify-between px-5">
           <BrandLockup to="/" />
           <button
@@ -218,7 +214,7 @@ function MobileMenu({
         </div>
       </div>
 
-      <div className="relative flex flex-1 flex-col overflow-y-auto px-7 pt-10 pb-8">
+      <div className="relative flex flex-1 flex-col overflow-y-auto px-5 pt-10 pb-8">
         <div className="flex flex-col">
           {navItems.map((item) => {
             switch (item.kind) {
@@ -254,7 +250,7 @@ function MobileMenu({
             </a>
             <Link to="/privacy">privacy policy</Link>
           </div>
-          <span className="text-foreground/40 text-xs">
+          <span className="text-foreground/50 text-xs">
             made with love in zürich
           </span>
         </div>
@@ -277,7 +273,7 @@ function MobileMenuLink(props: MobileMenuLinkProps) {
   return (
     <Component
       className={cn(
-        "border-border flex items-center justify-between border-b py-4 text-xl tracking-tight",
+        "flex items-center justify-between border-b py-4 text-xl tracking-tight",
         className,
       )}
       {...rest}

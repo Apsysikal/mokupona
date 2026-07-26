@@ -1,11 +1,9 @@
-import { v2 as cloudinary } from "cloudinary";
 import type { UploadApiOptions, UploadApiResponse } from "cloudinary";
+import { v2 as cloudinary } from "cloudinary";
 import invariant from "tiny-invariant";
 
 import { fetchBlurDataUrl } from "../blur-placeholder.server";
 import type { ImageStorageProvider } from "../types";
-
-// The only module that may import the Cloudinary SDK (design §3.1).
 
 function uploadStream(
   buffer: Buffer,
