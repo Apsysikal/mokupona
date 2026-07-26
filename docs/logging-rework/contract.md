@@ -61,11 +61,11 @@ It is a module of its own rather than an inline literal because the test logger
 is `pino({ level: "silent" })` with no redaction, so the only way to assert on
 the censor is to build a pino instance around the exported config.
 
-| Declared path                                  | Censor result                                                             |
-| ---------------------------------------------- | ------------------------------------------------------------------------- |
+| Declared path                                  | Censor result                                                                                                               |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `email`, `*.email`                             | first character, `***`, domain — `alice@example.com` → `a***@example.com`; `[redacted]` when there is no local part to keep |
-| `ip`, `*.ip`                                   | `hashIp(value)`                                                           |
-| `password`, `req.headers.authorization`, other | `[redacted]`                                                              |
+| `ip`, `*.ip`                                   | `hashIp(value)`                                                                                                             |
+| `password`, `req.headers.authorization`, other | `[redacted]`                                                                                                                |
 
 `hashIp` (`app/logger/hash-ip.server.ts`) is an HMAC-SHA256 under a 32-byte salt
 that rotates every 24 h, truncated to 16 base64url characters. The salt lives in
@@ -156,6 +156,7 @@ listed key, never a synonym.
 | `userId`       | `string`  | `User.id` of the acting user                                           |
 | `targetUserId` | `string`  | `User.id` of the user an admin action operates on                      |
 | `pattern`      | `string`  | matched route pattern; never `request.url`                             |
+| `path`         | `string`  | request pathname, no query string; only where no `pattern` is in hand  |
 | `statusCode`   | `number`  | response status                                                        |
 | `shellMs`      | `number`  | ms until the `Response` exists (shell-ready, not body-complete)        |
 | `role`         | `string`  | a `Role.name`                                                          |
