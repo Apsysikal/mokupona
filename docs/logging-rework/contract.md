@@ -58,6 +58,15 @@ formatting misbehaves, never the pino ones.
 app contains no rotation code. `LOG_DIR` in `fly.toml` and the path in
 `logrotate.conf` must stay in agreement or rotation silently does nothing.
 
+A dead `cron` is the failure mode this design cannot otherwise see: rotation
+stops, retention silently exceeds the 30 day privacy commitment, and the volume
+fills alongside SQLite. Decided in phase 2 (open question 3): the app checks once
+at boot, in production only, whether a process named `cron` appears in `/proc`,
+and logs at `warn` if it does not. `isCronRunning()` lives in
+`app/logger/cron-check.server.ts` and returns `undefined` where `/proc` cannot be
+read, so an unknown answer never raises a false alarm. No size alarm — `rotate 45`
+× `maxsize 5M` compressed already bounds the volume at ~25 MB.
+
 ## Call convention
 
 ```ts

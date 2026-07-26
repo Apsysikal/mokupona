@@ -4,6 +4,8 @@ import path from "node:path";
 import pino from "pino";
 import pretty from "pino-pretty";
 
+import { isCronRunning } from "~/logger/cron-check.server";
+
 const PRODUCTION = process.env.NODE_ENV === "production";
 const TEST = process.env.NODE_ENV === "test";
 const LEVEL = process.env.LOG_LEVEL ?? (PRODUCTION ? "info" : "debug");
@@ -43,5 +45,11 @@ function createLogger() {
 }
 
 const logger = createLogger();
+
+if (PRODUCTION && isCronRunning() === false) {
+  logger.warn(
+    "cron is not running: log rotation and the 30 day retention window are inactive",
+  );
+}
 
 export { logger };
