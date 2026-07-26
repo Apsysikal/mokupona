@@ -53,8 +53,10 @@ const googleProvider =
 
 export const googleAuthEnabled = Boolean(googleProvider);
 
-export const auth = singleton("better-auth", () =>
-  betterAuth({
+export const auth = singleton("better-auth", () => {
+  logger.info({ googleAuthEnabled }, "auth configured");
+
+  return betterAuth({
     baseURL: process.env.BETTER_AUTH_URL,
     secret: process.env.BETTER_AUTH_SECRET,
     database: prismaAdapter(prisma, { provider: "sqlite" }),
@@ -105,5 +107,5 @@ export const auth = singleton("better-auth", () =>
         },
       },
     },
-  }),
-);
+  });
+});
