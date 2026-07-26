@@ -8,20 +8,33 @@ import { PassThrough } from "node:stream";
 
 import { createReadableStreamFromReadable } from "@react-router/node";
 import { isbot } from "isbot";
+import type { Logger } from "pino";
 import { renderToPipeableStream } from "react-dom/server";
-import type { EntryContext, HandleErrorFunction } from "react-router";
+import type {
+  EntryContext,
+  HandleErrorFunction,
+  RouterContextProvider,
+  ServerInstrumentation,
+} from "react-router";
 import { isRouteErrorResponse, ServerRouter } from "react-router";
 
+import { requestLoggerContext } from "~/features/auth/middleware.server";
+import { describeCompletedRequest } from "~/logger/request-log.server";
 import { logger } from "~/logger.server";
 
 export const streamTimeout = 5000;
 
-export const handleError: HandleErrorFunction = (error, { request }) => {
+export const handleError: HandleErrorFunction = (
+  error,
+  { request, context },
+) => {
   // React Router aborts requests as a matter of course — superseded client
   // navigations, closed streams — and every one of those lands here.
   if (request.signal.aborted) return;
 
-  logger.error(
+  const log = context?.get(requestLoggerContext) ?? logger;
+
+  log.error(
     {
       error:
         isRouteErrorResponse(error) && "error" in error ? error.error : error,
@@ -31,11 +44,40 @@ export const handleError: HandleErrorFunction = (error, { request }) => {
   );
 };
 
+// Observational only: a throw in here is swallowed by the router, so nothing
+// load-bearing may live in it.
+export const instrumentations: ServerInstrumentation[] = [
+  {
+    handler(handler) {
+      handler.instrument({
+        async request(callHandler, info) {
+          const startedAt = performance.now();
+          const result = await callHandler();
+
+          const entry = describeCompletedRequest({
+            method: info.request.method,
+            pathname: new URL(info.request.url).pathname,
+            pattern: result.meta?.pattern,
+            statusCode: result.statusCode,
+            failed: result.status === "error",
+            shellMs: Math.round(performance.now() - startedAt),
+          });
+          if (!entry) return;
+
+          const log = info.context?.get(requestLoggerContext) ?? logger;
+          log[entry.level](entry.bindings, "Request completed");
+        },
+      });
+    },
+  },
+];
+
 export default function handleRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
   reactRouterContext: EntryContext,
+  loadContext: RouterContextProvider,
 ) {
   // bots wait for the full document so crawlers see complete markup;
   // browsers stream as soon as the shell is ready
@@ -49,6 +91,7 @@ export default function handleRequest(
     responseHeaders,
     reactRouterContext,
     readyEvent,
+    loadContext.get(requestLoggerContext),
   );
 }
 
@@ -58,6 +101,7 @@ function streamDocument(
   responseHeaders: Headers,
   reactRouterContext: EntryContext,
   readyEvent: "onAllReady" | "onShellReady",
+  log: Logger,
 ) {
   const path = new URL(request.url).pathname;
 
@@ -93,11 +137,11 @@ function streamDocument(
           renderDone();
           // the rejection reaches handleError, which logs the throwable; only
           // the "nothing was sent yet" part of it is news here
-          logger.warn({ path }, "Document shell render failed");
+          log.warn({ path }, "Document shell render failed");
           reject(error);
         },
         onError(error: unknown) {
-          logger.warn({ error, path }, "Error while rendering the document");
+          log.warn({ error, path }, "Error while rendering the document");
           responseStatusCode = 500;
         },
       },
@@ -105,7 +149,7 @@ function streamDocument(
 
     if (!rendered) {
       timeout = setTimeout(() => {
-        logger.warn({ path }, "Document render exceeded the stream timeout");
+        log.warn({ path }, "Document render exceeded the stream timeout");
         abort();
       }, streamTimeout + 1000);
     }

@@ -3,7 +3,7 @@ import { redirect } from "react-router";
 import { auth } from "./auth.server";
 import { isRoleName, type RoleName } from "./roles";
 
-import { logger } from "~/logger.server";
+import { requestLogger } from "~/logger/request-context.server";
 import type { Role } from "~/models/role.server";
 import type { User } from "~/models/user.server";
 import { getUserByIdWithRole } from "~/models/user.server";
@@ -11,9 +11,14 @@ import { getUserByIdWithRole } from "~/models/user.server";
 /** A user whose persisted role name passed the vocabulary check. */
 export type ValidatedUser = User & { role: Role & { name: RoleName } };
 
+// Root middleware resolves the user on every request, so an affected user
+// would otherwise produce one record per request until the row is fixed.
+const reportedRoleViolations = new Set<User["id"]>();
+
 function validateRoleName(user: User & { role: Role }): ValidatedUser {
-  if (!isRoleName(user.role.name)) {
-    logger.error(
+  if (!isRoleName(user.role.name) && !reportedRoleViolations.has(user.id)) {
+    reportedRoleViolations.add(user.id);
+    requestLogger().error(
       { userId: user.id, role: user.role.name },
       "User has a role outside the role vocabulary",
     );

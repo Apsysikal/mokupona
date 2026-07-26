@@ -1,3 +1,4 @@
+import type { Logger } from "pino";
 import {
   createContext,
   redirect,
@@ -15,6 +16,9 @@ import {
 import type { RoleName } from "./roles";
 import { getSignupSettings } from "./signup-settings.server";
 
+import { withRequestLogger } from "~/logger/request-context.server";
+import { logger } from "~/logger.server";
+
 // Root middleware always initializes this context with a lazy, memoized
 // resolver (null resolution = anonymous request): routes that never read the
 // user — the /file/:fileId resource route in particular, which middleware
@@ -23,6 +27,26 @@ import { getSignupSettings } from "./signup-settings.server";
 export const optionalUserContext =
   createContext<() => Promise<ValidatedUser | null>>();
 export const userContext = createContext<ValidatedUser>();
+
+// The default keeps `.get()` from throwing where this middleware never ran —
+// an unmatched path, or the instrumentation reading the context of one.
+export const requestLoggerContext = createContext<Logger>(logger);
+
+/**
+ * Mint the request id and hang the request-scoped logger off both the router
+ * context and an AsyncLocalStorage store. Honouring `fly-request-id` where the
+ * platform set one correlates our records with Fly's.
+ */
+export const requestLoggerMiddleware: MiddlewareFunction<Response> = (
+  { request, context },
+  next,
+) => {
+  const requestId =
+    request.headers.get("fly-request-id") ?? crypto.randomUUID();
+  const requestLogger = logger.child({ requestId });
+  context.set(requestLoggerContext, requestLogger);
+  return withRequestLogger(requestLogger, next);
+};
 
 export const resolveOptionalUserMiddleware: MiddlewareFunction<
   Response

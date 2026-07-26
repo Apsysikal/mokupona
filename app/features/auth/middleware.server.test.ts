@@ -1,15 +1,19 @@
 // @vitest-environment node
 // (happy-dom swaps the fetch primitives; better-auth needs the real ones)
 
+import type { Logger } from "pino";
 import { RouterContextProvider, type MiddlewareFunction } from "react-router";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { signedInRequest } from "../../../test/auth-session";
 import { ensureAuthRoles } from "../../../test/factories";
+import { loggerStub } from "../../../test/logger-stub";
 
 import { auth } from "./auth.server";
 import {
   optionalUserContext,
+  requestLoggerContext,
+  requestLoggerMiddleware,
   requireResolvedUserRoleMiddleware,
   resolveOptionalUserMiddleware,
   userContext,
@@ -17,6 +21,8 @@ import {
 import { ADMIN_ROLE_NAMES, type RoleName } from "./roles";
 
 import { prisma } from "~/db.server";
+import { requestLogger } from "~/logger/request-context.server";
+import { logger } from "~/logger.server";
 import { getUserByIdWithRole } from "~/models/user.server";
 
 // Wrap the module in pass-through spies so the tests can (a) force the
@@ -55,6 +61,53 @@ async function runMiddleware(
 async function resolveUser(request: Request, context: RouterContextProvider) {
   await runMiddleware(resolveOptionalUserMiddleware, request, context);
 }
+
+describe("request logger middleware", () => {
+  function stubRequestChild() {
+    const child = {} as Logger;
+    loggerStub.child.mockReturnValueOnce(child);
+    return child;
+  }
+
+  it("carries the fly request id into the context and the ambient store", async () => {
+    const child = stubRequestChild();
+    const request = new Request("http://localhost:3000/dinners", {
+      headers: { "fly-request-id": "01K9ZQ-fra1" },
+    });
+    const context = new RouterContextProvider();
+
+    let ambient: Logger | undefined;
+    await runMiddleware(requestLoggerMiddleware, request, context, async () => {
+      ambient = requestLogger();
+      return new Response(null);
+    });
+
+    expect(loggerStub.child).toHaveBeenCalledWith({ requestId: "01K9ZQ-fra1" });
+    expect(context.get(requestLoggerContext)).toBe(child);
+    expect(ambient).toBe(child);
+    // the store unwinds with the request
+    expect(requestLogger()).toBe(logger);
+  });
+
+  it("mints a request id where the platform set none", async () => {
+    stubRequestChild();
+    await runMiddleware(
+      requestLoggerMiddleware,
+      new Request("http://localhost:3000/dinners"),
+      new RouterContextProvider(),
+    );
+
+    expect(loggerStub.child).toHaveBeenCalledWith({
+      requestId: expect.stringMatching(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+      ),
+    });
+  });
+
+  it("hands the process logger to a request the middleware never ran for", () => {
+    expect(new RouterContextProvider().get(requestLoggerContext)).toBe(logger);
+  });
+});
 
 describe("resolved-user role middleware", () => {
   it("fails fast when root middleware did not initialize the optional context", async () => {

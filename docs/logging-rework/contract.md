@@ -148,26 +148,27 @@ trigger by typing the wrong password is at most `warn`.
 Redaction matches declared paths, so these names are load-bearing. Use the
 listed key, never a synonym.
 
-| Field          | Type      | Meaning                                                                |
-| -------------- | --------- | ---------------------------------------------------------------------- |
-| `email`        | `string`  | an email address, **always the plain value** — the censor masks it     |
-| `ip`           | `string`  | a client IP, **always the plain value** — the censor hashes it         |
-| `requestId`    | `string`  | `fly-request-id`, else a UUID; carried as a `logger.child()` binding   |
-| `userId`       | `string`  | `User.id` of the acting user                                           |
-| `targetUserId` | `string`  | `User.id` of the user an admin action operates on                      |
-| `pattern`      | `string`  | matched route pattern; never `request.url`                             |
-| `path`         | `string`  | request pathname, no query string; only where no `pattern` is in hand  |
-| `statusCode`   | `number`  | response status                                                        |
-| `shellMs`      | `number`  | ms until the `Response` exists (shell-ready, not body-complete)        |
-| `role`         | `string`  | a `Role.name`                                                          |
-| `dinner`       | `string`  | `Event.id`                                                             |
-| `formVersion`  | `string`  | `FormVersion.id`                                                       |
-| `submission`   | `string`  | `FormSubmission.id`                                                    |
-| `inviteId`     | `string`  | `Invite.id`                                                            |
-| `storageKey`   | `string`  | image storage provider key                                             |
-| `reason`       | `unknown` | a structured explanation of a failure (validation errors, error codes) |
-| `error`        | `unknown` | a caught throwable                                                     |
-| `signal`       | `string`  | POSIX signal name, shutdown only                                       |
+| Field           | Type      | Meaning                                                                |
+| --------------- | --------- | ---------------------------------------------------------------------- |
+| `email`         | `string`  | an email address, **always the plain value** — the censor masks it     |
+| `ip`            | `string`  | a client IP, **always the plain value** — the censor hashes it         |
+| `requestId`     | `string`  | `fly-request-id`, else a UUID; carried as a `logger.child()` binding   |
+| `userId`        | `string`  | `User.id` of the acting user                                           |
+| `targetUserId`  | `string`  | `User.id` of the user an admin action operates on                      |
+| `pattern`       | `string`  | matched route pattern; never `request.url`                             |
+| `path`          | `string`  | request pathname, no query string; only where no `pattern` is in hand  |
+| `statusCode`    | `number`  | response status                                                        |
+| `shellMs`       | `number`  | ms until the `Response` exists (shell-ready, not body-complete)        |
+| `isDataRequest` | `true`    | present only on the completion line of a single-fetch `.data` request  |
+| `role`          | `string`  | a `Role.name`                                                          |
+| `dinner`        | `string`  | `Event.id`                                                             |
+| `formVersion`   | `string`  | `FormVersion.id`                                                       |
+| `submission`    | `string`  | `FormSubmission.id`                                                    |
+| `inviteId`      | `string`  | `Invite.id`                                                            |
+| `storageKey`    | `string`  | image storage provider key                                             |
+| `reason`        | `unknown` | a structured explanation of a failure (validation errors, error codes) |
+| `error`         | `unknown` | a caught throwable                                                     |
+| `signal`        | `string`  | POSIX signal name, shutdown only                                       |
 
 Rules:
 
@@ -181,6 +182,45 @@ Rules:
   what turns it into `{ type, message, stack }`. Under any other key an `Error`
   serializes to `{}`, because its own properties are not enumerable.
 - New fields are added to this table before they are added to a call site.
+
+## Correlation and request logging
+
+`requestLoggerMiddleware` (`app/features/auth/middleware.server.ts`) runs first
+in the root middleware array. It takes `fly-request-id` where the platform set
+one — so our records join Fly's — and mints a UUID otherwise, then publishes
+`logger.child({ requestId })` two ways:
+
+- `requestLoggerContext`, for anything holding the router context. Its default
+  value is the process logger, so `.get()` is safe on a request the middleware
+  never ran for (an unmatched path, or the instrumentation reading that
+  request's context).
+- an `AsyncLocalStorage` store behind `requestLogger()`
+  (`app/logger/request-context.server.ts`), for the modules the context API does
+  not reach: `app/models/*`, mail, image storage, the auth guards. The ALS
+  instance is held by `app/utils/singleton.server.ts`, like `prisma` and
+  better-auth. Outside a request `requestLogger()` is the process logger.
+
+`instrumentations` in `app/entry.server.tsx` emits **exactly one completion
+line per request**, `"Request completed"`, carrying `pattern`, `statusCode`,
+`shellMs` and — through the child — `requestId`. It covers what middleware does
+not: resource routes, 404s, `/api/auth/*`. A handler that rejected raises that
+line's level; it never adds a second record, and it never logs the error object,
+which belongs to `handleError`. Instrumentations are observational: the router
+swallows a throw inside one, so nothing load-bearing goes in there.
+
+The policy the line follows is `app/logger/request-log.server.ts`:
+
+| Surface                          | Handling                                                                                            |
+| -------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `/healthcheck`, and `HEAD /`     | no record — the healthcheck loader `fetch`es the site root, so one check every 10 s is two requests |
+| `.data` requests                 | `debug`, tagged `isDataRequest`; never filtered                                                     |
+| `file/:fileId`                   | `debug`                                                                                             |
+| any `4xx`                        | `warn` — this is what records the thrown-`Response` 403s and 404s                                   |
+| any `5xx`, or a rejected handler | `error`                                                                                             |
+| everything else                  | `info`                                                                                              |
+
+Static assets need no exclusion: `@react-router/serve` mounts them before the
+route table, so they never reach the handler.
 
 ## Test stub
 
