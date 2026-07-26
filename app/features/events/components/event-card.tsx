@@ -14,6 +14,7 @@ import { CoverImage } from "~/components/cover-image";
 import { SecondaryCTA } from "~/components/section";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 
 // the one upcoming dinner gets the whole spotlight: image + pill on the
 // left, date/title/stats/CTAs on the right (design handoff §2)
@@ -26,7 +27,7 @@ export function FeaturedEventCard({
   isNext?: boolean;
 }) {
   return (
-    <article className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border lg:flex-row">
+    <Card as="article" className="flex flex-col overflow-hidden lg:flex-row">
       <div className="relative lg:w-[62%] lg:shrink-0">
         <CoverImage
           image={event.image}
@@ -67,7 +68,7 @@ export function FeaturedEventCard({
           </SecondaryCTA>
         </div>
       </div>
-    </article>
+    </Card>
   );
 }
 

@@ -1,8 +1,69 @@
+import { ChevronLeftIcon } from "@radix-ui/react-icons";
 import { cva, type VariantProps } from "class-variance-authority";
-import type { ReactNode } from "react";
+import type { ComponentProps, ElementType, ReactNode } from "react";
 import { Link } from "react-router";
 
 import { cn } from "~/lib/utils";
+
+export const pageTitleClassName =
+  "text-3xl font-light tracking-tight md:text-4xl";
+
+export function PageContainer({
+  as: Component = "main",
+  className,
+  children,
+  ...rest
+}: ComponentProps<"main"> & { as?: ElementType }) {
+  return (
+    <Component
+      className={cn("mx-auto w-full max-w-5xl px-5 md:px-10", className)}
+      {...rest}
+    >
+      {children}
+    </Component>
+  );
+}
+
+export function BackLink({
+  to,
+  prefetch,
+  className,
+  children,
+}: {
+  to: string;
+  prefetch?: "intent";
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <Link
+      to={to}
+      prefetch={prefetch}
+      className={cn(
+        "text-foreground/50 hover:text-foreground mb-3 inline-flex items-center gap-2 text-sm transition-colors",
+        className,
+      )}
+    >
+      <ChevronLeftIcon className="size-4" />
+      {children}
+    </Link>
+  );
+}
+
+export const pillVariants = cva(
+  "flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-semibold",
+  {
+    variants: {
+      accent: {
+        true: "border-primary/35 bg-primary/10 text-accent-light",
+        false: "text-foreground/65",
+      },
+    },
+    defaultVariants: {
+      accent: false,
+    },
+  },
+);
 
 // One eyebrow, two variants (design system §5). `tracked` is the uppercase,
 // letter-spaced kicker above headings; `kicker` is the sentence-case accent
@@ -87,18 +148,28 @@ export function SecondaryCTA({
 
 // One pill-chip recipe shared by the admin filter chips and the section jump
 // nav (design system §9). Callers apply it to a <button>, <a> or <Link>.
-export const chipVariants = cva(
-  "inline-flex items-center rounded-full border px-4 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors",
-  {
-    variants: {
-      active: {
-        true: "border-primary/35 bg-primary/10 text-accent-light",
-        false:
-          "border-border text-foreground/65 hover:border-foreground/20 hover:text-foreground",
-      },
+export const chipVariants = cva("rounded-full border transition-colors", {
+  variants: {
+    active: {
+      true: "border-primary/35 bg-primary/10 text-accent-light font-semibold",
+      false: "text-foreground/65 hover:text-foreground",
     },
-    defaultVariants: {
-      active: false,
+    size: {
+      default:
+        "inline-flex items-center px-4 py-1.5 text-xs font-semibold whitespace-nowrap",
+      nav: "block px-3 py-1.5 text-sm md:rounded-lg md:py-2",
     },
   },
-);
+  compoundVariants: [
+    { active: false, size: "default", class: "hover:border-foreground/20" },
+    {
+      active: false,
+      size: "nav",
+      class: "md:hover:bg-foreground/5 md:border-transparent",
+    },
+  ],
+  defaultVariants: {
+    active: false,
+    size: "default",
+  },
+});

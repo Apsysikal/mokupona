@@ -5,7 +5,6 @@ import {
   getTextareaProps,
   useFormMetadata,
 } from "@conform-to/react";
-import { ChevronLeftIcon } from "@radix-ui/react-icons";
 import { Link } from "react-router";
 import type z from "zod";
 
@@ -18,6 +17,7 @@ import {
   SelectField,
   TextareaField,
 } from "~/components/forms";
+import { BackLink, pageTitleClassName } from "~/components/section";
 import { SectionNav } from "~/components/section-nav";
 import { SignupFormBuilder } from "~/components/signup-form-builder";
 import { Button } from "~/components/ui/button";
@@ -123,17 +123,10 @@ export function AdminEventForm({
   return (
     <div className="flex flex-col gap-4 md:gap-6">
       <div>
-        <Link
-          to="/admin/dinners"
-          prefetch="intent"
-          className="text-foreground/50 hover:text-foreground mb-3 inline-flex items-center gap-2 text-sm transition-colors"
-        >
-          <ChevronLeftIcon className="size-4" />
+        <BackLink to="/admin/dinners" prefetch="intent">
           Dinners
-        </Link>
-        <h1 className="text-3xl font-light tracking-tight md:text-4xl">
-          {pageTitle}
-        </h1>
+        </BackLink>
+        <h1 className={pageTitleClassName}>{pageTitle}</h1>
       </div>
 
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-7">

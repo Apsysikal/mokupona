@@ -4,6 +4,7 @@ import type { Route } from "./+types/admin";
 
 import { AdminTabs } from "~/components/admin-tabs";
 import { RouteErrorContent } from "~/components/route-error-content";
+import { PageContainer } from "~/components/section";
 import {
   requireResolvedUserRoleMiddleware,
   userContext,
@@ -44,9 +45,9 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
   return (
     <>
       <AdminTabs counts={loaderData.counts} />
-      <main className="mx-auto w-full max-w-5xl grow px-5 pt-5 pb-4 md:px-10 md:pt-9">
+      <PageContainer className="grow pt-5 pb-4 md:pt-9">
         <Outlet />
-      </main>
+      </PageContainer>
     </>
   );
 }
@@ -55,8 +56,8 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
 // boundary, so denied users see a styled page inside the site chrome.
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   return (
-    <main className="mx-auto w-full max-w-5xl grow px-5 pt-5 pb-4 md:px-10 md:pt-9">
+    <PageContainer className="grow pt-5 pb-4 md:pt-9">
       <RouteErrorContent error={error} />
-    </main>
+    </PageContainer>
   );
 }

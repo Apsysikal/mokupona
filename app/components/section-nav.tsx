@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { cn } from "~/lib/utils";
+import { chipVariants } from "./section";
 
 export interface SectionNavSection {
   id: string;
@@ -61,12 +61,7 @@ export function SectionNav({ sections }: { sections: SectionNavSection[] }) {
                   window.history.replaceState(null, "", `#${section.id}`);
                 }}
                 aria-current={active ? "true" : undefined}
-                className={cn(
-                  "block rounded-full border px-3 py-1.5 text-sm transition-colors md:rounded-lg md:py-2",
-                  active
-                    ? "border-primary/35 bg-primary/10 text-accent-light font-semibold"
-                    : "text-foreground/65 hover:text-foreground border-border md:hover:bg-foreground/5 md:border-transparent",
-                )}
+                className={chipVariants({ active, size: "nav" })}
               >
                 {section.label}
               </a>

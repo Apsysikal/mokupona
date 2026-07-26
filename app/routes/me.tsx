@@ -9,10 +9,13 @@ import { z } from "zod";
 import type { Route } from "./+types/me";
 
 import { InitialsAvatar } from "~/components/admin-ui";
-import { Field } from "~/components/forms";
-import { Eyebrow } from "~/components/section";
+import { ErrorList, Field } from "~/components/forms";
+import { Eyebrow, pageTitleClassName, pillVariants } from "~/components/section";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { authClient } from "~/features/auth/auth.client";
 import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { GoogleMark } from "~/features/auth/components/google-button";
@@ -165,9 +168,7 @@ export default function MeRoute({ loaderData }: Route.ComponentProps) {
         <Eyebrow variant="tracked" tone="label" className="mb-2 block">
           account
         </Eyebrow>
-        <h1 className="text-3xl font-light tracking-tight md:text-4xl">
-          your account
-        </h1>
+        <h1 className={pageTitleClassName}>your account</h1>
       </div>
 
       <ProfileCard user={user} />
@@ -192,20 +193,22 @@ function SectionCard({
   subtitle,
   children,
 }: {
-  title: string;
+  title?: string;
   subtitle?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="border-border bg-card flex flex-col gap-5 rounded-2xl border p-6 md:p-7">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-lg font-semibold">{title}</h2>
-        {subtitle ? (
-          <p className="text-foreground/55 text-sm">{subtitle}</p>
-        ) : null}
-      </div>
+    <Card as="section" className="flex flex-col gap-5 p-6 md:p-7">
+      {title ? (
+        <div className="flex flex-col gap-1">
+          <h2 className="text-lg font-semibold">{title}</h2>
+          {subtitle ? (
+            <p className="text-foreground/50 text-sm">{subtitle}</p>
+          ) : null}
+        </div>
+      ) : null}
       {children}
-    </section>
+    </Card>
   );
 }
 
@@ -228,7 +231,7 @@ function ProfileCard({
   useActionToast(fetcher.data, state, "name", "name updated");
 
   return (
-    <section className="border-border bg-card flex flex-col gap-5 rounded-2xl border p-6 md:p-7">
+    <SectionCard>
       <div className="flex items-center gap-4">
         <InitialsAvatar
           name={user.name}
@@ -238,9 +241,7 @@ function ProfileCard({
         <div className="min-w-0 flex-1">
           <p className="truncate text-lg font-semibold">{user.name}</p>
         </div>
-        <span className="border-primary/35 bg-primary/10 text-accent-light rounded-full border px-3.5 py-1.5 text-[13px] font-semibold">
-          {user.role.name}
-        </span>
+        <span className={pillVariants({ accent: true })}>{user.role.name}</span>
       </div>
 
       <fetcher.Form
@@ -282,7 +283,7 @@ function ProfileCard({
           your email is your login and can&apos;t be changed here.
         </p>
       </div>
-    </section>
+    </SectionCard>
   );
 }
 

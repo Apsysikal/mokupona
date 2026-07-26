@@ -2,12 +2,15 @@ import type { ReactNode } from "react";
 
 import type { Route } from "./+types/privacy";
 
+import { PageContainer, pageTitleClassName } from "~/components/section";
+import { cn } from "~/lib/utils";
+
 export const meta: Route.MetaFunction = () => [{ title: "Privacy Policy" }];
 
 export default function PrivacyPage() {
   return (
-    <main className="mx-auto w-full max-w-4xl grow px-5 pt-7 pb-20 md:px-10 md:pt-16">
-      <h1 className="mb-9 text-3xl font-light tracking-tight md:mb-12 md:text-4xl">
+    <PageContainer className="max-w-4xl grow pt-7 pb-20 md:pt-16">
+      <h1 className={cn("mb-9 md:mb-12", pageTitleClassName)}>
         Privacy Policy
       </h1>
 
@@ -443,7 +446,7 @@ export default function PrivacyPage() {
           <P>Last updated: February 5, 2025</P>
         </Section>
       </div>
-    </main>
+    </PageContainer>
   );
 }
 

@@ -15,6 +15,7 @@ import {
 import { CoverImage } from "~/components/cover-image";
 import { UtensilsIcon } from "~/components/icons";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { formatAdminDateLine } from "~/features/events/date-format";
 import {
   isPastEvent,
@@ -144,7 +145,8 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
   const date = new Date(dinner.date);
 
   return (
-    <div
+    <Card
+      interactive
       className={cn(
         "border-border bg-card hover:border-primary/30 flex flex-wrap items-center gap-4 rounded-2xl border p-4 transition-colors",
         dinner.past && "opacity-60",
@@ -205,6 +207,6 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
         </Button>
         <AdminDeleteButton action={`${dinner.id}/delete`} />
       </div>
-    </div>
+    </Card>
   );
 }

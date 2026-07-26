@@ -8,10 +8,14 @@ import { cn } from "~/lib/utils";
 const Card = ({
   className,
   interactive = false,
+  as: Component = "div",
   ref,
   ...props
-}: React.ComponentProps<"div"> & { interactive?: boolean }) => (
-  <div
+}: React.ComponentProps<"div"> & {
+  interactive?: boolean;
+  as?: React.ElementType;
+}) => (
+  <Component
     ref={ref}
     className={cn(
       "bg-card text-card-foreground rounded-2xl border",

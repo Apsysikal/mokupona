@@ -1,9 +1,9 @@
-import { ChevronLeftIcon, DownloadIcon } from "@radix-ui/react-icons";
-import { Link } from "react-router";
+import { DownloadIcon } from "@radix-ui/react-icons";
 
 import type { Route } from "./+types/admin.dinners.$dinnerId_.signups";
 
 import { AdminPageHeader, InitialsAvatar } from "~/components/admin-ui";
+import { BackLink } from "~/components/section";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import {
@@ -84,14 +84,9 @@ export default function DinnerSignupsPage({
 
   return (
     <main className="animate-page-in">
-      <Link
-        to="/admin/dinners"
-        prefetch="intent"
-        className="text-foreground/50 hover:text-foreground mb-3 inline-flex items-center gap-2 text-sm transition-colors"
-      >
-        <ChevronLeftIcon className="size-4" />
+      <BackLink to="/admin/dinners" prefetch="intent">
         Dinners
-      </Link>
+      </BackLink>
 
       <AdminPageHeader
         eyebrow={`${parties.length} signups · ${seatsTaken} / ${event.slots} seats`}

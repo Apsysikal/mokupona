@@ -14,6 +14,7 @@ import type { Route } from "./+types/invite.$token";
 import { AuthShell } from "~/components/auth-layout";
 import { AuthStatus } from "~/components/auth-status";
 import { ErrorList, Field } from "~/components/forms";
+import { pillVariants } from "~/components/section";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -327,18 +328,7 @@ function RolePill({
   accent?: boolean;
   children: React.ReactNode;
 }) {
-  return (
-    <span
-      className={cn(
-        "flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[13px] font-semibold",
-        accent
-          ? "border-primary/35 bg-primary/10 text-accent-light"
-          : "border-border text-foreground/60",
-      )}
-    >
-      {children}
-    </span>
-  );
+  return <span className={pillVariants({ accent })}>{children}</span>;
 }
 
 function InviteSignup({

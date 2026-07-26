@@ -1,6 +1,8 @@
 import type { ImageBlockType } from "./model";
 
 import { OptimizedImage } from "~/components/optimized-image";
+import { PageContainer } from "~/components/section";
+import { cn } from "~/lib/utils";
 
 type ImageBlockViewProps = {
   blockData: ImageBlockType;
@@ -19,16 +21,14 @@ export function ImageBlockView({ blockData, className }: ImageBlockViewProps) {
       : "h-auto w-full";
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-5 md:px-10">
+    <PageContainer as="div">
       <OptimizedImage
         image={{ storageKey: src, blurDataUrl }}
         width={width ?? 1080}
         height={height ?? 382}
         alt={alt ?? ""}
-        className={
-          imageClasses ? `${imageClasses} ${className ?? ""}` : className
-        }
+        className={cn(imageClasses, className)}
       />
-    </div>
+    </PageContainer>
   );
 }

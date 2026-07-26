@@ -27,7 +27,9 @@ import {
   InitialsAvatar,
 } from "~/components/admin-ui";
 import { ErrorList, Field } from "~/components/forms";
+import { SectionDivider } from "~/components/section";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import {
   Dialog,
   DialogClose,
@@ -174,13 +176,13 @@ export default function AdminUsersPage({ loaderData }: Route.ComponentProps) {
 
       {invites.length > 0 ? (
         <>
-          <SectionDivider label="pending invites" />
+          <SectionDivider className="mb-4">pending invites</SectionDivider>
           <div className="mb-6 flex flex-col gap-3">
             {invites.map((invite) => (
               <PendingInviteRow key={invite.id} invite={invite} />
             ))}
           </div>
-          <SectionDivider label="accounts" />
+          <SectionDivider className="mb-4">accounts</SectionDivider>
         </>
       ) : null}
 
@@ -197,17 +199,6 @@ export default function AdminUsersPage({ loaderData }: Route.ComponentProps) {
           description="Try a different search or role filter."
         />
       )}
-    </div>
-  );
-}
-
-function SectionDivider({ label }: { label: string }) {
-  return (
-    <div className="mb-4 flex items-center gap-3">
-      <span className="text-foreground/40 text-xs font-semibold tracking-[0.14em] uppercase">
-        {label}
-      </span>
-      <span className="bg-border h-px flex-1" aria-hidden />
     </div>
   );
 }
@@ -416,7 +407,7 @@ function UserCard({ user, seed }: { user: User; seed: number }) {
   const roleClassName = ROLE_CLASS_NAMES[role.name] ?? "text-foreground/40";
 
   return (
-    <div className="border-border bg-card hover:border-primary/30 flex items-center gap-3 rounded-2xl border px-4 py-3 transition-colors">
+    <Card interactive className="flex items-center gap-3 px-4 py-3">
       <InitialsAvatar name={email} seed={seed} className="size-10 text-sm" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-base font-semibold">{email}</p>
@@ -430,6 +421,6 @@ function UserCard({ user, seed }: { user: User; seed: number }) {
         </Button>
         <AdminDeleteButton action={`${id}/delete`} disabled={isAdmin} />
       </div>
-    </div>
+    </Card>
   );
 }

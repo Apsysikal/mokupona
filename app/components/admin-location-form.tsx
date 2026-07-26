@@ -1,9 +1,9 @@
 import { getInputProps, type FieldMetadata } from "@conform-to/react";
-import { ChevronLeftIcon } from "@radix-ui/react-icons";
 import { Link } from "react-router";
 import type z from "zod";
 
 import { Field } from "./forms";
+import { BackLink, pageTitleClassName } from "./section";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 
@@ -27,17 +27,10 @@ export function AdminLocationForm({
   return (
     <div className="flex flex-col gap-4 md:gap-6">
       <div>
-        <Link
-          to="/admin/locations"
-          prefetch="intent"
-          className="text-foreground/50 hover:text-foreground mb-3 inline-flex items-center gap-2 text-sm transition-colors"
-        >
-          <ChevronLeftIcon className="size-4" />
+        <BackLink to="/admin/locations" prefetch="intent">
           Locations
-        </Link>
-        <h1 className="text-3xl font-light tracking-tight md:text-4xl">
-          {pageTitle}
-        </h1>
+        </BackLink>
+        <h1 className={pageTitleClassName}>{pageTitle}</h1>
       </div>
 
       <Card className="flex max-w-2xl flex-col gap-5 p-5 md:p-6">

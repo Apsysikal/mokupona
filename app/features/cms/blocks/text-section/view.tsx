@@ -2,7 +2,7 @@ import type React from "react";
 
 import type { TextSectionBlockType } from "./model";
 
-import { Eyebrow } from "~/components/section";
+import { Eyebrow, PageContainer } from "~/components/section";
 
 type TextSectionBlockViewProps = React.ComponentPropsWithoutRef<"div"> & {
   blockData: TextSectionBlockType;
@@ -44,7 +44,7 @@ export function TextSectionBlockView({
 
   // editorial two-column grid: eyebrow + headline left, body right
   return (
-    <div className="mx-auto w-full max-w-5xl px-5 md:px-10" {...rest}>
+    <PageContainer as="div" {...rest}>
       <section className="grid items-start gap-3 py-9 md:grid-cols-[1fr_1.2fr] md:gap-12 md:py-14">
         <div className="flex flex-col gap-3 md:gap-4">
           {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
@@ -56,6 +56,6 @@ export function TextSectionBlockView({
           {body}
         </p>
       </section>
-    </div>
+    </PageContainer>
   );
 }

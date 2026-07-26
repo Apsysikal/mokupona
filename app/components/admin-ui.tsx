@@ -1,6 +1,8 @@
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 
-import { chipVariants, Eyebrow } from "./section";
+import { chipVariants, Eyebrow, pageTitleClassName } from "./section";
+import { Card } from "./ui/card";
+import { fieldShellClassName } from "./ui/input";
 
 import { cn } from "~/lib/utils";
 
@@ -25,9 +27,7 @@ export function AdminPageHeader({
         <Eyebrow variant="tracked" tone="label" className="mb-2 block">
           {eyebrow}
         </Eyebrow>
-        <h1 className="text-3xl font-light tracking-tight md:text-4xl">
-          {title}
-        </h1>
+        <h1 className={pageTitleClassName}>{title}</h1>
         {subtitle ? (
           <p className="text-muted-foreground mt-2 text-base">{subtitle}</p>
         ) : null}
@@ -49,7 +49,12 @@ export function AdminSearchField({
   placeholder: string;
 }) {
   return (
-    <div className="border-border bg-foreground/5 flex h-11 items-center gap-2 rounded-lg border px-3 max-md:w-full md:w-72">
+    <div
+      className={cn(
+        fieldShellClassName,
+        "flex items-center gap-2 max-md:w-full md:w-72",
+      )}
+    >
       <MagnifyingGlassIcon className="text-foreground/50 size-4 shrink-0" />
       <input
         type="search"
@@ -161,13 +166,13 @@ export function AdminEmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="border-border bg-card flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-14 text-center">
+    <Card className="flex flex-col items-center gap-3 border-dashed px-6 py-14 text-center">
       <div className="bg-primary/10 text-primary mb-1 flex size-14 items-center justify-center rounded-full">
         {icon}
       </div>
       <p className="text-lg font-semibold">{title}</p>
       <p className="text-foreground/50 max-w-xs text-sm">{description}</p>
       {action ? <div className="mt-1">{action}</div> : null}
-    </div>
+    </Card>
   );
 }

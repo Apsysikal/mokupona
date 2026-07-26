@@ -12,7 +12,9 @@ import type { Route } from "./+types/dinners_.$dinnerId";
 
 import { CheckboxField, ErrorList } from "~/components/forms";
 import { RouteErrorContent } from "~/components/route-error-content";
+import { BackLink, PageContainer } from "~/components/section";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import {
   EventFactList,
   EventStory,
@@ -206,19 +208,17 @@ export default function DinnerPage({
   );
 
   return (
-    <main className="mx-auto w-full max-w-5xl grow px-5 pt-7 pb-20 md:px-10 md:pt-9">
-      <Link
-        to="/dinners"
-        className="text-foreground/50 hover:text-foreground mb-6 inline-flex items-center gap-2 text-sm transition-colors"
-      >
-        ← all dinners
-      </Link>
+    <PageContainer className="grow pt-7 pb-20 md:pt-9">
+      <BackLink to="/dinners" className="mb-6">
+        all dinners
+      </BackLink>
 
       <div className={gridClasses}>
         <EventStory event={event} />
 
         {signupFields ? (
-          <aside
+          <Card
+            as="aside"
             id="sign-up"
             className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-5 lg:sticky lg:top-6 lg:p-7"
           >
@@ -239,10 +239,10 @@ export default function DinnerPage({
                 lastResult={actionData}
               />
             </>
-          </aside>
+          </Card>
         ) : null}
       </div>
-    </main>
+    </PageContainer>
   );
 }
 

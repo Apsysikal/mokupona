@@ -12,6 +12,7 @@ import {
 
 import { AutoLink } from "~/components/auto-link";
 import { CoverImage } from "~/components/cover-image";
+import { pageTitleClassName } from "~/components/section";
 import {
   Accordion,
   AccordionContent,
@@ -47,9 +48,7 @@ export function EventStory({ event }: EventViewProps) {
 
       <div className="flex flex-col gap-3">
         <EventDateHeading date={event.date} />
-        <h1 className="text-3xl font-light tracking-tight md:text-4xl">
-          {event.title}
-        </h1>
+        <h1 className={pageTitleClassName}>{event.title}</h1>
       </div>
 
       <p className="text-foreground/80 text-base leading-relaxed font-light whitespace-pre-line md:text-lg">

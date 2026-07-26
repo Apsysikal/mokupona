@@ -1,7 +1,13 @@
 import type { Route } from "./+types/dinners._index";
 
-import { Eyebrow, SectionDivider } from "~/components/section";
+import {
+  Eyebrow,
+  PageContainer,
+  pageTitleClassName,
+  SectionDivider,
+} from "~/components/section";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import {
   FeaturedEventCard,
   PastEventCard,
@@ -11,6 +17,7 @@ import {
   partitionEvents,
 } from "~/features/events/event-status";
 import { toEventCardModel } from "~/features/events/view-models";
+import { cn } from "~/lib/utils";
 import { getEventsWithAddress } from "~/models/event.server";
 
 export const loader = async () => {
@@ -32,12 +39,10 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
   const pastEvents = orderEventsByStatus(past, now);
 
   return (
-    <main className="mx-auto w-full max-w-5xl grow px-5 pt-7 pb-20 md:px-10 md:pt-16">
+    <PageContainer className="grow pt-7 pb-20 md:pt-16">
       <div className="mb-9 flex flex-col gap-3 md:mb-12">
         <Eyebrow>gatherings</Eyebrow>
-        <h1 className="text-3xl font-light tracking-tight md:text-4xl">
-          dinners
-        </h1>
+        <h1 className={pageTitleClassName}>dinners</h1>
         <p className="text-foreground/65 max-w-2xl text-base leading-relaxed font-light md:text-lg">
           {upcomingEvents.length > 0
             ? "a handful of seats open before each supper. reserve early, tables are small and fill quickly."
@@ -72,7 +77,7 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
           </div>
         </>
       ) : null}
-    </main>
+    </PageContainer>
   );
 }
 
@@ -80,7 +85,7 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
 // mailing-list capture here (design handoff §5)
 function EmptyState() {
   return (
-    <div className="border-border bg-card relative mb-14 flex flex-col items-center gap-4 overflow-hidden rounded-2xl border px-6 py-9 text-center md:mb-18 md:gap-5 md:px-14 md:py-19">
+    <Card className="relative mb-14 flex flex-col items-center gap-4 overflow-hidden px-6 py-9 text-center md:mb-18 md:gap-5 md:px-14 md:py-19">
       <div
         aria-hidden
         className="glow-primary pointer-events-none absolute -top-36 left-1/2 h-80 w-md -translate-x-1/2"
@@ -88,7 +93,7 @@ function EmptyState() {
       <span className="text-primary relative text-sm font-semibold">
         nothing on the calendar right now
       </span>
-      <h2 className="relative max-w-lg text-3xl font-light tracking-tight md:text-4xl">
+      <h2 className={cn("relative max-w-lg", pageTitleClassName)}>
         the table is being set
       </h2>
       <p className="text-foreground/80 relative max-w-md text-sm leading-relaxed font-light md:text-lg">
@@ -104,6 +109,6 @@ function EmptyState() {
           follow on instagram
         </a>
       </Button>
-    </div>
+    </Card>
   );
 }
