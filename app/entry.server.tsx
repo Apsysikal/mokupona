@@ -37,7 +37,9 @@ export const handleError: HandleErrorFunction = (
   log.error(
     {
       error:
-        isRouteErrorResponse(error) && "error" in error ? error.error : error,
+        isRouteErrorResponse(error) && "error" in error && error.error
+          ? error.error
+          : error,
       path: new URL(request.url).pathname,
     },
     "Unhandled error while handling a request",
@@ -108,30 +110,39 @@ function streamDocument(
   return new Promise((resolve, reject) => {
     let timeout: NodeJS.Timeout | undefined;
     let rendered = false;
-    // the abort below is a deadline for the whole render, not just the shell,
-    // so it may only be dropped once the body is done
+    // the abort below is a deadline for the whole render, not just the shell.
+    // onAllReady is the only completion signal that does not depend on someone
+    // reading the body: nobody ever reads a HEAD response's, so watching the
+    // stream instead leaves the deadline armed on every HEAD document request.
     const renderDone = () => {
       rendered = true;
       clearTimeout(timeout);
     };
 
+    const sendShell = (pipe: (to: PassThrough) => void) => {
+      const body = new PassThrough();
+
+      responseHeaders.set("Content-Type", "text/html");
+
+      resolve(
+        new Response(createReadableStreamFromReadable(body), {
+          headers: responseHeaders,
+          status: responseStatusCode,
+        }),
+      );
+
+      pipe(body);
+    };
+
     const { abort, pipe } = renderToPipeableStream(
       <ServerRouter context={reactRouterContext} url={request.url} />,
       {
-        [readyEvent]() {
-          const body = new PassThrough();
-          body.on("close", renderDone);
-
-          responseHeaders.set("Content-Type", "text/html");
-
-          resolve(
-            new Response(createReadableStreamFromReadable(body), {
-              headers: responseHeaders,
-              status: responseStatusCode,
-            }),
-          );
-
-          pipe(body);
+        onShellReady() {
+          if (readyEvent === "onShellReady") sendShell(pipe);
+        },
+        onAllReady() {
+          renderDone();
+          if (readyEvent === "onAllReady") sendShell(pipe);
         },
         onShellError(error: unknown) {
           renderDone();
