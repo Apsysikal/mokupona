@@ -1,7 +1,8 @@
+import { ChevronDownIcon } from "@radix-ui/react-icons";
 import React, { useId } from "react";
 
 import { Checkbox } from "./ui/checkbox";
-import { Input } from "./ui/input";
+import { fieldShellClassName, Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 
@@ -118,22 +119,29 @@ export function SelectField({
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <Label htmlFor={id} {...labelProps} />
-      <select
-        id={id}
-        aria-invalid={errorId ? true : undefined}
-        aria-describedby={errorId}
-        className={cn(
-          "border-border bg-foreground/5 focus-visible:inset-ring-ring flex h-11 w-full appearance-none rounded-lg border px-3 py-1 transition-colors focus-visible:border-0 focus-visible:inset-ring-2 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
-          selectClassName,
-        )}
-        {...props}
-      >
-        {options?.map(({ label, value }) => (
-          <option key={value} value={value}>
-            {label}
-          </option>
-        )) ?? children}
-      </select>
+      <div className="relative">
+        <select
+          id={id}
+          aria-invalid={errorId ? true : undefined}
+          aria-describedby={errorId}
+          className={cn(
+            fieldShellClassName,
+            "focus-visible:inset-ring-ring flex w-full appearance-none py-1 pr-9 focus-visible:border-0 focus-visible:inset-ring-2 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
+            selectClassName,
+          )}
+          {...props}
+        >
+          {options?.map(({ label, value }) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          )) ?? children}
+        </select>
+        <ChevronDownIcon
+          aria-hidden
+          className="text-foreground/50 pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2"
+        />
+      </div>
       {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
     </div>
   );
