@@ -21,15 +21,21 @@ export { logger };
 
 The instance is a plain `pino.Logger`, constructed with:
 
-| Setting                | Value                                           |
-| ---------------------- | ----------------------------------------------- |
-| `timestamp`            | `pino.stdTimeFunctions.isoTime`                 |
-| `formatters.level`     | `(label) => ({ level: label })`                 |
-| `serializers.error`    | `pino.stdSerializers.err`                       |
-| `level`                | `LOG_LEVEL`, see below                          |
-| stdout sink (prod)     | `pino.destination(1)` — raw JSON                |
-| stdout sink (non-prod) | `pino-pretty`, colorized, `ignore` pid/hostname |
-| test                   | `pino({ level: "silent" })`, no streams         |
+| Setting                | Value                                                                                     |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| `timestamp`            | `pino.stdTimeFunctions.isoTime`                                                           |
+| `formatters.level`     | `(label) => ({ level: label })`                                                           |
+| `serializers.error`    | `pino.stdSerializers.err`                                                                 |
+| `level`                | `LOG_LEVEL`, see below                                                                    |
+| stdout sink (prod)     | `pino.destination(1)` — raw JSON                                                          |
+| stdout sink (non-prod) | `pino-pretty`, colorized, `ignore` pid/hostname                                           |
+| file sink              | `pino.destination` on `$LOG_DIR/app.log`, `append: true`, `mkdir: true` — always raw JSON |
+| test                   | `pino({ level: "silent" })`, no streams                                                   |
+
+Outside tests both sinks are combined with `pino.multistream`. The file sink is
+always constructed — there is no on/off switch and no environment branch in the
+wiring; only the shape of the stdout sink varies. Every stream entry carries its
+own `level`, which defaults to `info` independently of `logger.level`.
 
 Every record therefore carries `time` as an ISO-8601 string and `level` as a
 lowercase string label. The file sink's greppability and `pino-pretty`'s
@@ -41,9 +47,16 @@ formatting misbehaves, never the pino ones.
 | Variable    | Default                                 | Purpose                                     |
 | ----------- | --------------------------------------- | ------------------------------------------- |
 | `LOG_LEVEL` | `info` in production, `debug` otherwise | minimum level; must be ≤ every stream level |
-| `LOG_DIR`   | `os.tmpdir()/mokupona-logs` (phase 2)   | log file destination                        |
+| `LOG_DIR`   | `os.tmpdir()/mokupona-logs`             | log file destination                        |
 
 `NODE_ENV === "test"` forces `silent` and ignores both variables.
+
+## Rotation
+
+`/data/logs/app.log` is rotated by `logrotate` (`logrotate.conf`, copied to
+`/etc/logrotate.d/mokupona`) from `/etc/cron.hourly`, in `copytruncate` mode. The
+app contains no rotation code. `LOG_DIR` in `fly.toml` and the path in
+`logrotate.conf` must stay in agreement or rotation silently does nothing.
 
 ## Call convention
 

@@ -1,9 +1,13 @@
+import os from "node:os";
+import path from "node:path";
+
 import pino from "pino";
 import pretty from "pino-pretty";
 
 const PRODUCTION = process.env.NODE_ENV === "production";
 const TEST = process.env.NODE_ENV === "test";
 const LEVEL = process.env.LOG_LEVEL ?? (PRODUCTION ? "info" : "debug");
+const LOG_DIR = process.env.LOG_DIR ?? path.join(os.tmpdir(), "mokupona-logs");
 
 const options = {
   level: LEVEL,
@@ -23,7 +27,19 @@ function createLogger() {
         ignore: "pid,hostname",
       });
 
-  return pino(options, stdout);
+  const file = pino.destination({
+    dest: path.join(LOG_DIR, "app.log"),
+    append: true,
+    mkdir: true,
+  });
+
+  return pino(
+    options,
+    pino.multistream([
+      { level: LEVEL, stream: stdout },
+      { level: LEVEL, stream: file },
+    ]),
+  );
 }
 
 const logger = createLogger();
