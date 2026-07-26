@@ -13,9 +13,6 @@ import { requireFound } from "~/shared/http.server";
 export async function loader({ params }: Route.LoaderArgs) {
   const { dinnerId } = params;
 
-  // one line per attendee; columns are the field-name union across all
-  // versions with submissions (plus legacy defaults), headers from the
-  // latest labels — design §8
   const [event, { attendees, columns }] = await Promise.all([
     getEventById(dinnerId).then(requireFound),
     getAttendeeRosterForEvent(dinnerId),

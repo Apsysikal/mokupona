@@ -65,9 +65,6 @@ export const pillVariants = cva(
   },
 );
 
-// One eyebrow, two variants (design system §5). `tracked` is the uppercase,
-// letter-spaced kicker above headings; `kicker` is the sentence-case accent
-// line. Tones map to the native foreground opacity tiers.
 const eyebrowVariants = cva("block font-semibold", {
   variants: {
     variant: {
@@ -122,8 +119,6 @@ export function SectionDivider({
   );
 }
 
-// The quiet underlined text link paired with a primary CTA (hero + dinner
-// card). One source, always with a color transition (design system §9).
 export function SecondaryCTA({
   to,
   className,
@@ -146,8 +141,6 @@ export function SecondaryCTA({
   );
 }
 
-// One pill-chip recipe shared by the admin filter chips and the section jump
-// nav (design system §9). Callers apply it to a <button>, <a> or <Link>.
 export const chipVariants = cva("rounded-full border transition-colors", {
   variants: {
     active: {

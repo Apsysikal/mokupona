@@ -11,11 +11,9 @@ import {
 interface AuthShellBrandCopy {
   eyebrow: string;
   heading: ReactNode;
-  /** desktop-only supporting line under the heading */
   body?: ReactNode;
 }
 
-// the login/join default; status surfaces pass their own (design handoff §3–7)
 const DEFAULT_BRAND: AuthShellBrandCopy = {
   eyebrow: "members",
   heading: "welcome back to the table",
@@ -25,7 +23,6 @@ const DEFAULT_BRAND: AuthShellBrandCopy = {
 interface AuthShellProps {
   /** omit to hide the login/sign-up toggle (status + reset surfaces) */
   mode?: "login" | "join";
-  /** preserved on the toggle links (e.g. redirectTo) */
   search?: string;
   brand?: AuthShellBrandCopy;
   children: ReactNode;

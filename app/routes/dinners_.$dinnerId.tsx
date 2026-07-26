@@ -50,11 +50,7 @@ export async function loader({ params }: Route.LoaderArgs) {
   );
 
   return {
-    // the route ships the detail model, not the Prisma entity; it also covers
-    // the meta tags (title, imageId) and the past check (date)
     event: toEventDetailModel(event),
-    // null when the stored schema fails to parse — the signup section is
-    // hidden rather than rendered wrong (design §11)
     formFields: parseStoredFormSchemaOrLog(version),
     formVersionId: version.id,
   };
@@ -66,8 +62,6 @@ const FORM_CHANGED_ERROR =
 export async function action({ params, request }: Route.ActionArgs) {
   const { dinnerId } = params;
 
-  // the action never trusts client descriptors: re-read the current version
-  // from the DB and rebuild the identical schema server-side (design §6.1)
   const { event: dinner, version } = requireFound(
     await getEventWithCurrentFormVersion(dinnerId),
   );
@@ -114,9 +108,6 @@ export async function action({ params, request }: Route.ActionArgs) {
     return submission.reply();
   }
 
-  // acceptedPrivacy is a legal control, never a stored answer (design §5);
-  // normalization stores explicit false for unchecked checkboxes and [] for
-  // empty lists instead of absent keys.
   const { acceptedPrivacy: _acceptedPrivacy, ...values } = submission.value;
   const answers = normalizeSubmissionValues(formFields, values);
 
@@ -125,9 +116,6 @@ export async function action({ params, request }: Route.ActionArgs) {
   );
 
   try {
-    // one row per party — the version the loader rendered & this action
-    // re-read (design §7). The updatedAt guard rejects the write if an
-    // in-place schema update raced this request.
     await createFormSubmission({
       formVersionId: version.id,
       answers,

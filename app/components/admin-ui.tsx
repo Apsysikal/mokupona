@@ -6,10 +6,6 @@ import { fieldShellClassName } from "./ui/input";
 
 import { cn } from "~/lib/utils";
 
-// Shared building blocks of the admin surface: page headers, the search +
-// filter-chip toolbar, seat progress bars, initials avatars and the dashed
-// empty-state panel (design system §9).
-
 export function AdminPageHeader({
   eyebrow,
   title,
@@ -116,8 +112,6 @@ export function SeatProgress({
   );
 }
 
-// two rotating tints so neighbouring avatars read as distinct (the third,
-// tan, tint was dropped in the native-token harmonization — design system §2)
 const AVATAR_TINTS = [
   "text-accent-light bg-primary/10",
   "text-foreground/80 bg-foreground/10",

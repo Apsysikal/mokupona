@@ -230,7 +230,6 @@ export function AdminEventForm({
                 ...getInputProps(fields.cover, { type: "file" }),
                 tabIndex: 0,
                 accept: VALID_IMAGE_TYPES.join(","),
-                // reads as a dashed dropzone (design system §9 file-upload)
                 className: fileFieldClassName,
               }}
               errors={fields.cover.errors}

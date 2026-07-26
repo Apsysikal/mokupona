@@ -61,17 +61,6 @@ function cloudinaryTransform({
   return parts.join(",");
 }
 
-/**
- * Client-safe, isomorphic delivery-URL builder (design §3.2).
- *
- * - Cloudinary: a plain `res.cloudinary.com` URL — the app is not in the
- *   serving path. Static assets (no `id`) use it whenever a cloud name is
- *   configured, independent of `imageProvider` (delivery needs no secrets).
- * - Local provider or no cloud name: the `/file/:fileId` resource route,
- *   which serves original bytes (transforms are dropped — only the CDN
- *   resizes).
- * - A static asset without a cloud name renders nothing (offline dev hero).
- */
 export function getImageUrl(
   image: ImageUrlSource,
   config: ImageProviderConfig,
@@ -96,13 +85,7 @@ export const RESPONSIVE_IMAGE_WIDTHS = [432, 648, 864, 1080] as const;
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
 export const MAX_STAGED_IMAGE_BYTES = 4 * 1024 * 1024;
 export const IMAGE_SIZE_ERROR = "File cannot be greater than 3MB";
-
-// Client-safe: the accepted types back every image input's `accept`
-// attribute AND the schema's server-side allowlist below. (This reverses the
-// earlier size-only decision: bytes used to stay in our own DB, but uploads
-// are now forwarded to a third-party provider — design §2.)
 export const VALID_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-
 export const IMAGE_TYPE_ERROR = "File must be a JPEG, PNG or WebP image";
 
 /**

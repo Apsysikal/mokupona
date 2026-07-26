@@ -73,9 +73,6 @@ model Account {
   @@index([userId])
 }
 
-// Email-bound, single-use, role-carrying invite links — a custom feature
-// beside better-auth, NOT a plugin (design §6). Ceiling "moderator" is
-// enforced in code; "admin" stays a seed/DB-level role.
 model Invite {
   id         String    @id @default(cuid())
   // bound address — must match at acceptance

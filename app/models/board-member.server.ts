@@ -60,10 +60,6 @@ export async function createBoardMember(
   });
 }
 
-// The portrait cascades (Image.boardMemberId is onDelete: Cascade), so its
-// storageKey is captured inside the transaction before the delete erases it
-// (capture-and-destroy, design §3.4) — the CALLER destroys the provider
-// asset strictly after commit.
 export async function deleteBoardMember(
   id: string,
 ): Promise<{ boardMember: BoardMember; imageKey: string | null }> {

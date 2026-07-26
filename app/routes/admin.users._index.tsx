@@ -67,7 +67,6 @@ import { getDomainUrl, unknownIntent } from "~/shared/http.server";
 const inviteSchema = z.object({
   intent: z.literal("invite"),
   email: emailSchema,
-  // admin is not offered and rejected here — ceiling "moderator" (design §6)
   role: z.enum(INVITABLE_ROLES, { error: "Pick a role" }),
 });
 

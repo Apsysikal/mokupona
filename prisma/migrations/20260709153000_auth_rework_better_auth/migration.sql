@@ -1,12 +1,3 @@
--- Auth rework cutover (docs/auth-rework/design.md §7):
---  * better-auth tables (Session/Account/Verification), new User fields
---  * Password table dropped — old bcrypt hashes intentionally die here
---  * name backfilled from the email local-part
---  * every existing user gets a credential Account row holding a scrypt hash
---    of a random secret that was generated once and discarded, so no password
---    can ever match it. It exists so the reset flow always has a credential
---    account to update; "forgot password" is the migration path for everyone.
-
 -- DropIndex
 DROP INDEX "Password_userId_key";
 

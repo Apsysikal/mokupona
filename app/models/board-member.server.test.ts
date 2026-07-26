@@ -89,10 +89,6 @@ describe("board member image lifecycle", () => {
     ).resolves.toBe(0);
   });
 
-  // capture-and-destroy (design §3.4): the doomed portrait's storageKey is
-  // captured inside the transaction and returned for the caller's
-  // post-commit provider destroy
-
   it("deleteBoardMember returns the captured portrait storageKey", async () => {
     const image = portrait("captured-on-delete");
     const member = await createBoardMember({

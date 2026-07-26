@@ -82,8 +82,6 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
   );
 }
 
-// between dinners the page stays warm rather than blank; deliberately no
-// mailing-list capture here (design handoff §5)
 function EmptyState() {
   return (
     <Card className="relative mb-14 flex flex-col items-center gap-4 overflow-hidden px-6 py-9 text-center md:mb-20 md:gap-5 md:px-14 md:py-20">

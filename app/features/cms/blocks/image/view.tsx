@@ -14,7 +14,6 @@ export function ImageBlockView({ blockData, className }: ImageBlockViewProps) {
   const { image, variant } = data;
   const { src, alt, width, height, blurDataUrl } = image;
 
-  // "full-width" spans the editorial column, not the viewport (design §1)
   const imageClasses =
     variant === "full-width"
       ? "h-64 w-full rounded-2xl md:h-96"

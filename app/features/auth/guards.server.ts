@@ -8,20 +8,9 @@ import type { Role } from "~/models/role.server";
 import type { User } from "~/models/user.server";
 import { getUserByIdWithRole } from "~/models/user.server";
 
-// Same-signature port of the old utils/session.server.ts helpers onto
-// better-auth — the admin routes and root.tsx only change an import path
-// (design §3). Role checks stay here; better-auth knows nothing about them.
-
 /** A user whose persisted role name passed the vocabulary check. */
 export type ValidatedUser = User & { role: Role & { name: RoleName } };
 
-// Prisma types Role.name as string; the guards are where persisted roles
-// enter the app, so screen against the vocabulary here (plan phase 1). A
-// stored name outside it is corrupt data — surface it in the logs, but keep
-// the request alive: this runs for every request via root middleware, so a
-// hard failure would lock the account out of every page, logout included.
-// The cast is safe in practice because role checks compare against the
-// vocabulary (`assertUserHasRole`), which denies an unknown name everywhere.
 function validateRoleName(user: User & { role: Role }): ValidatedUser {
   if (!isRoleName(user.role.name)) {
     logger.error(

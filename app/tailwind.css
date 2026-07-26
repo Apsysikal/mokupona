@@ -118,8 +118,6 @@
   );
 }
 
-/* the admin page-entrance, from one source (design system §8). Motion stays a
-   register signal: admin animates in, the public site is static. */
 @utility animate-page-in {
   animation: page-in 300ms ease-out;
 }

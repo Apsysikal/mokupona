@@ -20,19 +20,6 @@ type ImageInputProps = {
 type ImageProps = Omit<ComponentProps<"img">, "width" | "height" | "src"> &
   ImageInputProps;
 
-/**
- * Provider-served image with a width-descriptor `srcSet` (Cloudinary variant
- * URLs, or the `/file` route under the local provider) and a blur-up loading
- * experience (design §3.3): the container reserves the aspect ratio (zero
- * CLS), the stored base64 placeholder renders instantly under a
- * backdrop-blur that smooths its upscaled pixels, and the real image fades
- * in on load. Without a placeholder (local provider, not-yet-backfilled
- * rows) a neutral surface fills the frame instead.
- *
- * `className` sizes and shapes the frame; the layers fill it. Pass `sizes`
- * whenever the image renders narrower than the viewport — without it
- * browsers assume roughly `100vw` and pick needlessly large candidates.
- */
 export function OptimizedImage({
   image,
   width,

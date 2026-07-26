@@ -43,8 +43,6 @@ export async function action({ request, params }: Route.ActionArgs) {
         }),
       });
 
-      // a replaced portrait's provider asset goes strictly after the commit
-      // (capture-and-destroy, design §3.4)
       await destroyImages([replacedImageKey]);
 
       return redirect("/admin/board-members");

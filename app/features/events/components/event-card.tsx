@@ -16,8 +16,6 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 
-// the one upcoming dinner gets the whole spotlight: image + pill on the
-// left, date/title/stats/CTAs on the right (design handoff §2)
 export function FeaturedEventCard({
   event,
   isNext = true,

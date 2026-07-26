@@ -110,11 +110,6 @@ export class InviteNoLongerValidError extends Error {
   }
 }
 
-// Acceptance: token consumption and the role change commit atomically, so a
-// reused token can never double-apply (design §6). Also marks the email
-// verified — following the invite link proves control of the bound mailbox.
-// Role rules: only upgrades are performed (a moderator invited as "user"
-// keeps moderator), and admins are never touched.
 export async function acceptInvite({
   invite,
   userId,

@@ -87,12 +87,6 @@ export async function action({ request, params, context }: Route.ActionArgs) {
         fieldName: "donationDescription",
       });
 
-      // event data, the swapped cover image, and the authored form persist in
-      // one transaction (updateEvent creates the new image, repoints the event
-      // and deletes the old image atomically); the form follows the §9
-      // versioning policy (deep-equal skip / in-place while unsubmitted / new
-      // version), validated by SignupFormSchema inside EventSchema's signupForm
-      // field
       const { event, replacedImageKey } = await updateEvent(
         dinnerId,
         {
@@ -120,8 +114,6 @@ export async function action({ request, params, context }: Route.ActionArgs) {
         builderRowsToDescriptors(signupForm),
       );
 
-      // a replaced cover's provider asset goes strictly after the commit
-      // (capture-and-destroy, design §3.4)
       await destroyImages([replacedImageKey]);
 
       return redirect(`/admin/dinners/${event.id}`);

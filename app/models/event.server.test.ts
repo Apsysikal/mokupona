@@ -259,10 +259,6 @@ describe("event image lifecycle", () => {
     ).resolves.toBeNull();
   });
 
-  // capture-and-destroy (design §3.4): the models must hand the doomed
-  // storageKey out of their transactions so callers can destroy the provider
-  // asset after commit — the cascade would otherwise erase it unseen
-
   it("deleteEvent returns the captured cover storageKey", async () => {
     const data = await buildEventData();
     const event = await createEvent(data);

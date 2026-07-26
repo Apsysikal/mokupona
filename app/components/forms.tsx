@@ -10,9 +10,6 @@ import { cn } from "~/lib/utils";
 
 export type ListOfErrors = (string | null | undefined)[] | null | undefined;
 
-// One dropzone treatment shared by every file-upload field (design system §9):
-// a dashed hairline over the field fill that warms to the accent on hover.
-// Pass it as a file Field's `inputProps.className`.
 export const fileFieldClassName =
   "h-auto cursor-pointer rounded-lg border-dashed border-foreground/20 py-6 text-center transition-colors hover:border-primary/35 file:font-semibold";
 

@@ -45,13 +45,6 @@ import {
 } from "~/features/signup-form/schema";
 import { cn } from "~/lib/utils";
 
-// The admin "Signup form" section (design §10): a field array of descriptor
-// rows rendered as collapsible cards. The friends list and the
-// name/email/phone identity fields are pinned — rendered without
-// type/key/remove controls — everything else is free.
-
-// derived from the profile so the pin set can't drift from what the server
-// actually requires
 const PINNED_IDENTITY_KEYS = new Set<string>(
   FIXED_IDENTITY_FIELDS.map((field) => field.name),
 );
@@ -82,11 +75,8 @@ const REMOVE_RESPONDED_FIELD_MESSAGE =
 
 type RowMetadata = FieldMetadata<BuilderRowInput>;
 type ItemRowMetadata = FieldMetadata<BuilderItemRowInput>;
-// EditableRowView renders the keys the two row shapes share
 type EditableRowMetadata = RowMetadata | ItemRowMetadata;
 
-// The sync nudge's target: the other scope's field list and the keys it
-// already holds (twins share name + type — the roster merge link, design §10)
 interface TwinTarget {
   listName: string;
   existingKeys: Set<string>;
@@ -272,7 +262,6 @@ function BuilderRowView({
     return (
       <RowCard
         row={row}
-        // friends card carries the sky "info" tint (design system §2)
         className="border-sky-300/35 bg-sky-300/10"
         isRowOpen={isRowOpen}
         toggleRow={toggleRow}
@@ -640,8 +629,6 @@ function EditableRowView({
           errors={rowFields.required.errors}
         />
         {showTwinButton ? (
-          // sync nudge (design §10): create the twin with the same key and
-          // type so the answers merge into one roster column
           <Button
             variant="outline"
             size="sm"

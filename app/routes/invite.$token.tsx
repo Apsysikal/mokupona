@@ -26,7 +26,6 @@ import { optionalUserContext } from "~/features/auth/middleware.server";
 import { passwordSchema } from "~/features/auth/password-schema";
 import { landingPathForRole } from "~/features/auth/roles";
 import { normalizeInvitableRole } from "~/features/users/invite.shared";
-import { cn } from "~/lib/utils";
 import { logger } from "~/logger.server";
 import {
   acceptInvite,
@@ -62,9 +61,6 @@ async function acceptCurrentInvite(
   }
 }
 
-// /invite/$token — email-bound, role-carrying link (design §6). Four states:
-// dead-end (invalid/expired/used), logged-out signup with locked email,
-// logged-in match (confirm upgrade), logged-in mismatch.
 export const loader = async ({ params, context }: Route.LoaderArgs) => {
   const invite = await getInviteByToken(params.token);
   const validity = inviteValidity(invite);
