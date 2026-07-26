@@ -1,6 +1,19 @@
 # Logging rework: winston → pino
 
-Status: **proposed 2026-07-26**, not started.
+Status: phases 0–8 **landed on `chore/logging-rework`** 2026-07-26. Everything
+below is the plan as written; where it differs from the code, the code and
+[`contract.md`](./contract.md) win.
+
+Three verification steps remain and can only be run by the owner, on Fly:
+
+- the five phase 2 rotation checks below — `cron` alive, config parses, a forced
+  rotation produces a compressed file and leaves `app.log` small, new lines keep
+  arriving, and `logrotate` sits in `/etc/cron.hourly`.
+- the phase 5 RSS and latency reading on the production machine.
+- `ls /data/logs/` after 30 days, for the retention commitment.
+
+Open question 1 (does `SIGINT` reach node through npm) is deferred by owner
+decision; `start.sh` still ends with `exec npm run start`.
 
 ## Goal
 

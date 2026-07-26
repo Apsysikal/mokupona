@@ -52,11 +52,27 @@ formatting misbehaves, never the pino ones.
 
 `NODE_ENV === "test"` forces `silent` and ignores both variables.
 
+## Shutdown
+
+`app/logger.server.ts` owns the only `SIGTERM`/`SIGINT` handlers the app
+registers, outside tests. The handler is idempotent, logs one `shutting down`
+record carrying `signal`, flushes both sinks and exits 0. `flushSync` is called
+optionally — in dev the stdout sink is a `pino-pretty` Transform, which has
+none — and inside a try/catch, because a sink that has not finished opening
+throws `"sonic boom is not ready yet"`.
+
+A failed flush does not abort the exit: the handler sets `process.exitCode = 0`
+and retries once behind a 250 ms unref'd timer, well inside `fly.toml`'s 5 s
+`kill_timeout`. The timer is unref'd so a short-lived `scripts/` tool still
+exits immediately, and it has to exist at all because a process whose event loop
+is held open by a listening server would otherwise ignore that signal and every
+one after it. An unclean kill still loses the buffered tail.
+
 ## Redaction
 
 All PII policy lives in one `redact` config, in `app/logger/redact.server.ts`.
 Call sites log the plain value under the agreed key and the censor transforms it
-on the way to the sinks; nothing is masked, hashed or truncated at the call site.
+on the way to the sinks; no PII is masked, hashed or truncated at the call site.
 It is a module of its own rather than an inline literal because the test logger
 is `pino({ level: "silent" })` with no redaction, so the only way to assert on
 the censor is to build a pino instance around the exported config.
@@ -96,6 +112,11 @@ Behaviour that call sites must know about:
   into the email field.
 - **`redact` does not touch the message string**, which is why the call
   convention below requires a static literal.
+
+One value is masked outside the censor. A connection string is not PII and its
+secret part has no fixed key shape, so `redactDatabaseUrl`
+(`app/logger/redact-url.server.ts`) drops the query string and replaces any
+userinfo before `db.server.ts` logs `databaseUrl` on the boot line.
 
 ## Rotation
 
@@ -163,7 +184,6 @@ listed key, never a synonym.
 | `role`          | `string`  | a `Role.name`                                                          |
 | `dinner`        | `string`  | `Event.id`                                                             |
 | `formVersion`   | `string`  | `FormVersion.id`                                                       |
-| `submission`    | `string`  | `FormSubmission.id`                                                    |
 | `inviteId`      | `string`  | `Invite.id`                                                            |
 | `addressId`     | `string`  | `Address.id`                                                           |
 | `intent`        | `string`  | the `intent` an action dispatched on                                   |
@@ -173,6 +193,18 @@ listed key, never a synonym.
 | `reason`        | `unknown` | a structured explanation of a failure (validation errors, error codes) |
 | `error`         | `unknown` | a caught throwable                                                     |
 | `signal`        | `string`  | POSIX signal name, shutdown only                                       |
+
+Boot and form-version fields, each used by a single call site:
+
+| Field               | Type      | Meaning                                                       |
+| ------------------- | --------- | ------------------------------------------------------------- |
+| `adapter`           | `string`  | the Prisma driver adapter                                     |
+| `databaseUrl`       | `string`  | `DATABASE_URL` through `redactDatabaseUrl`                    |
+| `target`            | `string`  | the Prisma client target a `warn`/`error` log event came from |
+| `folderPrefix`      | `string`  | `CLOUDINARY_FOLDER_PREFIX`                                    |
+| `googleAuthEnabled` | `boolean` | whether Google OAuth is configured                            |
+| `submittedVersion`  | `unknown` | the `formVersionId` a signup was submitted against            |
+| `currentVersion`    | `string`  | the `FormVersion.id` that was live at the time                |
 
 Rules:
 
@@ -225,6 +257,16 @@ The policy the line follows is `app/logger/request-log.server.ts`:
 
 Static assets need no exclusion: `@react-router/serve` mounts them before the
 route table, so they never reach the handler.
+
+`handleError` in the same file is the counterpart: it is the only surface that
+logs a throw out of a loader, action, middleware or render with its stack, under
+`error` and `path`. Exporting it is what stops React Router falling back to
+`console.error`, which bypasses pino entirely. It returns `void` and is not
+awaited, so its body is synchronous; it returns early on
+`request.signal.aborted`, because the router aborts superseded navigations as a
+matter of course; and thrown `Response`s never reach it, which is why the 4xx
+rule above is what records them. The three streaming surfaces in the same file
+— `onShellError`, `onError` and the stream timeout — log at `warn` with `path`.
 
 ## Test stub
 
