@@ -31,7 +31,7 @@ const CardHeader = ({
 }: React.ComponentProps<"div">) => (
   <div
     ref={ref}
-    className={cn("flex flex-col gap-1.5 p-6", className)}
+    className={cn("flex flex-col gap-1.5 p-5 pb-4", className)}
     {...props}
   />
 );
@@ -45,7 +45,10 @@ const CardTitle = ({
 }: React.ComponentProps<"div">) => (
   <div
     ref={ref}
-    className={cn("leading-none font-semibold tracking-tight", className)}
+    className={cn(
+      "text-base leading-none font-semibold tracking-tight",
+      className,
+    )}
     {...props}
   />
 );
@@ -59,7 +62,7 @@ const CardDescription = ({
 }: React.ComponentProps<"div">) => (
   <div
     ref={ref}
-    className={cn("text-muted-foreground text-sm", className)}
+    className={cn("text-foreground/50 text-sm", className)}
     {...props}
   />
 );
@@ -71,7 +74,7 @@ const CardContent = ({
   ref,
   ...props
 }: React.ComponentProps<"div">) => (
-  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+  <div ref={ref} className={cn("p-5 pt-0", className)} {...props} />
 );
 
 CardContent.displayName = "CardContent";

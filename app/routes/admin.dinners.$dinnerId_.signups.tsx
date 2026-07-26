@@ -110,27 +110,16 @@ export default function DinnerSignupsPage({
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="text-foreground/50 h-auto px-4 py-3 text-xs font-semibold tracking-wide uppercase">
-                Guest
-              </TableHead>
-              <TableHead className="text-foreground/50 h-auto px-4 py-3 text-xs font-semibold tracking-wide uppercase">
-                Email
-              </TableHead>
-              <TableHead className="text-foreground/50 h-auto px-4 py-3 text-center text-xs font-semibold tracking-wide uppercase">
-                Party
-              </TableHead>
-              <TableHead className="text-foreground/50 h-auto px-4 py-3 text-right text-xs font-semibold tracking-wide uppercase">
-                Signed up
-              </TableHead>
+              <TableHead>Guest</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead className="text-center">Party</TableHead>
+              <TableHead className="text-right">Signed up</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {parties.map((party, index) => (
-              <TableRow
-                key={`${party.email}-${index}`}
-                className="hover:bg-foreground/5"
-              >
-                <TableCell className="px-4 py-4">
+              <TableRow key={`${party.email}-${index}`}>
+                <TableCell>
                   <div className="flex items-center gap-3">
                     <InitialsAvatar
                       name={party.name}
@@ -140,13 +129,11 @@ export default function DinnerSignupsPage({
                     <span className="font-semibold">{party.name}</span>
                   </div>
                 </TableCell>
-                <TableCell className="text-muted-foreground px-4 py-4">
+                <TableCell className="text-muted-foreground">
                   {party.email}
                 </TableCell>
-                <TableCell className="px-4 py-4 text-center">
-                  {party.size}
-                </TableCell>
-                <TableCell className="px-4 py-4 text-right">
+                <TableCell className="text-center">{party.size}</TableCell>
+                <TableCell className="text-right">
                   <time
                     dateTime={new Date(party.createdAt).toISOString()}
                     suppressHydrationWarning

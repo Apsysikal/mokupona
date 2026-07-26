@@ -70,17 +70,13 @@ function SectionCard({
       // scroll-mt clears the sticky chip nav when jumping via anchor links
       className="scroll-mt-16 md:scroll-mt-8"
     >
-      <CardHeader className="p-5 pb-4">
-        <CardTitle className="text-base font-semibold">{title}</CardTitle>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
         {description ? (
-          <CardDescription className="text-foreground/50 text-sm">
-            {description}
-          </CardDescription>
+          <CardDescription>{description}</CardDescription>
         ) : null}
       </CardHeader>
-      <CardContent className="flex flex-col gap-6 p-5 pt-0">
-        {children}
-      </CardContent>
+      <CardContent className="flex flex-col gap-6">{children}</CardContent>
     </Card>
   );
 }
