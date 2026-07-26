@@ -20,8 +20,21 @@ const options = {
   serializers: { error: pino.stdSerializers.err },
 };
 
+// pino-pretty hands back a plain Transform, which has no flushSync
+type MaybeFlushable = { flushSync?: () => void };
+
+function flushStream(stream: object) {
+  try {
+    (stream as MaybeFlushable).flushSync?.();
+    return true;
+  } catch {
+    // "sonic boom is not ready yet" — the file has not finished opening
+    return false;
+  }
+}
+
 function createLogger() {
-  if (TEST) return pino({ level: "silent" });
+  if (TEST) return { logger: pino({ level: "silent" }), flush: () => true };
 
   const stdout = PRODUCTION
     ? pino.destination(1)
@@ -37,16 +50,46 @@ function createLogger() {
     mkdir: true,
   });
 
-  return pino(
-    options,
-    pino.multistream([
-      { level: LEVEL, stream: stdout },
-      { level: LEVEL, stream: file },
-    ]),
-  );
+  return {
+    logger: pino(
+      options,
+      pino.multistream([
+        { level: LEVEL, stream: stdout },
+        { level: LEVEL, stream: file },
+      ]),
+    ),
+    flush: () => {
+      const stdoutFlushed = flushStream(stdout);
+      const fileFlushed = flushStream(file);
+      return stdoutFlushed && fileFlushed;
+    },
+  };
 }
 
-const logger = createLogger();
+const { logger, flush } = createLogger();
+
+let closing = false;
+
+function shutdown(signal: NodeJS.Signals) {
+  if (closing) return;
+  closing = true;
+  logger.info({ signal }, "shutting down");
+
+  if (flush()) {
+    process.exit(0);
+  } else {
+    // A signal within the first milliseconds of a short-lived script, before
+    // the file sink finished opening. Exiting now would rethrow out of pino's
+    // own exit hook and lose the buffered lines; draining the event loop
+    // instead lets that hook flush them on "beforeExit".
+    process.exitCode = 0;
+  }
+}
+
+if (!TEST) {
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+}
 
 if (PRODUCTION && isCronRunning() === false) {
   logger.warn(
