@@ -11,11 +11,11 @@ Status: **proposed 2026-07-26**, not started.
    never reach the logger, no audit trail on privilege changes or invites, and
    ~26 silent failure paths.
 
-## What is broken today
+## Current state
 
 `app/logger.server.ts` writes `./logs/*.log` — the **ephemeral container
 rootfs**, not the `/data` volume — so production log files are discarded on every
-deploy and grow unbounded in between. `logs/error.log` is 0 bytes.
+deploy and grow unbounded in between.
 
 Across 19 call sites: 12 `info` (4 of them failure paths), 6 `error`, 1 `warn`.
 
@@ -42,29 +42,35 @@ Across 19 call sites: 12 `info` (4 of them failure paths), 6 `error`, 1 `warn`.
 
 ## 1. Logger
 
-Two `pino.destination` sinks combined with `pino.multistream`, on the main
-thread. No worker transport, no pretty-printer, no rotation library — exactly one
-new dependency (`pino` 10.3.1) replacing winston, and no new devDependency. One
-construction path for every environment.
+Two sinks combined with `pino.multistream`, on the main thread — no worker
+transport, no rotation library. `pino` 10.3.1 and `pino-pretty` 13.1.3 replace
+winston; both are **production** dependencies. One construction path for every
+environment: the stdout sink is either a raw `pino.destination(1)` or a
+`pino-pretty` stream, and nothing else about the wiring changes.
 
 ```ts
 // app/logger.server.ts
 import pino from "pino";
+import pretty from "pino-pretty";
 
-const streams: pino.StreamEntry[] = [
-  { level: LEVEL, stream: pino.destination(1) },
-];
+const PRODUCTION = process.env.NODE_ENV === "production";
+const LEVEL = process.env.LOG_LEVEL ?? (PRODUCTION ? "info" : "debug");
+const LOG_DIR =
+  process.env.LOG_DIR ?? path.join(os.tmpdir(), "mokupona-logs");
 
-if (fileLoggingEnabled) {
-  streams.push({
-    level: LEVEL,
-    stream: pino.destination({
-      dest: `${LOG_DIR}/app.log`,
-      append: true,
-      mkdir: true,
-    }),
-  });
-}
+const stdout = PRODUCTION
+  ? pino.destination(1)
+  : pretty({
+      colorize: true,
+      translateTime: "SYS:HH:MM:ss.l",
+      ignore: "pid,hostname",
+    });
+
+const fileDest = pino.destination({
+  dest: `${LOG_DIR}/app.log`,
+  append: true,
+  mkdir: true,
+});
 
 const logger = pino(
   {
@@ -73,11 +79,14 @@ const logger = pino(
     timestamp: pino.stdTimeFunctions.isoTime,
     formatters: { level: (label) => ({ level: label }) },
   },
-  pino.multistream(streams),
+  pino.multistream([
+    { level: LEVEL, stream: stdout },
+    { level: LEVEL, stream: fileDest },
+  ]),
 );
 ```
 
-Non-negotiable details:
+Implementation traps:
 
 - **`level` must be set on every stream entry.** It defaults to `info`
   independently of `logger.level`; omitting it silently drops `debug` from that
@@ -85,13 +94,18 @@ Non-negotiable details:
 - **`append: true`** is what makes `copytruncate` rotation safe. Without
   `O_APPEND` the file goes sparse after truncation.
 - **`pino.final` does not exist** (removed in v8). Use `flushSync()`.
-- **`isoTime` and the level formatter are what make raw JSON readable**, and they
-  are the reason no pretty-printer is needed. pino's defaults are `"time":
-1753524000123` and `"level":30`; these two options make them
-  `"time":"2026-07-26T09:20:00.123Z"` and `"level":"info"`. Both apply to the file
-  sink too, where nothing pretty-prints anyway and the log is read over
-  `fly ssh console` with `grep`. Nothing in this stack consumes numeric levels —
-  Fly's log view is plaintext.
+- **The pretty stream goes on the stdout entry only.** The file sink always gets
+  raw JSON — it is read over `fly ssh console` with `grep`, where ANSI colour
+  codes are actively harmful.
+- **`pretty()` returns a plain Transform, not a SonicBoom**, so it has no
+  `flushSync()` — see §5.
+- **`isoTime` and the level formatter replace pino's numeric defaults**
+  (`"time":1753524000123`, `"level":30`) with `"time":"2026-07-26T09:20:00.123Z"`
+  and `"level":"info"`. The file sink's greppability depends on both. `pino-pretty`
+  also depends on them — `translateTime` shortens the ISO string, and colourising
+  needs a string level label. If either misbehaves, adjust the `pino-pretty`
+  options (drop `translateTime`, pass `useOnlyCustomProps: false`), never the pino
+  ones.
 - **Errors serialize as `err.message`, not `msg`.** pino's `api.md` documents the
   pre-v7 shape and is wrong.
 - `package.json` sets `"sideEffects": false` — keep exporting and importing the
@@ -99,50 +113,42 @@ Non-negotiable details:
 
 ### Environment
 
-| Variable    | Default                               | Purpose                       |
-| ----------- | ------------------------------------- | ----------------------------- |
-| `LOG_LEVEL` | `info` in prod, `debug` otherwise     | must be ≤ every stream level  |
-| `LOG_DIR`   | `/data/logs` on Fly, `./logs` locally | log file destination          |
-| `LOG_FILE`  | `true` in prod, `false` in dev/test   | kill switch for the file sink |
+Two variables. Everything else is derived.
+
+| Variable    | Default                                                     | Purpose                                     |
+| ----------- | ----------------------------------------------------------- | ------------------------------------------- |
+| `LOG_LEVEL` | `info` in production, `debug` otherwise                     | minimum level; must be ≤ every stream level |
+| `LOG_DIR`   | `os.tmpdir()/mokupona-logs`; `/data/logs` on Fly via `[env]` | log file destination                        |
+
+The file sink is always constructed — there is no on/off switch and no
+environment branch in the wiring. Pretty-printing on stdout is
+`NODE_ENV !== "production"`.
 
 `LOG_DIR` also appears hard-coded in the logrotate config (§2) — they must agree
-or rotation silently does nothing. `logs/` is already gitignored; `.dockerignore`
-already excludes `*.log`.
+or rotation silently does nothing. Nothing is written inside the repo any more;
+the `logs/` gitignore entry and the existing `.dockerignore` `*.log` rule become
+vestigial and the stale `logs/` directory can be deleted.
 
 ### Development and test
 
-**Dev**: the same JSON to stdout, with `LOG_LEVEL=debug` and no file sink. **No
-`pino-pretty`, in any wiring.** With `isoTime` and string levels a line reads
+**Dev**: `debug` level, stdout through `pino-pretty`, file sink under the OS temp
+directory. Only `/data/logs` is rotated; the temp-directory file grows until the
+OS clears it.
 
-```
-{"level":"warn","time":"2026-07-26T09:20:00.123Z","requestId":"01H…","msg":"failed login"}
-```
+`pino-pretty` must be a **production** dependency. The server build externalises
+every `node_modules` dependency (`build/server/index.js` opens with a bare
+`import winston from "winston"` today) and the Dockerfile runs
+`npm prune --omit=dev` at line 25, so a devDependency reached by a hoisted static
+import is `ERR_MODULE_NOT_FOUND` at boot.
 
-which is legible at this app's dev volume — 19 call sites today, one developer,
-one request-completion line per navigation after §5.
-
-Pretty-printing was the single most expensive 5% of this design. It was the only
-reason for a devDependency, a second `pino()` construction path, a worker thread,
-and an open question about whether the wiring survives the production build —
-because the server build externalises every `node_modules` dependency
-(`build/server/index.js` opens with a bare `import winston from "winston"` today)
-and the Dockerfile runs `npm prune --omit=dev`, so a hoisted static import is
-`ERR_MODULE_NOT_FOUND` at boot. Every escape from that — `pino-pretty` promoted
-to a production dependency, a dev-only `transport: { target }`, a dynamic
-`await import` with the top-level await it drags into every module that imports
-the logger — is machinery bought for a dev-only convenience.
-
-If the output ever does get too dense to scan, in order of cost:
-
-1. `npm run dev | npx pino-pretty` — ad hoc, zero committed code, no dependency.
-   Non-JSON lines pass through unchanged, though Vite loses its TTY colours and
-   clear-screen.
-2. Add `transport: { target: "pino-pretty" }` to a dev-only branch. Three lines,
-   a devDependency, and a second construction path. Reach for this only once
-   option 1 has proven annoying in practice.
+Two accepted consequences: the module and its 13 transitive deps (~360 KB, on par
+with winston's 11) are parsed at boot in production even though `pretty()` is
+never called there, and `pretty()` runs on the main thread rather than in a
+worker.
 
 **Test**: under `NODE_ENV === "test"`, construct `pino({ level: "silent" })` with
-no streams and no destination.
+no streams and no destination — no pretty stream and no file, so vitest never
+touches the temp directory.
 
 - `app/features/images/image-storage.server.test.ts:22-24` mocks the logger with
   `{ logger: { warn } }` only — replace with a shared stub exposing
@@ -198,7 +204,10 @@ Container changes:
   a day at 06:25, too coarse for `maxsize`).
 - **`start.sh`** — run `cron` before the existing `exec npm run start`.
 
-Expected footprint: ~160 KB/day compressed, so ~5 MB for the 30-day window.
+Footprint: ~160 KB/day compressed at today's volume, so ~5 MB for the 30-day
+window. Request logging (§5) raises that. The bound that protects the SQLite
+volume is `rotate 45` × `maxsize 5M` compressed, ~25 MB worst case.
+
 Retention is "30 days, plus up to an hour" — logrotate only evaluates when cron
 fires.
 
@@ -210,32 +219,68 @@ fires.
 
 ## 3. Redaction and PII
 
-Replace all nine `obscureEmail` call sites with pino's `redact`:
+All PII policy lives in one `redact` config. Call sites log the plain value under
+an agreed key; the censor transforms it on the way to the sinks. This replaces
+all nine `obscureEmail` call sites, and the nine sites that log
+`getClientIPAddress(request)` raw.
 
 ```ts
 redact: {
-  paths: ["email", "*.email", "user.email", "req.headers.authorization", "password"],
-  censor: (value) =>
-    typeof value === "string" ? value.replace(/^(.).*(@.*)$/, "$1***$2") : "[redacted]",
+  paths: ["email", "*.email", "ip", "*.ip", "req.headers.authorization", "password"],
+  censor: (value, path) => {
+    if (typeof value !== "string") return "[redacted]";
+    switch (path.at(-1)) {
+      case "email":
+        return value.replace(/^(.).*(@.*)$/, "$1***$2");
+      case "ip":
+        return hashIp(value);
+      default:
+        return "[redacted]";
+    }
+  },
 },
 ```
 
+An IP is personal data under GDPR. `hashIp` is an HMAC under a salt that rotates
+daily, using `node:crypto` only:
+
+```ts
+// app/logger/hash-ip.server.ts
+import { createHmac, randomBytes } from "node:crypto";
+
+const EPOCH_MS = 24 * 60 * 60 * 1000;
+let epoch = -1;
+let salt: Buffer;
+
+export function hashIp(ip: string) {
+  const current = Math.floor(Date.now() / EPOCH_MS);
+  if (current !== epoch) {
+    epoch = current;
+    salt = randomBytes(32);
+  }
+  return createHmac("sha256", salt).update(ip).digest("base64url").slice(0, 16);
+}
+```
+
+Resulting properties:
+
+- Correlatable within an epoch — failed-login clustering still works.
+- Not correlatable across epochs, and not across process restarts: the salt is
+  held in memory only and never persisted.
+- No new secret and no new environment variable. `BETTER_AUTH_SECRET` stays
+  scoped to better-auth.
+- Single machine, so there is no cross-instance correlation to preserve.
+
 Redaction only matches declared paths, so the migration must **standardise the
-key name**: every site logs the address under `email`, never `recipient`, `to` or
-`address`. This is a review checklist item. Paths are case-sensitive, hyphenated
-keys need bracket notation, and a path must never be built from user input.
+key names**: every site logs an address under `email` and an address under `ip`,
+never `recipient`, `to`, `clientIp` or `remoteAddress`. Paths are case-sensitive,
+hyphenated keys need bracket notation, and a path must never be built from user
+input. `redact` does not touch the message string, so no site may interpolate
+either value into it.
 
-**IP handling needs a decision** — 9 sites log `getClientIPAddress(request)` raw,
-and an IP is personal data under GDPR:
-
-| Option                       | Keeps abuse detection?         | Effort |
-| ---------------------------- | ------------------------------ | ------ |
-| HMAC with a rotating salt    | Yes, correlatable within epoch | medium |
-| Truncate last octet / v6 /64 | Yes for rate-of-failure trends | low    |
-| Keep raw + bounded retention | Fully                          | policy |
-
-Recommendation: **HMAC** (`BETTER_AUTH_SECRET` is already available at module
-load). Preserves failed-login correlation while making the log non-identifying.
+**Verify when wiring phase 3:** that `redact` also applies to `logger.child()`
+bindings. Keep `email` and `ip` out of child bindings either way — the child in
+§5 carries `requestId` only.
 
 Fold in while the file is open: `app/shared/http.server.ts:48` checks
 `X-Forwarded-For` before `Fly-Client-IP`. On Fly the platform-set header should
@@ -245,7 +290,27 @@ win.
 
 ## 4. Errors
 
-Add a `handleError` export to `app/entry.server.tsx`:
+`handleError` and the §5 instrumentation are **not** interchangeable, and their
+records do not overlap:
+
+| | `handleError` | `instrumentations.handler.request` |
+| --- | --- | --- |
+| Fires on | any non-`Response` throw in a loader, action, middleware or render | every request through the React Router handler |
+| Sees | the `Error` itself, with stack | `statusCode`, `meta.pattern`, `meta.params`, and `status: "error"` only when the handler itself rejects |
+| Misses | thrown `Response`s (403/404), requests that never error | errors React Router recovers from by rendering an `ErrorBoundary` — the handler resolves normally |
+
+Division of labour:
+
+- **`handleError` is the only place that logs at `error` level with a stack.**
+- **Instrumentation emits exactly one completion line per request** (`pattern`,
+  `statusCode`, `shellMs`, `requestId`) and never logs the error object. A
+  `status: "error"` result raises that line's level; it does not add a second
+  record.
+
+Not exporting `handleError` is not an option: its absence is what makes React
+Router fall back to `console.error`, which bypasses pino entirely.
+
+Add the export to `app/entry.server.tsx`:
 
 ```ts
 interface HandleErrorFunction {
@@ -294,10 +359,12 @@ read the id middleware set.
 
 Constraints: `info.request` is a readonly projection
 (`{ method, url, headers: Pick<Headers,"get"> }`) — no `.clone()`, no body, no
-`signal`. Instrumentations are observational only; a throw is swallowed.
+`signal`. `info.context` is `ReadonlyContext | undefined`, so the `requestId`
+lookup must tolerate `undefined`. Instrumentations are observational only; a
+throw is swallowed. Error records belong to `handleError`, not here (§4).
 
-Log `pattern`, not `request.url` — the latter is unbounded cardinality. Name the
-duration field **`shellMs`**: both `await next()` and `await handleRequest()`
+Log `pattern`, not `request.url` — the latter is unbounded cardinality. The
+duration field is **`shellMs`**: both `await next()` and `await handleRequest()`
 resolve when the `Response` exists, which for streamed HTML is shell-ready, not
 body-complete.
 
@@ -339,7 +406,9 @@ Also: `db.server.ts:15` calls `client.$connect()` with no `await` and no
 
 ### Shutdown
 
-Both sinks are SonicBoom, so the handler stays synchronous:
+In production both sinks are SonicBoom, so the handler stays synchronous. In dev
+the stdout sink is a `pino-pretty` Transform with no `flushSync()` — call it
+optionally rather than branching on the environment:
 
 ```ts
 let closing = false;
@@ -347,7 +416,7 @@ function shutdown(signal: NodeJS.Signals) {
   if (closing) return;
   closing = true;
   logger.info({ signal }, "shutting down");
-  stdout.flushSync();
+  stdout.flushSync?.();
   fileDest?.flushSync();
   process.exit(0);
 }
@@ -453,17 +522,17 @@ today), and `user.update`.
 
 ## 7. Phasing
 
-| #   | Phase            | Content                                                                                                                                 | Risk   |
-| --- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| 0   | **Contract**     | logger module shape, level policy, field names (`email`, `requestId`, `userId`, `pattern`), shared test stub                            | none   |
-| 1   | **Swap**         | winston → pino, stdout only, `isoTime` + string levels; all 19 call sites to `(obj, msg)`; delete the broken file transports; test stub | low    |
-| 2   | **Rotation**     | file destination → `LOG_DIR`; Dockerfile `logrotate cron` + config + `cron.hourly`; `start.sh` starts `cron`                            | medium |
-| 3   | **Redaction**    | `redact` config, drop `obscureEmail`, IP decision, `Fly-Client-IP` header order                                                         | low    |
-| 4   | **Errors**       | `handleError` + the three `entry.server.tsx` surfaces                                                                                   | low    |
-| 5   | **Correlation**  | request-id middleware, `loggerContext`, ALS singleton, `instrumentations`, noise exclusions                                             | medium |
-| 6   | **Lifecycle**    | boot lines, `$connect` fix, Prisma log events, shutdown flush, PID 1 verification                                                       | medium |
-| 7   | **Audit trail**  | Tier 1 + Tier 2                                                                                                                         | low    |
-| 8   | **Silent paths** | Tiers 3 + 4, the two `http.server.ts` helpers, level corrections                                                                        | low    |
+| #   | Phase            | Content                                                                                                                                                                                | Risk   |
+| --- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 0   | **Contract**     | logger module shape, level policy, field names (`email`, `requestId`, `userId`, `pattern`), shared test stub                                                                           | none   |
+| 1   | **Swap**         | winston → pino + `pino-pretty` (both prod deps), stdout only, `isoTime` + string levels, `LOG_LEVEL`; all 19 call sites to `(obj, msg)`; delete the broken file transports; test stub  | low    |
+| 2   | **Rotation**     | file sink + `LOG_DIR`; Dockerfile `logrotate cron` + config + `cron.hourly`; `start.sh` starts `cron`                                                                                  | medium |
+| 3   | **Redaction**    | `redact` config with the `email`/`ip` censor, `hashIp`, drop `obscureEmail`, `Fly-Client-IP` header order                                                                               | low    |
+| 4   | **Errors**       | `handleError` + the three `entry.server.tsx` surfaces                                                                                                                                  | low    |
+| 5   | **Correlation**  | request-id middleware, `loggerContext`, ALS singleton, `instrumentations`, noise exclusions                                                                                            | medium |
+| 6   | **Lifecycle**    | boot lines, `$connect` fix, Prisma log events, shutdown flush, PID 1 verification                                                                                                      | medium |
+| 7   | **Audit trail**  | Tier 1 + Tier 2                                                                                                                                                                        | low    |
+| 8   | **Silent paths** | Tiers 3 + 4, the two `http.server.ts` helpers, level corrections                                                                                                                       | low    |
 
 Phase 1 lands alone — it touches every call site, so mixing it with behaviour
 changes would make the diff unreviewable. Phases 3–8 are largely independent.
@@ -491,13 +560,10 @@ nothing in CI can assert it.
 
 ## 8. Open questions
 
-1. **IP handling** (§3) — HMAC, truncate, or raw-with-retention. Policy call.
-2. **Does SIGINT reach node through npm?** (§5) Determines whether `start.sh`
+1. **Does SIGINT reach node through npm?** (§5) Determines whether `start.sh`
    changes. Shutdown only; rotation is unaffected.
-3. **Does `await next()` resolve before or after the streamed body flushes?**
-   (§5) Determines whether `shellMs` is honestly named. Empirically checkable.
-4. **Custom Express server?** Would remove morgan duplication and give an ordered
+2. **Custom Express server?** Would remove morgan duplication and give an ordered
    shutdown hook. Deferred — revisit if the flush proves flaky in phase 6.
-5. **Who notices if cron dies?** (§2) Rotation stops, retention silently exceeds
+3. **Who notices if cron dies?** (§2) Rotation stops, retention silently exceeds
    30 days, and the volume fills with SQLite on it. Decide in phase 2 whether a
    boot-time check and a size alarm are worth the code.
