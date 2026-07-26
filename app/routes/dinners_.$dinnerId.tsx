@@ -23,6 +23,7 @@ import { getViewForField, type FieldDescriptor } from "~/features/forms/fields";
 import { normalizeSubmissionValues } from "~/features/forms/normalize-submission";
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
 import { buildSignupSchema } from "~/features/signup-form/build-schema";
+import { cn } from "~/lib/utils";
 import { logger } from "~/logger.server";
 import { getEventWithCurrentFormVersion } from "~/models/event.server";
 import {
@@ -198,9 +199,11 @@ export default function DinnerPage({
   const { event, formFields, formVersionId } = loaderData;
 
   const eventIsPast = isPastEvent(new Date(event.date), new Date());
-  // formFields is null when the stored schema failed to parse — the signup
-  // section is hidden rather than rendered wrong (design §11)
   const signupFields = eventIsPast ? null : formFields;
+  const gridClasses = cn(
+    "grid items-start gap-8",
+    !eventIsPast && "lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]",
+  );
 
   return (
     <main className="mx-auto w-full max-w-5xl grow px-5 pt-7 pb-20 md:px-10 md:pt-9">
@@ -211,16 +214,16 @@ export default function DinnerPage({
         ← all dinners
       </Link>
 
-      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+      <div className={gridClasses}>
         <EventStory event={event} />
 
-        <aside
-          id="sign-up"
-          className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-5 lg:sticky lg:top-6 lg:p-7"
-        >
-          <EventFactList event={event} />
+        {signupFields ? (
+          <aside
+            id="sign-up"
+            className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-5 lg:sticky lg:top-6 lg:p-7"
+          >
+            <EventFactList event={event} />
 
-          {signupFields ? (
             <>
               <div aria-hidden className="bg-border h-px" />
 
@@ -236,8 +239,8 @@ export default function DinnerPage({
                 lastResult={actionData}
               />
             </>
-          ) : null}
-        </aside>
+          </aside>
+        ) : null}
       </div>
     </main>
   );
