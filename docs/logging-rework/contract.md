@@ -63,7 +63,7 @@ the censor is to build a pino instance around the exported config.
 
 | Declared path                                  | Censor result                                                             |
 | ---------------------------------------------- | ------------------------------------------------------------------------- |
-| `email`, `*.email`                             | first character, `***`, domain — `alice@example.com` → `a***@example.com` |
+| `email`, `*.email`                             | first character, `***`, domain — `alice@example.com` → `a***@example.com`; `[redacted]` when there is no local part to keep |
 | `ip`, `*.ip`                                   | `hashIp(value)`                                                           |
 | `password`, `req.headers.authorization`, other | `[redacted]`                                                              |
 
@@ -89,10 +89,11 @@ Behaviour that call sites must know about:
 - **`reason` holding a conform error map is affected.** `{ email: [...] }` under
   `reason` matches `*.email` with a non-string value, so the email field's
   validation messages arrive as `[redacted]`.
-- **A string under `email` with no `@` is written verbatim** — the mask pattern
-  does not match it. The two sites that log an unvalidated submission payload
-  substitute `unknown@no-domain.com` for a missing address, but a syntactically
-  invalid one the user typed reaches the sinks unmasked.
+- **A string under `email` that is not maskable becomes `[redacted]`.** No `@`,
+  an empty string, or a leading `@` leaves no local part to mask, so the whole
+  value is dropped rather than written through. This matters because the two
+  sites that log an unvalidated submission payload log whatever the user typed
+  into the email field.
 - **`redact` does not touch the message string**, which is why the call
   convention below requires a static literal.
 

@@ -60,6 +60,30 @@ describe("redact", () => {
     });
   });
 
+  it("keeps only the last domain of an address with several @", () => {
+    createLogger().info({ email: "eve@evil@example.com" }, "several at signs");
+
+    expect(records[0].email).toBe("e***@example.com");
+    expect(JSON.stringify(records[0])).not.toContain("evil");
+  });
+
+  it("drops an address that has no local part to mask", () => {
+    const logger = createLogger();
+    logger.info({ email: "not-an-address" }, "no at sign");
+    logger.info({ email: "" }, "empty");
+    logger.info({ email: "@example.com" }, "leading at sign");
+    logger.info({ user: { email: "still-not-an-address" } }, "one level down");
+
+    expect(records.map((record) => record.email)).toEqual([
+      "[redacted]",
+      "[redacted]",
+      "[redacted]",
+      undefined,
+    ]);
+    expect(records[3].user).toEqual({ email: "[redacted]" });
+    expect(JSON.stringify(records)).not.toContain("not-an-address");
+  });
+
   it("replaces every other declared path with a fixed marker", () => {
     createLogger().info({ password: "hunter2" }, "credentials");
 
