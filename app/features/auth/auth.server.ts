@@ -6,6 +6,7 @@ import { isSignupEnabled } from "./signup-settings.server";
 
 import { prisma } from "~/db.server";
 import { sendTemplate } from "~/features/mail/mail.server";
+import { requestLogger } from "~/logger/request-context.server";
 import { logger } from "~/logger.server";
 import { getRoleByName } from "~/models/role.server";
 import { setUserEmailVerified } from "~/models/user.server";
@@ -103,6 +104,30 @@ export const auth = singleton("better-auth", () => {
               throw new Error("Default role 'user' is not seeded");
             }
             return { data: { ...user, roleId: role.id } };
+          },
+        },
+        update: {
+          after: async (user) => {
+            requestLogger().info({ userId: user.id }, "User record updated");
+          },
+        },
+      },
+      session: {
+        create: {
+          after: async (session) => {
+            requestLogger().info({ userId: session.userId }, "Session created");
+          },
+        },
+      },
+      account: {
+        create: {
+          after: async (account) => {
+            // accountLinking.trustedProviders links a Google identity onto an
+            // existing address without a confirmation step
+            requestLogger().warn(
+              { userId: account.userId, provider: account.providerId },
+              "Account linked to a user",
+            );
           },
         },
       },

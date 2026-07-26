@@ -44,7 +44,10 @@ import {
 } from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
 import { emailSchema } from "~/features/auth/form-schemas";
-import { userContext } from "~/features/auth/middleware.server";
+import {
+  requestLoggerContext,
+  userContext,
+} from "~/features/auth/middleware.server";
 import {
   isAdminRole,
   ROLE_FILTER_OPTIONS,
@@ -90,6 +93,7 @@ export async function loader() {
 
 export async function action({ request, context }: Route.ActionArgs) {
   const admin = context.get(userContext);
+  const log = context.get(requestLoggerContext);
   const formData = await request.formData();
   const intent = formData.get("intent");
 
@@ -106,6 +110,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       createdById: admin.id,
       origin: getDomainUrl(request),
     });
+    log.warn({ userId: admin.id, email, role }, "Admin issued an invite");
     return data({
       result: submission.reply({ resetForm: true }),
       sentTo: email,
@@ -114,7 +119,10 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   if (intent === "revoke") {
     const id = formData.get("inviteId");
-    if (typeof id === "string") await revokeInvite(id);
+    if (typeof id === "string") {
+      await revokeInvite(id);
+      log.warn({ userId: admin.id, inviteId: id }, "Admin revoked an invite");
+    }
     return data({ result: null, sentTo: null });
   }
 

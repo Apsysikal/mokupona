@@ -58,6 +58,16 @@ export function assertUserHasRole(
   roles: readonly RoleName[],
 ) {
   if (!roles.includes(user.role.name)) {
+    // A thrown Response never reaches handleError, so this is the only place
+    // an authorization denial can be recorded at all.
+    requestLogger().warn(
+      {
+        userId: user.id,
+        role: user.role.name,
+        reason: { requiredRoles: roles },
+      },
+      "Authorization denied",
+    );
     throw new Response("Forbidden", { status: 403 });
   }
   return user;

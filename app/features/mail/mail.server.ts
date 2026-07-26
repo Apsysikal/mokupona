@@ -6,6 +6,7 @@ import { mailTemplates } from "./templates";
 import type { MailTemplateName, MailTemplateProps } from "./templates";
 import type { MailProvider } from "./types";
 
+import { requestLogger } from "~/logger/request-context.server";
 import { logger } from "~/logger.server";
 import { singleton } from "~/utils/singleton.server";
 
@@ -44,7 +45,7 @@ const provider = singleton("mail-provider", () => {
 
 // The way features send mail: name a template from ./templates and hand it the
 // props it declares. Subject, text and HTML all come from that one definition.
-export function sendTemplate<Name extends MailTemplateName>(
+export async function sendTemplate<Name extends MailTemplateName>(
   name: Name,
   to: string,
   props: MailTemplateProps<Name>,
@@ -53,5 +54,18 @@ export function sendTemplate<Name extends MailTemplateName>(
     props: MailTemplateProps<Name>,
   ) => MailBody;
 
-  return provider.send({ to, ...render(props) });
+  // better-auth swallows a throw out of its sendResetPassword and
+  // sendVerificationEmail callbacks, so this is the only record those two
+  // flows can produce when delivery fails.
+  try {
+    await provider.send({ to, ...render(props) });
+  } catch (error) {
+    requestLogger().error(
+      { template: name, email: to, error },
+      "Failed to send mail",
+    );
+    throw error;
+  }
+
+  requestLogger().info({ template: name, email: to }, "Sent mail");
 }

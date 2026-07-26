@@ -166,6 +166,8 @@ listed key, never a synonym.
 | `submission`    | `string`  | `FormSubmission.id`                                                    |
 | `inviteId`      | `string`  | `Invite.id`                                                            |
 | `storageKey`    | `string`  | image storage provider key                                             |
+| `template`      | `string`  | a `mailTemplates` key                                                  |
+| `provider`      | `string`  | a configured provider name: mail, image storage, or an auth account    |
 | `reason`        | `unknown` | a structured explanation of a failure (validation errors, error codes) |
 | `error`         | `unknown` | a caught throwable                                                     |
 | `signal`        | `string`  | POSIX signal name, shutdown only                                       |
