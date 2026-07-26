@@ -10,7 +10,11 @@ import type { Route } from "./+types/me";
 
 import { InitialsAvatar } from "~/components/admin-ui";
 import { ErrorList, Field } from "~/components/forms";
-import { Eyebrow, pageTitleClassName, pillVariants } from "~/components/section";
+import {
+  Eyebrow,
+  pageTitleClassName,
+  pillVariants,
+} from "~/components/section";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";

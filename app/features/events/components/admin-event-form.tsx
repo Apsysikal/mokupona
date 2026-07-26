@@ -72,9 +72,7 @@ function SectionCard({
     >
       <CardHeader>
         <CardTitle>{title}</CardTitle>
-        {description ? (
-          <CardDescription>{description}</CardDescription>
-        ) : null}
+        {description ? <CardDescription>{description}</CardDescription> : null}
       </CardHeader>
       <CardContent className="flex flex-col gap-6">{children}</CardContent>
     </Card>

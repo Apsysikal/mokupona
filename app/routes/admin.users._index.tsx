@@ -229,7 +229,8 @@ function InviteDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
-          <PlusIcon className="size-4" />Invite
+          <PlusIcon className="size-4" />
+          Invite
         </Button>
       </DialogTrigger>
       <DialogContent>

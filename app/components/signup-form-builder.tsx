@@ -381,12 +381,7 @@ function RowCard({
         {header}
         <RowErrors id={row.errorId} errors={row.errors} />
         <CollapsibleContent forceMount className="data-[state=closed]:hidden">
-          <div
-            className={cn(
-              "border-t",
-              small ? "p-3" : "p-3 sm:p-4",
-            )}
-          >
+          <div className={cn("border-t", small ? "p-3" : "p-3 sm:p-4")}>
             {children}
           </div>
         </CollapsibleContent>
@@ -492,7 +487,7 @@ function RowHeader({
         <Button
           variant="outline"
           size={iconSize}
-          className="border-destructive/50 bg-destructive/10 hover:bg-destructive/30 shrink-0 text-destructive-light"
+          className="border-destructive/50 bg-destructive/10 hover:bg-destructive/30 text-destructive-light shrink-0"
           aria-label="Remove"
           {...form.remove.getButtonProps({ name: listName, index })}
           onClick={
