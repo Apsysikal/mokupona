@@ -20,11 +20,7 @@ import {
   OAUTH_SIGNUP_DISABLED_ERROR,
 } from "~/features/auth/signup-settings";
 import { logger } from "~/logger.server";
-import {
-  getClientIPAddress,
-  obscureEmail,
-  safeRedirect,
-} from "~/shared/http.server";
+import { getClientIPAddress, safeRedirect } from "~/shared/http.server";
 
 const schema = z.object({
   email: emailSchema,
@@ -61,7 +57,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     logger.info(
       {
         ip: getClientIPAddress(request),
-        email: obscureEmail(email),
+        email,
       },
       "Successful login request",
     );
@@ -76,7 +72,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     logger.info(
       {
         ip: getClientIPAddress(request),
-        email: obscureEmail(email),
+        email,
         reason: code ?? "unknown",
       },
       "Failed login request",

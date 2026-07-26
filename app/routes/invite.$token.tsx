@@ -35,11 +35,7 @@ import {
   inviteValidity,
 } from "~/models/invite.server";
 import { getUserByEmail } from "~/models/user.server";
-import {
-  getClientIPAddress,
-  obscureEmail,
-  unknownIntent,
-} from "~/shared/http.server";
+import { getClientIPAddress, unknownIntent } from "~/shared/http.server";
 
 const signupSchema = z.object({
   intent: z.literal("signup"),
@@ -139,7 +135,7 @@ export const action = async ({
     logger.info(
       {
         ip: getClientIPAddress(request),
-        email: obscureEmail(user.email),
+        email: user.email,
         role: invite.roleName,
       },
       "Invite accepted (existing user)",
@@ -183,7 +179,7 @@ export const action = async ({
     logger.info(
       {
         ip: getClientIPAddress(request),
-        email: obscureEmail(invite.email),
+        email: invite.email,
         role: invite.roleName,
       },
       "Invite accepted (new user)",

@@ -32,11 +32,7 @@ import {
   createFormSubmission,
   FormVersionChangedError,
 } from "~/models/form-submission.server";
-import {
-  getClientIPAddress,
-  obscureEmail,
-  requireFound,
-} from "~/shared/http.server";
+import { getClientIPAddress, requireFound } from "~/shared/http.server";
 import { getImageUrl } from "~/shared/image";
 import { withOpenGraphUrls } from "~/shared/meta";
 import { getImageConfig } from "~/shared/root-data";
@@ -103,9 +99,8 @@ export async function action({ params, request }: Route.ActionArgs) {
       {
         ip: getClientIPAddress(request),
         dinner: dinner.id,
-        email: obscureEmail(
+        email:
           submission.payload["email"]?.toString() ?? "unknown@no-domain.com",
-        ),
         reason: submission.status === "error" ? submission.error : null,
       },
       "Failed submission for dinner signup",
@@ -117,9 +112,8 @@ export async function action({ params, request }: Route.ActionArgs) {
   const { acceptedPrivacy: _acceptedPrivacy, ...values } = submission.value;
   const answers = normalizeSubmissionValues(formFields, values);
 
-  const email = obscureEmail(
-    typeof values.email === "string" ? values.email : "unknown@no-domain.com",
-  );
+  const email =
+    typeof values.email === "string" ? values.email : "unknown@no-domain.com";
 
   try {
     await createFormSubmission({

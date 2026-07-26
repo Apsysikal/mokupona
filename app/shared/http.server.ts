@@ -41,12 +41,6 @@ export function getDomainUrl(request: Request) {
   return `${protocol}://${host}`;
 }
 
-/** Masks the local part of an email address for privacy-preserving logging. */
-export function obscureEmail(email: string) {
-  const [name, domain] = email.split("@");
-  return `${name[0]}${new Array(name.length).join("*")}@${domain}`;
-}
-
 export function getClientIPAddress(request: Request): string | null {
   const header = request.headers.get("Fly-Client-IP");
   if (!header || header.length > 64) return null;

@@ -22,7 +22,7 @@ import {
 import { isSignupEnabled } from "~/features/auth/signup-settings.server";
 import { logger } from "~/logger.server";
 import { getUserByEmail } from "~/models/user.server";
-import { getClientIPAddress, obscureEmail } from "~/shared/http.server";
+import { getClientIPAddress } from "~/shared/http.server";
 
 const schema = withPasswordConfirmation({
   name: displayNameSchema,
@@ -70,9 +70,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
     logger.info(
       {
         ip: getClientIPAddress(request),
-        email: obscureEmail(
+        email:
           submission.payload["email"]?.toString() ?? "unknown@no-domain.com",
-        ),
         reason: submission.status === "error" ? submission.error : null,
       },
       "Failed signup request",
@@ -99,7 +98,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   logger.info(
     {
       ip: getClientIPAddress(request),
-      email: obscureEmail(email),
+      email,
     },
     "Successful signup request",
   );

@@ -13,7 +13,7 @@ import { Button } from "~/components/ui/button";
 import { auth } from "~/features/auth/auth.server";
 import { emailSchema, parseRequestForm } from "~/features/auth/form-schemas";
 import { logger } from "~/logger.server";
-import { getClientIPAddress, obscureEmail } from "~/shared/http.server";
+import { getClientIPAddress } from "~/shared/http.server";
 
 const schema = z.object({
   email: emailSchema,
@@ -36,7 +36,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   logger.info(
     {
       ip: getClientIPAddress(request),
-      email: obscureEmail(email),
+      email,
     },
     "Password reset requested",
   );

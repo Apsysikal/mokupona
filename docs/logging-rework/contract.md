@@ -26,6 +26,7 @@ The instance is a plain `pino.Logger`, constructed with:
 | `timestamp`            | `pino.stdTimeFunctions.isoTime`                                                           |
 | `formatters.level`     | `(label) => ({ level: label })`                                                           |
 | `serializers.error`    | `pino.stdSerializers.err`                                                                 |
+| `redact`               | `app/logger/redact.server.ts`, see below                                                  |
 | `level`                | `LOG_LEVEL`, see below                                                                    |
 | stdout sink (prod)     | `pino.destination(1)` — raw JSON                                                          |
 | stdout sink (non-prod) | `pino-pretty`, colorized, `ignore` pid/hostname                                           |
@@ -50,6 +51,50 @@ formatting misbehaves, never the pino ones.
 | `LOG_DIR`   | `os.tmpdir()/mokupona-logs`             | log file destination                        |
 
 `NODE_ENV === "test"` forces `silent` and ignores both variables.
+
+## Redaction
+
+All PII policy lives in one `redact` config, in `app/logger/redact.server.ts`.
+Call sites log the plain value under the agreed key and the censor transforms it
+on the way to the sinks; nothing is masked, hashed or truncated at the call site.
+It is a module of its own rather than an inline literal because the test logger
+is `pino({ level: "silent" })` with no redaction, so the only way to assert on
+the censor is to build a pino instance around the exported config.
+
+| Declared path                                  | Censor result                                                             |
+| ---------------------------------------------- | ------------------------------------------------------------------------- |
+| `email`, `*.email`                             | first character, `***`, domain — `alice@example.com` → `a***@example.com` |
+| `ip`, `*.ip`                                   | `hashIp(value)`                                                           |
+| `password`, `req.headers.authorization`, other | `[redacted]`                                                              |
+
+`hashIp` (`app/logger/hash-ip.server.ts`) is an HMAC-SHA256 under a 32-byte salt
+that rotates every 24 h, truncated to 16 base64url characters. The salt lives in
+memory and is never persisted, and there is no new secret and no new environment
+variable — `BETTER_AUTH_SECRET` stays scoped to better-auth. So an address is
+correlatable within an epoch (failed-login clustering works) but not across
+epochs and not across process restarts. Single machine, so there is no
+cross-instance correlation to preserve.
+
+Behaviour that call sites must know about:
+
+- **Redaction applies to `logger.child()` — verified, not assumed.** Both the
+  bindings handed to `child()` and the records logged through the child go
+  through the censor. `email` and `ip` still stay out of child bindings; the
+  request child carries `requestId` only.
+- **`*.email` and `*.ip` reach exactly one level down.** `{ user: { email } }` is
+  censored, `{ a: { b: { email } } }` is not. Keep bindings flat.
+- **A non-string value under a declared path becomes `[redacted]`.**
+  `getClientIPAddress` returns `null` for an unresolvable address, so those
+  records carry `ip: "[redacted]"` rather than dropping the key.
+- **`reason` holding a conform error map is affected.** `{ email: [...] }` under
+  `reason` matches `*.email` with a non-string value, so the email field's
+  validation messages arrive as `[redacted]`.
+- **A string under `email` with no `@` is written verbatim** — the mask pattern
+  does not match it. The two sites that log an unvalidated submission payload
+  substitute `unknown@no-domain.com` for a missing address, but a syntactically
+  invalid one the user typed reaches the sinks unmasked.
+- **`redact` does not touch the message string**, which is why the call
+  convention below requires a static literal.
 
 ## Rotation
 
@@ -126,7 +171,7 @@ Rules:
 
 - `email` and `ip` are **never** masked, hashed or truncated at the call site,
   and never appear under any other key (`recipient`, `to`, `clientIp`,
-  `remoteAddress`). Phase 3 removes `obscureEmail` in favour of the censor.
+  `remoteAddress`). `obscureEmail` is gone; the censor replaces it.
 - `email` and `ip` are **never** child-logger bindings. The request child
   carries `requestId` only.
 - Paths are case-sensitive, and a redaction path is never built from user input.

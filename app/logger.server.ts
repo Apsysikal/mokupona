@@ -5,6 +5,7 @@ import pino from "pino";
 import pretty from "pino-pretty";
 
 import { isCronRunning } from "~/logger/cron-check.server";
+import { redact } from "~/logger/redact.server";
 
 const PRODUCTION = process.env.NODE_ENV === "production";
 const TEST = process.env.NODE_ENV === "test";
@@ -13,6 +14,7 @@ const LOG_DIR = process.env.LOG_DIR ?? path.join(os.tmpdir(), "mokupona-logs");
 
 const options = {
   level: LEVEL,
+  redact,
   timestamp: pino.stdTimeFunctions.isoTime,
   formatters: { level: (label: string) => ({ level: label }) },
   serializers: { error: pino.stdSerializers.err },
