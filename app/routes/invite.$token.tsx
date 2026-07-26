@@ -147,6 +147,14 @@ export const action = async ({
   if (intent === "accept") {
     const user = await context.get(optionalUserContext)();
     if (!user || user.email !== invite.email) {
+      log.warn(
+        {
+          userId: user?.id,
+          inviteId: invite.id,
+          reason: user ? "identity-mismatch" : "anonymous",
+        },
+        "Invite acceptance refused for a different identity",
+      );
       return redirect(`/invite/${params.token}`);
     }
     await acceptCurrentInvite(invite, user.id, params.token);
