@@ -79,7 +79,7 @@ function LocationCard({ address }: { address: AddressWithEventCount }) {
           <h2 className="truncate text-base font-semibold">
             {streetName} {houseNumber}
           </h2>
-          <p className="text-muted-foreground mt-0.5 text-sm">
+          <p className="text-foreground/65 mt-1 text-sm">
             {zip} {city}
           </p>
         </div>
@@ -90,7 +90,7 @@ function LocationCard({ address }: { address: AddressWithEventCount }) {
         </Button>
         <AdminDeleteButton action={`${id}/delete`} disabled={inUse} />
         {inUse ? (
-          <span className="text-muted-foreground self-center text-xs">
+          <span className="text-foreground/50 self-center text-xs">
             hosts {eventCount} {eventCount === 1 ? "dinner" : "dinners"}
           </span>
         ) : null}

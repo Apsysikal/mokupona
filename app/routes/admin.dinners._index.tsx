@@ -148,7 +148,7 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
     <Card
       interactive
       className={cn(
-        "flex flex-wrap items-center gap-4 p-4",
+        "flex flex-wrap items-center gap-3 p-4",
         dinner.past && "opacity-60",
       )}
     >
@@ -163,7 +163,7 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
         <div>
           <p
             className={cn(
-              "text-xs font-bold tracking-wide",
+              "text-xs font-semibold tracking-wide",
               dinner.past ? "text-foreground/50" : "text-accent-light",
             )}
           >
@@ -171,15 +171,13 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
               {formatAdminDateLine(date)}
             </time>
           </p>
-          <h2 className="mt-0.5 truncate text-base font-semibold">
+          <h2 className="mt-1 truncate text-base font-semibold">
             {dinner.title}
           </h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {dinner.location}
-          </p>
+          <p className="text-foreground/65 mt-1 text-sm">{dinner.location}</p>
         </div>
         <div className="max-w-xs">
-          <div className="mb-1.5 flex justify-between text-xs">
+          <div className="mb-2 flex justify-between text-xs">
             <span className="text-foreground/80">{dinner.signups} signups</span>
             <span className="text-foreground/50">
               {dinner.signups} / {dinner.slots}

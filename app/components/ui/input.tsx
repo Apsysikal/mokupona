@@ -15,7 +15,7 @@ const Input = ({ className, type, ref, ...props }: InputProps) => {
       type={type}
       className={cn(
         fieldShellClassName,
-        "placeholder:text-foreground/40 file:text-foreground focus-visible:inset-ring-ring flex w-full py-1 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:border-0 focus-visible:inset-ring-2 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
+        "placeholder:text-foreground/50 file:text-foreground focus-visible:inset-ring-ring flex w-full py-1 file:border-0 file:bg-transparent file:text-sm file:font-semibold focus-visible:border-0 focus-visible:inset-ring-2 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       ref={ref}

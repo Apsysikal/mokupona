@@ -124,7 +124,7 @@ export default function DinnerSignupsPage({
                     <span className="font-semibold">{party.name}</span>
                   </div>
                 </TableCell>
-                <TableCell className="text-muted-foreground">
+                <TableCell className="text-foreground/65">
                   {party.email}
                 </TableCell>
                 <TableCell className="text-center">{party.size}</TableCell>

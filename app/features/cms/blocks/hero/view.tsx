@@ -26,17 +26,17 @@ export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
 
   return (
     <section
-      className="mx-auto flex max-w-7xl flex-col md:grid md:min-h-130 md:grid-cols-[46fr_54fr]"
+      className="mx-auto flex max-w-7xl flex-col md:grid md:min-h-128 md:grid-cols-[46fr_54fr]"
       {...rest}
     >
-      <div className="flex flex-col justify-center gap-5 px-6 py-8 md:gap-6 md:px-14 md:py-16">
+      <div className="flex flex-col justify-center gap-5 px-5 py-8 md:gap-6 md:px-10 md:py-16">
         {eyebrow ? (
           <Eyebrow variant="kicker" tone="primary">
             {eyebrow}
           </Eyebrow>
         ) : null}
 
-        <h1 className="text-4xl font-light tracking-tight text-balance md:text-5xl">
+        <h1 className="text-4xl leading-tight font-light tracking-tight text-balance md:text-5xl">
           {headline}
           {headlineAccent ? (
             <>
@@ -47,7 +47,7 @@ export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
         </h1>
 
         {description ? (
-          <p className="text-foreground/80 max-w-md text-base leading-relaxed font-light md:text-lg">
+          <p className="text-foreground/80 max-w-md text-base font-light md:text-lg">
             {description}
           </p>
         ) : null}
@@ -73,9 +73,9 @@ export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
         ) : null}
 
         {meta ? (
-          <div className="text-foreground/40 mt-2 text-xs tracking-widest uppercase">
+          <Eyebrow variant="tracked" tone="label" className="mt-2">
             {meta}
-          </div>
+          </Eyebrow>
         ) : null}
       </div>
 

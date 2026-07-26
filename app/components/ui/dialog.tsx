@@ -45,8 +45,8 @@ const DialogContent = ({
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="text-foreground/50 hover:text-foreground focus-visible:ring-ring absolute top-5 right-5 rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-hidden">
-        <Cross2Icon className="size-4.5" />
+      <DialogPrimitive.Close className="text-foreground/50 hover:text-foreground focus-visible:ring-ring absolute top-5 right-5 rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-hidden">
+        <Cross2Icon className="size-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>

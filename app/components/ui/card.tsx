@@ -19,7 +19,7 @@ const Card = ({
     ref={ref}
     className={cn(
       "bg-card text-card-foreground rounded-2xl border",
-      interactive && "hover:border-primary/30 transition-colors",
+      interactive && "hover:border-primary/35 transition-colors",
       className,
     )}
     {...props}
@@ -35,7 +35,7 @@ const CardHeader = ({
 }: React.ComponentProps<"div">) => (
   <div
     ref={ref}
-    className={cn("flex flex-col gap-1.5 p-5 pb-4", className)}
+    className={cn("flex flex-col gap-2 p-5 pb-4", className)}
     {...props}
   />
 );

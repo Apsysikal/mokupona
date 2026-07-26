@@ -45,7 +45,7 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
   return (
     <>
       <AdminTabs counts={loaderData.counts} />
-      <PageContainer className="grow pt-5 pb-4 md:pt-9">
+      <PageContainer className="grow pt-7 pb-20">
         <Outlet />
       </PageContainer>
     </>
@@ -56,7 +56,7 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
 // boundary, so denied users see a styled page inside the site chrome.
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   return (
-    <PageContainer className="grow pt-5 pb-4 md:pt-9">
+    <PageContainer className="grow pt-7 pb-20">
       <RouteErrorContent error={error} />
     </PageContainer>
   );

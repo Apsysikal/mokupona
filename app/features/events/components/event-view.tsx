@@ -51,7 +51,7 @@ export function EventStory({ event }: EventViewProps) {
         <h1 className={pageTitleClassName}>{event.title}</h1>
       </div>
 
-      <p className="text-foreground/80 text-base leading-relaxed font-light whitespace-pre-line md:text-lg">
+      <p className="text-foreground/80 text-base font-light whitespace-pre-line md:text-lg">
         <AutoLink text={event.description} />
       </p>
 
@@ -70,9 +70,9 @@ export function EventStory({ event }: EventViewProps) {
                   {menuLines.map((line, index) => (
                     <div
                       key={index}
-                      className="text-foreground/80 flex gap-3 text-base leading-relaxed font-light"
+                      className="text-foreground/80 flex gap-3 text-base font-light"
                     >
-                      <span className="text-foreground/40 pt-0.5 font-mono text-sm">
+                      <span className="text-foreground/50 pt-1 font-mono text-sm">
                         {String(index + 1).padStart(2, "0")}
                       </span>
                       <span>
@@ -91,7 +91,7 @@ export function EventStory({ event }: EventViewProps) {
                 donation
               </AccordionTrigger>
               <AccordionContent className="pb-6">
-                <p className="text-foreground/80 text-base leading-relaxed font-light whitespace-pre-line">
+                <p className="text-foreground/80 text-base font-light whitespace-pre-line">
                   <AutoLink text={event.donationDescription} />
                 </p>
               </AccordionContent>

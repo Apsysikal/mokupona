@@ -6,7 +6,7 @@ import { Link } from "react-router";
 import { cn } from "~/lib/utils";
 
 export const pageTitleClassName =
-  "text-3xl font-light tracking-tight md:text-4xl";
+  "text-3xl leading-tight font-light tracking-tight md:text-4xl";
 
 export function PageContainer({
   as: Component = "main",
@@ -51,7 +51,7 @@ export function BackLink({
 }
 
 export const pillVariants = cva(
-  "flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-semibold",
+  "flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold",
   {
     variants: {
       accent: {
@@ -78,6 +78,7 @@ const eyebrowVariants = cva("block font-semibold", {
       primary: "text-primary",
       light: "text-accent-light",
       label: "text-foreground/50",
+      onPrimary: "text-primary-foreground/70",
     },
   },
   defaultVariants: {
@@ -136,7 +137,7 @@ export function SecondaryCTA({
     <Link
       to={to}
       className={cn(
-        "border-foreground/40 hover:border-foreground w-fit border-b pb-0.5 text-base transition-colors",
+        "border-foreground/40 hover:border-foreground w-fit border-b pb-1 text-base transition-colors",
         className,
       )}
     >
@@ -155,8 +156,8 @@ export const chipVariants = cva("rounded-full border transition-colors", {
     },
     size: {
       default:
-        "inline-flex items-center px-4 py-1.5 text-xs font-semibold whitespace-nowrap",
-      nav: "block px-3 py-1.5 text-sm md:rounded-lg md:py-2",
+        "inline-flex items-center px-4 py-2 text-xs font-semibold whitespace-nowrap",
+      nav: "block px-3 py-2 text-sm md:rounded-lg",
     },
   },
   compoundVariants: [
@@ -172,3 +173,40 @@ export const chipVariants = cva("rounded-full border transition-colors", {
     size: "default",
   },
 });
+
+export function Glow({
+  strong = false,
+  className,
+}: {
+  strong?: boolean;
+  className?: string;
+}) {
+  return (
+    <div
+      aria-hidden
+      className={cn(
+        "pointer-events-none absolute rounded-full",
+        strong ? "glow-primary-strong" : "glow-primary",
+        className,
+      )}
+    />
+  );
+}
+
+export const segmentGroupClassName =
+  "bg-foreground/5 flex rounded-lg border p-1";
+
+export const segmentVariants = cva(
+  "flex h-9 flex-1 items-center justify-center rounded-md text-sm font-semibold transition-colors",
+  {
+    variants: {
+      active: {
+        true: "bg-primary text-primary-foreground",
+        false: "text-foreground/65 hover:text-foreground",
+      },
+    },
+    defaultVariants: {
+      active: false,
+    },
+  },
+);

@@ -12,13 +12,14 @@ import { InitialsAvatar } from "~/components/admin-ui";
 import { ErrorList, Field } from "~/components/forms";
 import {
   Eyebrow,
+  PageContainer,
   pageTitleClassName,
   pillVariants,
 } from "~/components/section";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
+import { fieldShellClassName, Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { authClient } from "~/features/auth/auth.client";
 import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
@@ -26,6 +27,7 @@ import { GoogleMark } from "~/features/auth/components/google-button";
 import { displayNameSchema } from "~/features/auth/form-schemas";
 import { requireResolvedUser } from "~/features/auth/middleware.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
+import { cn } from "~/lib/utils";
 import { getUserAuthOverview, updateUserName } from "~/models/user.server";
 import { unknownIntent } from "~/shared/http.server";
 
@@ -167,7 +169,7 @@ export default function MeRoute({ loaderData }: Route.ComponentProps) {
     loaderData;
 
   return (
-    <main className="animate-page-in mx-auto flex w-full max-w-2xl flex-col gap-5 px-6 py-10 md:py-14">
+    <PageContainer className="animate-page-in flex grow flex-col gap-5 pt-7 pb-20">
       <div className="mb-1">
         <Eyebrow variant="tracked" tone="label" className="mb-2">
           account
@@ -188,7 +190,7 @@ export default function MeRoute({ loaderData }: Route.ComponentProps) {
       ) : null}
 
       <SessionsCard sessionCount={sessionCount} />
-    </main>
+    </PageContainer>
   );
 }
 
@@ -270,12 +272,17 @@ function ProfileCard({
       </fetcher.Form>
 
       <div className="flex flex-col gap-2">
-        <span className="text-sm font-medium">email</span>
-        <div className="bg-foreground/5 text-foreground/65 flex h-11 items-center justify-between rounded-lg border px-3 text-sm">
+        <span className="text-sm font-semibold">email</span>
+        <div
+          className={cn(
+            fieldShellClassName,
+            "text-foreground/65 flex items-center justify-between text-sm",
+          )}
+        >
           <span className="truncate">{user.email}</span>
           {user.emailVerified ? (
             <Badge variant="info" pill className="ml-2 shrink-0 gap-1">
-              <CheckIcon className="size-3.5" /> verified
+              <CheckIcon className="size-3" /> verified
             </Badge>
           ) : null}
         </div>
@@ -383,7 +390,7 @@ function ConnectedAccountsCard({
       title="connected accounts"
       subtitle="sign in faster by linking a provider."
     >
-      <div className="flex items-center gap-3.5 rounded-xl border px-4 py-3.5">
+      <div className="flex items-center gap-4 rounded-lg border px-4 py-4">
         <GoogleMark className="size-5 shrink-0" />
         <div className="min-w-0 flex-1">
           <p className="text-base font-semibold">google</p>

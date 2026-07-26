@@ -43,7 +43,9 @@ export function AdminBoardMemberForm({
   return (
     <>
       <div className="flex flex-col gap-3">
-        <h2 className="text-3xl">{heading}</h2>
+        <h2 className="text-3xl leading-tight font-light tracking-tight">
+          {heading}
+        </h2>
         <p>{description}</p>
       </div>
 

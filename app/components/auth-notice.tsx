@@ -25,10 +25,10 @@ export function AuthNotice({
         role="alert"
         className={cn(
           baseClasses,
-          "border-destructive/50 bg-destructive/15 text-destructive-light",
+          "border-destructive/35 bg-destructive/10 text-destructive-light",
         )}
       >
-        <ExclamationTriangleIcon className="mt-0.5 size-5 shrink-0" />
+        <ExclamationTriangleIcon className="mt-1 size-5 shrink-0" />
         <div className="flex flex-col gap-1">
           {title ? <p className="font-semibold">{title}</p> : null}
           <div>{children}</div>
@@ -42,7 +42,7 @@ export function AuthNotice({
       role="status"
       className={cn(baseClasses, "border-primary/35 bg-primary/10")}
     >
-      <EnvelopeClosedIcon className="text-accent-light mt-0.5 size-5 shrink-0" />
+      <EnvelopeClosedIcon className="text-accent-light mt-1 size-5 shrink-0" />
       <div className="flex flex-col gap-1">
         {title ? (
           <p className="text-accent-light font-semibold">{title}</p>

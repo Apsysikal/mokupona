@@ -27,7 +27,11 @@ import {
   InitialsAvatar,
 } from "~/components/admin-ui";
 import { ErrorList, Field } from "~/components/forms";
-import { SectionDivider } from "~/components/section";
+import {
+  SectionDivider,
+  segmentGroupClassName,
+  segmentVariants,
+} from "~/components/section";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import {
@@ -234,7 +238,7 @@ function InviteDialog() {
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
           <DialogTitle>Invite someone</DialogTitle>
           <DialogDescription>
             We&apos;ll email a single-use link that expires in 7 days.
@@ -290,7 +294,7 @@ function RolePicker({ meta }: { meta: FieldMetadata<InvitableRole> }) {
       <div
         role="radiogroup"
         aria-labelledby={labelId}
-        className="bg-foreground/5 flex rounded-lg border p-1"
+        className={segmentGroupClassName}
       >
         {getCollectionProps(meta, {
           type: "radio",
@@ -299,9 +303,9 @@ function RolePicker({ meta }: { meta: FieldMetadata<InvitableRole> }) {
           <label
             key={key}
             className={cn(
-              "flex h-9 flex-1 cursor-pointer items-center justify-center rounded-md text-sm capitalize transition-colors",
-              "text-foreground/65 hover:text-foreground font-medium",
-              "has-checked:bg-primary has-checked:text-primary-foreground has-checked:font-semibold",
+              segmentVariants(),
+              "cursor-pointer capitalize",
+              "has-checked:bg-primary has-checked:text-primary-foreground",
             )}
           >
             <input {...props} className="sr-only" />
@@ -351,19 +355,19 @@ function PendingInviteRow({ invite }: { invite: InviteRow }) {
   const { expired, text } = inviteMeta(invite);
 
   return (
-    <div className="border-foreground/20 bg-foreground/5 flex items-center gap-3 rounded-2xl border border-dashed px-4 py-3">
+    <Card className="flex items-center gap-3 border-dashed p-4">
       <span
         aria-hidden
         className="bg-foreground/10 text-foreground/65 flex size-10 shrink-0 items-center justify-center rounded-full"
       >
-        <EnvelopeClosedIcon className="size-4.5" />
+        <EnvelopeClosedIcon className="size-4" />
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-base font-semibold">{invite.email}</p>
         <p
           className={cn(
-            "mt-0.5 text-sm",
-            expired ? "text-destructive-light" : "text-foreground/50",
+            "mt-1 text-sm",
+            expired ? "text-destructive-light" : "text-foreground/65",
           )}
         >
           {text}
@@ -390,7 +394,7 @@ function PendingInviteRow({ invite }: { invite: InviteRow }) {
           </Button>
         </fetcher.Form>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -398,21 +402,21 @@ type User = Awaited<ReturnType<typeof loader>>["users"][number];
 
 const ROLE_CLASS_NAMES: Record<string, string> = {
   admin: "text-accent-light",
-  moderator: "text-muted-foreground",
-  user: "text-foreground/40",
+  moderator: "text-foreground/65",
+  user: "text-foreground/50",
 };
 
 function UserCard({ user, seed }: { user: User; seed: number }) {
   const { id, email, role } = user;
   const isAdmin = isAdminRole(role.name);
-  const roleClassName = ROLE_CLASS_NAMES[role.name] ?? "text-foreground/40";
+  const roleClassName = ROLE_CLASS_NAMES[role.name] ?? "text-foreground/50";
 
   return (
-    <Card interactive className="flex items-center gap-3 px-4 py-3">
-      <InitialsAvatar name={email} seed={seed} className="size-10 text-sm" />
+    <Card interactive className="flex items-center gap-3 p-4">
+      <InitialsAvatar name={email} seed={seed} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-base font-semibold">{email}</p>
-        <p className={cn("mt-0.5 text-sm", roleClassName)}>
+        <p className={cn("mt-1 text-sm", roleClassName)}>
           {roleLabel(role.name)}
         </p>
       </div>

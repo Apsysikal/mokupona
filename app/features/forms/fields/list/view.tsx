@@ -34,7 +34,7 @@ export function ListField({
 
       <div className="flex items-center justify-between">
         <span className="text-foreground/65 text-sm">{label}</span>
-        <span className="text-foreground/40 text-xs">up to {maxCount}</span>
+        <span className="text-foreground/50 text-xs">up to {maxCount}</span>
       </div>
 
       {items.length > 0 ? (
@@ -84,7 +84,7 @@ export function ListField({
       {items.length < maxCount ? (
         <button
           {...form.insert.getButtonProps({ name: metadata.name })}
-          className="text-primary flex w-fit items-center gap-2 text-sm font-medium hover:underline"
+          className="text-primary flex w-fit items-center gap-2 text-sm font-semibold hover:underline"
         >
           <span aria-hidden className="text-base leading-none">
             +

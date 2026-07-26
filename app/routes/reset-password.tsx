@@ -123,8 +123,10 @@ export default function ResetPassword({
         body: "pick a new password with at least 8 characters and you're back in.",
       }}
     >
-      <div className="mt-1 flex flex-col gap-1.5">
-        <h1 className="text-3xl font-light">choose a new password</h1>
+      <div className="mt-1 flex flex-col gap-2">
+        <h1 className="text-3xl leading-tight font-light tracking-tight">
+          choose a new password
+        </h1>
         {loaderData.email ? (
           <p className="text-foreground/65 text-sm">
             resetting for{" "}
@@ -163,7 +165,7 @@ export default function ResetPassword({
           errors={fields.confirmPassword.errors}
         />
 
-        <Button type="submit" size="lg" className="mt-0.5 w-full">
+        <Button type="submit" size="lg" className="w-full">
           save new password
         </Button>
       </Form>

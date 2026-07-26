@@ -18,10 +18,6 @@
   --popover-foreground: rgb(245 241 236);
   --primary: rgb(237 130 94); /* accent #ED825E */
   --primary-foreground: rgb(21 17 14); /* on-accent */
-  --secondary: rgb(27 21 17);
-  --secondary-foreground: rgb(245 241 236);
-  --muted: rgb(27 21 17);
-  --muted-foreground: rgb(167 158 149); /* text muted #A79E95 */
   --accent: rgb(237 130 94);
   --accent-foreground: rgb(21 17 14);
   --destructive: rgb(167 29 49);
@@ -43,15 +39,9 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
 
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-destructive-light: var(--destructive-light);
-
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
 
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);

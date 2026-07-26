@@ -9,6 +9,7 @@ import {
   SeatProgress,
 } from "~/components/admin-ui";
 import { CoverImage } from "~/components/cover-image";
+import { Eyebrow } from "~/components/section";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import {
@@ -114,14 +115,14 @@ export default function AdminOverviewPage({
                     <p className="truncate text-sm font-semibold">
                       {signup.name}
                     </p>
-                    <p className="text-foreground/50 truncate text-sm">
+                    <p className="text-foreground/65 truncate text-sm">
                       {signup.email}
                     </p>
                   </div>
                   <time
                     dateTime={new Date(signup.createdAt).toISOString()}
                     suppressHydrationWarning
-                    className="text-foreground/40 text-xs whitespace-nowrap"
+                    className="text-foreground/50 text-xs whitespace-nowrap"
                   >
                     {formatAdminTimestamp(new Date(signup.createdAt))}
                   </time>
@@ -143,23 +144,23 @@ function NextDinnerCard({ dinner }: { dinner: NextDinner }) {
   const date = new Date(dinner.date);
 
   return (
-    <Card className="flex flex-wrap items-center gap-4 p-4">
+    <Card className="flex flex-wrap items-center gap-3 p-4">
       <CoverImage
         image={dinner.image}
         alt=""
-        sizes="144px"
-        className="w-36 shrink-0 rounded-lg border"
+        sizes="160px"
+        className="w-40 shrink-0 rounded-lg border"
       />
 
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         <div>
-          <p className="text-foreground/50 text-xs font-semibold tracking-widest uppercase">
+          <Eyebrow variant="tracked" tone="label">
             Next dinner
-          </p>
+          </Eyebrow>
           <h2 className="mt-1 truncate text-lg font-semibold">
             {dinner.title}
           </h2>
-          <p className="text-muted-foreground mt-1 text-sm">
+          <p className="text-foreground/65 mt-1 text-sm">
             <time dateTime={date.toISOString()} suppressHydrationWarning>
               {formatAdminDateLine(date)}
             </time>

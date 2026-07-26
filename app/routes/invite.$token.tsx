@@ -224,7 +224,7 @@ export default function InvitePage({
         </Button>
         <Link
           to="/login"
-          className="text-primary text-sm font-medium hover:underline"
+          className="text-primary text-sm font-semibold hover:underline"
         >
           go to log in
         </Link>
@@ -251,9 +251,9 @@ export default function InvitePage({
         {upgrades ? (
           <div className="flex items-center gap-3" aria-hidden>
             <RolePill>{currentRole}</RolePill>
-            <ArrowRightIcon className="text-foreground/50 size-4.5" />
+            <ArrowRightIcon className="text-foreground/50 size-4" />
             <RolePill accent>
-              <LockClosedIcon className="size-3.5" />
+              <LockClosedIcon className="size-3" />
               {roleName}
             </RolePill>
           </div>
@@ -266,7 +266,7 @@ export default function InvitePage({
         </Form>
         <Link
           to="/"
-          className="text-primary text-sm font-medium hover:underline"
+          className="text-primary text-sm font-semibold hover:underline"
         >
           not now
         </Link>
@@ -304,7 +304,7 @@ export default function InvitePage({
         </Form>
         <Link
           to="/"
-          className="text-primary text-sm font-medium hover:underline"
+          className="text-primary text-sm font-semibold hover:underline"
         >
           stay signed in
         </Link>
@@ -367,7 +367,9 @@ function InviteSignup({
         body: brandBody,
       }}
     >
-      <h1 className="mt-1 text-3xl font-light">accept your invite</h1>
+      <h1 className="mt-1 text-3xl leading-tight font-light tracking-tight">
+        accept your invite
+      </h1>
 
       <Form
         method="post"
@@ -392,7 +394,7 @@ function InviteSignup({
             />
             <LockClosedIcon
               aria-hidden
-              className="text-foreground/40 absolute top-1/2 right-3 size-4 -translate-y-1/2"
+              className="text-foreground/50 absolute top-1/2 right-3 size-4 -translate-y-1/2"
             />
           </div>
           <p className="text-foreground/50 text-sm">
@@ -417,7 +419,7 @@ function InviteSignup({
           errors={fields.password.errors}
         />
 
-        <Button type="submit" size="lg" className="mt-0.5 w-full">
+        <Button type="submit" size="lg" className="w-full">
           accept &amp; create account
         </Button>
 

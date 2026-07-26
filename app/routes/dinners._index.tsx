@@ -2,6 +2,7 @@ import type { Route } from "./+types/dinners._index";
 
 import {
   Eyebrow,
+  Glow,
   PageContainer,
   pageTitleClassName,
   SectionDivider,
@@ -39,11 +40,11 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
   const pastEvents = orderEventsByStatus(past, now);
 
   return (
-    <PageContainer className="grow pt-7 pb-20 md:pt-16">
+    <PageContainer className="grow pt-7 pb-20">
       <div className="mb-9 flex flex-col gap-3 md:mb-12">
         <Eyebrow>gatherings</Eyebrow>
         <h1 className={pageTitleClassName}>dinners</h1>
-        <p className="text-foreground/65 max-w-2xl text-base leading-relaxed font-light md:text-lg">
+        <p className="text-foreground/80 max-w-2xl text-base font-light md:text-lg">
           {upcomingEvents.length > 0
             ? "a handful of seats open before each supper. reserve early, tables are small and fill quickly."
             : "we run a handful of intimate dinners a year. there's nothing on the calendar right now, but the next one is never far off."}
@@ -53,7 +54,7 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
       {upcomingEvents.length > 0 ? (
         <>
           <SectionDivider className="mb-5">the next dinner</SectionDivider>
-          <div className="mb-14 flex flex-col gap-8 md:mb-18">
+          <div className="mb-14 flex flex-col gap-8 md:mb-20">
             {upcomingEvents.map((event, index) => (
               <FeaturedEventCard
                 key={event.id}
@@ -85,18 +86,15 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
 // mailing-list capture here (design handoff §5)
 function EmptyState() {
   return (
-    <Card className="relative mb-14 flex flex-col items-center gap-4 overflow-hidden px-6 py-9 text-center md:mb-18 md:gap-5 md:px-14 md:py-19">
-      <div
-        aria-hidden
-        className="glow-primary pointer-events-none absolute -top-36 left-1/2 h-80 w-md -translate-x-1/2"
-      />
+    <Card className="relative mb-14 flex flex-col items-center gap-4 overflow-hidden px-6 py-9 text-center md:mb-20 md:gap-5 md:px-14 md:py-20">
+      <Glow className="-top-36 left-1/2 h-80 w-md -translate-x-1/2" />
       <span className="text-primary relative text-sm font-semibold">
         nothing on the calendar right now
       </span>
-      <h2 className={cn("relative max-w-lg", pageTitleClassName)}>
+      <h2 className={cn("relative max-w-md", pageTitleClassName)}>
         the table is being set
       </h2>
-      <p className="text-foreground/80 relative max-w-md text-sm leading-relaxed font-light md:text-lg">
+      <p className="text-foreground/80 relative max-w-md text-sm font-light md:text-lg">
         we&apos;re planning the next gathering. check back soon to see
         what&apos;s next, or follow along on instagram for the announcement.
       </p>

@@ -44,8 +44,8 @@ export function CoverImage({
         className,
       )}
     >
-      <span className="border-primary/40 flex aspect-square w-1/4 min-w-10 items-center justify-center rounded-full border-2">
-        <span className="border-primary/25 aspect-square w-2/3 rounded-full border" />
+      <span className="border-primary/35 flex aspect-square w-1/4 min-w-10 items-center justify-center rounded-full border-2">
+        <span className="border-primary/20 aspect-square w-2/3 rounded-full border" />
       </span>
     </div>
   );

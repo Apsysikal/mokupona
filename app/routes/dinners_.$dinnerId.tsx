@@ -208,7 +208,7 @@ export default function DinnerPage({
   );
 
   return (
-    <PageContainer className="grow pt-7 pb-20 md:pt-9">
+    <PageContainer className="grow pt-7 pb-20">
       <BackLink to="/dinners" className="mb-6">
         all dinners
       </BackLink>
@@ -298,7 +298,6 @@ function SignupForm({
         })}
 
         <CheckboxField
-          className="mt-0.5"
           labelProps={{
             children: (
               <span className="text-sm">
@@ -323,7 +322,7 @@ function SignupForm({
           join this dinner
         </Button>
 
-        <p className="text-foreground/40 text-center text-xs leading-normal">
+        <p className="text-foreground/50 text-center text-xs leading-normal">
           we&apos;ll email you to confirm if a seat is yours.
         </p>
       </Form>

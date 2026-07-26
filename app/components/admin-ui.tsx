@@ -29,7 +29,7 @@ export function AdminPageHeader({
         </Eyebrow>
         <h1 className={pageTitleClassName}>{title}</h1>
         {subtitle ? (
-          <p className="text-muted-foreground mt-2 text-base">{subtitle}</p>
+          <p className="text-foreground/65 mt-2 text-base">{subtitle}</p>
         ) : null}
       </div>
       {actions ? (
@@ -61,7 +61,7 @@ export function AdminSearchField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="placeholder:text-foreground/40 min-w-0 flex-1 bg-transparent text-sm outline-none"
+        className="placeholder:text-foreground/50 min-w-0 flex-1 bg-transparent text-sm outline-none"
       />
     </div>
   );
@@ -104,7 +104,7 @@ export function SeatProgress({
     total > 0 ? Math.min(100, Math.round((taken / total) * 100)) : 0;
 
   return (
-    <div className="bg-foreground/10 h-1.5 flex-1 overflow-hidden rounded-full">
+    <div className="bg-foreground/10 h-2 flex-1 overflow-hidden rounded-full">
       <div
         className={cn(
           "h-full rounded-full transition-[width] duration-500",
@@ -144,7 +144,7 @@ export function InitialsAvatar({
     <span
       aria-hidden
       className={cn(
-        "flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+        "flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
         AVATAR_TINTS[seed % AVATAR_TINTS.length],
         className,
       )}

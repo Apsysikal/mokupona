@@ -28,7 +28,7 @@ export function FeaturedEventCard({
 }) {
   return (
     <Card as="article" className="flex flex-col overflow-hidden lg:flex-row">
-      <div className="relative lg:w-[62%] lg:shrink-0">
+      <div className="relative lg:w-3/5 lg:shrink-0">
         <CoverImage
           image={event.image}
           alt=""
@@ -45,11 +45,11 @@ export function FeaturedEventCard({
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-3 p-5 lg:p-8">
         <EventDateHeading date={event.date} />
 
-        <h2 className="line-clamp-2 text-2xl font-light tracking-tight">
+        <h2 className="line-clamp-2 text-2xl leading-tight font-light tracking-tight">
           {event.title}
         </h2>
 
-        <p className="text-foreground/80 line-clamp-3 text-sm leading-relaxed font-light lg:line-clamp-2 lg:text-base">
+        <p className="text-foreground/80 line-clamp-3 text-sm font-light lg:line-clamp-2 lg:text-base">
           {event.description}
         </p>
 
@@ -92,7 +92,7 @@ export function PastEventCard({ event }: { event: EventCardModel }) {
           {formatEventMonthYear(eventDate)}
         </time>
       </span>
-      <h4 className="text-base font-normal md:text-lg">{event.title}</h4>
+      <h4 className="text-base font-light md:text-lg">{event.title}</h4>
     </Link>
   );
 }

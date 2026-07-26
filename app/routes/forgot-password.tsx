@@ -83,8 +83,10 @@ export default function ForgotPassword({ actionData }: Route.ComponentProps) {
         body: "tell us your email and we'll send a link to set a new password.",
       }}
     >
-      <div className="mt-1 flex flex-col gap-1.5">
-        <h1 className="text-3xl font-light">forgot your password?</h1>
+      <div className="mt-1 flex flex-col gap-2">
+        <h1 className="text-3xl leading-tight font-light tracking-tight">
+          forgot your password?
+        </h1>
         <p className="text-foreground/65 text-sm">
           enter the email you signed up with and we&apos;ll send a reset link.
         </p>
@@ -104,7 +106,7 @@ export default function ForgotPassword({ actionData }: Route.ComponentProps) {
           errors={fields.email.errors}
         />
 
-        <Button type="submit" size="lg" className="mt-0.5 w-full">
+        <Button type="submit" size="lg" className="w-full">
           send reset link
         </Button>
 
@@ -112,7 +114,7 @@ export default function ForgotPassword({ actionData }: Route.ComponentProps) {
           remembered it?{" "}
           <Link
             to="/login"
-            className="text-primary font-medium hover:underline"
+            className="text-primary font-semibold hover:underline"
           >
             back to log in
           </Link>

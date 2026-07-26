@@ -7,9 +7,8 @@ import type { Route } from "./+types/login";
 
 import { AuthShell } from "~/components/auth-layout";
 import { AuthNotice } from "~/components/auth-notice";
-import { ErrorList, Field } from "~/components/forms";
+import { CheckboxField, ErrorList, Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
-import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { auth } from "~/features/auth/auth.server";
@@ -110,7 +109,9 @@ export default function LoginPage({
 
   return (
     <AuthShell mode="login" search={searchParams.toString()}>
-      <h1 className="mt-1 text-3xl font-light">log in</h1>
+      <h1 className="mt-1 text-3xl leading-tight font-light tracking-tight">
+        log in
+      </h1>
 
       <Form
         method="post"
@@ -155,7 +156,7 @@ export default function LoginPage({
             <Label htmlFor={fields.password.id}>password</Label>
             <Link
               to="/forgot-password"
-              className="text-primary text-sm font-medium hover:underline"
+              className="text-primary text-sm font-semibold hover:underline"
             >
               forgot password?
             </Link>
@@ -176,17 +177,12 @@ export default function LoginPage({
 
         <Input type="hidden" name="redirectTo" value={redirectTo} />
 
-        <div className="flex items-center gap-2">
-          <Checkbox id="remember" name="remember" />
-          <Label
-            htmlFor="remember"
-            className="text-foreground/80 text-sm leading-none font-normal"
-          >
-            remember me
-          </Label>
-        </div>
+        <CheckboxField
+          buttonProps={{ id: "remember", name: "remember" }}
+          labelProps={{ children: "remember me" }}
+        />
 
-        <Button type="submit" size="lg" className="mt-0.5 w-full">
+        <Button type="submit" size="lg" className="w-full">
           log in
         </Button>
 
@@ -208,7 +204,7 @@ export default function LoginPage({
               pathname: "/join",
               search: searchParams.toString(),
             }}
-            className="text-primary font-medium hover:underline"
+            className="text-primary font-semibold hover:underline"
           >
             sign up
           </Link>

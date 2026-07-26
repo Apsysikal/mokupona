@@ -273,7 +273,7 @@ function BuilderRowView({
       <RowCard
         row={row}
         // friends card carries the sky "info" tint (design system §2)
-        className="border-sky-300/40 bg-sky-300/5"
+        className="border-sky-300/35 bg-sky-300/10"
         isRowOpen={isRowOpen}
         toggleRow={toggleRow}
         header={
@@ -309,7 +309,7 @@ function BuilderRowView({
       row={row}
       // pinned identity cards carry the design's orange tint
       className={
-        isPinnedIdentity ? "border-primary/35 bg-primary/5" : undefined
+        isPinnedIdentity ? "border-primary/35 bg-primary/10" : undefined
       }
       isRowOpen={isRowOpen}
       toggleRow={toggleRow}
@@ -485,9 +485,9 @@ function RowHeader({
       </Button>
       {removable ? (
         <Button
-          variant="outline"
+          variant="destructive-outline"
           size={iconSize}
-          className="border-destructive/50 bg-destructive/10 hover:bg-destructive/30 text-destructive-light shrink-0"
+          className="shrink-0"
           aria-label="Remove"
           {...form.remove.getButtonProps({ name: listName, index })}
           onClick={
@@ -534,7 +534,7 @@ function PinnedIdentityRowView({ row }: { row: RowMetadata }) {
         inputProps={{ ...getInputProps(rowFields.label, { type: "text" }) }}
         errors={rowFields.label.errors}
       />
-      <p className="text-muted-foreground text-xs">
+      <p className="text-foreground/65 text-xs">
         Type and field key are fixed for identity fields — only the label guests
         see can change. Always required.
       </p>
@@ -719,7 +719,7 @@ function FriendsRowView({
       </div>
 
       <div className="flex flex-col gap-3">
-        <span className="text-sm font-medium">Questions per friend</span>
+        <span className="text-sm font-semibold">Questions per friend</span>
         <ErrorList
           id={rowFields.itemFields.errorId}
           errors={rowFields.itemFields.errors}

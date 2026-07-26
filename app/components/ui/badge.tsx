@@ -4,20 +4,19 @@ import React from "react";
 import { cn } from "~/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center border px-2.5 py-0.5 text-xs font-semibold tracking-wide",
+  "inline-flex items-center border px-3 py-1 text-xs font-semibold tracking-wide",
   {
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground border-transparent",
-        secondary:
-          "bg-secondary text-secondary-foreground border-foreground/15",
-        info: "border-sky-300/40 bg-sky-300/15 text-sky-300",
+        secondary: "bg-card text-card-foreground",
+        info: "border-sky-300/35 bg-sky-300/10 text-sky-300",
       },
       // pill-shaped badges (the "next dinner" tag, admin filter shapes) vs the
       // default rounded rectangle
       pill: {
         true: "rounded-full",
-        false: "rounded-md",
+        false: "rounded-lg",
       },
     },
     defaultVariants: {

@@ -9,7 +9,7 @@ export const meta: Route.MetaFunction = () => [{ title: "Privacy Policy" }];
 
 export default function PrivacyPage() {
   return (
-    <PageContainer className="max-w-4xl grow pt-7 pb-20 md:pt-16">
+    <PageContainer className="grow pt-7 pb-20">
       <h1 className={cn("mb-9 md:mb-12", pageTitleClassName)}>
         Privacy Policy
       </h1>
@@ -453,7 +453,7 @@ export default function PrivacyPage() {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-6">
-      <h2 className="text-2xl font-light tracking-tight md:text-3xl">
+      <h2 className="text-2xl leading-tight font-light tracking-tight md:text-3xl">
         {title}
       </h2>
       {children}
@@ -471,16 +471,12 @@ function Sub({ title, children }: { title: string; children: ReactNode }) {
 }
 
 function P({ children }: { children: ReactNode }) {
-  return (
-    <p className="text-foreground/80 text-base leading-relaxed font-light">
-      {children}
-    </p>
-  );
+  return <p className="text-foreground/80 text-base font-light">{children}</p>;
 }
 
 function Ol({ children }: { children: ReactNode }) {
   return (
-    <ol className="text-foreground/80 list-decimal space-y-1 pl-5 text-base leading-relaxed font-light">
+    <ol className="text-foreground/80 list-decimal space-y-1 pl-5 text-base font-light">
       {children}
     </ol>
   );
