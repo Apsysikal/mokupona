@@ -15,7 +15,11 @@ const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 const googleProvider =
   googleClientId && googleClientSecret
-    ? { clientId: googleClientId, clientSecret: googleClientSecret }
+    ? {
+        prompt: "select_account" as const,
+        clientId: googleClientId,
+        clientSecret: googleClientSecret,
+      }
     : undefined;
 
 export const googleAuthEnabled = Boolean(googleProvider);
