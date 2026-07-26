@@ -566,3 +566,22 @@ nothing in CI can assert it.
 3. **Who notices if cron dies?** (§2) Rotation stops, retention silently exceeds
    30 days, and the volume fills with SQLite on it. Decide in phase 2 whether a
    boot-time check and a size alarm are worth the code.
+
+---
+
+## 9. Follow-up
+
+Filed out of phase 8 (§6 tier 3). A blocked write is now visible in the log, but
+the UI still reports it as success. Three actions redirect as though the write
+landed because they discard the `null` their model function returns:
+
+| Call site                                | Discarded return                       |
+| ---------------------------------------- | -------------------------------------- |
+| `admin.locations.$locationId.delete.tsx` | `deleteAddress` — address still in use |
+| `admin.users._index.tsx` (`resend`)      | `resendInvite` — no live invite        |
+| `admin.users.$userId.delete.tsx`         | `deleteNonAdminUserById` — protected   |
+
+The third already branches on the return value to log the outcome; all three
+still need to surface it to the user. Checking the return value and reporting
+the failure is a behaviour change, deliberately out of scope for the logging
+rework.

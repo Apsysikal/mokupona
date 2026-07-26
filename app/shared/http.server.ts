@@ -1,8 +1,11 @@
 import { isIP } from "node:net";
 
+import { requestLogger } from "~/logger/request-context.server";
+
 /** Throws the conventional 404 response when a looked-up record is absent. */
 export function requireFound<T>(value: T | null | undefined): T {
   if (value === null || value === undefined) {
+    requestLogger().warn("A looked-up record was absent");
     throw new Response("Not found", { status: 404 });
   }
   return value;
@@ -59,6 +62,7 @@ export function getClientIPAddress(request: Request): string | null {
  * branch. The flows differ per route — only the terminal response is shared.
  */
 export function unknownIntent() {
+  requestLogger().warn("An action received an unknown intent");
   return new Response("Unknown intent", { status: 400 });
 }
 

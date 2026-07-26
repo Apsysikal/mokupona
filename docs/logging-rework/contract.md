@@ -165,6 +165,8 @@ listed key, never a synonym.
 | `formVersion`   | `string`  | `FormVersion.id`                                                       |
 | `submission`    | `string`  | `FormSubmission.id`                                                    |
 | `inviteId`      | `string`  | `Invite.id`                                                            |
+| `addressId`     | `string`  | `Address.id`                                                           |
+| `intent`        | `string`  | the `intent` an action dispatched on                                   |
 | `storageKey`    | `string`  | image storage provider key                                             |
 | `template`      | `string`  | a `mailTemplates` key                                                  |
 | `provider`      | `string`  | a configured provider name: mail, image storage, or an auth account    |

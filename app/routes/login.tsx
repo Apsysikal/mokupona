@@ -69,7 +69,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
         ? (error as { body?: { code?: string } }).body?.code
         : undefined;
 
-    logger.info(
+    logger.warn(
       {
         ip: getClientIPAddress(request),
         email,

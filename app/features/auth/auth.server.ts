@@ -100,7 +100,10 @@ export const auth = singleton("better-auth", () => {
           before: async (user) => {
             const role = await getRoleByName("user");
             if (!role) {
-              logger.error("Default role 'user' missing during signup");
+              requestLogger().error(
+                { email: user.email },
+                "Default role 'user' missing during signup",
+              );
               throw new Error("Default role 'user' is not seeded");
             }
             return { data: { ...user, roleId: role.id } };

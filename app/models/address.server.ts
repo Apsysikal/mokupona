@@ -1,6 +1,7 @@
 import type { Address } from "#prisma/generated/client";
 
 import { prisma } from "~/db.server";
+import { requestLogger } from "~/logger/request-context.server";
 
 export type { Address } from "#prisma/generated/client";
 
@@ -84,7 +85,13 @@ export async function updateAddress(
 export async function deleteAddress(id: string): Promise<Address | null> {
   return prisma.$transaction(async (tx) => {
     const inUse = await tx.event.count({ where: { addressId: id } });
-    if (inUse > 0) return null;
+    if (inUse > 0) {
+      requestLogger().warn(
+        { addressId: id, reason: { dinnersUsingAddress: inUse } },
+        "Refused to delete an address dinners still point at",
+      );
+      return null;
+    }
 
     return tx.address.delete({ where: { id } });
   });

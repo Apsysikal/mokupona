@@ -25,7 +25,10 @@ import { authClient } from "~/features/auth/auth.client";
 import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { GoogleMark } from "~/features/auth/components/google-button";
 import { displayNameSchema } from "~/features/auth/form-schemas";
-import { requireResolvedUser } from "~/features/auth/middleware.server";
+import {
+  requestLoggerContext,
+  requireResolvedUser,
+} from "~/features/auth/middleware.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
 import { cn } from "~/lib/utils";
 import { getUserAuthOverview, updateUserName } from "~/models/user.server";
@@ -71,6 +74,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
 
 export const action = async ({ request, context }: Route.ActionArgs) => {
   const { id: userId } = await requireResolvedUser(context, request);
+  const log = context.get(requestLoggerContext);
   const formData = await request.formData();
   const intent = formData.get("intent");
 
@@ -106,7 +110,10 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
           headers: request.headers,
         });
       }
-    } catch {
+    } catch (error) {
+      // the field error below blames the user's input, which is only one of
+      // the reasons better-auth rejects this
+      log.warn({ userId, intent, error }, "Password change failed");
       return data({
         result: submission.reply({
           fieldErrors:
@@ -140,7 +147,8 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         headers: request.headers,
       });
       return data({ result: null, done: "unlink" as const });
-    } catch {
+    } catch (error) {
+      log.warn({ userId, error }, "Unlinking the Google account failed");
       return data({ result: null, done: null });
     }
   }

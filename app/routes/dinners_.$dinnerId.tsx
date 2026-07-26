@@ -123,7 +123,7 @@ export async function action({ params, request }: Route.ActionArgs) {
     });
   } catch (reason) {
     if (reason instanceof FormVersionChangedError) {
-      logger.info(
+      logger.warn(
         {
           dinner: dinner.id,
           formVersion: version.id,

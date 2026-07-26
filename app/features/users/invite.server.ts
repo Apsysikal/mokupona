@@ -2,6 +2,7 @@ import { normalizeInvitableRole } from "./invite.shared";
 import type { InvitableRole } from "./invite.shared";
 
 import { sendTemplate } from "~/features/mail/mail.server";
+import { requestLogger } from "~/logger/request-context.server";
 import type { InviteWithToken } from "~/models/invite.server";
 import { refreshInvite, upsertInvite } from "~/models/invite.server";
 
@@ -45,5 +46,12 @@ export async function resendInvite({
   origin: string;
 }): Promise<void> {
   const invite = await refreshInvite(id);
-  if (invite) await sendInviteMail({ invite, origin });
+  if (!invite) {
+    requestLogger().warn(
+      { inviteId: id },
+      "Re-send found no live invite to refresh",
+    );
+    return;
+  }
+  await sendInviteMail({ invite, origin });
 }

@@ -92,8 +92,10 @@ export async function logout(request: Request) {
       returnHeaders: true,
     });
     return redirect("/", { headers });
-  } catch {
-    // no live session to revoke — still land the user on the home page
+  } catch (error) {
+    // usually no live session to revoke, but a session that survives this is
+    // indistinguishable from one that was never there
+    requestLogger().warn({ error }, "Sign-out did not revoke a session");
     return redirect("/");
   }
 }

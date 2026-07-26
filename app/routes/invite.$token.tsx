@@ -31,7 +31,6 @@ import { landingPathForRole } from "~/features/auth/roles";
 import { isSignupEnabled } from "~/features/auth/signup-settings.server";
 import { normalizeInvitableRole } from "~/features/users/invite.shared";
 import { requestLogger } from "~/logger/request-context.server";
-import { logger } from "~/logger.server";
 import {
   acceptInvite,
   getInviteByToken,
@@ -151,9 +150,11 @@ export const action = async ({
       return redirect(`/invite/${params.token}`);
     }
     await acceptCurrentInvite(invite, user.id, params.token);
-    logger.info(
+    log.warn(
       {
         ip: getClientIPAddress(request),
+        userId: user.id,
+        inviteId: invite.id,
         email: user.email,
         role: invite.roleName,
       },
@@ -195,9 +196,11 @@ export const action = async ({
       returnHeaders: true,
     });
 
-    logger.info(
+    log.warn(
       {
         ip: getClientIPAddress(request),
+        userId: created.id,
+        inviteId: invite.id,
         email: invite.email,
         role: invite.roleName,
       },

@@ -50,15 +50,19 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   const { password, token } = submission.value;
+  // resolvable only while the token is live, so it has to be read first
+  const email = await getPasswordResetEmail(token);
 
   try {
     await auth.api.resetPassword({
       body: { newPassword: password, token },
     });
-  } catch {
-    logger.info(
+  } catch (error) {
+    logger.warn(
       {
         ip: getClientIPAddress(request),
+        email,
+        error,
       },
       "Password reset failed (stale token)",
     );
@@ -68,6 +72,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   logger.info(
     {
       ip: getClientIPAddress(request),
+      email,
     },
     "Password reset completed",
   );
