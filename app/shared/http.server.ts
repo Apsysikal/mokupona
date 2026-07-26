@@ -1,3 +1,5 @@
+import { isIP } from "node:net";
+
 /** Throws the conventional 404 response when a looked-up record is absent. */
 export function requireFound<T>(value: T | null | undefined): T {
   if (value === null || value === undefined) {
@@ -45,14 +47,17 @@ export function obscureEmail(email: string) {
   return `${name[0]}${new Array(name.length).join("*")}@${domain}`;
 }
 
-export function getClientIPAddress(request: Request) {
-  const ip =
-    request.headers.get("X-Client-IP") ??
-    request.headers.get("X-Forwarded-For") ??
-    request.headers.get("HTTP-X-Forwarded-For") ??
-    request.headers.get("Fly-Client-IP");
+export function getClientIPAddress(request: Request): string | null {
+  const header = request.headers.get("Fly-Client-IP");
+  if (!header || header.length > 64) return null;
 
-  return ip;
+  const value = header.trim().toLowerCase();
+  const family = isIP(value);
+  if (family === 0) return null;
+  if (family === 4) return value;
+
+  const mapped = /^(?:0*:)*0*ffff:(\d{1,3}(?:\.\d{1,3}){3})$/.exec(value);
+  return mapped && isIP(mapped[1]) === 4 ? mapped[1] : value;
 }
 
 /**

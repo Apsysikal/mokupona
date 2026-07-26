@@ -1,12 +1,12 @@
 # Client IP detection, and the groundwork for rate limiting
 
-Status: **proposed 2026-07-26**. Step 1 is ready to implement; part 2 is research
-for a later session.
+Status: **step 1 implemented 2026-07-26**; part 2 is research for a later
+session, nothing in it has been built.
 
 ## Goal
 
-1. **Now:** make client-IP extraction reliable and non-spoofable. Today the
-   helper returns an attacker-chosen string on request.
+1. **Done:** make client-IP extraction reliable and non-spoofable. The helper
+   used to return an attacker-chosen string on request; it no longer does.
 2. **Later:** when rate limiting is actually introduced, do it from a correct
    starting point. Part 2 records the findings so that session does not have to
    redo the research.
@@ -15,9 +15,10 @@ Rate limiting is explicitly **out of scope for step 1**. The header fix stands o
 its own — it is a correctness and log-integrity fix, not a prerequisite being
 rushed for something else.
 
-## Current state
+## The state that was fixed
 
-`app/shared/http.server.ts:48`:
+For the record — this is what shipped before 2026-07-26 and what the defect list
+below refers to:
 
 ```ts
 export function getClientIPAddress(request: Request) {
@@ -63,10 +64,10 @@ across 6 route modules, no rate limit or access check depends on it:
 | `app/routes/invite.$token.tsx` | 134, 175 |
 | `app/routes/forgot-password.tsx` | 37 |
 
-So the impact today is **unusable abuse forensics plus log injection**, not an
-authentication bypass. It is worth fixing before the logging rework wires
-redaction: `hashIp` over an attacker-supplied string produces confident-looking
-garbage that reads exactly like a real client identity.
+So the impact was **unusable abuse forensics plus log injection**, not an
+authentication bypass. Fixing it ahead of the logging rework mattered because
+`hashIp` over an attacker-supplied string produces confident-looking garbage that
+reads exactly like a real client identity.
 
 ## Constraints
 
@@ -85,7 +86,7 @@ Header-based derivation is the only option — which makes the single-value
 
 ---
 
-# Step 1 — reliable header extraction
+# Step 1 — reliable header extraction (implemented)
 
 ## Which header to trust
 
@@ -116,20 +117,12 @@ fallback is the actual hazard — it hides the day the trusted header stops
 arriving and starts trusting a spoofable one instead. The header to read is a
 *deployment* fact, not a runtime guess.
 
-## Implementation
+## Implementation — shipped
+
+`app/shared/http.server.ts`, with `import { isIP } from "node:net"` at the top of
+the file:
 
 ```ts
-// app/shared/http.server.ts
-import { isIP } from "node:net";
-
-/**
- * The client address as observed by the Fly proxy, or `null` when the request
- * did not pass through it (local dev, health check, or a 6PN peer).
- *
- * `Fly-Client-IP` is the only client-address header Fly overwrites, so it is the
- * only one a client cannot dictate. `X-Forwarded-For` is appended to rather than
- * replaced, which leaves its left side under client control.
- */
 export function getClientIPAddress(request: Request): string | null {
   const header = request.headers.get("Fly-Client-IP");
   if (!header || header.length > 64) return null;
@@ -164,16 +157,17 @@ in part 2.
 ## Behaviour changes
 
 - **Return type is unchanged** (`string | null`), and every call site already
-  passes the result straight into a log field. **No call-site edits needed.**
-- **Local dev and tests log `ip: null`.** This is not a regression — the Vite dev
-  server sets none of the four old headers either, so the current helper already
-  returns `null` there.
-- **In production, values become real.** Today a crafted request logs whatever it
-  chose; afterwards it logs the address Fly saw.
+  passed the result straight into a log field, so **no call site was edited**.
+  The 12 sites in the table above are untouched.
+- **Local dev and tests log `ip: null`.** Not a regression — the Vite dev server
+  sets none of the four old headers either, so the old helper already returned
+  `null` there.
+- **In production, values become real.** Before, a crafted request logged
+  whatever it chose; now it logs the address Fly saw.
 
 ## Tests
 
-Worth a small unit test file, since the whole point is rejecting inputs:
+`app/shared/http.server.test.ts` — new file, eight cases, all passing:
 
 | Input | Expected |
 | --- | --- |
@@ -186,12 +180,23 @@ Worth a small unit test file, since the whole point is rejecting inputs:
 | `Fly-Client-IP: <2 KB of junk>` | `null` |
 | no headers | `null` |
 
+`tsc --noEmit` and `eslint` are clean on both files.
+
+## Not verified in production
+
+The behaviour above is verified against the helper's inputs, not against a live
+Fly request. Nobody has yet logged the inbound header set on the deployed app to
+confirm `Fly-Client-IP` arrives as expected — worth a glance at the first
+production logs after the deploy, and a prerequisite anyway for the
+absence-detection idea in §2.7.
+
 ## Interaction with the logging rework
 
 `docs/logging-rework/plan.md` §3 already folds in "`Fly-Client-IP` should win".
-This supersedes that note: the ordering is not the main problem, the two
-never-set headers and the missing validation are. Two refinements to that plan's
-`hashIp`, both from the privacy research in part 2:
+That note is now **done and superseded** — the ordering was not the main problem,
+the two never-set headers and the missing validation were, and all three are
+fixed. Two refinements to that plan's `hashIp` remain **open**, both from the
+privacy research in part 2; neither is implemented:
 
 1. **Truncate before HMAC** — `/24` for IPv4, `/64` for IPv6. Strictly better: it
    shrinks the re-identification surface, and if the value is ever reused as a
@@ -402,9 +407,11 @@ production. Two caveats before implementing:
 
 ---
 
-# Unrelated bug found in the same file
+# Unrelated bug found in the same file — still open
 
-`getDomainUrl` (`app/shared/http.server.ts:33`) trusts `X-Forwarded-Host`, which
+Not touched by step 1.
+
+`getDomainUrl` (`app/shared/http.server.ts:35`) trusts `X-Forwarded-Host`, which
 **Fly does not set** — it is absent from Fly's documented header list, so on Fly
 it is fully client-controlled. Its output is used as:
 
