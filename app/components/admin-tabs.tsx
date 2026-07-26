@@ -24,7 +24,7 @@ export function AdminTabs({ counts }: { counts: AdminTabCounts }) {
   return (
     <nav
       aria-label="Admin sections"
-      className="border-border flex gap-5 overflow-x-auto border-b px-4 whitespace-nowrap md:gap-7 md:px-10 [&::-webkit-scrollbar]:hidden"
+      className="scrollbar-hidden flex gap-5 overflow-x-auto border-b px-4 whitespace-nowrap md:gap-7 md:px-10"
     >
       {TABS.map((tab) => {
         const count = "countKey" in tab ? counts[tab.countKey] : null;

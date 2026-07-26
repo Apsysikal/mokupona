@@ -165,7 +165,7 @@ export default function MeRoute({ loaderData }: Route.ComponentProps) {
   return (
     <main className="animate-page-in mx-auto flex w-full max-w-2xl flex-col gap-5 px-6 py-10 md:py-14">
       <div className="mb-1">
-        <Eyebrow variant="tracked" tone="label" className="mb-2 block">
+        <Eyebrow variant="tracked" tone="label" className="mb-2">
           account
         </Eyebrow>
         <h1 className={pageTitleClassName}>your account</h1>
@@ -250,22 +250,18 @@ function ProfileCard({
         {...getFormProps(form)}
       >
         <input type="hidden" name="intent" value="update-name" />
-        <div className="flex items-end gap-2">
-          <Field
-            className="flex-1"
-            labelProps={{ children: "name" }}
-            inputProps={{ ...getInputProps(fields.name, { type: "text" }) }}
-            errors={fields.name.errors}
-          />
-          <Button
-            type="submit"
-            variant="outline"
-            disabled={state !== "idle"}
-            // keeps the button aligned with the input when an error renders
-            className={fields.name.errors?.length ? "mb-8" : undefined}
-          >
-            save
-          </Button>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={fields.name.id}>name</Label>
+          <div className="flex gap-2">
+            <Input
+              className="flex-1"
+              {...getInputProps(fields.name, { type: "text" })}
+            />
+            <Button type="submit" variant="outline" disabled={state !== "idle"}>
+              save
+            </Button>
+          </div>
+          <ErrorList id={fields.name.errorId} errors={fields.name.errors} />
         </div>
       </fetcher.Form>
 

@@ -24,7 +24,7 @@ export function AdminPageHeader({
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <Eyebrow variant="tracked" tone="label" className="mb-2 block">
+        <Eyebrow variant="tracked" tone="label" className="mb-2">
           {eyebrow}
         </Eyebrow>
         <h1 className={pageTitleClassName}>{title}</h1>

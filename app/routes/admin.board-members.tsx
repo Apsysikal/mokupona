@@ -40,7 +40,7 @@ export default function AdminBoardMembersPage({
         actions={
           <Button asChild>
             <Link to="new">
-              <PlusIcon className="mr-2 size-4" />
+              <PlusIcon className="size-4" />
               Add member
             </Link>
           </Button>
@@ -96,7 +96,7 @@ function BoardMemberCard({
           alt={`Portrait of ${name}`}
           width={96}
           height={96}
-          className="size-12 shrink-0 rounded-full object-cover"
+          className="size-12 shrink-0 rounded-full"
         />
       ) : (
         <InitialsAvatar name={name} seed={seed} className="size-12 text-sm" />

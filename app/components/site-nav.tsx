@@ -105,7 +105,7 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
   const sectionLinkClasses = (active: boolean) =>
     cn(
       "hover:text-foreground pb-0.5",
-      active ? "text-foreground border-b border-primary" : "text-foreground/80",
+      active && "text-foreground border-b border-primary",
     );
 
   return (
@@ -147,7 +147,7 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
                 case "logout":
                   return (
                     <Form key="logout" action="/logout" method="POST">
-                      <button className="text-foreground/80 hover:text-foreground">
+                      <button className="hover:text-foreground">
                         logout
                       </button>
                     </Form>

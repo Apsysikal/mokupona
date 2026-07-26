@@ -21,8 +21,6 @@ export function CoverImage({
   className?: string;
   sizes?: string;
 }) {
-  const frameClassName = cn("aspect-3/2", className);
-
   if (image) {
     return (
       <OptimizedImage
@@ -31,7 +29,7 @@ export function CoverImage({
         width={COVER_IMAGE_WIDTH}
         height={COVER_IMAGE_HEIGHT}
         sizes={sizes}
-        className={frameClassName}
+        className={className}
       />
     );
   }
@@ -42,8 +40,8 @@ export function CoverImage({
       role={alt === "" ? undefined : "img"}
       aria-label={alt === "" ? undefined : alt}
       className={cn(
-        "bg-primary/10 flex items-center justify-center",
-        frameClassName,
+        "bg-primary/10 flex aspect-3/2 items-center justify-center",
+        className,
       )}
     >
       <span className="border-primary/40 flex aspect-square w-1/4 min-w-10 items-center justify-center rounded-full border-2">

@@ -69,9 +69,9 @@ export function AuthShell({
       <div className="bg-card relative flex flex-col overflow-hidden border-b px-6 pt-6 pb-7 md:hidden">
         <CornerGlow className="-top-24 -right-16 size-56" />
         <div className="relative flex flex-col gap-2">
-          <span className="text-accent-light text-xs font-semibold">
+          <Eyebrow variant="kicker" tone="light" className="text-xs">
             {brand.eyebrow}
-          </span>
+          </Eyebrow>
           <h1 className="text-3xl leading-tight font-light tracking-tight">
             {brand.heading}
           </h1>

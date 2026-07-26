@@ -220,7 +220,7 @@ export default function DinnerPage({
           <Card
             as="aside"
             id="sign-up"
-            className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-5 lg:sticky lg:top-6 lg:p-7"
+            className="flex flex-col gap-4 p-5 lg:sticky lg:top-6 lg:p-7"
           >
             <EventFactList event={event} />
 

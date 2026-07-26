@@ -68,7 +68,7 @@ export const pillVariants = cva(
 // One eyebrow, two variants (design system §5). `tracked` is the uppercase,
 // letter-spaced kicker above headings; `kicker` is the sentence-case accent
 // line. Tones map to the native foreground opacity tiers.
-const eyebrowVariants = cva("font-semibold", {
+const eyebrowVariants = cva("block font-semibold", {
   variants: {
     variant: {
       tracked: "text-xs uppercase tracking-widest",

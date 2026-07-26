@@ -68,7 +68,7 @@ export default function AdminOverviewPage({
             </Button>
             <Button asChild>
               <Link to="dinners/new">
-                <PlusIcon className="mr-2 size-4" />
+                <PlusIcon className="size-4" />
                 New dinner
               </Link>
             </Button>

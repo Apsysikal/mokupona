@@ -11,9 +11,6 @@ const badgeVariants = cva(
         default: "bg-primary text-primary-foreground border-transparent",
         secondary:
           "bg-secondary text-secondary-foreground border-foreground/15",
-        destructive:
-          "bg-destructive text-destructive-foreground border-transparent",
-        outline: "text-foreground",
         info: "border-sky-300/40 bg-sky-300/15 text-sky-300",
       },
       // pill-shaped badges (the "next dinner" tag, admin filter shapes) vs the

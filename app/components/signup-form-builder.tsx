@@ -309,7 +309,7 @@ function BuilderRowView({
       row={row}
       // pinned identity cards carry the design's orange tint
       className={
-        isPinnedIdentity ? "border-primary/35 bg-primary/5" : "border-border"
+        isPinnedIdentity ? "border-primary/35 bg-primary/5" : undefined
       }
       isRowOpen={isRowOpen}
       toggleRow={toggleRow}
@@ -740,7 +740,6 @@ function FriendsRowView({
               <RowCard
                 key={itemRow.key}
                 row={itemRow as ItemRowMetadata}
-                className="border-border"
                 small
                 isRowOpen={isRowOpen}
                 toggleRow={toggleRow}

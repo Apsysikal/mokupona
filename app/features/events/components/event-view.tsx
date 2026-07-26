@@ -63,7 +63,7 @@ export function EventStory({ event }: EventViewProps) {
           className="mt-2 border-t"
         >
           {menuLines?.length ? (
-            <AccordionItem value="menu" className="border-border">
+            <AccordionItem value="menu">
               <AccordionTrigger className="text-primary">menu</AccordionTrigger>
               <AccordionContent className="pb-6">
                 <div className="flex flex-col gap-3">
@@ -86,7 +86,7 @@ export function EventStory({ event }: EventViewProps) {
           ) : null}
 
           {event.donationDescription ? (
-            <AccordionItem value="donation" className="border-border">
+            <AccordionItem value="donation">
               <AccordionTrigger className="text-primary">
                 donation
               </AccordionTrigger>

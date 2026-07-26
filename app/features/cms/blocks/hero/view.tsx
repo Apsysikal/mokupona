@@ -11,8 +11,6 @@ type HeroBlockViewProps = React.ComponentPropsWithoutRef<"section"> & {
   blockData: HeroBlockType;
 };
 
-// editorial split hero: copy on the left, a full-height photo on the right;
-// on mobile the photo moves above the copy (design handoff §1)
 export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
   const { data } = blockData;
   const {

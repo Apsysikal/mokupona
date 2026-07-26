@@ -32,7 +32,7 @@ export default function AdminLocationsPage({
         actions={
           <Button asChild>
             <Link to="new">
-              <PlusIcon className="mr-2 size-4" />
+              <PlusIcon className="size-4" />
               New location
             </Link>
           </Button>

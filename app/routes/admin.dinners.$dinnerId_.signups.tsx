@@ -94,7 +94,7 @@ export default function DinnerSignupsPage({
         actions={
           <Button variant="outline" asChild>
             <a href="signups.csv">
-              <DownloadIcon className="mr-2 size-4" />
+              <DownloadIcon className="size-4" />
               Export CSV
             </a>
           </Button>
@@ -143,7 +143,7 @@ export default function DinnerSignupsPage({
               <TableRow className="hover:bg-transparent">
                 <TableCell
                   colSpan={4}
-                  className="text-foreground/50 px-4 py-8 text-center text-sm"
+                  className="text-foreground/50 py-8 text-center text-sm"
                 >
                   No signups yet.
                 </TableCell>

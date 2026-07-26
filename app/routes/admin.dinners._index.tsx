@@ -89,7 +89,7 @@ export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
         actions={
           <Button asChild>
             <Link to="new">
-              <PlusIcon className="mr-2 size-4" />
+              <PlusIcon className="size-4" />
               New dinner
             </Link>
           </Button>
@@ -148,7 +148,7 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
     <Card
       interactive
       className={cn(
-        "border-border bg-card hover:border-primary/30 flex flex-wrap items-center gap-4 rounded-2xl border p-4 transition-colors",
+        "flex flex-wrap items-center gap-4 p-4",
         dinner.past && "opacity-60",
       )}
     >
@@ -194,12 +194,7 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          variant="ghost"
-          className="text-foreground/80"
-          asChild
-        >
+        <Button size="sm" variant="ghost" asChild>
           <Link to={`${dinner.id}/signups`}>Signups</Link>
         </Button>
         <Button size="sm" variant="outline" asChild>
