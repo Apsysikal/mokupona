@@ -55,8 +55,7 @@ import pretty from "pino-pretty";
 
 const PRODUCTION = process.env.NODE_ENV === "production";
 const LEVEL = process.env.LOG_LEVEL ?? (PRODUCTION ? "info" : "debug");
-const LOG_DIR =
-  process.env.LOG_DIR ?? path.join(os.tmpdir(), "mokupona-logs");
+const LOG_DIR = process.env.LOG_DIR ?? path.join(os.tmpdir(), "mokupona-logs");
 
 const stdout = PRODUCTION
   ? pino.destination(1)
@@ -115,9 +114,9 @@ Implementation traps:
 
 Two variables. Everything else is derived.
 
-| Variable    | Default                                                     | Purpose                                     |
-| ----------- | ----------------------------------------------------------- | ------------------------------------------- |
-| `LOG_LEVEL` | `info` in production, `debug` otherwise                     | minimum level; must be ≤ every stream level |
+| Variable    | Default                                                      | Purpose                                     |
+| ----------- | ------------------------------------------------------------ | ------------------------------------------- |
+| `LOG_LEVEL` | `info` in production, `debug` otherwise                      | minimum level; must be ≤ every stream level |
 | `LOG_DIR`   | `os.tmpdir()/mokupona-logs`; `/data/logs` on Fly via `[env]` | log file destination                        |
 
 The file sink is always constructed — there is no on/off switch and no
@@ -293,11 +292,11 @@ win.
 `handleError` and the §5 instrumentation are **not** interchangeable, and their
 records do not overlap:
 
-| | `handleError` | `instrumentations.handler.request` |
-| --- | --- | --- |
-| Fires on | any non-`Response` throw in a loader, action, middleware or render | every request through the React Router handler |
-| Sees | the `Error` itself, with stack | `statusCode`, `meta.pattern`, `meta.params`, and `status: "error"` only when the handler itself rejects |
-| Misses | thrown `Response`s (403/404), requests that never error | errors React Router recovers from by rendering an `ErrorBoundary` — the handler resolves normally |
+|          | `handleError`                                                      | `instrumentations.handler.request`                                                                      |
+| -------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| Fires on | any non-`Response` throw in a loader, action, middleware or render | every request through the React Router handler                                                          |
+| Sees     | the `Error` itself, with stack                                     | `statusCode`, `meta.pattern`, `meta.params`, and `status: "error"` only when the handler itself rejects |
+| Misses   | thrown `Response`s (403/404), requests that never error            | errors React Router recovers from by rendering an `ErrorBoundary` — the handler resolves normally       |
 
 Division of labour:
 
@@ -522,17 +521,17 @@ today), and `user.update`.
 
 ## 7. Phasing
 
-| #   | Phase            | Content                                                                                                                                                                                | Risk   |
-| --- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| 0   | **Contract**     | logger module shape, level policy, field names (`email`, `requestId`, `userId`, `pattern`), shared test stub                                                                           | none   |
-| 1   | **Swap**         | winston → pino + `pino-pretty` (both prod deps), stdout only, `isoTime` + string levels, `LOG_LEVEL`; all 19 call sites to `(obj, msg)`; delete the broken file transports; test stub  | low    |
-| 2   | **Rotation**     | file sink + `LOG_DIR`; Dockerfile `logrotate cron` + config + `cron.hourly`; `start.sh` starts `cron`                                                                                  | medium |
-| 3   | **Redaction**    | `redact` config with the `email`/`ip` censor, `hashIp`, drop `obscureEmail`, `Fly-Client-IP` header order                                                                               | low    |
-| 4   | **Errors**       | `handleError` + the three `entry.server.tsx` surfaces                                                                                                                                  | low    |
-| 5   | **Correlation**  | request-id middleware, `loggerContext`, ALS singleton, `instrumentations`, noise exclusions                                                                                            | medium |
-| 6   | **Lifecycle**    | boot lines, `$connect` fix, Prisma log events, shutdown flush, PID 1 verification                                                                                                      | medium |
-| 7   | **Audit trail**  | Tier 1 + Tier 2                                                                                                                                                                        | low    |
-| 8   | **Silent paths** | Tiers 3 + 4, the two `http.server.ts` helpers, level corrections                                                                                                                       | low    |
+| #   | Phase            | Content                                                                                                                                                                               | Risk   |
+| --- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 0   | **Contract**     | logger module shape, level policy, field names (`email`, `requestId`, `userId`, `pattern`), shared test stub                                                                          | none   |
+| 1   | **Swap**         | winston → pino + `pino-pretty` (both prod deps), stdout only, `isoTime` + string levels, `LOG_LEVEL`; all 19 call sites to `(obj, msg)`; delete the broken file transports; test stub | low    |
+| 2   | **Rotation**     | file sink + `LOG_DIR`; Dockerfile `logrotate cron` + config + `cron.hourly`; `start.sh` starts `cron`                                                                                 | medium |
+| 3   | **Redaction**    | `redact` config with the `email`/`ip` censor, `hashIp`, drop `obscureEmail`, `Fly-Client-IP` header order                                                                             | low    |
+| 4   | **Errors**       | `handleError` + the three `entry.server.tsx` surfaces                                                                                                                                 | low    |
+| 5   | **Correlation**  | request-id middleware, `loggerContext`, ALS singleton, `instrumentations`, noise exclusions                                                                                           | medium |
+| 6   | **Lifecycle**    | boot lines, `$connect` fix, Prisma log events, shutdown flush, PID 1 verification                                                                                                     | medium |
+| 7   | **Audit trail**  | Tier 1 + Tier 2                                                                                                                                                                       | low    |
+| 8   | **Silent paths** | Tiers 3 + 4, the two `http.server.ts` helpers, level corrections                                                                                                                      | low    |
 
 Phase 1 lands alone — it touches every call site, so mixing it with behaviour
 changes would make the diff unreviewable. Phases 3–8 are largely independent.

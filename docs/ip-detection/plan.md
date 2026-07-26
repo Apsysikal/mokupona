@@ -55,14 +55,14 @@ you read.
 **Blast radius is bounded.** This helper feeds **logging only** — 12 call sites
 across 6 route modules, no rate limit or access check depends on it:
 
-| File | Lines |
-| --- | --- |
+| File                                | Lines         |
+| ----------------------------------- | ------------- |
 | `app/routes/dinners_.$dinnerId.tsx` | 100, 135, 147 |
-| `app/routes/login.tsx` | 58, 70 |
-| `app/routes/join.tsx` | 51, 77 |
-| `app/routes/reset-password.tsx` | 60, 66 |
-| `app/routes/invite.$token.tsx` | 134, 175 |
-| `app/routes/forgot-password.tsx` | 37 |
+| `app/routes/login.tsx`              | 58, 70        |
+| `app/routes/join.tsx`               | 51, 77        |
+| `app/routes/reset-password.tsx`     | 60, 66        |
+| `app/routes/invite.$token.tsx`      | 134, 175      |
+| `app/routes/forgot-password.tsx`    | 37            |
 
 So the impact was **unusable abuse forensics plus log injection**, not an
 authentication bypass. Fixing it ahead of the logging rework mattered because
@@ -71,13 +71,13 @@ reads exactly like a real client identity.
 
 ## Constraints
 
-| Constraint | Value |
-| --- | --- |
-| Production machine | `mokupona-stack-b568`, 1 machine, `ams`, shared CPU / 256 MB |
-| Fly app IPs | `2a09:8280:1::6:e61f` (v6, dedicated), `66.241.125.28` (v4, **shared**) |
-| Server | `@react-router/serve` 8.2.0 (Express 5 under the hood) |
-| better-auth | 1.6.23 |
-| Proxy in front of Fly | none |
+| Constraint            | Value                                                                   |
+| --------------------- | ----------------------------------------------------------------------- |
+| Production machine    | `mokupona-stack-b568`, 1 machine, `ams`, shared CPU / 256 MB            |
+| Fly app IPs           | `2a09:8280:1::6:e61f` (v6, dedicated), `66.241.125.28` (v4, **shared**) |
+| Server                | `@react-router/serve` 8.2.0 (Express 5 under the hood)                  |
+| better-auth           | 1.6.23                                                                  |
+| Proxy in front of Fly | none                                                                    |
 
 `@react-router/serve` gives loaders and actions a **web `Request`**, so
 `app.set("trust proxy")`, `req.ip` and `proxy-addr` are not reachable.
@@ -90,17 +90,17 @@ Header-based derivation is the only option — which makes the single-value
 
 ## Which header to trust
 
-| Header | Fly proxy behaviour | Trust |
-| --- | --- | --- |
-| `Fly-Client-IP` | **Set and unconditionally overwritten** from the real TCP peer. Single-valued. | **Yes** |
-| `Fly-Forwarded-Port` | Always set by the proxy | Yes |
-| `Fly-Region` | Set by the proxy; the edge that accepted the connection | Yes |
-| `X-Forwarded-For` | **Appended to, not replaced** | Partial — see below |
-| `X-Forwarded-Port` | Fly's docs: "may be set by the client" | No |
-| `X-Forwarded-Proto` / `-Ssl` | Documented as client-reported | No |
-| `X-Client-IP`, `HTTP-X-Forwarded-For` | **Not set by anything on Fly** | No |
+| Header                                | Fly proxy behaviour                                                            | Trust               |
+| ------------------------------------- | ------------------------------------------------------------------------------ | ------------------- |
+| `Fly-Client-IP`                       | **Set and unconditionally overwritten** from the real TCP peer. Single-valued. | **Yes**             |
+| `Fly-Forwarded-Port`                  | Always set by the proxy                                                        | Yes                 |
+| `Fly-Region`                          | Set by the proxy; the edge that accepted the connection                        | Yes                 |
+| `X-Forwarded-For`                     | **Appended to, not replaced**                                                  | Partial — see below |
+| `X-Forwarded-Port`                    | Fly's docs: "may be set by the client"                                         | No                  |
+| `X-Forwarded-Proto` / `-Ssl`          | Documented as client-reported                                                  | No                  |
+| `X-Client-IP`, `HTTP-X-Forwarded-For` | **Not set by anything on Fly**                                                 | No                  |
 
-Because Fly *appends* to `X-Forwarded-For`, the structure on arrival is:
+Because Fly _appends_ to `X-Forwarded-For`, the structure on arrival is:
 
 ```
 X-Forwarded-For: <client-supplied entries…>, <real client IP>, <your Fly app IP>
@@ -115,7 +115,7 @@ proxy is in front, which is our case.
 **Decision: read `Fly-Client-IP` only, and fail closed.** No waterfall. A silent
 fallback is the actual hazard — it hides the day the trusted header stops
 arriving and starts trusting a spoofable one instead. The header to read is a
-*deployment* fact, not a runtime guess.
+_deployment_ fact, not a runtime guess.
 
 ## Implementation — shipped
 
@@ -169,16 +169,16 @@ in part 2.
 
 `app/shared/http.server.test.ts` — new file, eight cases, all passing:
 
-| Input | Expected |
-| --- | --- |
-| `Fly-Client-IP: 203.0.113.9` | `"203.0.113.9"` |
-| `Fly-Client-IP: 2001:DB8::1` | `"2001:db8::1"` |
-| `Fly-Client-IP: ::ffff:203.0.113.9` | `"203.0.113.9"` |
-| `X-Client-IP: 1.2.3.4` only | `null` |
-| `X-Forwarded-For: 1.2.3.4, 66.241.125.28` only | `null` |
-| `Fly-Client-IP: not-an-ip` | `null` |
-| `Fly-Client-IP: <2 KB of junk>` | `null` |
-| no headers | `null` |
+| Input                                          | Expected        |
+| ---------------------------------------------- | --------------- |
+| `Fly-Client-IP: 203.0.113.9`                   | `"203.0.113.9"` |
+| `Fly-Client-IP: 2001:DB8::1`                   | `"2001:db8::1"` |
+| `Fly-Client-IP: ::ffff:203.0.113.9`            | `"203.0.113.9"` |
+| `X-Client-IP: 1.2.3.4` only                    | `null`          |
+| `X-Forwarded-For: 1.2.3.4, 66.241.125.28` only | `null`          |
+| `Fly-Client-IP: not-an-ip`                     | `null`          |
+| `Fly-Client-IP: <2 KB of junk>`                | `null`          |
+| no headers                                     | `null`          |
 
 `tsc --noEmit` and `eslint` are clean on both files.
 
@@ -202,7 +202,7 @@ privacy research in part 2; neither is implemented:
    shrinks the re-identification surface, and if the value is ever reused as a
    rate-limit key it stops IPv6 rotation from minting a fresh bucket per request.
 2. **Say "pseudonymised", not "anonymised"** in the privacy policy. No EU
-   authority accepts hashing *or* truncation as anonymisation (AEPD–EDPS joint
+   authority accepts hashing _or_ truncation as anonymisation (AEPD–EDPS joint
    paper on hash functions; EDPB Guidelines 01/2025). The stronger claim buys no
    legal benefit and creates Art. 19 DSG accuracy risk.
 
@@ -228,14 +228,14 @@ better-auth registers its rate limiter as the `onRequest` hook inside `router()`
 
 Every sensitive flow in this app calls `auth.api.*` directly from a route action:
 
-| Flow | Call site |
-| --- | --- |
-| `signInEmail` | `app/routes/login.tsx:45`, `app/routes/invite.$token.tsx:168` |
-| `signUpEmail` | `app/routes/join.tsx:63`, `invite.$token.tsx:156`, `app/features/auth/create-user.server.ts:27` |
-| `requestPasswordReset` | `app/routes/forgot-password.tsx:31` |
-| `resetPassword` | `app/routes/reset-password.tsx:55` |
-| `changePassword` / `setPassword` | `app/routes/me.tsx:94,104` |
-| `sendVerificationEmail` | `app/routes/join.tsx:68` |
+| Flow                             | Call site                                                                                       |
+| -------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `signInEmail`                    | `app/routes/login.tsx:45`, `app/routes/invite.$token.tsx:168`                                   |
+| `signUpEmail`                    | `app/routes/join.tsx:63`, `invite.$token.tsx:156`, `app/features/auth/create-user.server.ts:27` |
+| `requestPasswordReset`           | `app/routes/forgot-password.tsx:31`                                                             |
+| `resetPassword`                  | `app/routes/reset-password.tsx:55`                                                              |
+| `changePassword` / `setPassword` | `app/routes/me.tsx:94,104`                                                                      |
+| `sendVerificationEmail`          | `app/routes/join.tsx:68`                                                                        |
 
 Only `/api/auth/*` (`app/routes/api.auth.$.ts`, i.e. Google social login and the
 client-side calls) passes through `auth.handler` and therefore through the
@@ -243,7 +243,7 @@ limiter.
 
 > **So login, signup and password reset currently have no rate limiting at
 > all** — not weak limiting, none. Setting `rateLimit` options in
-> `auth.server.ts` will *not* change that on its own.
+> `auth.server.ts` will _not_ change that on its own.
 
 The future session has to choose between routing those flows through
 `auth.handler`, or adding its own limiter in the actions. That is the real design
@@ -253,23 +253,23 @@ decision, and it is unrelated to the header fix.
 
 The published docs are stale on two counts. Verified directly:
 
-| Fact | Value | Source |
-| --- | --- | --- |
-| Default window / max | **10 s / 100** — docs claim 60 s | `dist/context/create-context.mjs:172-173` |
-| `enabled` default | `isProduction` — off in dev | same, `:171` |
-| Default `ipAddressHeaders` | `["x-forwarded-for"]` | `@better-auth/core/src/utils/ip.ts:342` |
-| Multi-entry XFF without `trustedProxies` | **returns `null`** | `ip.ts:330` |
-| IPv6 masking | `/64` by default (`ipv6Subnet`) | `ip.ts:196` |
-| Dev/test fallback | returns `"127.0.0.1"` | `ip.ts:376-378` |
-| `session.ipAddress` when unresolved | stored as `""`, not NULL | `dist/db/internal-adapter.mjs:177` |
-| Unresolved-IP rate limit key | shared `"no-trusted-ip"` bucket per path | `dist/api/rate-limiter/index.mjs:275` |
+| Fact                                     | Value                                    | Source                                    |
+| ---------------------------------------- | ---------------------------------------- | ----------------------------------------- |
+| Default window / max                     | **10 s / 100** — docs claim 60 s         | `dist/context/create-context.mjs:172-173` |
+| `enabled` default                        | `isProduction` — off in dev              | same, `:171`                              |
+| Default `ipAddressHeaders`               | `["x-forwarded-for"]`                    | `@better-auth/core/src/utils/ip.ts:342`   |
+| Multi-entry XFF without `trustedProxies` | **returns `null`**                       | `ip.ts:330`                               |
+| IPv6 masking                             | `/64` by default (`ipv6Subnet`)          | `ip.ts:196`                               |
+| Dev/test fallback                        | returns `"127.0.0.1"`                    | `ip.ts:376-378`                           |
+| `session.ipAddress` when unresolved      | stored as `""`, not NULL                 | `dist/db/internal-adapter.mjs:177`        |
+| Unresolved-IP rate limit key             | shared `"no-trusted-ip"` bucket per path | `dist/api/rate-limiter/index.mjs:275`     |
 
 **Consequence today:** Fly's `X-Forwarded-For` always carries ≥2 entries
 (client + our app IP), so better-auth's resolver returns `null` on **every**
 production request. `/api/auth/*` therefore shares one global bucket per path,
 and `session.ipAddress` is written as `""` for all sessions.
 
-Credit where due: 1.6.23's resolver is *correctly conservative*. It refuses
+Credit where due: 1.6.23's resolver is _correctly conservative_. It refuses
 ambiguous chains, walks right-to-left skipping `trustedProxies` when configured,
 validates with `isValidIP`, unwraps IPv4-mapped addresses and masks IPv6 to
 `/64`. That is the full recommended algorithm — so aligning our helper with it
@@ -305,7 +305,7 @@ limit by the machine count.
 
 - **False positives — one IP, many members.** RFC 6269 states that penalty-box
   approaches "simply will not work" under address sharing. Cloudflare measured
-  CGNAT addresses being rate limited **3× more often despite *lower* bot rates**,
+  CGNAT addresses being rate limited **3× more often despite _lower_ bot rates**,
   and their fix was to replace the IP with a cookie identifier (`_cfuvid`). For
   this site that is not hypothetical: Swisscom/Salt/Sunrise mobile, SBB and café
   Wi-Fi, and ETH networks are exactly the population signing up for dinners.
@@ -332,13 +332,13 @@ Anchored on better-auth's own defaults (3 req/10 s on `/sign-in/email`), the Epi
 Stack (10/60 s), and Supabase (2 auth emails/hour, 60 s per-user cooldown). These
 are a starting point, not a verified configuration:
 
-| Endpoint | Per account/email | Per IP (v4) or /64 (v6) |
-| --- | --- | --- |
-| Login | 10 failures / 15 min → escalating delay, reset on success | 20 failures / 15 min |
-| Signup | 3 / hour | 5 / hour, 20 / day |
-| Password reset request | 1 per 60 s, 3–5 / hour, 10 / day | 10 / hour |
-| Reset-token verify | 5 per token, single-use | 20 / hour |
-| All outbound mail | — | global ~50–100 / day |
+| Endpoint               | Per account/email                                         | Per IP (v4) or /64 (v6) |
+| ---------------------- | --------------------------------------------------------- | ----------------------- |
+| Login                  | 10 failures / 15 min → escalating delay, reset on success | 20 failures / 15 min    |
+| Signup                 | 3 / hour                                                  | 5 / hour, 20 / day      |
+| Password reset request | 1 per 60 s, 3–5 / hour, 10 / day                          | 10 / hour               |
+| Reset-token verify     | 5 per token, single-use                                   | 20 / hour               |
+| All outbound mail      | —                                                         | global ~50–100 / day    |
 
 That last row is arguably the highest-value limit on the list: it protects
 `mail.mokupona.ch` deliverability, which is slow to win back once damaged.
@@ -385,7 +385,7 @@ so its **absence** means the request was not proxied, and can be rejected in
 production. Two caveats before implementing:
 
 - **`/healthcheck` must be exempt** — the check originates on the host over the
-  private network. This is an *expectation*, not something we tested; verify by
+  private network. This is an _expectation_, not something we tested; verify by
   logging the inbound header set before enforcing anything, or deploys will break.
 - It detects absence, not forgery. A hostile in-org peer that sets the headers is
   indistinguishable. That requires org-level compromise, which is a reasonable

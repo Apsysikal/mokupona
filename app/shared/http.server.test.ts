@@ -21,7 +21,9 @@ describe("getClientIPAddress", () => {
 
   it("unwraps IPv4-mapped IPv6 so one client has one identity", () => {
     expect(
-      getClientIPAddress(requestWith({ "Fly-Client-IP": "::ffff:203.0.113.9" })),
+      getClientIPAddress(
+        requestWith({ "Fly-Client-IP": "::ffff:203.0.113.9" }),
+      ),
     ).toBe("203.0.113.9");
   });
 
