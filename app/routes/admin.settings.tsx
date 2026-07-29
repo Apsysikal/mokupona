@@ -8,10 +8,9 @@ import { AdminPageHeader } from "~/components/admin-ui";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import { narrowResolvedUserRoleMiddleware } from "~/features/auth/middleware.server";
+import { requireResolvedUserRoleMiddleware } from "~/features/auth/middleware.server";
 import {
-  SIGNUP_METHOD_DESCRIPTIONS,
-  SIGNUP_METHOD_LABELS,
+  SIGNUP_METHOD_COPY,
   SIGNUP_METHODS,
   type SignupMethod,
   type SignupSettings,
@@ -23,12 +22,8 @@ import {
 import { logger } from "~/logger.server";
 import { redirectWithToast } from "~/utils/toast.server";
 
-// Site-wide switches are an owner's call, not a moderator's — the parent
-// admin middleware already admitted both roles, so narrow like the users
-// segment does. The switches are enforced again at every signup entry point;
-// this route only decides who may flip them.
 export const middleware: Route.MiddlewareFunction[] = [
-  narrowResolvedUserRoleMiddleware(["admin"]),
+  requireResolvedUserRoleMiddleware(["admin"]),
 ];
 
 const schema = z.object({
@@ -55,7 +50,7 @@ export async function action({ request }: Route.ActionArgs) {
   logger.info("Self-signup setting changed", { method, enabled });
 
   return redirectWithToast("/admin/settings", {
-    title: `${SIGNUP_METHOD_LABELS[method]} sign-ups ${enabled ? "enabled" : "disabled"}`,
+    title: `${SIGNUP_METHOD_COPY[method].label} sign-ups ${enabled ? "enabled" : "disabled"}`,
     type: "success",
   });
 }
@@ -109,14 +104,14 @@ function SignupMethodRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold">
-            {SIGNUP_METHOD_LABELS[method]}
+            {SIGNUP_METHOD_COPY[method].label}
           </p>
           <Badge variant={enabled ? "info" : "secondary"} pill>
             {enabled ? "open" : "closed"}
           </Badge>
         </div>
         <p className="text-foreground/65 mt-1 text-sm">
-          {SIGNUP_METHOD_DESCRIPTIONS[method]}
+          {SIGNUP_METHOD_COPY[method].description}
         </p>
       </div>
 

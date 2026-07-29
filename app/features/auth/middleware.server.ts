@@ -7,7 +7,6 @@ import {
 
 import { googleAuthEnabled } from "./auth.server";
 import {
-  assertUserHasRole,
   getUserWithRole,
   loginRedirect,
   requireResolvedUserWithRole,
@@ -86,14 +85,5 @@ export function requireResolvedUserRoleMiddleware(
       roles,
     );
     context.set(userContext, user);
-  };
-}
-
-/** Narrow the required user established by parent admin middleware. */
-export function narrowResolvedUserRoleMiddleware(
-  roles: readonly RoleName[],
-): MiddlewareFunction<Response> {
-  return async ({ context }) => {
-    assertUserHasRole(context.get(userContext), roles);
   };
 }

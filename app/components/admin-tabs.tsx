@@ -18,9 +18,6 @@ const TABS = [
   { to: "/admin/settings", label: "settings", adminOnly: true },
 ] as const;
 
-// Secondary section nav under the site nav, shared by desktop and mobile
-// (the mobile pill-chip variant was rejected — same underline bar, it just
-// scrolls horizontally).
 export function AdminTabs({
   counts,
   isAdmin,
@@ -34,7 +31,6 @@ export function AdminTabs({
       className="scrollbar-hidden flex gap-5 overflow-x-auto border-b px-5 whitespace-nowrap md:gap-7 md:px-10"
     >
       {TABS.map((tab) => {
-        // users and settings are admin-only; moderators see neither
         if ("adminOnly" in tab && !isAdmin) return null;
 
         const count = "countKey" in tab ? counts[tab.countKey] : null;

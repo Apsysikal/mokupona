@@ -6,10 +6,6 @@ import {
 
 import { singleton } from "~/utils/singleton.server";
 
-// Process-local state, deliberately: the toggles are a stop-gap switch for
-// closing self-signup, not persisted configuration. Every deploy or restart
-// re-opens both methods, and a multi-instance deployment would have to be
-// toggled per instance — move this into the database before either matters.
 const state = singleton<SignupSettings>("signup-settings", () => allEnabled());
 
 function allEnabled(): SignupSettings {

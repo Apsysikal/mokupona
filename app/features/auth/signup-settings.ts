@@ -1,12 +1,20 @@
-// Client-safe vocabulary for the self-signup toggles. The state itself lives
-// in `signup-settings.server.ts`; only the names and copy are shared with the
-// browser bundle (same split as `roles.ts`).
-
 export const SIGNUP_METHODS = ["email", "google"] as const;
 export type SignupMethod = (typeof SIGNUP_METHODS)[number];
 
 /** Which self-signup methods are currently open. */
 export type SignupSettings = Record<SignupMethod, boolean>;
+
+export const SIGNUP_METHOD_COPY = {
+  email: {
+    label: "email and password",
+    description: "lets anyone create an account from the sign-up form.",
+  },
+  google: {
+    label: "google",
+    description:
+      "lets anyone create an account using google. existing accounts can always sign.",
+  },
+} satisfies Record<SignupMethod, { label: string; description: string }>;
 
 export const SIGNUP_METHOD_LABELS = {
   email: "email and password",
@@ -36,7 +44,3 @@ export const EMAIL_SIGNUP_CLOSED_MESSAGE =
 /** Google's variant, where the email form may well still be open. */
 export const GOOGLE_SIGNUP_CLOSED_MESSAGE =
   "we aren't creating new accounts from google sign-in right now. if you were invited, use the link in your invitation email.";
-
-export function isSignupMethod(value: string): value is SignupMethod {
-  return SIGNUP_METHODS.some((method) => method === value);
-}

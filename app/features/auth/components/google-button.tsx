@@ -42,10 +42,6 @@ export function GoogleSignInButton({ callbackURL }: { callbackURL: string }) {
           authClient.signIn.social({
             provider: "google",
             callbackURL,
-            // Without this, a callback better-auth refuses (a first-time
-            // Google user while Google signup is off, most of all) lands on
-            // its bare /api/auth/error page. Send those back to login, which
-            // reads the `error` param and explains itself.
             errorCallbackURL: "/login",
           })
         }
