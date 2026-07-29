@@ -39,7 +39,11 @@ export function GoogleSignInButton({ callbackURL }: { callbackURL: string }) {
       </div>
       <GoogleButton
         onClick={() =>
-          authClient.signIn.social({ provider: "google", callbackURL })
+          authClient.signIn.social({
+            provider: "google",
+            callbackURL,
+            errorCallbackURL: "/login",
+          })
         }
       />
     </>

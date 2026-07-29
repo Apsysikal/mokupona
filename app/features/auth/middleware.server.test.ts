@@ -9,7 +9,6 @@ import { ensureAuthRoles } from "../../../test/factories";
 
 import { auth } from "./auth.server";
 import {
-  narrowResolvedUserRoleMiddleware,
   optionalUserContext,
   requireResolvedUserRoleMiddleware,
   resolveOptionalUserMiddleware,
@@ -147,9 +146,9 @@ describe("resolved-user role middleware", () => {
     expect(context.get(userContext).id).toBe(user.id);
     expect(context.get(userContext).role.name).toBe("moderator");
 
-    // inner admin.users.tsx middleware: narrows to admin
+    // inner admin.users.tsx middleware: admin only
     const thrown = await runMiddleware(
-      narrowResolvedUserRoleMiddleware(["admin"]),
+      requireResolvedUserRoleMiddleware(["admin"]),
       request,
       context,
     ).catch((error) => error);
@@ -169,7 +168,7 @@ describe("resolved-user role middleware", () => {
       context,
     );
     await runMiddleware(
-      narrowResolvedUserRoleMiddleware(["admin"]),
+      requireResolvedUserRoleMiddleware(["admin"]),
       request,
       context,
     );
@@ -233,7 +232,7 @@ describe("resolved-user role middleware", () => {
       context,
     );
     await runMiddleware(
-      narrowResolvedUserRoleMiddleware(["admin"]),
+      requireResolvedUserRoleMiddleware(["admin"]),
       request,
       context,
     );
@@ -242,13 +241,13 @@ describe("resolved-user role middleware", () => {
     expect(getUserByIdWithRole).toHaveBeenCalledTimes(1);
     getSessionSpy.mockRestore();
 
-    // A request with NO session cookie: any session or user lookup would see
-    // an anonymous request and login-redirect. The populated context alone
-    // must let the nested middleware pass.
+    // A request with NO session cookie: any fresh session or user lookup would
+    // see an anonymous request and login-redirect. The resolver the parent
+    // already memoized must carry the nested middleware through instead.
     const cookieless = new Request("http://localhost:3000/admin/users");
     await expect(
       runMiddleware(
-        narrowResolvedUserRoleMiddleware(["admin"]),
+        requireResolvedUserRoleMiddleware(["admin"]),
         cookieless,
         context,
       ),
@@ -269,29 +268,5 @@ describe("resolved-user role middleware", () => {
     expect((thrown as Response).headers.get("location")).toBe(
       "/login?redirectTo=%2Fadmin%2Fusers",
     );
-  });
-
-  it("role-narrows from context: a context-held moderator is 403'd without a request lookup", async () => {
-    const { user } = await signedInAs("moderator");
-    const context = new RouterContextProvider();
-    context.set(userContext, {
-      ...user,
-      role: {
-        ...(await prisma.role.findUniqueOrThrow({
-          where: { name: "moderator" },
-        })),
-        name: "moderator",
-      },
-    });
-
-    const cookieless = new Request("http://localhost:3000/admin/users");
-    const thrown = await runMiddleware(
-      narrowResolvedUserRoleMiddleware(["admin"]),
-      cookieless,
-      context,
-    ).catch((error) => error);
-
-    expect(thrown).toBeInstanceOf(Response);
-    expect((thrown as Response).status).toBe(403);
   });
 });

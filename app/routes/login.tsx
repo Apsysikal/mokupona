@@ -15,6 +15,10 @@ import { auth } from "~/features/auth/auth.server";
 import { GoogleSignInButton } from "~/features/auth/components/google-button";
 import { emailSchema, parseRequestForm } from "~/features/auth/form-schemas";
 import { anonymousAuthPageLoader } from "~/features/auth/middleware.server";
+import {
+  GOOGLE_SIGNUP_CLOSED_MESSAGE,
+  OAUTH_SIGNUP_DISABLED_ERROR,
+} from "~/features/auth/signup-settings";
 import { logger } from "~/logger.server";
 import {
   getClientIPAddress,
@@ -106,6 +110,9 @@ export default function LoginPage({
     },
   });
   const credentialsRejected = authError?.kind === "credentials";
+  // set by the OAuth callback when it refused to register a new Google user
+  const oauthSignupRejected =
+    searchParams.get("error") === OAUTH_SIGNUP_DISABLED_ERROR;
 
   return (
     <AuthShell mode="login" search={searchParams.toString()}>
@@ -122,6 +129,14 @@ export default function LoginPage({
           <AuthNotice variant="destructive">
             we couldn&apos;t sign you in. check your email and password, then
             try again.
+          </AuthNotice>
+        ) : null}
+        {oauthSignupRejected ? (
+          <AuthNotice
+            variant="destructive"
+            title="that google account isn't registered here"
+          >
+            {GOOGLE_SIGNUP_CLOSED_MESSAGE}
           </AuthNotice>
         ) : null}
         {authError?.kind === "unverified" ? (

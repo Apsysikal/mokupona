@@ -7,13 +7,13 @@ import {
 
 import { googleAuthEnabled } from "./auth.server";
 import {
-  assertUserHasRole,
   getUserWithRole,
   loginRedirect,
   requireResolvedUserWithRole,
   type ValidatedUser,
 } from "./guards.server";
 import type { RoleName } from "./roles";
+import { getSignupSettings } from "./signup-settings.server";
 
 // Root middleware always initializes this context with a lazy, memoized
 // resolver (null resolution = anonymous request): routes that never read the
@@ -52,7 +52,8 @@ export async function requireResolvedUser(
 
 /**
  * Loader shared by the anonymous-only auth pages (login/join): bounce
- * signed-in users home and expose whether Google sign-in is configured.
+ * signed-in users home, expose whether Google sign-in is configured, and
+ * report which self-signup methods the admin toggles currently leave open.
  */
 export async function anonymousAuthPageLoader({
   context,
@@ -61,7 +62,10 @@ export async function anonymousAuthPageLoader({
 }) {
   const user = await context.get(optionalUserContext)();
   if (user) throw redirect("/");
-  return { googleEnabled: googleAuthEnabled };
+  return {
+    googleEnabled: googleAuthEnabled,
+    signupEnabled: getSignupSettings(),
+  };
 }
 
 /**
@@ -81,14 +85,5 @@ export function requireResolvedUserRoleMiddleware(
       roles,
     );
     context.set(userContext, user);
-  };
-}
-
-/** Narrow the required user established by parent admin middleware. */
-export function narrowResolvedUserRoleMiddleware(
-  roles: readonly RoleName[],
-): MiddlewareFunction<Response> {
-  return async ({ context }) => {
-    assertUserHasRole(context.get(userContext), roles);
   };
 }
