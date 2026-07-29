@@ -14,25 +14,30 @@ const TABS = [
   { to: "/admin/dinners", label: "dinners", countKey: "dinners" },
   { to: "/admin/locations", label: "locations", countKey: "locations" },
   { to: "/admin/board-members", label: "board", countKey: "board" },
-  { to: "/admin/users", label: "users", countKey: "users" },
+  { to: "/admin/users", label: "users", countKey: "users", adminOnly: true },
+  { to: "/admin/settings", label: "settings", adminOnly: true },
 ] as const;
 
 // Secondary section nav under the site nav, shared by desktop and mobile
 // (the mobile pill-chip variant was rejected — same underline bar, it just
 // scrolls horizontally).
-export function AdminTabs({ counts }: { counts: AdminTabCounts }) {
+export function AdminTabs({
+  counts,
+  isAdmin,
+}: {
+  counts: AdminTabCounts;
+  isAdmin: boolean;
+}) {
   return (
     <nav
       aria-label="Admin sections"
       className="scrollbar-hidden flex gap-5 overflow-x-auto border-b px-5 whitespace-nowrap md:gap-7 md:px-10"
     >
       {TABS.map((tab) => {
-        const count = "countKey" in tab ? counts[tab.countKey] : null;
+        // users and settings are admin-only; moderators see neither
+        if ("adminOnly" in tab && !isAdmin) return null;
 
-        // the users tab is admin-only; its count is null for moderators
-        if ("countKey" in tab && tab.countKey === "users" && count === null) {
-          return null;
-        }
+        const count = "countKey" in tab ? counts[tab.countKey] : null;
 
         return (
           <NavLink
