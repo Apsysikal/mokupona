@@ -34,7 +34,7 @@ export async function loader({ context }: Route.LoaderArgs) {
     isAdmin ? countUsers() : Promise.resolve(null),
   ]);
 
-  return { counts: { dinners, locations, board, users } };
+  return { counts: { dinners, locations, board, users }, isAdmin };
 }
 
 export const meta: Route.MetaFunction = () => {
@@ -44,7 +44,7 @@ export const meta: Route.MetaFunction = () => {
 export default function AdminLayout({ loaderData }: Route.ComponentProps) {
   return (
     <>
-      <AdminTabs counts={loaderData.counts} />
+      <AdminTabs counts={loaderData.counts} isAdmin={loaderData.isAdmin} />
       <PageContainer className="grow pt-7 pb-20">
         <Outlet />
       </PageContainer>
