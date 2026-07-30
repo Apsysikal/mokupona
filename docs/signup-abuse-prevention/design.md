@@ -47,9 +47,11 @@ Every unauthenticated auth flow we have calls `auth.api.*` directly:
 
 1. Adding `captcha({...})` would protect nothing that matters. It would appear to
    work when tested against `/api/auth/*` and do nothing for the actual form.
-2. We have **zero rate limiting today** — not the defaults one might assume. Had we
-   been on the router path, better-auth would already cap `/sign-up` at 3 requests
-   per 10s and `/request-password-reset` at 3 per 60s. None of it applies.
+2. **None of our user-facing flows are rate limited.** The built-in limiter does run
+   for the `/api/auth/*` catch-all in production (3 requests/10s on `/sign-up`,
+   3/60s on `/request-password-reset`) — but that is the path nothing legitimate
+   uses. `/join`, `/login` and `/forgot-password` get nothing. See also §5 on why
+   that `/api/auth/*` cap may be a single site-wide bucket on Fly.
 3. Our forms are progressively-enhanced HTML `<Form>`s. A captcha token arrives as a
    form **field** (`cf-turnstile-response`, `altcha`), not as the
    `x-captcha-response` **header** the plugin reads. The plugin is the wrong shape
@@ -72,7 +74,7 @@ What abuse of `/join` actually costs us:
 - **Third-party mail bombing.** An attacker signs up as `victim@example.com`; the
   victim receives mail from us. Repeatable across many addresses. This is the most
   serious item and the one rate limiting addresses directly.
-- **Account enumeration** (adjacent, pre-existing): `join.tsx:61` answers "an account
+- **Account enumeration** (adjacent, pre-existing): `join.tsx:54` answers "an account
   already exists with this email", and the existing-user check runs before any other
   validation. Anyone can test address membership. Worth fixing while we are here.
 
@@ -200,18 +202,36 @@ together. CAPTCHA is deferred until we have evidence the first three are insuffi
 
 **Phase 0 — close the holes we already have** _(small, do first)_
 
-1. **Reject `/api/auth/sign-up/email` unconditionally** in `app/routes/api.auth.$.ts`.
-   Verified safe: all three `signUpEmail` call sites are server-side
+1. **Reject `POST /api/auth/sign-up/email` unconditionally** in
+   `app/routes/api.auth.$.ts`. better-auth's own registration endpoint, exposed
+   because the catch-all forwards every route it mounts (we need the catch-all for
+   the Google flow). Today it is blocked **only while the toggle is off** — so in
+   normal operation it is a live signup path that skips `join.tsx` entirely: no
+   existing-user check, no logging, and no honeypot or timing check we add later.
+
+   Verified safe to close: all three `signUpEmail` call sites are server-side
    (`join.tsx:83`, `invite.$token.tsx:162`, `create-user.server.ts:27`), and the only
-   client-side better-auth calls are `signIn.social` and `linkSocial`. Nothing
-   legitimate posts there. Today it is an unprotected signup path that no honeypot on
-   `/join` would cover — currently gated only while the toggle is off.
-2. **Persist the signup toggle.** `signup-settings.server.ts` keeps it in an
-   in-memory `singleton()`. It resets to _all enabled_ on every deploy and restart,
-   and is per-instance if we ever scale past one Fly machine. The kill switch
-   silently re-opens itself. Move it to the database.
-3. **Stop leaking account existence** at `join.tsx:61` — respond identically whether
+   client-side better-auth calls are `signIn.social` and `linkSocial`.
+
+   **The risk is address squatting, not mail-bombing.** With `sendOnSignUp: false` a
+   direct POST creates an unverified `User` row and sends no mail — but `join.tsx:54`
+   then reports "an account already exists with this email", so burning a list of real
+   addresses permanently locks those people out of signing up. Silent, no outbound
+   mail, discovered only when someone complains.
+
+   Neither existing control helps. `formCsrfMiddleware` validates the origin only when
+   a cookie, a `Sec-Fetch-*` header, or `Origin`/`Referer` is present; a bare scripted
+   POST has none and falls through — correct for CSRF, worthless against bots. The
+   built-in rate limiter does apply here (3/10s), which is ~18/min: ample for squatting,
+   and possibly a site-wide shared bucket on Fly (§5).
+
+2. **Stop leaking account existence** at `join.tsx:54` — respond identically whether
    or not the address is registered.
+
+_Not included:_ the in-memory signup toggle in `signup-settings.server.ts` is a
+deliberate choice. It resets to _all enabled_ on every deploy and restart, and is
+per-instance if we scale past one Fly machine — accepted as an ephemeral brake rather
+than a durable setting.
 
 **Phase 1 — rate limiting** _(highest value)_
 
