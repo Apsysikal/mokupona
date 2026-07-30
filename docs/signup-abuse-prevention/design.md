@@ -268,9 +268,87 @@ be relaxed.
 
 ---
 
-## 5. Sources
+## 5. Considered: moving `/join` to the better-auth client
 
-better-auth behaviour in §1 was verified against the installed `better-auth@1.6.25`
+If `/join` called `authClient.signUp.email()` from the browser instead of posting to a
+React Router action, the request would go through `/api/auth/*` → `auth.handler()` →
+the router, and §1 would no longer apply. Worth taking seriously, since it is the
+configuration better-auth's own docs assume. Assessed below; **recommendation is not
+to switch, for abuse-prevention reasons alone.**
+
+### What we would gain
+
+- **The captcha plugin works.** Token passed as `x-captcha-response` via
+  `fetchOptions.headers`. Protects `/sign-up/email`, `/sign-in/email` and
+  `/request-password-reset` out of the box.
+- **Built-in rate limiting works**, with no code: 3 requests/10s on `/sign-up`, 3/60s
+  on `/request-password-reset`.
+- **Honeypot and timing stay available.** `signUpEmailBodySchema` ends in
+  `.and(z.record(z.string(), z.any()))`, so extra body fields are accepted and
+  ignored (only keys declared in `user.additionalFields` are persisted). The trap
+  field can ride along in the body and be checked in `hooks.before`.
+
+### What we would lose or have to rebuild
+
+1. **Progressive enhancement.** Signup would require JS, and `/join` becomes the only
+   form in the app that does.
+2. **The manual verification-mail flow.** `join.tsx` sends the verification mail
+   itself with a custom `callbackURL`, precisely because `sendOnSignUp: false` keeps
+   the invite flow from sending one (`auth.server.ts:83-86`). Flipping
+   `sendOnSignUp: true` would fire for the invite flow too, since both paths hit the
+   same endpoint. A path-based `hooks.after` does not separate them either — it runs
+   for `auth.api.*` calls as well. The only discriminator is whether `ctx.request`
+   exists, which the docs describe as "may not exist in server-only endpoints" —
+   workable, but leaning on an implementation detail for correctness of who gets mail.
+3. **The Conform error pipeline.** Server errors currently return as a
+   `SubmissionResult` via `submission.reply()`. Client-side we would get better-auth
+   error codes as JSON and have to map them back into Conform's error state by hand,
+   losing the single validation path.
+4. **Account enumeration is not fixed** either way — better-auth returns
+   `USER_ALREADY_EXISTS`.
+
+### The two findings that decide it
+
+**The built-in limiter is IP-keyed only.** `createRateLimitKey(ip, path)` — and
+`customRules` adjust only `window`/`max`, never the key. It cannot express _"3 mails
+per day to this address"_, which is exactly the limit that stops a specific victim
+being mail-bombed (§2). We would end up hand-rolling the per-email limit regardless,
+which is most of the work we were trying to avoid.
+
+**On Fly, the built-in limiter is a self-DoS risk until configured.** `getIp` defaults
+to `ipAddressHeaders: ["x-forwarded-for"]`, and `getIPFromHeader` returns `null` for a
+multi-entry header unless `trustedProxies` is set. Fly forwards a chain. With no IP,
+the key falls back to a single shared `"no-trusted-ip"` bucket per path — so the
+built-in 3-per-10s rule on `/sign-up` becomes **3 signups per 10 seconds for the
+entire site**. It logs a warning once and otherwise fails quietly. Anyone enabling
+this must set `advanced.ipAddress.ipAddressHeaders: ["fly-client-ip"]` first.
+
+### Verdict
+
+Switching buys two things we can each build in a few dozen lines in the action, and
+costs three things that work today. Doing it ourselves is also strictly more capable —
+per-email limits, per-route thresholds, shadow mode, and our own logging.
+
+If `/join` were being written from scratch with no progressive-enhancement
+requirement, client-side plus the captcha plugin would be a reasonable default. Given
+what exists, the migration is not justified by abuse prevention. If we ever move
+`/join` to the client for _other_ reasons, revisit: Phase 1 largely collapses into
+config, and Phase 3 becomes trivial.
+
+**Middle option, if we want the built-ins without giving up the form:** keep the
+action, but forward to `auth.handler()` with a synthesized `Request` (copying the
+client's headers so IP resolution and the origin check still work, and lifting the
+captcha token from the form field into the `x-captcha-response` header). That yields
+the full router middleware stack while keeping Conform and progressive enhancement.
+The cost is an awkward internal-request indirection plus `Set-Cookie` propagation, and
+it still does not solve the per-email limit — so it is worth it only if we specifically
+want the captcha plugin rather than a direct provider call.
+
+---
+
+## 6. Sources
+
+better-auth behaviour in §1 and §5 was verified against the installed `better-auth@1.6.25`
 in `node_modules`, not only the docs (the rate-limit docs state a 60s default window;
 the source says 10s). The remix-utils findings in §3.3 were verified against
 `sergiodxa/remix-utils` `main`.
