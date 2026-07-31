@@ -30,6 +30,18 @@ Verified directly against the installed packages: in an upload handler,
 `fileUpload.size` is known synchronously and draining `fileUpload.stream()`
 completes in ~0.6 ms as a single chunk — it is reading RAM, not the socket.
 
+`parser-streaming-comparison.test.ts` pins this against busboy: given a request
+body that stalls halfway through the file part, busboy delivers the first half
+immediately while `form-data-parser` does not invoke the handler at all until
+the body completes — and when it does, `size` is already the full payload.
+
+To be precise about what _is_ streamed: `form-data-parser` reads `request.body`
+incrementally, unlike `request.formData()`. But it accumulates those chunks into
+the part's `content` array and only yields the part at the closing boundary, so
+the stream you get from `fileUpload.stream()` sits **downstream of the buffer**.
+There is no earlier point at which to link it to Cloudinary's stream, because
+the handler does not run any earlier.
+
 So "streaming to Cloudinary" in the byte-forwarding sense (request socket →
 Cloudinary socket, never fully resident) **is not reachable through this
 library's public API**, and every design built on `form-data-parser` has a peak
@@ -94,6 +106,77 @@ So the streaming in this ecosystem is real but sits on the _storage_ side, not
 between the request socket and the upload handler. On `main` today the only
 `ReadableStream` in `multipart-parser` is the parser's own input; no per-part
 stream is exposed, and the exports are unchanged from the installed version.
+
+### Why the README still says "streaming"
+
+Because it used to be literally true, and the docs were never updated.
+
+`FileUpload` was stream-backed until `form-data-parser` **v0.9.0**
+(2025-06-13). Here it is at v0.8.0 — note that it `implements File` rather
+than extending it, and that the two methods which would force materialisation
+throw on purpose:
+
+```ts
+// @mjackson/form-data-parser@0.8.0
+export class FileUpload implements File {
+  get size(): number {
+    throw new Error(
+      "Cannot get the size of a file upload without buffering the entire file",
+    );
+  }
+  slice(): Blob {
+    throw new Error(
+      "Cannot slice a file upload without buffering the entire file",
+    );
+  }
+  stream(): ReadableStream<Uint8Array> {
+    return this.#part.body; // ← the live, socket-backed part stream
+  }
+}
+```
+
+And the part behind it, in `multipart-parser@0.9.0`, really was a stream, with
+`Request`-style one-shot consumption semantics:
+
+```ts
+export class MultipartPart {
+  #body: ReadableStream<Uint8Array>;
+  get body(): ReadableStream<Uint8Array> {
+    return this.#body;
+  }
+  get bodyUsed(): boolean {
+    return this.#bodyUsed;
+  }
+}
+```
+
+In that era you genuinely could pipe an upload straight to S3 or Cloudinary
+without the file ever being resident — exactly what the README describes.
+
+Then `multipart-parser@0.10.0` replaced `#body` with `readonly content:
+Uint8Array[]`, and `form-data-parser@0.9.0` adopted it, changing `FileUpload`
+to a plain `File` subclass. Its changelog states the trade openly:
+
+> This release … **removes the restrictions on checking the `size` and/or
+> `slice`ing `FileUpload` objects.** `FileUpload` is now a normal subclass of
+> `File` with all the same functionality.
+
+Those restrictions were not incidental — they were the streaming. You cannot
+know a stream's `size` without consuming it, so making `size` work means
+buffering the part. The library traded byte-level streaming for `File`
+ergonomics and kept the old marketing copy.
+
+The irony is worth noting, because it cuts directly against "just restore the
+streaming": **the ergonomics they traded it for are exactly what this app's
+validation depends on.** `imageFileSchema()` is `z.instanceof(File)` plus
+`file.size` and `file.type` checks — none of which would work against a
+v0.8-era `FileUpload`, where `instanceof File` was false and `size` threw. The
+buffering that costs us memory is the same change that lets Conform and Zod
+validate an upload like any other field.
+
+That is the real shape of the trade-off, and it is why prototype 5 has to
+reintroduce a stand-in `File` to keep the schema working once bytes are
+streaming again.
 
 ## Where the current code stands
 
