@@ -43,7 +43,7 @@ export function HoneypotField() {
         id={HONEYPOT_VALID_FROM_FIELD_NAME}
         name={HONEYPOT_VALID_FROM_FIELD_NAME}
         type="text"
-        value={honeypot?.validFrom ?? ""}
+        value={honeypot.validFrom}
         readOnly
         autoComplete="off"
         tabIndex={-1}

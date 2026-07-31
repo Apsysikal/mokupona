@@ -34,7 +34,7 @@ describe("checkHoneypot", () => {
     const { validFrom } = getHoneypotInputProps();
 
     expect(check({ [HONEYPOT_VALID_FROM_FIELD_NAME]: validFrom })).toEqual({
-      spam: false,
+      outcome: "ok",
     });
   });
 
@@ -46,7 +46,7 @@ describe("checkHoneypot", () => {
         [HONEYPOT_FIELD_NAME]: "   ",
         [HONEYPOT_VALID_FROM_FIELD_NAME]: validFrom,
       }),
-    ).toEqual({ spam: false });
+    ).toEqual({ outcome: "ok" });
   });
 
   it("rejects a filled trap field", () => {
@@ -57,7 +57,7 @@ describe("checkHoneypot", () => {
         [HONEYPOT_FIELD_NAME]: "https://buy-now.example",
         [HONEYPOT_VALID_FROM_FIELD_NAME]: validFrom,
       }),
-    ).toEqual({ spam: true, reason: "filled" });
+    ).toEqual({ outcome: "trapped", reason: "filled" });
   });
 
   it("rejects a trap field holding something other than text", () => {
@@ -68,17 +68,20 @@ describe("checkHoneypot", () => {
         [HONEYPOT_FIELD_NAME]: new File([], "payload.txt"),
         [HONEYPOT_VALID_FROM_FIELD_NAME]: validFrom,
       }),
-    ).toEqual({ spam: true, reason: "filled" });
+    ).toEqual({ outcome: "trapped", reason: "filled" });
   });
 
   it("rejects a submission without the timestamp field", () => {
-    expect(check({})).toEqual({ spam: true, reason: "missing-timestamp" });
+    expect(check({})).toEqual({
+      outcome: "unverified",
+      reason: "missing-timestamp",
+    });
   });
 
   it("rejects a timestamp field that is not text", () => {
     expect(
       check({ [HONEYPOT_VALID_FROM_FIELD_NAME]: new File([], "stamp.txt") }),
-    ).toEqual({ spam: true, reason: "missing-timestamp" });
+    ).toEqual({ outcome: "unverified", reason: "missing-timestamp" });
   });
 
   it.each([
@@ -89,7 +92,7 @@ describe("checkHoneypot", () => {
     ["a zero timestamp", "0.sig"],
   ])("rejects a timestamp with %s", (_case, validFrom) => {
     expect(check({ [HONEYPOT_VALID_FROM_FIELD_NAME]: validFrom })).toEqual({
-      spam: true,
+      outcome: "unverified",
       reason: "malformed-timestamp",
     });
   });
@@ -99,7 +102,7 @@ describe("checkHoneypot", () => {
       check({
         [HONEYPOT_VALID_FROM_FIELD_NAME]: `${Date.now()}.not-a-real-sig`,
       }),
-    ).toEqual({ spam: true, reason: "bad-signature" });
+    ).toEqual({ outcome: "unverified", reason: "bad-signature" });
   });
 
   it("rejects a timestamp swapped under an otherwise valid signature", () => {
@@ -109,7 +112,7 @@ describe("checkHoneypot", () => {
       check({
         [HONEYPOT_VALID_FROM_FIELD_NAME]: `${Date.now() - 60_000}.${signature}`,
       }),
-    ).toEqual({ spam: true, reason: "bad-signature" });
+    ).toEqual({ outcome: "unverified", reason: "bad-signature" });
   });
 
   // the same rejection a stamp minted before a restart now gets
@@ -119,7 +122,7 @@ describe("checkHoneypot", () => {
 
     expect(
       check({ [HONEYPOT_VALID_FROM_FIELD_NAME]: `${timestamp}.${foreign}` }),
-    ).toEqual({ spam: true, reason: "bad-signature" });
+    ).toEqual({ outcome: "unverified", reason: "bad-signature" });
   });
 
   it("rejects a properly signed timestamp from the future", () => {
@@ -129,7 +132,7 @@ describe("checkHoneypot", () => {
     vi.setSystemTime(new Date("2026-07-31T12:00:00Z"));
 
     expect(check({ [HONEYPOT_VALID_FROM_FIELD_NAME]: validFrom })).toEqual({
-      spam: true,
+      outcome: "unverified",
       reason: "future-timestamp",
     });
   });
@@ -141,18 +144,32 @@ describe("checkHoneypot", () => {
     vi.setSystemTime(new Date("2026-07-31T12:00:00Z"));
 
     expect(check({ [HONEYPOT_VALID_FROM_FIELD_NAME]: validFrom })).toEqual({
-      spam: false,
+      outcome: "ok",
     });
   });
 
-  it("accepts a timestamp from an hour-old tab", () => {
+  it("accepts a timestamp from a tab open while the form was filled in", () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-07-31T11:00:00Z"));
+    vi.setSystemTime(new Date("2026-07-31T11:40:00Z"));
     const { validFrom } = getHoneypotInputProps();
     vi.setSystemTime(new Date("2026-07-31T12:00:00Z"));
 
     expect(check({ [HONEYPOT_VALID_FROM_FIELD_NAME]: validFrom })).toEqual({
-      spam: false,
+      outcome: "ok",
+    });
+  });
+
+  // the cost of being wrong here is one resubmission with the answers intact,
+  // which is what lets the bound stay this tight
+  it("rejects a timestamp past the maximum age", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-31T09:00:00Z"));
+    const { validFrom } = getHoneypotInputProps();
+    vi.setSystemTime(new Date("2026-07-31T12:00:00Z"));
+
+    expect(check({ [HONEYPOT_VALID_FROM_FIELD_NAME]: validFrom })).toEqual({
+      outcome: "unverified",
+      reason: "stale-timestamp",
     });
   });
 });

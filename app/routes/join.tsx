@@ -23,6 +23,7 @@ import {
   SIGNUP_CLOSED_MESSAGE,
 } from "~/features/auth/signup-settings";
 import { isSignupEnabled } from "~/features/auth/signup-settings.server";
+import { HONEYPOT_RETRY_MESSAGE } from "~/features/forms/honeypot";
 import { HoneypotField } from "~/features/forms/honeypot-field";
 import { checkHoneypot } from "~/features/forms/honeypot.server";
 import { getUserByEmail } from "~/models/user.server";
@@ -44,7 +45,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
   // was caught. Checked before the signup gate so it cannot learn whether
   // sign-ups are open either.
   const honeypot = checkHoneypot(formData);
-  if (honeypot.spam) {
+  if (honeypot.outcome === "trapped") {
     logger.warn(
       { ip: getClientIPAddress(request), reason: honeypot.reason },
       "Blocked signup request caught by the spam trap",
@@ -56,10 +57,18 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     return redirect(`/check-your-inbox?${search}`);
   }
 
-  // The form renders disabled while the toggle is off, so this catches direct
-  // posts and the race where an admin closes sign-ups with the page already
-  // open. Checked before the existing-account lookup: a closed door owes the
-  // caller no database work, and no hint about which addresses are taken.
+  if (honeypot.outcome === "unverified") {
+    logger.info(
+      { ip: getClientIPAddress(request), reason: honeypot.reason },
+      "Rejected signup request with an unverifiable spam-trap stamp",
+    );
+
+    const rejected = parseWithZod(formData, { schema });
+    return data(rejected.reply({ formErrors: [HONEYPOT_RETRY_MESSAGE] }), {
+      status: 400,
+    });
+  }
+
   if (!isSignupEnabled("email")) {
     logger.warn(
       { ip: getClientIPAddress(request) },

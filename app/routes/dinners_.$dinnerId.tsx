@@ -23,6 +23,7 @@ import {
 import { isPastEvent } from "~/features/events/event-status";
 import { toEventDetailModel } from "~/features/events/view-models";
 import { getViewForField, type FieldDescriptor } from "~/features/forms/fields";
+import { HONEYPOT_RETRY_MESSAGE } from "~/features/forms/honeypot";
 import { HoneypotField } from "~/features/forms/honeypot-field";
 import { checkHoneypot } from "~/features/forms/honeypot.server";
 import { normalizeSubmissionValues } from "~/features/forms/normalize-submission";
@@ -91,7 +92,7 @@ export async function action({ params, request, context }: Route.ActionArgs) {
   // Answered with the success path's toast redirect: a caught bot must not
   // learn it was caught, so nothing is validated or stored.
   const honeypot = checkHoneypot(formData);
-  if (honeypot.spam) {
+  if (honeypot.outcome === "trapped") {
     logger.warn(
       {
         ip: getClientIPAddress(request),
@@ -105,6 +106,19 @@ export async function action({ params, request, context }: Route.ActionArgs) {
   }
 
   const submission = parseWithZod(formData, { schema });
+
+  if (honeypot.outcome === "unverified") {
+    logger.info(
+      {
+        ip: getClientIPAddress(request),
+        dinner: dinner.id,
+        reason: honeypot.reason,
+      },
+      "Rejected dinner signup with an unverifiable spam-trap stamp",
+    );
+
+    return submission.reply({ formErrors: [HONEYPOT_RETRY_MESSAGE] });
+  }
 
   // the answers must be validated and stored against the version the user
   // actually saw — a schema change in between would silently strip answers

@@ -12,6 +12,7 @@ import {
 
 import {
   HONEYPOT_FIELD_NAME,
+  HONEYPOT_RETRY_MESSAGE,
   HONEYPOT_VALID_FROM_FIELD_NAME,
 } from "~/features/forms/honeypot";
 import { getHoneypotInputProps } from "~/features/forms/honeypot.server";
@@ -121,5 +122,23 @@ describe("join action", () => {
 
     // the trap is checked first, so a bot cannot probe the toggle either
     await expectFakeSuccess(await submit(fromBot()));
+  });
+
+  it("asks for a retry when the stamp cannot be verified", async () => {
+    // what a tab that outlived a deploy sends: an empty trap, a stamp this
+    // process cannot vouch for. A person, so it must not vanish into the
+    // fake success.
+    const result = await submit({
+      ...VALID_SIGNUP,
+      email: SPAM_EMAIL,
+      [HONEYPOT_FIELD_NAME]: "",
+      [HONEYPOT_VALID_FROM_FIELD_NAME]: `${Date.now()}.stale-signature`,
+    });
+
+    expect(readReply(result)).toEqual({
+      status: 400,
+      formErrors: [HONEYPOT_RETRY_MESSAGE],
+    });
+    expect(await getUserByEmail(SPAM_EMAIL)).toBeNull();
   });
 });
