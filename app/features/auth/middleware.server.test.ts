@@ -69,11 +69,9 @@ describe("request logger middleware", () => {
     return child;
   }
 
-  it("carries the fly request id into the context and the ambient store", async () => {
+  it("carries the minted request id into the context and the ambient store", async () => {
     const child = stubRequestChild();
-    const request = new Request("http://localhost:3000/dinners", {
-      headers: { "fly-request-id": "01K9ZQ-fra1" },
-    });
+    const request = new Request("http://localhost:3000/dinners");
     const context = new RouterContextProvider();
 
     await runMiddleware(requestLoggerMiddleware, request, context, async () => {
@@ -81,27 +79,16 @@ describe("request logger middleware", () => {
       return new Response(null);
     });
 
-    expect(loggerStub.child).toHaveBeenCalledWith({ requestId: "01K9ZQ-fra1" });
-    expect(context.get(requestLoggerContext)).toBe(child);
-    expect(child.info).toHaveBeenCalledWith("during the request");
-    // the store unwinds with the request
-    requestLogger.info("after the request");
-    expect(loggerStub.info).toHaveBeenCalledWith("after the request");
-  });
-
-  it("mints a request id where the platform set none", async () => {
-    stubRequestChild();
-    await runMiddleware(
-      requestLoggerMiddleware,
-      new Request("http://localhost:3000/dinners"),
-      new RouterContextProvider(),
-    );
-
     expect(loggerStub.child).toHaveBeenCalledWith({
       requestId: expect.stringMatching(
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
       ),
     });
+    expect(context.get(requestLoggerContext)).toBe(child);
+    expect(child.info).toHaveBeenCalledWith("during the request");
+    // the store unwinds with the request
+    requestLogger.info("after the request");
+    expect(loggerStub.info).toHaveBeenCalledWith("after the request");
   });
 
   it("hands the process logger to a request the middleware never ran for", () => {

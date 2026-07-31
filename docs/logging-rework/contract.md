@@ -178,7 +178,7 @@ listed key, never a synonym.
 | --------------- | --------- | ---------------------------------------------------------------------- |
 | `email`         | `string`  | an email address, **always the plain value** — the censor masks it     |
 | `ip`            | `string`  | a client IP, **always the plain value** — the censor hashes it         |
-| `requestId`     | `string`  | `fly-request-id`, else a UUID; carried as a `logger.child()` binding   |
+| `requestId`     | `string`  | a per-request UUID; carried as a `logger.child()` binding              |
 | `userId`        | `string`  | `User.id` of the acting user                                           |
 | `targetUserId`  | `string`  | `User.id` of the user an admin action operates on                      |
 | `pattern`       | `string`  | matched route pattern; never `request.url`                             |
@@ -226,9 +226,9 @@ Rules:
 ## Correlation and request logging
 
 `requestLoggerMiddleware` (`app/features/auth/middleware.server.ts`) runs first
-in the root middleware array. It takes `fly-request-id` where the platform set
-one — so our records join Fly's — and mints a UUID otherwise, then publishes
-`logger.child({ requestId })` two ways:
+in the root middleware array. It mints a UUID per request — Fly stamps
+`fly-request-id` on responses only, so no inbound id is trustworthy — then
+publishes `logger.child({ requestId })` two ways:
 
 - `requestLoggerContext`, for anything holding the router context. Its default
   value is the process logger, so `.get()` is safe on a request the middleware

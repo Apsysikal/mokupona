@@ -16,8 +16,8 @@ import {
 import type { RoleName } from "./roles";
 import { getSignupSettings } from "./signup-settings.server";
 
-import { withRequestLogger } from "~/logger/request-context.server";
 import { logger } from "~/logger.server";
+import { withRequestLogger } from "~/logger/request-context.server";
 
 // Root middleware always initializes this context with a lazy, memoized
 // resolver (null resolution = anonymous request): routes that never read the
@@ -34,15 +34,13 @@ export const requestLoggerContext = createContext<Logger>(logger);
 
 /**
  * Mint the request id and hang the request-scoped logger off both the router
- * context and an AsyncLocalStorage store. Honouring `fly-request-id` where the
- * platform set one correlates our records with Fly's.
+ * context and an AsyncLocalStorage store.
  */
 export const requestLoggerMiddleware: MiddlewareFunction<Response> = (
-  { request, context },
+  { context },
   next,
 ) => {
-  const requestId =
-    request.headers.get("fly-request-id") ?? crypto.randomUUID();
+  const requestId = crypto.randomUUID();
   const requestLogger = logger.child({ requestId });
   context.set(requestLoggerContext, requestLogger);
   return withRequestLogger(requestLogger, next);
