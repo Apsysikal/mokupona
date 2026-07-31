@@ -82,7 +82,7 @@ export function getImageUrl(
 
 export const RESPONSIVE_IMAGE_WIDTHS = [432, 648, 864, 1080] as const;
 
-const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
 export const MAX_STAGED_IMAGE_BYTES = 4 * 1024 * 1024;
 export const IMAGE_SIZE_ERROR = "File cannot be greater than 3MB";
 export const VALID_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
