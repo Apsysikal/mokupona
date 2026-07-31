@@ -49,6 +49,47 @@ on:
 Prototypes 1–3 exploit #2 in different ways. Prototype 4 sidesteps the floor
 entirely.
 
+### "But isn't `file-storage-s3` a streaming backend?"
+
+It reads like one, and it is the obvious place to look for a counter-example.
+It isn't one. `@remix-run/file-storage-s3@0.1.4` — and the identical code on
+`main` — writes like this:
+
+```ts
+// packages/file-storage-s3/src/lib/s3.ts
+async function putFile(key: string, file: FileLike): Promise<File> {
+  let body = await file.arrayBuffer(); // ← whole file, in memory
+  let response = await s3Fetch(getObjectUrl(key), {
+    method: "PUT",
+    headers,
+    body, // ← one buffered PUT
+  });
+  await assertOk(response, `PUT "${key}"`);
+  return new File([body], file.name, {/* … */}); // ← and a second copy kept
+}
+```
+
+No `.stream()`, no S3 multipart upload (`CreateMultipartUpload`/`UploadPart`
+appear nowhere), no `duplex: 'half'`. Reads buffer too — `get` does
+`await response.arrayBuffer()`. It is in fact the _most_ buffering-heavy
+backend in the family, which is unsurprising: since `FileUpload` is already
+fully resident, a backend gains nothing by streaming from it.
+
+Where streaming genuinely does exist in this family:
+
+- **The `fs` backend streams on write.** `writeFile` opens a
+  `createWriteStream` and pumps `file.stream()` chunk by chunk with
+  backpressure. This is real, and it is why prototype 3 avoids an extra
+  full-size copy when staging to disk (and why staging via the S3 backend
+  instead would re-buffer).
+- **`LazyFile` streams on read.** Bytes are pulled from disk on demand, which
+  is what lets prototype 3 validate `size`/`type` without rehydrating.
+
+So the streaming in this ecosystem is real but sits on the _storage_ side, not
+between the request socket and the upload handler. On `main` today the only
+`ReadableStream` in `multipart-parser` is the parser's own input; no per-part
+stream is exposed, and the exports are unchanged from the installed version.
+
 ## Where the current code stands
 
 `parseImageFormData` → `withParsedImageForm` → `storeImage`, i.e. parse fully,
