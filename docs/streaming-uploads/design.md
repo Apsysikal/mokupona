@@ -277,9 +277,38 @@ folder prefix **and** it still passes the server's own size/format policy. The
 tests sign with the real helper and cover forged signatures, a swapped
 `public_id`, a foreign folder, oversize, and disallowed formats.
 
-Not implemented here: the client-side script, the loader wiring that hands the
-form its ticket, and a Cloudinary upload preset capping `max_file_size` at the
-edge.
+The client half is implemented in `p4-direct-upload-field.tsx`, and the
+mechanism is simpler than it sounds: **two inputs share the field name, and
+`disabled` decides which one the browser posts.** Disabled controls are excluded
+from form submission, so exactly one is ever sent.
+
+| State                       | file input | hidden descriptor | what gets posted |
+| --------------------------- | ---------- | ----------------- | ---------------- |
+| No JS / pre-hydration       | enabled    | disabled          | the bytes        |
+| Upload in flight            | enabled    | disabled          | the bytes        |
+| Upload succeeded            | disabled   | enabled           | a short string   |
+| Upload failed / unreachable | enabled    | disabled          | the bytes        |
+
+The no-JS row is tested against `renderToStaticMarkup` output — literally what a
+scripting-disabled browser receives — rather than against simulated behaviour,
+since no behaviour of ours can run there. The rest are tested through a real
+`FormData(form)`, so the assertions are about what the browser would actually
+send.
+
+The failure rows are the part worth keeping: a broken or unreachable Cloudinary
+does not break the form. The enhancement simply never completes, the file input
+is never disabled, and the submission falls back to the server-side path. The
+enhancement is purely additive.
+
+**The honest caveat:** progressive enhancement means the server-side path must
+stay, so P4 does not _bound_ worst-case server memory — it only avoids it for
+clients that can run the script. Anyone (including an attacker) can still post
+multipart to the action, which is why the parser limits and the server-side
+policy checks in `verifyDirectUpload` both have to stay in place. P4 reduces the
+common case to zero; it does not remove the need for a server-side upload path.
+
+Still not implemented: the loader wiring that hands the form its ticket, and a
+Cloudinary upload preset capping `max_file_size` at the edge.
 
 ### P5 — True socket-to-Cloudinary streaming (`p5-true-streaming.server.ts`)
 
@@ -322,7 +351,7 @@ undrained part stalls the parser so `close` never fires. The failure path has to
 | **P1** | ~1x file            | yes                                     | none                                | none            | ✅                    |
 | **P2** | ~1x file            | no (released at ACK)                    | **yes** — needs compensating delete | none            | ✅                    |
 | **P3** | ~1x file, then disk | no (on disk)                            | none                                | key indirection | ✅                    |
-| **P4** | **zero**            | n/a                                     | none¹                               | union branch    | ✅ (falls back to P1) |
+| **P4** | **zero** (JS path)  | n/a                                     | none¹                               | union branch    | ✅ (falls back to P1) |
 | **P5** | **constant**        | no (never resident)                     | **yes** — partial asset on abort    | none            | ✅                    |
 
 ¹ An abandoned direct upload leaves an unreferenced Cloudinary asset; a
@@ -360,6 +389,6 @@ cheapest byte to handle is the one that never arrives.
 ## Reproducing
 
 ```sh
-npx vitest run app/features/images/prototypes/   # 42 tests
+npx vitest run app/features/images/prototypes/   # 52 tests
 npm run typecheck
 ```

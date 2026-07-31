@@ -13,6 +13,7 @@ The write-up — including the constraint that shapes all of them — is in
 | `p2-parse-time-upload.server.ts` | Upload from the upload handler; leave a stand-in `File` in the `FormData`. Needs compensating deletes.       |
 | `p3-disk-staged.server.ts`       | Stage parts to `file-storage`, validate the disk-backed handle, upload from disk.                            |
 | `p4-signed-direct.server.ts`     | Browser uploads straight to Cloudinary with a signed ticket; server-side upload stays as the no-JS fallback. |
+| `p4-direct-upload-field.tsx`     | The client half of P4: two inputs share a name, `disabled` picks which one the browser posts.                |
 | `p5-true-streaming.server.ts`    | Swap the parser for busboy and forward the request socket straight into Cloudinary at constant memory.       |
 
 The headline: **`form-data-parser` never hands the upload handler a stream** —
