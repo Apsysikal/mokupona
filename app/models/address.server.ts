@@ -86,7 +86,7 @@ export async function deleteAddress(id: string): Promise<Address | null> {
   return prisma.$transaction(async (tx) => {
     const inUse = await tx.event.count({ where: { addressId: id } });
     if (inUse > 0) {
-      requestLogger().warn(
+      requestLogger.warn(
         { addressId: id, reason: { dinnersUsingAddress: inUse } },
         "Refused to delete an address dinners still point at",
       );

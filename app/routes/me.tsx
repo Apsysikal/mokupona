@@ -111,8 +111,6 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         });
       }
     } catch (error) {
-      // the field error below blames the user's input, which is only one of
-      // the reasons better-auth rejects this
       log.warn({ userId, intent, error }, "Password change failed");
       return data({
         result: submission.reply({

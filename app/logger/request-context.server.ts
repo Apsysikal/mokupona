@@ -10,9 +10,9 @@ const storage = singleton(
   () => new AsyncLocalStorage<Logger>(),
 );
 
-/** Make `requestLogger` the ambient logger for everything `run` awaits. */
-export function withRequestLogger<T>(requestLogger: Logger, run: () => T): T {
-  return storage.run(requestLogger, run);
+/** Make `scoped` the ambient logger for everything `run` awaits. */
+export function withRequestLogger<T>(scoped: Logger, run: () => T): T {
+  return storage.run(scoped, run);
 }
 
 /**
@@ -21,6 +21,10 @@ export function withRequestLogger<T>(requestLogger: Logger, run: () => T): T {
  * modules the router's context API does not reach — `app/models/*`, mail,
  * image storage, the auth guards.
  */
-export function requestLogger(): Logger {
-  return storage.getStore() ?? logger;
-}
+export const requestLogger = new Proxy({} as Logger, {
+  get(_target, property) {
+    const current = storage.getStore() ?? logger;
+    const value = Reflect.get(current, property, current);
+    return typeof value === "function" ? value.bind(current) : value;
+  },
+});

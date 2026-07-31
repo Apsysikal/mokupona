@@ -100,7 +100,7 @@ export const auth = singleton("better-auth", () => {
           before: async (user) => {
             const role = await getRoleByName("user");
             if (!role) {
-              requestLogger().error(
+              requestLogger.error(
                 { email: user.email },
                 "Default role 'user' missing during signup",
               );
@@ -111,14 +111,14 @@ export const auth = singleton("better-auth", () => {
         },
         update: {
           after: async (user) => {
-            requestLogger().info({ userId: user.id }, "User record updated");
+            requestLogger.info({ userId: user.id }, "User record updated");
           },
         },
       },
       session: {
         create: {
           after: async (session) => {
-            requestLogger().info({ userId: session.userId }, "Session created");
+            requestLogger.info({ userId: session.userId }, "Session created");
           },
         },
       },
@@ -127,7 +127,7 @@ export const auth = singleton("better-auth", () => {
           after: async (account) => {
             // accountLinking.trustedProviders links a Google identity onto an
             // existing address without a confirmation step
-            requestLogger().warn(
+            requestLogger.warn(
               { userId: account.userId, provider: account.providerId },
               "Account linked to a user",
             );

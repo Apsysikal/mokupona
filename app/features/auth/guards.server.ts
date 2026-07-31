@@ -18,7 +18,7 @@ const reportedRoleViolations = new Set<User["id"]>();
 function validateRoleName(user: User & { role: Role }): ValidatedUser {
   if (!isRoleName(user.role.name) && !reportedRoleViolations.has(user.id)) {
     reportedRoleViolations.add(user.id);
-    requestLogger().error(
+    requestLogger.error(
       { userId: user.id, role: user.role.name },
       "User has a role outside the role vocabulary",
     );
@@ -60,7 +60,7 @@ export function assertUserHasRole(
   if (!roles.includes(user.role.name)) {
     // A thrown Response never reaches handleError, so this is the only place
     // an authorization denial can be recorded at all.
-    requestLogger().warn(
+    requestLogger.warn(
       {
         userId: user.id,
         role: user.role.name,
@@ -93,9 +93,7 @@ export async function logout(request: Request) {
     });
     return redirect("/", { headers });
   } catch (error) {
-    // usually no live session to revoke, but a session that survives this is
-    // indistinguishable from one that was never there
-    requestLogger().warn({ error }, "Sign-out did not revoke a session");
+    requestLogger.warn({ error }, "Sign-out did not revoke a session");
     return redirect("/");
   }
 }

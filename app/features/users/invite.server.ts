@@ -47,7 +47,7 @@ export async function resendInvite({
 }): Promise<void> {
   const invite = await refreshInvite(id);
   if (!invite) {
-    requestLogger().warn(
+    requestLogger.warn(
       { inviteId: id },
       "Re-send found no live invite to refresh",
     );

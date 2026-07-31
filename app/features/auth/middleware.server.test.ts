@@ -64,8 +64,8 @@ async function resolveUser(request: Request, context: RouterContextProvider) {
 
 describe("request logger middleware", () => {
   function stubRequestChild() {
-    const child = {} as Logger;
-    loggerStub.child.mockReturnValueOnce(child);
+    const child = { info: vi.fn() };
+    loggerStub.child.mockReturnValueOnce(child as unknown as Logger);
     return child;
   }
 
@@ -76,17 +76,17 @@ describe("request logger middleware", () => {
     });
     const context = new RouterContextProvider();
 
-    let ambient: Logger | undefined;
     await runMiddleware(requestLoggerMiddleware, request, context, async () => {
-      ambient = requestLogger();
+      requestLogger.info("during the request");
       return new Response(null);
     });
 
     expect(loggerStub.child).toHaveBeenCalledWith({ requestId: "01K9ZQ-fra1" });
     expect(context.get(requestLoggerContext)).toBe(child);
-    expect(ambient).toBe(child);
+    expect(child.info).toHaveBeenCalledWith("during the request");
     // the store unwinds with the request
-    expect(requestLogger()).toBe(logger);
+    requestLogger.info("after the request");
+    expect(loggerStub.info).toHaveBeenCalledWith("after the request");
   });
 
   it("mints a request id where the platform set none", async () => {

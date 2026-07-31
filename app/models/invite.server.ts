@@ -162,7 +162,7 @@ export async function acceptInvite({
   });
 
   if (promotedTo) {
-    requestLogger().warn(
+    requestLogger.warn(
       { userId, inviteId: invite.id, role: promotedTo },
       "Invite promoted a user's role",
     );

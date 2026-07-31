@@ -36,7 +36,7 @@ export async function fetchBlurDataUrl({
   } catch (error) {
     // getBlurDataUrl caches this promise for the process lifetime, so a single
     // failure here degrades the landing page until the next deploy
-    requestLogger().warn(
+    requestLogger.warn(
       { storageKey: publicId, error },
       "Blur placeholder fetch failed",
     );

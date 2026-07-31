@@ -113,11 +113,6 @@ Behaviour that call sites must know about:
 - **`redact` does not touch the message string**, which is why the call
   convention below requires a static literal.
 
-One value is masked outside the censor. A connection string is not PII and its
-secret part has no fixed key shape, so `redactDatabaseUrl`
-(`app/logger/redact-url.server.ts`) drops the query string and replaces any
-userinfo before `db.server.ts` logs `databaseUrl` on the boot line.
-
 ## Rotation
 
 `/data/logs/app.log` is rotated by `logrotate` (`logrotate.conf`, copied to
@@ -198,8 +193,7 @@ Boot and form-version fields, each used by a single call site:
 
 | Field               | Type      | Meaning                                                       |
 | ------------------- | --------- | ------------------------------------------------------------- |
-| `adapter`           | `string`  | the Prisma driver adapter                                     |
-| `databaseUrl`       | `string`  | `DATABASE_URL` through `redactDatabaseUrl`                    |
+| `databaseUrl`       | `string`  | `DATABASE_URL`                                                |
 | `target`            | `string`  | the Prisma client target a `warn`/`error` log event came from |
 | `folderPrefix`      | `string`  | `CLOUDINARY_FOLDER_PREFIX`                                    |
 | `googleAuthEnabled` | `boolean` | whether Google OAuth is configured                            |
@@ -230,11 +224,14 @@ one — so our records join Fly's — and mints a UUID otherwise, then publishes
   value is the process logger, so `.get()` is safe on a request the middleware
   never ran for (an unmatched path, or the instrumentation reading that
   request's context).
-- an `AsyncLocalStorage` store behind `requestLogger()`
+- an `AsyncLocalStorage` store behind `requestLogger`
   (`app/logger/request-context.server.ts`), for the modules the context API does
-  not reach: `app/models/*`, mail, image storage, the auth guards. The ALS
-  instance is held by `app/utils/singleton.server.ts`, like `prisma` and
-  better-auth. Outside a request `requestLogger()` is the process logger.
+  not reach: `app/models/*`, mail, image storage, the auth guards.
+  `requestLogger` is a proxy that resolves the store on every read, so it is
+  used like a logger — `requestLogger.warn(...)` — while still recording under
+  the request in scope at the call. The ALS instance is held by
+  `app/utils/singleton.server.ts`, like `prisma` and better-auth. Outside a
+  request `requestLogger` is the process logger.
 
 `instrumentations` in `app/entry.server.tsx` emits **exactly one completion
 line per request**, `"Request completed"`, carrying `pattern`, `statusCode`,

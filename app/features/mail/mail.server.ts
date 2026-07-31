@@ -60,12 +60,12 @@ export async function sendTemplate<Name extends MailTemplateName>(
   try {
     await provider.send({ to, ...render(props) });
   } catch (error) {
-    requestLogger().error(
+    requestLogger.error(
       { template: name, email: to, error },
       "Failed to send mail",
     );
     throw error;
   }
 
-  requestLogger().info({ template: name, email: to }, "Sent mail");
+  requestLogger.info({ template: name, email: to }, "Sent mail");
 }

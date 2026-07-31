@@ -18,8 +18,6 @@ export function createResendProvider(
   const send = async (message: MailMessage) => {
     const { error } = await resend.emails.send({ from, ...message });
     if (error) {
-      // never name the recipient here: the message string bypasses the
-      // logger's censor. sendTemplate logs the address under `email`.
       throw new Error(`Resend rejected the message: ${error.message}`);
     }
   };

@@ -55,7 +55,7 @@ async function acceptCurrentInvite(
     await acceptInvite({ invite, userId });
   } catch (error) {
     if (error instanceof InviteNoLongerValidError) {
-      requestLogger().warn(
+      requestLogger.warn(
         { userId, inviteId: invite.id },
         "Invite acceptance lost the single-use race",
       );

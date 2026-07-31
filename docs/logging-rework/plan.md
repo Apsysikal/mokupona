@@ -511,7 +511,7 @@ Each answers a question that is currently unanswerable from logs:
   `console` provider would drop every transactional mail).
 - `image-storage.server.ts:30` — image provider + Cloudinary folder prefix.
 - `auth.server.ts:14-21` — whether Google OAuth is enabled.
-- `db.server.ts:9-17` — adapter and redacted `DATABASE_URL`.
+- `db.server.ts:9-17` — `DATABASE_URL`.
 
 Also: `db.server.ts:15` calls `client.$connect()` with no `await` and no
 `.catch()` — an unhandled rejection on boot. Fix it, and wire Prisma's

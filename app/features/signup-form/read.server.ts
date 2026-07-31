@@ -55,7 +55,7 @@ function newRosterDrops(): RosterDrops {
 function reportRosterDrops(eventId: string, drops: RosterDrops) {
   if (Object.values(drops).every((count) => count === 0)) return;
 
-  requestLogger().error(
+  requestLogger.error(
     { dinner: eventId, reason: drops },
     "Dropped attendee data while loading the roster",
   );
@@ -100,7 +100,7 @@ export async function getAttendeeCountsForEvents(
   }
 
   if (submissionsWithoutDinner > 0) {
-    requestLogger().error(
+    requestLogger.error(
       { reason: { submissionsWithoutDinner } },
       "Dropped form submissions that no longer point at a dinner",
     );
