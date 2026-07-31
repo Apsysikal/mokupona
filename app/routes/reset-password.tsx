@@ -12,8 +12,8 @@ import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { auth } from "~/features/auth/auth.server";
 import { parseRequestForm } from "~/features/auth/form-schemas";
+import { requestLoggerContext } from "~/features/auth/middleware.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
-import { logger } from "~/logger.server";
 import { getPasswordResetEmail } from "~/models/password-reset.server";
 import { getClientIPAddress } from "~/shared/http.server";
 
@@ -42,7 +42,8 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   return { state: "form" as const, token, email };
 };
 
-export const action = async ({ request }: Route.ActionArgs) => {
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const logger = context.get(requestLoggerContext);
   const submission = await parseRequestForm(request, schema);
 
   if (submission.status !== "success") {

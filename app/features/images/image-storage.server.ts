@@ -2,6 +2,7 @@ import { createCloudinaryProvider } from "./providers/cloudinary.server";
 import { createLocalProvider } from "./providers/local.server";
 import type { ImageStorageProvider, StoredImage } from "./types";
 
+import { requestLogger } from "~/logger/request-context.server";
 import { logger } from "~/logger.server";
 import { singleton } from "~/utils/singleton.server";
 
@@ -59,7 +60,7 @@ export async function destroyImages(
     try {
       await providerOverride.destroy(storageKey);
     } catch (error) {
-      logger.warn(
+      requestLogger.warn(
         {
           storageKey,
           error,

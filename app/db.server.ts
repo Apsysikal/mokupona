@@ -20,9 +20,11 @@ const prisma = singleton("prisma", () => {
     ],
   });
 
-  client.$on("warn", ({ message, target }) => logger.warn({ target }, message));
+  client.$on("warn", ({ message, target }) =>
+    logger.warn({ target, reason: message }, "Prisma reported a warning"),
+  );
   client.$on("error", ({ message, target }) =>
-    logger.error({ target }, message),
+    logger.error({ target, reason: message }, "Prisma reported an error"),
   );
 
   logger.info(

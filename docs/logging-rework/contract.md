@@ -233,6 +233,12 @@ one — so our records join Fly's — and mints a UUID otherwise, then publishes
   `app/utils/singleton.server.ts`, like `prisma` and better-auth. Outside a
   request `requestLogger` is the process logger.
 
+**Anything logged while serving a request goes through one of those two.** The
+bare `logger` is for boot and shutdown only — a record it writes carries no
+`requestId` and cannot be joined to the completion line beside it, which is
+worth the least on exactly the auth and signup lines an audit reads first.
+Routes take the context, everything below them takes `requestLogger`.
+
 `instrumentations` in `app/entry.server.tsx` emits **exactly one completion
 line per request**, `"Request completed"`, carrying `pattern`, `statusCode`,
 `shellMs` and — through the child — `requestId`. It covers what middleware does

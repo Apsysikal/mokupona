@@ -13,14 +13,16 @@ import { Input } from "~/components/ui/input";
 import { auth } from "~/features/auth/auth.server";
 import { GoogleSignInButton } from "~/features/auth/components/google-button";
 import { displayNameSchema, emailSchema } from "~/features/auth/form-schemas";
-import { anonymousAuthPageLoader } from "~/features/auth/middleware.server";
+import {
+  anonymousAuthPageLoader,
+  requestLoggerContext,
+} from "~/features/auth/middleware.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
 import {
   EMAIL_SIGNUP_CLOSED_MESSAGE,
   SIGNUP_CLOSED_MESSAGE,
 } from "~/features/auth/signup-settings";
 import { isSignupEnabled } from "~/features/auth/signup-settings.server";
-import { logger } from "~/logger.server";
 import { getUserByEmail } from "~/models/user.server";
 import { getClientIPAddress } from "~/shared/http.server";
 
@@ -32,7 +34,8 @@ const schema = withPasswordConfirmation({
 
 export const loader = anonymousAuthPageLoader;
 
-export const action = async ({ request }: Route.ActionArgs) => {
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const logger = context.get(requestLoggerContext);
   const formData = await request.formData();
 
   // The form renders disabled while the toggle is off, so this catches direct

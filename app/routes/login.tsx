@@ -14,12 +14,14 @@ import { Label } from "~/components/ui/label";
 import { auth } from "~/features/auth/auth.server";
 import { GoogleSignInButton } from "~/features/auth/components/google-button";
 import { emailSchema, parseRequestForm } from "~/features/auth/form-schemas";
-import { anonymousAuthPageLoader } from "~/features/auth/middleware.server";
+import {
+  anonymousAuthPageLoader,
+  requestLoggerContext,
+} from "~/features/auth/middleware.server";
 import {
   GOOGLE_SIGNUP_CLOSED_MESSAGE,
   OAUTH_SIGNUP_DISABLED_ERROR,
 } from "~/features/auth/signup-settings";
-import { logger } from "~/logger.server";
 import { getClientIPAddress, safeRedirect } from "~/shared/http.server";
 
 const schema = z.object({
@@ -31,7 +33,8 @@ const schema = z.object({
 
 export const loader = anonymousAuthPageLoader;
 
-export const action = async ({ request }: Route.ActionArgs) => {
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const logger = context.get(requestLoggerContext);
   const submission = await parseRequestForm(request, schema);
 
   if (submission.status !== "success") {

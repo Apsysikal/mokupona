@@ -15,6 +15,7 @@ import { RouteErrorContent } from "~/components/route-error-content";
 import { BackLink, PageContainer } from "~/components/section";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
+import { requestLoggerContext } from "~/features/auth/middleware.server";
 import {
   EventFactList,
   EventStory,
@@ -26,7 +27,6 @@ import { normalizeSubmissionValues } from "~/features/forms/normalize-submission
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
 import { buildSignupSchema } from "~/features/signup-form/build-schema";
 import { cn } from "~/lib/utils";
-import { logger } from "~/logger.server";
 import { getEventWithCurrentFormVersion } from "~/models/event.server";
 import {
   createFormSubmission,
@@ -55,8 +55,9 @@ export async function loader({ params }: Route.LoaderArgs) {
 const FORM_CHANGED_ERROR =
   "The signup form was updated while you were filling it out. Please review your answers and submit again.";
 
-export async function action({ params, request }: Route.ActionArgs) {
+export async function action({ params, request, context }: Route.ActionArgs) {
   const { dinnerId } = params;
+  const logger = context.get(requestLoggerContext);
 
   const { event: dinner, version } = requireFound(
     await getEventWithCurrentFormVersion(dinnerId),
