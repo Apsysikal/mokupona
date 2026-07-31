@@ -10,6 +10,11 @@ import { AuthNotice } from "~/components/auth-notice";
 import { ErrorList, Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import {
+  EMAIL_SIGNUP_CLOSED_MESSAGE,
+  SIGNUP_CLOSED_MESSAGE,
+} from "~/features/auth/auth-settings";
+import { isAuthToggleEnabled } from "~/features/auth/auth-settings.server";
 import { auth } from "~/features/auth/auth.server";
 import { GoogleSignInButton } from "~/features/auth/components/google-button";
 import { displayNameSchema, emailSchema } from "~/features/auth/form-schemas";
@@ -18,11 +23,6 @@ import {
   requestLoggerContext,
 } from "~/features/auth/middleware.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
-import {
-  EMAIL_SIGNUP_CLOSED_MESSAGE,
-  SIGNUP_CLOSED_MESSAGE,
-} from "~/features/auth/signup-settings";
-import { isSignupEnabled } from "~/features/auth/signup-settings.server";
 import { HONEYPOT_RETRY_MESSAGE } from "~/features/forms/honeypot";
 import { HoneypotField } from "~/features/forms/honeypot-field";
 import { checkHoneypot } from "~/features/forms/honeypot.server";
@@ -69,7 +69,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     });
   }
 
-  if (!isSignupEnabled("email")) {
+  if (!isAuthToggleEnabled("emailSignup")) {
     logger.warn(
       { ip: getClientIPAddress(request) },
       "Blocked signup request while self-signup is disabled",
@@ -154,9 +154,8 @@ export default function Join({ loaderData, actionData }: Route.ComponentProps) {
     },
   });
 
-  const emailSignupOpen = loaderData.signupEnabled.email;
-  const googleSignupOpen =
-    loaderData.googleEnabled && loaderData.signupEnabled.google;
+  const emailSignupOpen = loaderData.emailSignupEnabled;
+  const googleOpen = loaderData.googleEnabled;
 
   return (
     <AuthShell mode="join" search={searchParams.toString()}>
@@ -175,9 +174,7 @@ export default function Join({ loaderData, actionData }: Route.ComponentProps) {
           // the loader's verdict replaces the equivalent form-level error, so
           // a rejected direct post never says the same thing twice
           <AuthNotice variant="destructive">
-            {googleSignupOpen
-              ? EMAIL_SIGNUP_CLOSED_MESSAGE
-              : SIGNUP_CLOSED_MESSAGE}
+            {googleOpen ? EMAIL_SIGNUP_CLOSED_MESSAGE : SIGNUP_CLOSED_MESSAGE}
           </AuthNotice>
         )}
 
@@ -237,7 +234,7 @@ export default function Join({ loaderData, actionData }: Route.ComponentProps) {
           </Button>
         </fieldset>
 
-        {googleSignupOpen ? (
+        {googleOpen ? (
           <GoogleSignInButton callbackURL={redirectTo ?? "/"} />
         ) : null}
 

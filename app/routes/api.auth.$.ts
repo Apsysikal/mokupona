@@ -1,14 +1,15 @@
 import type { Route } from "./+types/api.auth.$";
 
+import { isAuthToggleEnabled } from "~/features/auth/auth-settings.server";
 import { auth } from "~/features/auth/auth.server";
 import { requestLoggerContext } from "~/features/auth/middleware.server";
-import { isSignupEnabled } from "~/features/auth/signup-settings.server";
 import { getClientIPAddress } from "~/shared/http.server";
 
 // better-auth's registration endpoint. Neither /join nor the invite flow
 // reaches it through this route — both call `auth.api.signUpEmail` directly —
 // so guarding here closes the direct-POST path without touching either. A
 // hand-rolled request has to be refused the same way the form is.
+// The Google toggle lives in `~/features/auth/google-gate.server`.
 const SIGN_UP_EMAIL_PATH = "/sign-up/email";
 
 export const loader = async ({ request }: Route.LoaderArgs) =>
@@ -17,7 +18,10 @@ export const loader = async ({ request }: Route.LoaderArgs) =>
 export const action = async ({ request, context }: Route.ActionArgs) => {
   const { pathname } = new URL(request.url);
 
-  if (pathname.endsWith(SIGN_UP_EMAIL_PATH) && !isSignupEnabled("email")) {
+  if (
+    pathname.endsWith(SIGN_UP_EMAIL_PATH) &&
+    !isAuthToggleEnabled("emailSignup")
+  ) {
     const logger = context.get(requestLoggerContext);
     logger.warn(
       { ip: getClientIPAddress(request) },

@@ -6,6 +6,7 @@ import {
   type RouterContextProvider,
 } from "react-router";
 
+import { isAuthToggleEnabled } from "./auth-settings.server";
 import { googleAuthEnabled } from "./auth.server";
 import {
   getUserWithRole,
@@ -14,7 +15,6 @@ import {
   type ValidatedUser,
 } from "./guards.server";
 import type { RoleName } from "./roles";
-import { getSignupSettings } from "./signup-settings.server";
 
 import { logger } from "~/logger.server";
 import { withRequestLogger } from "~/logger/request-context.server";
@@ -74,8 +74,8 @@ export async function requireResolvedUser(
 
 /**
  * Loader shared by the anonymous-only auth pages (login/join): bounce
- * signed-in users home, expose whether Google sign-in is configured, and
- * report which self-signup methods the admin toggles currently leave open.
+ * signed-in users home, and report whether Google sign-in and email sign-ups
+ * are on the table right now.
  */
 export async function anonymousAuthPageLoader({
   context,
@@ -85,8 +85,8 @@ export async function anonymousAuthPageLoader({
   const user = await context.get(optionalUserContext)();
   if (user) throw redirect("/");
   return {
-    googleEnabled: googleAuthEnabled,
-    signupEnabled: getSignupSettings(),
+    googleEnabled: googleAuthEnabled && isAuthToggleEnabled("google"),
+    emailSignupEnabled: isAuthToggleEnabled("emailSignup"),
   };
 }
 

@@ -1,37 +1,23 @@
-export const SIGNUP_METHODS = ["email", "google"] as const;
-export type SignupMethod = (typeof SIGNUP_METHODS)[number];
+export const AUTH_TOGGLES = ["emailSignup", "google"] as const;
+export type AuthToggle = (typeof AUTH_TOGGLES)[number];
 
-/** Which self-signup methods are currently open. */
-export type SignupSettings = Record<SignupMethod, boolean>;
+/** Which self-service auth paths are currently open. */
+export type AuthSettings = Record<AuthToggle, boolean>;
 
-export const SIGNUP_METHOD_COPY = {
-  email: {
-    label: "email and password",
+export const AUTH_TOGGLE_COPY = {
+  emailSignup: {
+    label: "email sign-ups",
     description: "lets anyone create an account from the sign-up form.",
   },
   google: {
-    label: "google",
+    label: "google sign-in",
     description:
-      "lets anyone create an account using google. existing accounts can always sign.",
+      "lets anyone sign in, sign up, or link an account with google. turning it off refuses all three.",
   },
-} satisfies Record<SignupMethod, { label: string; description: string }>;
+} satisfies Record<AuthToggle, { label: string; description: string }>;
 
-export const SIGNUP_METHOD_LABELS = {
-  email: "email and password",
-  google: "google",
-} as const satisfies Record<SignupMethod, string>;
-
-export const SIGNUP_METHOD_DESCRIPTIONS = {
-  email: "lets anyone create an account from the sign-up form.",
-  google:
-    "lets a first-time google sign-in create an account. existing accounts can always sign in with google.",
-} as const satisfies Record<SignupMethod, string>;
-
-/**
- * The error code better-auth redirects with when the OAuth callback refuses to
- * register a new user (`link-account.mjs` turns "signup disabled" into this).
- */
-export const OAUTH_SIGNUP_DISABLED_ERROR = "signup_disabled";
+/** The error code the OAuth callback redirects with once Google is off. */
+export const GOOGLE_DISABLED_ERROR = "google_disabled";
 
 /** Shown wherever a closed sign-up path has to explain itself. */
 export const SIGNUP_CLOSED_MESSAGE =
@@ -41,6 +27,6 @@ export const SIGNUP_CLOSED_MESSAGE =
 export const EMAIL_SIGNUP_CLOSED_MESSAGE =
   "email sign-ups are closed right now. you can still continue with google below.";
 
-/** Google's variant, where the email form may well still be open. */
-export const GOOGLE_SIGNUP_CLOSED_MESSAGE =
-  "we aren't creating new accounts from google sign-in right now. if you were invited, use the link in your invitation email.";
+/** Google's variant, where the email form is the way back in. */
+export const GOOGLE_DISABLED_MESSAGE =
+  "google sign-in is switched off right now. use your email address and password instead — if you only ever signed in with google, use forgot password to set one.";

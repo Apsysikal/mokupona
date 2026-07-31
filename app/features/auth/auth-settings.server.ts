@@ -1,38 +1,38 @@
 import {
-  SIGNUP_METHODS,
-  type SignupMethod,
-  type SignupSettings,
-} from "./signup-settings";
+  AUTH_TOGGLES,
+  type AuthSettings,
+  type AuthToggle,
+} from "./auth-settings";
 
 import { singleton } from "~/utils/singleton.server";
 
-const state = singleton<SignupSettings>("signup-settings", () => allEnabled());
+const state = singleton<AuthSettings>("auth-settings", () => allEnabled());
 
-function allEnabled(): SignupSettings {
+function allEnabled(): AuthSettings {
   return Object.fromEntries(
-    SIGNUP_METHODS.map((method) => [method, true]),
-  ) as SignupSettings;
+    AUTH_TOGGLES.map((toggle) => [toggle, true]),
+  ) as AuthSettings;
 }
 
 /** A snapshot for loaders — mutating it does not touch the live state. */
-export function getSignupSettings(): SignupSettings {
+export function getAuthSettings(): AuthSettings {
   return { ...state };
 }
 
-export function isSignupEnabled(method: SignupMethod): boolean {
-  return state[method];
+export function isAuthToggleEnabled(toggle: AuthToggle): boolean {
+  return state[toggle];
 }
 
-export function setSignupEnabled(
-  method: SignupMethod,
+export function setAuthToggleEnabled(
+  toggle: AuthToggle,
   enabled: boolean,
-): SignupSettings {
-  state[method] = enabled;
-  return getSignupSettings();
+): AuthSettings {
+  state[toggle] = enabled;
+  return getAuthSettings();
 }
 
 /** Test-only escape hatch: back to "everything open". */
-export function resetSignupSettings(): SignupSettings {
-  for (const method of SIGNUP_METHODS) state[method] = true;
-  return getSignupSettings();
+export function resetAuthSettings(): AuthSettings {
+  for (const toggle of AUTH_TOGGLES) state[toggle] = true;
+  return getAuthSettings();
 }

@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import invariant from "tiny-invariant";
 
-import { isSignupEnabled } from "./signup-settings.server";
+import { googleGate } from "./google-gate.server";
 
 import { prisma } from "~/db.server";
 import { sendTemplate } from "~/features/mail/mail.server";
@@ -14,42 +14,15 @@ import { singleton } from "~/utils/singleton.server";
 
 invariant(process.env.BETTER_AUTH_SECRET, "BETTER_AUTH_SECRET must be set");
 
-/**
- * better-auth builds its provider once at startup but keeps these options by
- * reference and re-reads them on every OAuth callback — which is why the
- * signup switches are getters and not booleans. A boolean would freeze
- * whatever the admin toggle happened to say at boot.
- */
-export function buildGoogleProviderOptions(
-  clientId: string,
-  clientSecret: string,
-) {
-  return {
-    prompt: "select_account" as const,
-    clientId,
-    clientSecret,
-    // Read inside the callback as `provider.options.disableSignUp`. Sign-in
-    // for accounts that already exist is untouched — only registration of a
-    // first-time Google user is refused.
-    get disableSignUp() {
-      return !isSignupEnabled("google");
-    },
-    // The id-token branch of /sign-in/social consults `provider.disableSignUp`
-    // instead — a field better-auth never populates from these options, so the
-    // getter above cannot reach it. We only ever use the redirect flow, so
-    // closing that branch outright is the cheapest way to stop it registering
-    // accounts behind the toggle's back.
-    get disableIdTokenSignIn() {
-      return !isSignupEnabled("google");
-    },
-  };
-}
-
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 const googleProvider =
   googleClientId && googleClientSecret
-    ? buildGoogleProviderOptions(googleClientId, googleClientSecret)
+    ? {
+        prompt: "select_account" as const,
+        clientId: googleClientId,
+        clientSecret: googleClientSecret,
+      }
     : undefined;
 
 export const googleAuthEnabled = Boolean(googleProvider);
@@ -69,6 +42,7 @@ export const auth = singleton("better-auth", () => {
       },
     },
     socialProviders: googleProvider ? { google: googleProvider } : undefined,
+    hooks: { before: googleGate },
     account: {
       accountLinking: {
         enabled: true,

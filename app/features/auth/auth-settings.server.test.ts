@@ -1,37 +1,37 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
-  getSignupSettings,
-  isSignupEnabled,
-  resetSignupSettings,
-  setSignupEnabled,
-} from "./signup-settings.server";
+  getAuthSettings,
+  isAuthToggleEnabled,
+  resetAuthSettings,
+  setAuthToggleEnabled,
+} from "./auth-settings.server";
 
 afterEach(() => {
-  resetSignupSettings();
+  resetAuthSettings();
 });
 
-describe("signup settings store", () => {
-  it("leaves every method open until something closes one", () => {
-    expect(getSignupSettings()).toEqual({ email: true, google: true });
+describe("auth settings store", () => {
+  it("leaves every toggle open until something closes one", () => {
+    expect(getAuthSettings()).toEqual({ emailSignup: true, google: true });
   });
 
-  it("closes methods independently of each other", () => {
-    setSignupEnabled("email", false);
+  it("closes toggles independently of each other", () => {
+    setAuthToggleEnabled("emailSignup", false);
 
-    expect(isSignupEnabled("email")).toBe(false);
-    expect(isSignupEnabled("google")).toBe(true);
+    expect(isAuthToggleEnabled("emailSignup")).toBe(false);
+    expect(isAuthToggleEnabled("google")).toBe(true);
 
-    setSignupEnabled("google", false);
-    setSignupEnabled("email", true);
+    setAuthToggleEnabled("google", false);
+    setAuthToggleEnabled("emailSignup", true);
 
-    expect(getSignupSettings()).toEqual({ email: true, google: false });
+    expect(getAuthSettings()).toEqual({ emailSignup: true, google: false });
   });
 
   it("hands loaders a snapshot they cannot write back through", () => {
-    const snapshot = getSignupSettings();
-    snapshot.email = false;
+    const snapshot = getAuthSettings();
+    snapshot.emailSignup = false;
 
-    expect(isSignupEnabled("email")).toBe(true);
+    expect(isAuthToggleEnabled("emailSignup")).toBe(true);
   });
 });
