@@ -38,6 +38,16 @@ always constructed — there is no on/off switch and no environment branch in th
 wiring; only the shape of the stdout sink varies. Every stream entry carries its
 own `level`, which defaults to `info` independently of `logger.level`.
 
+**A failing sink is disabled, never fatal.** `disableOnError`, private to
+`app/logger.server.ts`, listens on the file sink, because pino's own listener
+handles `EPIPE` and re-emits everything else — and an `error` with no listener
+is what Node turns into a throw, out of an fs callback where no `try`/`catch`
+of ours can reach it. A full `/data` would otherwise end the
+process over a log line. The sink is silenced the way pino silences a broken
+pipe, one `error` record reports it, and the run continues on stdout alone.
+Rotation is what keeps the volume from filling; this is what happens when
+rotation did not.
+
 Every record therefore carries `time` as an ISO-8601 string and `level` as a
 lowercase string label. The file sink's greppability and `pino-pretty`'s
 rendering both depend on those two; change the `pino-pretty` options if
