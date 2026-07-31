@@ -15,6 +15,7 @@ import { RouteErrorContent } from "~/components/route-error-content";
 import { BackLink, PageContainer } from "~/components/section";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
+import { requestLoggerContext } from "~/features/auth/middleware.server";
 import {
   EventFactList,
   EventStory,
@@ -26,17 +27,12 @@ import { normalizeSubmissionValues } from "~/features/forms/normalize-submission
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
 import { buildSignupSchema } from "~/features/signup-form/build-schema";
 import { cn } from "~/lib/utils";
-import { logger } from "~/logger.server";
 import { getEventWithCurrentFormVersion } from "~/models/event.server";
 import {
   createFormSubmission,
   FormVersionChangedError,
 } from "~/models/form-submission.server";
-import {
-  getClientIPAddress,
-  obscureEmail,
-  requireFound,
-} from "~/shared/http.server";
+import { getClientIPAddress, requireFound } from "~/shared/http.server";
 import { getImageUrl } from "~/shared/image";
 import { withOpenGraphUrls } from "~/shared/meta";
 import { getImageConfig } from "~/shared/root-data";
@@ -59,8 +55,9 @@ export async function loader({ params }: Route.LoaderArgs) {
 const FORM_CHANGED_ERROR =
   "The signup form was updated while you were filling it out. Please review your answers and submit again.";
 
-export async function action({ params, request }: Route.ActionArgs) {
+export async function action({ params, request, context }: Route.ActionArgs) {
   const { dinnerId } = params;
+  const logger = context.get(requestLoggerContext);
 
   const { event: dinner, version } = requireFound(
     await getEventWithCurrentFormVersion(dinnerId),
@@ -86,24 +83,29 @@ export async function action({ params, request }: Route.ActionArgs) {
   // actually saw — a schema change in between would silently strip answers
   // to removed fields
   if (formData.get("formVersionId") !== version.id) {
-    logger.info("Dinner signup submitted against an outdated form version", {
-      dinner: dinner.id,
-      submittedVersion: formData.get("formVersionId"),
-      currentVersion: version.id,
-    });
+    logger.info(
+      {
+        dinner: dinner.id,
+        submittedVersion: formData.get("formVersionId"),
+        currentVersion: version.id,
+      },
+      "Dinner signup submitted against an outdated form version",
+    );
 
     return submission.reply({ formErrors: [FORM_CHANGED_ERROR] });
   }
 
   if (submission.status !== "success" || !submission.value) {
-    logger.info("Failed submission for dinner signup", {
-      ip: getClientIPAddress(request),
-      dinner: dinner.id,
-      email: obscureEmail(
-        submission.payload["email"]?.toString() ?? "unknown@no-domain.com",
-      ),
-      reason: submission.status === "error" ? submission.error : null,
-    });
+    logger.info(
+      {
+        ip: getClientIPAddress(request),
+        dinner: dinner.id,
+        email:
+          submission.payload["email"]?.toString() ?? "unknown@no-domain.com",
+        reason: submission.status === "error" ? submission.error : null,
+      },
+      "Failed submission for dinner signup",
+    );
 
     return submission.reply();
   }
@@ -111,9 +113,8 @@ export async function action({ params, request }: Route.ActionArgs) {
   const { acceptedPrivacy: _acceptedPrivacy, ...values } = submission.value;
   const answers = normalizeSubmissionValues(formFields, values);
 
-  const email = obscureEmail(
-    typeof values.email === "string" ? values.email : "unknown@no-domain.com",
-  );
+  const email =
+    typeof values.email === "string" ? values.email : "unknown@no-domain.com";
 
   try {
     await createFormSubmission({
@@ -123,31 +124,40 @@ export async function action({ params, request }: Route.ActionArgs) {
     });
   } catch (reason) {
     if (reason instanceof FormVersionChangedError) {
-      logger.info("Dinner signup raced an in-place form update", {
-        dinner: dinner.id,
-        formVersion: version.id,
-      });
+      logger.warn(
+        {
+          dinner: dinner.id,
+          formVersion: version.id,
+        },
+        "Dinner signup raced an in-place form update",
+      );
 
       return submission.reply({ formErrors: [FORM_CHANGED_ERROR] });
     }
 
-    logger.error("Failed to persist dinner signup", {
-      ip: getClientIPAddress(request),
-      dinner: dinner.id,
-      email,
-      reason: reason,
-    });
+    logger.error(
+      {
+        ip: getClientIPAddress(request),
+        dinner: dinner.id,
+        email,
+        error: reason,
+      },
+      "Failed to persist dinner signup",
+    );
 
     return submission.reply({
       formErrors: ["Your signup could not be saved. Please try again."],
     });
   }
 
-  logger.info("Successful submission for dinner signup", {
-    ip: getClientIPAddress(request),
-    dinner: dinner.id,
-    email,
-  });
+  logger.info(
+    {
+      ip: getClientIPAddress(request),
+      dinner: dinner.id,
+      email,
+    },
+    "Successful submission for dinner signup",
+  );
 
   return redirectWithToast("/dinners", {
     title: "Signup complete",

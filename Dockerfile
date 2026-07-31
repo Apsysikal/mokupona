@@ -4,8 +4,9 @@ FROM node:24-bullseye-slim AS base
 # set for base and all layer that inherit from it
 ENV NODE_ENV=production
 
-# Install openssl for Prisma, sqlite3 for the database-cli shortcut
-RUN apt-get update && apt-get install -y openssl sqlite3
+# Install openssl for Prisma, sqlite3 for the database-cli shortcut, logrotate
+# and cron for log rotation and retention
+RUN apt-get update && apt-get install -y openssl sqlite3 logrotate cron
 
 # Install all node_modules, including dev dependencies
 FROM base AS deps
@@ -47,6 +48,10 @@ ENV NODE_ENV="production"
 
 # add shortcut for connecting to database CLI
 RUN echo "#!/bin/sh\nset -x\nsqlite3 \$DATABASE_URL" > /usr/local/bin/database-cli && chmod +x /usr/local/bin/database-cli
+
+COPY logrotate.conf /etc/logrotate.d/mokupona
+# Debian runs logrotate once a day at 06:25, too coarse for the maxsize bound
+RUN mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate
 
 WORKDIR /myapp
 

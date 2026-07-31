@@ -12,14 +12,15 @@ import { Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { auth } from "~/features/auth/auth.server";
 import { emailSchema, parseRequestForm } from "~/features/auth/form-schemas";
-import { logger } from "~/logger.server";
-import { getClientIPAddress, obscureEmail } from "~/shared/http.server";
+import { requestLoggerContext } from "~/features/auth/middleware.server";
+import { getClientIPAddress } from "~/shared/http.server";
 
 const schema = z.object({
   email: emailSchema,
 });
 
-export const action = async ({ request }: Route.ActionArgs) => {
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const logger = context.get(requestLoggerContext);
   const submission = await parseRequestForm(request, schema);
 
   if (submission.status !== "success") {
@@ -33,10 +34,13 @@ export const action = async ({ request }: Route.ActionArgs) => {
     headers: request.headers,
   });
 
-  logger.info("Password reset requested", {
-    ip: getClientIPAddress(request),
-    email: obscureEmail(email),
-  });
+  logger.info(
+    {
+      ip: getClientIPAddress(request),
+      email,
+    },
+    "Password reset requested",
+  );
 
   return data({ result: submission.reply(), sentTo: email });
 };

@@ -20,6 +20,7 @@ import { getToast } from "./utils/toast.server";
 
 import {
   optionalUserContext,
+  requestLoggerMiddleware,
   resolveOptionalUserMiddleware,
 } from "~/features/auth/middleware.server";
 import stylesheet from "~/tailwind.css?url";
@@ -43,6 +44,7 @@ export const links: LinksFunction = () => [
 ];
 
 export const middleware: Route.MiddlewareFunction[] = [
+  requestLoggerMiddleware,
   resolveOptionalUserMiddleware,
 ];
 

@@ -8,7 +8,10 @@ import { AdminPageHeader } from "~/components/admin-ui";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import { requireResolvedUserRoleMiddleware } from "~/features/auth/middleware.server";
+import {
+  requestLoggerContext,
+  requireResolvedUserRoleMiddleware,
+} from "~/features/auth/middleware.server";
 import {
   SIGNUP_METHOD_COPY,
   SIGNUP_METHODS,
@@ -19,7 +22,6 @@ import {
   getSignupSettings,
   setSignupEnabled,
 } from "~/features/auth/signup-settings.server";
-import { logger } from "~/logger.server";
 import { redirectWithToast } from "~/utils/toast.server";
 
 export const middleware: Route.MiddlewareFunction[] = [
@@ -35,7 +37,8 @@ export async function loader() {
   return { signupSettings: getSignupSettings() };
 }
 
-export async function action({ request }: Route.ActionArgs) {
+export async function action({ request, context }: Route.ActionArgs) {
+  const logger = context.get(requestLoggerContext);
   const submission = parseWithZod(await request.formData(), { schema });
 
   // Two buttons per row, both server-rendered — a submission that misses the
@@ -47,7 +50,7 @@ export async function action({ request }: Route.ActionArgs) {
   const { method, enabled } = submission.value;
   setSignupEnabled(method, enabled);
 
-  logger.info("Self-signup setting changed", { method, enabled });
+  logger.info({ method, enabled }, "Self-signup setting changed");
 
   return redirectWithToast("/admin/settings", {
     title: `${SIGNUP_METHOD_COPY[method].label} sign-ups ${enabled ? "enabled" : "disabled"}`,

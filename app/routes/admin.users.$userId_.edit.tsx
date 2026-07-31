@@ -7,6 +7,10 @@ import type { Route } from "./+types/admin.users.$userId_.edit";
 
 import { SelectField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
+import {
+  requestLoggerContext,
+  userContext,
+} from "~/features/auth/middleware.server";
 import { isAdminRole } from "~/features/auth/roles";
 import {
   INVITABLE_ROLE_OPTIONS,
@@ -37,7 +41,7 @@ export const meta: Route.MetaFunction = () => {
   return [{ title: "Admin - Edit User" }];
 };
 
-export async function action({ request, params }: Route.ActionArgs) {
+export async function action({ request, params, context }: Route.ActionArgs) {
   const { userId } = params;
 
   const formData = await request.formData();
@@ -68,9 +72,18 @@ export async function action({ request, params }: Route.ActionArgs) {
     return submission.reply();
   }
 
-  const { roleId } = submission.value;
+  const { roleId, roleName } = submission.value;
 
   await updateNonAdminUserRole(userId, roleId);
+
+  context.get(requestLoggerContext).warn(
+    {
+      userId: context.get(userContext).id,
+      targetUserId: userId,
+      role: roleName,
+    },
+    "Admin changed a user's role",
+  );
 
   return redirect(`/admin/users`);
 }

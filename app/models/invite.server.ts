@@ -4,6 +4,7 @@ import type { Invite } from "#prisma/generated/client";
 
 import { prisma } from "~/db.server";
 import type { InvitableRole } from "~/features/users/invite.shared";
+import { requestLogger } from "~/logger/request-context.server";
 
 export type InviteWithToken = Invite & { token: string };
 
@@ -117,7 +118,7 @@ export async function acceptInvite({
   invite: Pick<Invite, "id" | "roleName">;
   userId: string;
 }): Promise<void> {
-  await prisma.$transaction(async (tx) => {
+  const promotedTo = await prisma.$transaction(async (tx) => {
     // single-use guard: only flips if still unaccepted and unexpired
     const consumed = await tx.invite.updateMany({
       where: { id: invite.id, acceptedAt: null, expiresAt: { gt: new Date() } },
@@ -156,5 +157,14 @@ export async function acceptInvite({
         ...(promoteToRoleId && { role: { connect: { id: promoteToRoleId } } }),
       },
     });
+
+    return promoteToRoleId ? invite.roleName : null;
   });
+
+  if (promotedTo) {
+    requestLogger.warn(
+      { userId, inviteId: invite.id, role: promotedTo },
+      "Invite promoted a user's role",
+    );
+  }
 }

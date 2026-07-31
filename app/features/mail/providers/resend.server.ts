@@ -18,9 +18,7 @@ export function createResendProvider(
   const send = async (message: MailMessage) => {
     const { error } = await resend.emails.send({ from, ...message });
     if (error) {
-      throw new Error(
-        `Resend rejected mail to ${message.to}: ${error.message}`,
-      );
+      throw new Error(`Resend rejected the message: ${error.message}`);
     }
   };
 

@@ -2,7 +2,7 @@ import { DEFAULT_FORM } from "./default-form";
 
 import type { parseStoredFormSchema } from "~/features/forms/serialization";
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
-import { logger } from "~/logger.server";
+import { requestLogger } from "~/logger/request-context.server";
 import {
   countEventResponsesByEvent,
   getEventResponsesForEvent,
@@ -31,6 +31,36 @@ export interface RosterColumn {
 
 const FRIENDS_LIST_NAME = "friends";
 
+// Every drop below happens inside a loop over submissions, friend entries or
+// answer fields, so each is counted and reported once per load rather than
+// once per row.
+interface RosterDrops {
+  versionsWithoutSchema: number;
+  submissionsWithoutSchema: number;
+  submissionsWithMalformedAnswers: number;
+  friendEntriesDropped: number;
+  answerValuesDropped: number;
+}
+
+function newRosterDrops(): RosterDrops {
+  return {
+    versionsWithoutSchema: 0,
+    submissionsWithoutSchema: 0,
+    submissionsWithMalformedAnswers: 0,
+    friendEntriesDropped: 0,
+    answerValuesDropped: 0,
+  };
+}
+
+function reportRosterDrops(eventId: string, drops: RosterDrops) {
+  if (Object.values(drops).every((count) => count === 0)) return;
+
+  requestLogger.error(
+    { dinner: eventId, reason: drops },
+    "Dropped attendee data while loading the roster",
+  );
+}
+
 export async function getAttendeesForEvent(
   eventId: string,
 ): Promise<Attendee[]> {
@@ -56,13 +86,24 @@ export async function getAttendeeCountsForEvents(
     counts[eventId] = (counts[eventId] ?? 0) + _count._all;
   }
 
+  let submissionsWithoutDinner = 0;
   for (const submission of submissions) {
     const eventId = submission.formVersion.form.event?.id;
-    if (!eventId) continue;
+    if (!eventId) {
+      submissionsWithoutDinner += 1;
+      continue;
+    }
     const answers = asRecord(submission.answers);
     const friends = answers?.[FRIENDS_LIST_NAME];
     const party = 1 + (Array.isArray(friends) ? friends.length : 0);
     counts[eventId] = (counts[eventId] ?? 0) + party;
+  }
+
+  if (submissionsWithoutDinner > 0) {
+    requestLogger.error(
+      { reason: { submissionsWithoutDinner } },
+      "Dropped form submissions that no longer point at a dinner",
+    );
   }
 
   return counts;
@@ -117,19 +158,27 @@ async function loadRoster(eventId: string): Promise<{
     ).values(),
   ].sort((a, b) => b.version - a.version);
 
+  const drops = newRosterDrops();
   const descriptorsByVersion = new Map<string, StoredFormSchema>();
   for (const version of versions) {
     const parsed = parseStoredFormSchemaOrLog(version);
     if (parsed) descriptorsByVersion.set(version.id, parsed);
+    else drops.versionsWithoutSchema += 1;
   }
 
   const attendees = [
     ...legacyRows.map(legacyRowToAttendee),
     ...submissions.flatMap((submission) => {
       const descriptors = descriptorsByVersion.get(submission.formVersionId);
-      return descriptors ? flattenSubmission(submission, descriptors) : [];
+      if (!descriptors) {
+        drops.submissionsWithoutSchema += 1;
+        return [];
+      }
+      return flattenSubmission(submission, descriptors, drops);
     }),
   ].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+  reportRosterDrops(eventId, drops);
 
   return {
     attendees,
@@ -147,13 +196,11 @@ type StoredSubmission = Awaited<
 function flattenSubmission(
   submission: StoredSubmission,
   descriptors: StoredFormSchema,
+  drops: RosterDrops,
 ): Attendee[] {
   const answers = asRecord(submission.answers);
   if (!answers) {
-    logger.error("Stored submission answers are not an object", {
-      submission: submission.id,
-      formVersion: submission.formVersionId,
-    });
+    drops.submissionsWithMalformedAnswers += 1;
     return [];
   }
 
@@ -171,7 +218,11 @@ function flattenSubmission(
   for (const field of descriptors) {
     if (field.type === "list") continue;
     const value = answers[field.data.name];
-    if (typeof value !== "string" && typeof value !== "boolean") continue;
+    if (typeof value !== "string" && typeof value !== "boolean") {
+      // an absent key is an unanswered optional field, not a drop
+      if (value !== undefined) drops.answerValuesDropped += 1;
+      continue;
+    }
     topLevel[field.data.name] = value;
     if (!perAttendeeNames.has(field.data.name)) {
       submissionLevel[field.data.name] = value;
@@ -198,12 +249,17 @@ function flattenSubmission(
 
   const friends = friendItems.flatMap((item): Attendee[] => {
     const record = asRecord(item);
-    if (!record) return [];
+    if (!record) {
+      drops.friendEntriesDropped += 1;
+      return [];
+    }
 
     const personal: Record<string, string | boolean> = {};
     for (const [name, value] of Object.entries(record)) {
       if (typeof value === "string" || typeof value === "boolean") {
         personal[name] = value;
+      } else {
+        drops.answerValuesDropped += 1;
       }
     }
 

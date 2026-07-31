@@ -8,6 +8,8 @@ swap_size_mb = 512
 DATABASE_URL = "file:/data/sqlite.db"
 # volume-backed: only used if IMAGE_PROVIDER is ever flipped back to local
 IMAGE_UPLOAD_FOLDER = "/data/image-uploads"
+# must match the path in logrotate.conf or rotation silently does nothing
+LOG_DIR = "/data/logs"
 MAIL_PROVIDER = "resend"
 PORT = "8080"
 
