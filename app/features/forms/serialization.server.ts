@@ -1,6 +1,6 @@
 import { parseStoredFormSchema } from "./serialization";
 
-import { logger } from "~/logger.server";
+import { requestLogger } from "~/logger/request-context.server";
 
 // The degraded path every reader of FormVersion.schema shares: a parse
 // failure is a bug (all writers validate), so it is flagged loudly and the
@@ -12,10 +12,13 @@ export function parseStoredFormSchemaOrLog(version: {
   const parsed = parseStoredFormSchema(version.schema);
 
   if (!parsed.success) {
-    logger.error("Stored form schema failed to parse", {
-      formVersion: version.id,
-      error: parsed.error,
-    });
+    requestLogger.error(
+      {
+        formVersion: version.id,
+        error: parsed.error,
+      },
+      "Stored form schema failed to parse",
+    );
     return null;
   }
 

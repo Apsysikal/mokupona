@@ -13,16 +13,18 @@ import { Input } from "~/components/ui/input";
 import { auth } from "~/features/auth/auth.server";
 import { GoogleSignInButton } from "~/features/auth/components/google-button";
 import { displayNameSchema, emailSchema } from "~/features/auth/form-schemas";
-import { anonymousAuthPageLoader } from "~/features/auth/middleware.server";
+import {
+  anonymousAuthPageLoader,
+  requestLoggerContext,
+} from "~/features/auth/middleware.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
 import {
   EMAIL_SIGNUP_CLOSED_MESSAGE,
   SIGNUP_CLOSED_MESSAGE,
 } from "~/features/auth/signup-settings";
 import { isSignupEnabled } from "~/features/auth/signup-settings.server";
-import { logger } from "~/logger.server";
 import { getUserByEmail } from "~/models/user.server";
-import { getClientIPAddress, obscureEmail } from "~/shared/http.server";
+import { getClientIPAddress } from "~/shared/http.server";
 
 const schema = withPasswordConfirmation({
   name: displayNameSchema,
@@ -32,7 +34,8 @@ const schema = withPasswordConfirmation({
 
 export const loader = anonymousAuthPageLoader;
 
-export const action = async ({ request }: Route.ActionArgs) => {
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const logger = context.get(requestLoggerContext);
   const formData = await request.formData();
 
   // The form renders disabled while the toggle is off, so this catches direct
@@ -40,9 +43,10 @@ export const action = async ({ request }: Route.ActionArgs) => {
   // open. Checked before the existing-account lookup: a closed door owes the
   // caller no database work, and no hint about which addresses are taken.
   if (!isSignupEnabled("email")) {
-    logger.warn("Blocked signup request while self-signup is disabled", {
-      ip: getClientIPAddress(request),
-    });
+    logger.warn(
+      { ip: getClientIPAddress(request) },
+      "Blocked signup request while self-signup is disabled",
+    );
     const rejected = parseWithZod(formData, { schema });
     return data(rejected.reply({ formErrors: [SIGNUP_CLOSED_MESSAGE] }), {
       status: 403,
@@ -67,13 +71,15 @@ export const action = async ({ request }: Route.ActionArgs) => {
   });
 
   if (submission.status !== "success" || !submission.value) {
-    logger.info("Failed signup request", {
-      ip: getClientIPAddress(request),
-      email: obscureEmail(
-        submission.payload["email"]?.toString() ?? "unknown@no-domain.com",
-      ),
-      reason: submission.status === "error" ? submission.error : null,
-    });
+    logger.info(
+      {
+        ip: getClientIPAddress(request),
+        email:
+          submission.payload["email"]?.toString() ?? "unknown@no-domain.com",
+        reason: submission.status === "error" ? submission.error : null,
+      },
+      "Failed signup request",
+    );
 
     return submission.reply();
   }
@@ -93,10 +99,13 @@ export const action = async ({ request }: Route.ActionArgs) => {
     headers: request.headers,
   });
 
-  logger.info("Successful signup request", {
-    ip: getClientIPAddress(request),
-    email: obscureEmail(email),
-  });
+  logger.info(
+    {
+      ip: getClientIPAddress(request),
+      email,
+    },
+    "Successful signup request",
+  );
 
   const search = new URLSearchParams({ email });
   if (redirectTo) search.set("redirectTo", redirectTo);

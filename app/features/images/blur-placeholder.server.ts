@@ -1,3 +1,5 @@
+import { requestLogger } from "~/logger/request-context.server";
+
 const BLUR_TRANSFORM = "w_100,q_auto,f_webp,e_blur:1000";
 
 export function buildBlurVariantUrl(
@@ -31,7 +33,13 @@ export async function fetchBlurDataUrl({
 
     const bytes = Buffer.from(await response.arrayBuffer());
     return `data:image/webp;base64,${bytes.toString("base64")}`;
-  } catch {
+  } catch (error) {
+    // getBlurDataUrl caches this promise for the process lifetime, so a single
+    // failure here degrades the landing page until the next deploy
+    requestLogger.warn(
+      { storageKey: publicId, error },
+      "Blur placeholder fetch failed",
+    );
     return null;
   }
 }

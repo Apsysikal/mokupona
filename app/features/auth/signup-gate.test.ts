@@ -1,6 +1,7 @@
 // @vitest-environment node
 // (happy-dom swaps the fetch primitives; Request/Response have to be real)
 
+import { RouterContextProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -30,6 +31,7 @@ function post(path: string) {
   mocks.handler.mockResolvedValue(DELEGATED);
   return action({
     request: new Request(`http://localhost:3000${path}`, { method: "POST" }),
+    context: new RouterContextProvider(),
   } as unknown as Parameters<typeof action>[0]);
 }
 

@@ -3,7 +3,7 @@ import { redirect } from "react-router";
 import { auth } from "./auth.server";
 import { isRoleName, type RoleName } from "./roles";
 
-import { logger } from "~/logger.server";
+import { requestLogger } from "~/logger/request-context.server";
 import type { Role } from "~/models/role.server";
 import type { User } from "~/models/user.server";
 import { getUserByIdWithRole } from "~/models/user.server";
@@ -11,10 +11,16 @@ import { getUserByIdWithRole } from "~/models/user.server";
 /** A user whose persisted role name passed the vocabulary check. */
 export type ValidatedUser = User & { role: Role & { name: RoleName } };
 
+// Root middleware resolves the user on every request, so an affected user
+// would otherwise produce one record per request until the row is fixed.
+const reportedRoleViolations = new Set<User["id"]>();
+
 function validateRoleName(user: User & { role: Role }): ValidatedUser {
-  if (!isRoleName(user.role.name)) {
-    logger.error(
-      `User ${user.id} has role "${user.role.name}" outside the role vocabulary`,
+  if (!isRoleName(user.role.name) && !reportedRoleViolations.has(user.id)) {
+    reportedRoleViolations.add(user.id);
+    requestLogger.error(
+      { userId: user.id, role: user.role.name },
+      "User has a role outside the role vocabulary",
     );
   }
   return user as ValidatedUser;
@@ -52,6 +58,16 @@ export function assertUserHasRole(
   roles: readonly RoleName[],
 ) {
   if (!roles.includes(user.role.name)) {
+    // A thrown Response never reaches handleError, so this is the only place
+    // an authorization denial can be recorded at all.
+    requestLogger.warn(
+      {
+        userId: user.id,
+        role: user.role.name,
+        reason: { requiredRoles: roles },
+      },
+      "Authorization denied",
+    );
     throw new Response("Forbidden", { status: 403 });
   }
   return user;
@@ -76,8 +92,8 @@ export async function logout(request: Request) {
       returnHeaders: true,
     });
     return redirect("/", { headers });
-  } catch {
-    // no live session to revoke — still land the user on the home page
+  } catch (error) {
+    requestLogger.warn({ error }, "Sign-out did not revoke a session");
     return redirect("/");
   }
 }

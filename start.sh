@@ -5,4 +5,9 @@
 # and Fly release commands do not attach persistent volumes.
 
 npx prisma migrate deploy
+
+# logrotate runs from /etc/cron.hourly; without the daemon nothing rotates and
+# the 30 day retention window silently stops being enforced
+cron
+
 exec npm run start

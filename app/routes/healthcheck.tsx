@@ -2,9 +2,11 @@
 
 import type { Route } from "./+types/healthcheck";
 
+import { requestLoggerContext } from "~/features/auth/middleware.server";
 import { pingDatabase } from "~/models/health.server";
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
+  const logger = context.get(requestLoggerContext);
   const host =
     request.headers.get("X-Forwarded-Host") ?? request.headers.get("host");
 
@@ -20,7 +22,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     ]);
     return new Response("OK");
   } catch (error: unknown) {
-    console.log("healthcheck ❌", { error });
+    logger.error({ error }, "Healthcheck failed");
     return new Response("ERROR", { status: 500 });
   }
 };

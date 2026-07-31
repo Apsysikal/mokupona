@@ -22,12 +22,15 @@ import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { GoogleSignInButton } from "~/features/auth/components/google-button";
 import { displayNameSchema } from "~/features/auth/form-schemas";
 import { logout } from "~/features/auth/guards.server";
-import { optionalUserContext } from "~/features/auth/middleware.server";
+import {
+  optionalUserContext,
+  requestLoggerContext,
+} from "~/features/auth/middleware.server";
 import { passwordSchema } from "~/features/auth/password-schema";
 import { landingPathForRole } from "~/features/auth/roles";
 import { isSignupEnabled } from "~/features/auth/signup-settings.server";
 import { normalizeInvitableRole } from "~/features/users/invite.shared";
-import { logger } from "~/logger.server";
+import { requestLogger } from "~/logger/request-context.server";
 import {
   acceptInvite,
   getInviteByToken,
@@ -35,11 +38,7 @@ import {
   inviteValidity,
 } from "~/models/invite.server";
 import { getUserByEmail } from "~/models/user.server";
-import {
-  getClientIPAddress,
-  obscureEmail,
-  unknownIntent,
-} from "~/shared/http.server";
+import { getClientIPAddress, unknownIntent } from "~/shared/http.server";
 
 const signupSchema = z.object({
   intent: z.literal("signup"),
@@ -56,6 +55,10 @@ async function acceptCurrentInvite(
     await acceptInvite({ invite, userId });
   } catch (error) {
     if (error instanceof InviteNoLongerValidError) {
+      requestLogger.warn(
+        { userId, inviteId: invite.id },
+        "Invite acceptance lost the single-use race",
+      );
       throw redirect(`/invite/${token}`);
     }
     throw error;
@@ -110,17 +113,28 @@ export const action = async ({
 }: Route.ActionArgs) => {
   const formData = await request.formData();
   const intent = formData.get("intent");
+  const log = context.get(requestLoggerContext);
 
   if (intent === "logout-retry") {
+    const mismatched = await context.get(optionalUserContext)();
     // destroys the session, then lands back on this link for a clean retry
     const response = await logout(request);
+    log.warn(
+      { userId: mismatched?.id },
+      "Invite retried after signing out a mismatched account",
+    );
     response.headers.set("Location", `/invite/${params.token}`);
     return response;
   }
 
   const invite = await getInviteByToken(params.token);
-  if (inviteValidity(invite) !== "valid" || !invite) {
+  const validity = inviteValidity(invite);
+  if (validity !== "valid" || !invite) {
     // token went stale between render and submit — re-render the dead-end
+    log.warn(
+      { inviteId: invite?.id, reason: validity },
+      "Invite submitted with a token that is no longer valid",
+    );
     return redirect(`/invite/${params.token}`);
   }
 
@@ -133,14 +147,27 @@ export const action = async ({
   if (intent === "accept") {
     const user = await context.get(optionalUserContext)();
     if (!user || user.email !== invite.email) {
+      log.warn(
+        {
+          userId: user?.id,
+          inviteId: invite.id,
+          reason: user ? "identity-mismatch" : "anonymous",
+        },
+        "Invite acceptance refused for a different identity",
+      );
       return redirect(`/invite/${params.token}`);
     }
     await acceptCurrentInvite(invite, user.id, params.token);
-    logger.info("Invite accepted (existing user)", {
-      ip: getClientIPAddress(request),
-      email: obscureEmail(user.email),
-      role: invite.roleName,
-    });
+    log.warn(
+      {
+        ip: getClientIPAddress(request),
+        userId: user.id,
+        inviteId: invite.id,
+        email: user.email,
+        role: invite.roleName,
+      },
+      "Invite accepted (existing user)",
+    );
     return redirect(landingPath);
   }
 
@@ -177,11 +204,16 @@ export const action = async ({
       returnHeaders: true,
     });
 
-    logger.info("Invite accepted (new user)", {
-      ip: getClientIPAddress(request),
-      email: obscureEmail(invite.email),
-      role: invite.roleName,
-    });
+    log.warn(
+      {
+        ip: getClientIPAddress(request),
+        userId: created.id,
+        inviteId: invite.id,
+        email: invite.email,
+        role: invite.roleName,
+      },
+      "Invite accepted (new user)",
+    );
 
     return redirect(landingPath, { headers });
   }

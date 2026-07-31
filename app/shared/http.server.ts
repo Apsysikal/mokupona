@@ -1,6 +1,11 @@
+import { isIP } from "node:net";
+
+import { requestLogger } from "~/logger/request-context.server";
+
 /** Throws the conventional 404 response when a looked-up record is absent. */
 export function requireFound<T>(value: T | null | undefined): T {
   if (value === null || value === undefined) {
+    requestLogger.warn("A looked-up record was absent");
     throw new Response("Not found", { status: 404 });
   }
   return value;
@@ -39,20 +44,17 @@ export function getDomainUrl(request: Request) {
   return `${protocol}://${host}`;
 }
 
-/** Masks the local part of an email address for privacy-preserving logging. */
-export function obscureEmail(email: string) {
-  const [name, domain] = email.split("@");
-  return `${name[0]}${new Array(name.length).join("*")}@${domain}`;
-}
+export function getClientIPAddress(request: Request): string | null {
+  const header = request.headers.get("Fly-Client-IP");
+  if (!header || header.length > 64) return null;
 
-export function getClientIPAddress(request: Request) {
-  const ip =
-    request.headers.get("X-Client-IP") ??
-    request.headers.get("X-Forwarded-For") ??
-    request.headers.get("HTTP-X-Forwarded-For") ??
-    request.headers.get("Fly-Client-IP");
+  const value = header.trim().toLowerCase();
+  const family = isIP(value);
+  if (family === 0) return null;
+  if (family === 4) return value;
 
-  return ip;
+  const mapped = /^(?:0*:)*0*ffff:(\d{1,3}(?:\.\d{1,3}){3})$/.exec(value);
+  return mapped && isIP(mapped[1]) === 4 ? mapped[1] : value;
 }
 
 /**
@@ -60,6 +62,7 @@ export function getClientIPAddress(request: Request) {
  * branch. The flows differ per route — only the terminal response is shared.
  */
 export function unknownIntent() {
+  requestLogger.warn("An action received an unknown intent");
   return new Response("Unknown intent", { status: 400 });
 }
 

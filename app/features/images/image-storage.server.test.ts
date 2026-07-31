@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { loggerStub } from "../../../test/logger-stub";
+
 import {
   createImageStorageProvider,
   destroyImages,
@@ -10,7 +12,6 @@ import {
 const mocks = vi.hoisted(() => ({
   createLocalProvider: vi.fn(() => ({ kind: "local" })),
   createCloudinaryProvider: vi.fn(() => ({ kind: "cloudinary" })),
-  warn: vi.fn(),
 }));
 
 vi.mock("./providers/local.server", () => ({
@@ -18,9 +19,6 @@ vi.mock("./providers/local.server", () => ({
 }));
 vi.mock("./providers/cloudinary.server", () => ({
   createCloudinaryProvider: mocks.createCloudinaryProvider,
-}));
-vi.mock("~/logger.server", () => ({
-  logger: { warn: mocks.warn },
 }));
 
 describe("createImageStorageProvider", () => {
@@ -76,9 +74,9 @@ describe("destroyImages", () => {
     ).resolves.toBeUndefined();
 
     expect(destroy).toHaveBeenCalledTimes(2);
-    expect(mocks.warn).toHaveBeenCalledWith(
-      "Failed to destroy stored image after DB commit",
+    expect(loggerStub.warn).toHaveBeenCalledWith(
       expect.objectContaining({ storageKey: "dinners/a" }),
+      "Failed to destroy stored image after DB commit",
     );
   });
 });

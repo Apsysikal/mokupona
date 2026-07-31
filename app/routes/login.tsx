@@ -14,17 +14,15 @@ import { Label } from "~/components/ui/label";
 import { auth } from "~/features/auth/auth.server";
 import { GoogleSignInButton } from "~/features/auth/components/google-button";
 import { emailSchema, parseRequestForm } from "~/features/auth/form-schemas";
-import { anonymousAuthPageLoader } from "~/features/auth/middleware.server";
+import {
+  anonymousAuthPageLoader,
+  requestLoggerContext,
+} from "~/features/auth/middleware.server";
 import {
   GOOGLE_SIGNUP_CLOSED_MESSAGE,
   OAUTH_SIGNUP_DISABLED_ERROR,
 } from "~/features/auth/signup-settings";
-import { logger } from "~/logger.server";
-import {
-  getClientIPAddress,
-  obscureEmail,
-  safeRedirect,
-} from "~/shared/http.server";
+import { getClientIPAddress, safeRedirect } from "~/shared/http.server";
 
 const schema = z.object({
   email: emailSchema,
@@ -35,7 +33,8 @@ const schema = z.object({
 
 export const loader = anonymousAuthPageLoader;
 
-export const action = async ({ request }: Route.ActionArgs) => {
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const logger = context.get(requestLoggerContext);
   const submission = await parseRequestForm(request, schema);
 
   if (submission.status !== "success") {
@@ -58,10 +57,13 @@ export const action = async ({ request }: Route.ActionArgs) => {
       returnHeaders: true,
     });
 
-    logger.info("Successful login request", {
-      ip: getClientIPAddress(request),
-      email: obscureEmail(email),
-    });
+    logger.info(
+      {
+        ip: getClientIPAddress(request),
+        email,
+      },
+      "Successful login request",
+    );
 
     return redirect(redirectTo, { headers });
   } catch (error) {
@@ -70,11 +72,14 @@ export const action = async ({ request }: Route.ActionArgs) => {
         ? (error as { body?: { code?: string } }).body?.code
         : undefined;
 
-    logger.info("Failed login request", {
-      ip: getClientIPAddress(request),
-      email: obscureEmail(email),
-      reason: code ?? "unknown",
-    });
+    logger.warn(
+      {
+        ip: getClientIPAddress(request),
+        email,
+        reason: code ?? "unknown",
+      },
+      "Failed login request",
+    );
 
     if (code === "EMAIL_NOT_VERIFIED") {
       // better-auth already re-sent the verification link (sendOnSignIn)

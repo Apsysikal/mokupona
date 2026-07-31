@@ -105,9 +105,12 @@ export function runUploadDbCommand<T>(
     : "";
   const payloadArg = encodedPayload ? ` "${encodedPayload}"` : "";
 
+  // This script's stdout is its return channel, but importing app modules emits
+  // the boot lines onto the same descriptor. Without silencing them JSON.parse
+  // receives the pretty-printed log first.
   return cy
     .exec(
-      `npx tsx ./cypress/support/upload-test-records.ts "${action}"${payloadArg}`,
+      `npx cross-env LOG_LEVEL=silent tsx ./cypress/support/upload-test-records.ts "${action}"${payloadArg}`,
     )
     .then(({ stdout }) => JSON.parse(stdout) as T) as Cypress.Chainable<T>;
 }
