@@ -1,6 +1,7 @@
 // @vitest-environment node
 // (happy-dom swaps the fetch primitives; better-auth needs the real ones)
 
+import { RouterContextProvider } from "react-router";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { SIGNUP_CLOSED_MESSAGE } from "./signup-settings";
@@ -28,6 +29,7 @@ function submit(body: Record<string, string>) {
       method: "POST",
       body: new URLSearchParams(body),
     }),
+    context: new RouterContextProvider(),
   } as unknown as Parameters<typeof action>[0]);
 }
 

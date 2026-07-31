@@ -43,9 +43,10 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
   // open. Checked before the existing-account lookup: a closed door owes the
   // caller no database work, and no hint about which addresses are taken.
   if (!isSignupEnabled("email")) {
-    logger.warn("Blocked signup request while self-signup is disabled", {
-      ip: getClientIPAddress(request),
-    });
+    logger.warn(
+      { ip: getClientIPAddress(request) },
+      "Blocked signup request while self-signup is disabled",
+    );
     const rejected = parseWithZod(formData, { schema });
     return data(rejected.reply({ formErrors: [SIGNUP_CLOSED_MESSAGE] }), {
       status: 403,

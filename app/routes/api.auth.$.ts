@@ -1,8 +1,8 @@
 import type { Route } from "./+types/api.auth.$";
 
 import { auth } from "~/features/auth/auth.server";
+import { requestLoggerContext } from "~/features/auth/middleware.server";
 import { isSignupEnabled } from "~/features/auth/signup-settings.server";
-import { logger } from "~/logger.server";
 import { getClientIPAddress } from "~/shared/http.server";
 
 // better-auth's registration endpoint. Neither /join nor the invite flow
@@ -14,13 +14,15 @@ const SIGN_UP_EMAIL_PATH = "/sign-up/email";
 export const loader = async ({ request }: Route.LoaderArgs) =>
   auth.handler(request);
 
-export const action = async ({ request }: Route.ActionArgs) => {
+export const action = async ({ request, context }: Route.ActionArgs) => {
   const { pathname } = new URL(request.url);
 
   if (pathname.endsWith(SIGN_UP_EMAIL_PATH) && !isSignupEnabled("email")) {
-    logger.warn("Blocked email signup while self-signup is disabled", {
-      ip: getClientIPAddress(request),
-    });
+    const logger = context.get(requestLoggerContext);
+    logger.warn(
+      { ip: getClientIPAddress(request) },
+      "Blocked email signup while self-signup is disabled",
+    );
     return Response.json(
       { code: "SIGNUP_DISABLED", message: "Sign-ups are currently disabled" },
       { status: 403 },
