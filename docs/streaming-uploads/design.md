@@ -32,8 +32,12 @@ completes in ~0.6 ms as a single chunk — it is reading RAM, not the socket.
 
 So "streaming to Cloudinary" in the byte-forwarding sense (request socket →
 Cloudinary socket, never fully resident) **is not reachable through this
-library's public API**. Anything that routes bytes through this app has a peak
+library's public API**, and every design built on `form-data-parser` has a peak
 memory floor of `maxFileSize` per concurrent upload.
+
+That is a statement about `form-data-parser`, not about the goal. Cloudinary is
+not the constraint — see prototype 5, which reaches true socket-to-socket
+streaming by swapping the parser.
 
 What the library genuinely does give you, both of which the app already relies
 on:
@@ -46,8 +50,9 @@ on:
    return a string or a different object, so the payload does not have to stay
    resident through validation and the database write.
 
-Prototypes 1–3 exploit #2 in different ways. Prototype 4 sidesteps the floor
-entirely.
+Prototypes 1–3 exploit #2 in different ways. Prototype 4 sidesteps the floor by
+keeping the bytes off this server; prototype 5 removes the floor by replacing
+the parser.
 
 ### "But isn't `file-storage-s3` a streaming backend?"
 
@@ -107,7 +112,7 @@ second copy and `Buffer.from` makes a third. All three are live at once, and
 the file stays resident across the whole Cloudinary round trip plus the DB
 write.
 
-## The four prototypes
+## The five prototypes
 
 ### P1 — Stream handoff (`p1-stream-handoff.server.ts`)
 
@@ -193,6 +198,39 @@ Not implemented here: the client-side script, the loader wiring that hands the
 form its ticket, and a Cloudinary upload preset capping `max_file_size` at the
 edge.
 
+### P5 — True socket-to-Cloudinary streaming (`p5-true-streaming.server.ts`)
+
+The answer to "can Cloudinary not receive a stream?" — it can, and it always
+could. `upload_stream` returns a `Transform` whose `_transform` is a bare
+`this.push(buffer)` pass-through into an `https.request`, and the SDK sets **no
+`Content-Length`** anywhere, so the upload goes out chunked and the payload size
+need not be known in advance. That is exactly what an unbounded stream needs.
+
+The blocker was never the sink. Replacing `form-data-parser` with `busboy` —
+which emits each file as a `Readable` _while the request is still arriving_ —
+gives genuine socket-to-socket transfer at constant memory, regardless of file
+size. A test pins this: the body stalls mid-part and the provider has already
+received bytes before the request finishes.
+
+The tension it exposes is the real lesson, and it is inherent to streaming
+rather than a busboy quirk: **you cannot enforce a size limit before you start
+uploading, because you do not know the size until the stream ends.** The best
+available is enforcement _during_ transfer — count bytes in a pass-through
+`Transform` and tear the upload down the moment the cap is crossed. Media type
+is the one check that stays free, since it arrives in the part headers before
+any bytes.
+
+So P5 inverts the guarantee the other prototypes preserve. `form-data-parser`
+rejects an oversize upload _before_ your handler ever runs; P5 discovers it
+mid-flight, having already streamed several MB to Cloudinary, and must destroy
+the partial asset. Same for any schema rule that cannot be judged from headers.
+Constant memory is paid for in orphan cleanup.
+
+One practical trap, worth recording because it cost a hang: destroying the
+limiter is not enough. busboy is still writing the part into it, and an
+undrained part stalls the parser so `close` never fires. The failure path has to
+`unpipe` and `resume` the source so parsing can reach the end of the request.
+
 ## Comparison
 
 |        | Peak heap / upload  | Bytes held during Cloudinary round trip | Orphan risk                         | Schema change   | PE                    |
@@ -202,35 +240,43 @@ edge.
 | **P2** | ~1x file            | no (released at ACK)                    | **yes** — needs compensating delete | none            | ✅                    |
 | **P3** | ~1x file, then disk | no (on disk)                            | none                                | key indirection | ✅                    |
 | **P4** | **zero**            | n/a                                     | none¹                               | union branch    | ✅ (falls back to P1) |
+| **P5** | **constant**        | no (never resident)                     | **yes** — partial asset on abort    | none            | ✅                    |
 
 ¹ An abandoned direct upload leaves an unreferenced Cloudinary asset; a
 scheduled sweep of the folder handles it.
 
-All four keep `maxFileSize`/`maxFiles` enforced by the parser, and all four
-report failures as a Conform `SubmissionResult`, so the no-JS path renders
-field errors exactly as it does now.
+All of them report failures as a Conform `SubmissionResult`, so the no-JS path
+renders field errors exactly as it does now. P1–P4 keep `maxFileSize`/`maxFiles`
+enforced by the parser _before_ any handler runs; P5 trades that for
+enforcement mid-transfer, which is the price of true streaming.
 
 ## Recommendation
 
 1. **Take P1 now.** It is a handful of lines inside the existing provider, has
    no behavioural change to reason about, and removes two full-size copies.
-2. **Reach for P4 if upload memory is actually a problem.** It is the only
-   option that changes the asymptotics, and the PE fallback means the no-JS
-   path keeps working. Given production runs on a 256 MB box, this is the one
-   with real headroom upside.
-3. **P3 only if** the heap must be free _during_ the upload but a direct upload
-   is unacceptable. The key indirection is a real ergonomic cost.
-4. **P2 is not recommended.** It buys little over P3 and takes on a
-   distributed-transaction problem — an asset that exists before the submission
-   is known valid — in exchange.
+2. **Reach for P4 if upload memory is actually a problem.** The PE fallback
+   means the no-JS path keeps working, and no bytes touch the app at all.
+   Given production runs on a 256 MB box, this is the one with real headroom
+   upside.
+3. **P5 if you want true streaming through the app** — genuinely constant
+   memory, and the only option here that scales to files far larger than the
+   current 3 MB cap. Adopting it means owning a second multipart parser and
+   accepting that limits become mid-flight aborts rather than pre-checks.
+4. **P3 only if** the heap must be free _during_ the upload but neither a
+   direct upload nor a parser swap is acceptable. The key indirection is a real
+   ergonomic cost.
+5. **P2 is not recommended.** It takes on P5's orphan-cleanup problem without
+   P5's constant-memory payoff.
 
-Worth stating plainly: for a 3 MB cap and one image per submission, the
-difference between P1 and P3 is small. If the goal is bounded memory under
-concurrency, P4 is the answer and the rest is tuning.
+Worth stating plainly: at a 3 MB cap with one image per submission, P1 vs P3 is
+noise, and P5's constant memory beats P1's ~1x by a few megabytes per in-flight
+request. P5 earns its complexity when the cap rises or uploads get concurrent;
+P4 wins outright whenever a browser-side upload is acceptable, because the
+cheapest byte to handle is the one that never arrives.
 
 ## Reproducing
 
 ```sh
-npx vitest run app/features/images/prototypes/   # 33 tests
+npx vitest run app/features/images/prototypes/   # 42 tests
 npm run typecheck
 ```
