@@ -16,8 +16,8 @@ import {
 } from "./guards.server";
 import type { RoleName } from "./roles";
 
-import { logger } from "~/logger.server";
 import { withRequestLogger } from "~/logger/request-context.server";
+import { logger } from "~/logger.server";
 
 // Root middleware always initializes this context with a lazy, memoized
 // resolver (null resolution = anonymous request): routes that never read the
