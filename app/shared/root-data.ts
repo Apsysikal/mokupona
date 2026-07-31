@@ -1,7 +1,9 @@
 import { useRouteLoaderData } from "react-router";
+import invariant from "tiny-invariant";
 
 import type { Route as RootRoute } from "../+types/root";
 
+import type { HoneypotInputProps } from "~/features/forms/honeypot";
 import type { ImageProviderConfig } from "~/shared/image";
 
 type RootLoaderData = RootRoute.ComponentProps["loaderData"];
@@ -40,4 +42,15 @@ export function useImageConfig(): ImageProviderConfig {
   return toImageConfig(
     useRouteLoaderData("root") as RootLoaderData | undefined,
   );
+}
+
+/**
+ * Honeypot props for components (root loader data by route id).
+ */
+export function useHoneypotProps(): HoneypotInputProps {
+  const data = useRouteLoaderData("root") as RootLoaderData | undefined;
+  const honeypot = data?.honeypot;
+  invariant(honeypot, "the root loader must supply honeypot props");
+
+  return honeypot;
 }

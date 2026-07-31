@@ -23,6 +23,7 @@ import {
   requestLoggerMiddleware,
   resolveOptionalUserMiddleware,
 } from "~/features/auth/middleware.server";
+import { getHoneypotInputProps } from "~/features/forms/honeypot.server";
 import stylesheet from "~/tailwind.css?url";
 
 export const links: LinksFunction = () => [
@@ -69,6 +70,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
       nextDinnerId: nextEvent?.id ?? null,
       imageProvider,
       cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME ?? null,
+      honeypot: getHoneypotInputProps(),
     },
     { headers: headers ?? undefined },
   );

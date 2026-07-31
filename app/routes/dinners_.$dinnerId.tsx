@@ -23,6 +23,9 @@ import {
 import { isPastEvent } from "~/features/events/event-status";
 import { toEventDetailModel } from "~/features/events/view-models";
 import { getViewForField, type FieldDescriptor } from "~/features/forms/fields";
+import { HONEYPOT_RETRY_MESSAGE } from "~/features/forms/honeypot";
+import { HoneypotField } from "~/features/forms/honeypot-field";
+import { checkHoneypot } from "~/features/forms/honeypot.server";
 import { normalizeSubmissionValues } from "~/features/forms/normalize-submission";
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
 import { buildSignupSchema } from "~/features/signup-form/build-schema";
@@ -55,6 +58,14 @@ export async function loader({ params }: Route.LoaderArgs) {
 const FORM_CHANGED_ERROR =
   "The signup form was updated while you were filling it out. Please review your answers and submit again.";
 
+// shared with the spam-trap response, which must be indistinguishable from a
+// real success
+const SIGNUP_SUCCESS_TOAST = {
+  title: "Signup complete",
+  description: "We'll contact you if you were able to get a spot on the event.",
+  type: "success",
+} as const;
+
 export async function action({ params, request, context }: Route.ActionArgs) {
   const { dinnerId } = params;
   const logger = context.get(requestLoggerContext);
@@ -77,7 +88,37 @@ export async function action({ params, request, context }: Route.ActionArgs) {
 
   const schema = buildSignupSchema(formFields);
   const formData = await request.formData();
+
+  // Answered with the success path's toast redirect: a caught bot must not
+  // learn it was caught, so nothing is validated or stored.
+  const honeypot = checkHoneypot(formData);
+  if (honeypot.outcome === "trapped") {
+    logger.warn(
+      {
+        ip: getClientIPAddress(request),
+        dinner: dinner.id,
+        reason: honeypot.reason,
+      },
+      "Blocked dinner signup caught by the spam trap",
+    );
+
+    return redirectWithToast("/dinners", SIGNUP_SUCCESS_TOAST);
+  }
+
   const submission = parseWithZod(formData, { schema });
+
+  if (honeypot.outcome === "unverified") {
+    logger.info(
+      {
+        ip: getClientIPAddress(request),
+        dinner: dinner.id,
+        reason: honeypot.reason,
+      },
+      "Rejected dinner signup with an unverifiable spam-trap stamp",
+    );
+
+    return submission.reply({ formErrors: [HONEYPOT_RETRY_MESSAGE] });
+  }
 
   // the answers must be validated and stored against the version the user
   // actually saw — a schema change in between would silently strip answers
@@ -159,12 +200,7 @@ export async function action({ params, request, context }: Route.ActionArgs) {
     "Successful submission for dinner signup",
   );
 
-  return redirectWithToast("/dinners", {
-    title: "Signup complete",
-    description:
-      "We'll contact you if you were able to get a spot on the event.",
-    type: "success",
-  });
+  return redirectWithToast("/dinners", SIGNUP_SUCCESS_TOAST);
 }
 
 export const meta: Route.MetaFunction = ({ loaderData, matches, location }) => {
@@ -282,6 +318,8 @@ function SignupForm({
         {/* the action verifies the submission was made against the version
             it validates and stores with */}
         <input type="hidden" name="formVersionId" value={formVersionId} />
+
+        <HoneypotField />
 
         {formFields.map((descriptor) => {
           const FieldView = getViewForField(descriptor);

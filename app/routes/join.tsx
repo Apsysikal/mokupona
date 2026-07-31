@@ -23,6 +23,9 @@ import {
   SIGNUP_CLOSED_MESSAGE,
 } from "~/features/auth/signup-settings";
 import { isSignupEnabled } from "~/features/auth/signup-settings.server";
+import { HONEYPOT_RETRY_MESSAGE } from "~/features/forms/honeypot";
+import { HoneypotField } from "~/features/forms/honeypot-field";
+import { checkHoneypot } from "~/features/forms/honeypot.server";
 import { getUserByEmail } from "~/models/user.server";
 import { getClientIPAddress } from "~/shared/http.server";
 
@@ -38,10 +41,34 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
   const logger = context.get(requestLoggerContext);
   const formData = await request.formData();
 
-  // The form renders disabled while the toggle is off, so this catches direct
-  // posts and the race where an admin closes sign-ups with the page already
-  // open. Checked before the existing-account lookup: a closed door owes the
-  // caller no database work, and no hint about which addresses are taken.
+  // Answered with the success path's redirect: a caught bot must not learn it
+  // was caught. Checked before the signup gate so it cannot learn whether
+  // sign-ups are open either.
+  const honeypot = checkHoneypot(formData);
+  if (honeypot.outcome === "trapped") {
+    logger.warn(
+      { ip: getClientIPAddress(request), reason: honeypot.reason },
+      "Blocked signup request caught by the spam trap",
+    );
+
+    const search = new URLSearchParams({
+      email: formData.get("email")?.toString() ?? "",
+    });
+    return redirect(`/check-your-inbox?${search}`);
+  }
+
+  if (honeypot.outcome === "unverified") {
+    logger.info(
+      { ip: getClientIPAddress(request), reason: honeypot.reason },
+      "Rejected signup request with an unverifiable spam-trap stamp",
+    );
+
+    const rejected = parseWithZod(formData, { schema });
+    return data(rejected.reply({ formErrors: [HONEYPOT_RETRY_MESSAGE] }), {
+      status: 400,
+    });
+  }
+
   if (!isSignupEnabled("email")) {
     logger.warn(
       { ip: getClientIPAddress(request) },
@@ -195,6 +222,8 @@ export default function Join({ loaderData, actionData }: Route.ComponentProps) {
           />
 
           <Input type="hidden" name="redirectTo" value={redirectTo} />
+
+          <HoneypotField />
 
           <p className="text-foreground/50 text-center text-xs">
             by creating an account you accept the{" "}
