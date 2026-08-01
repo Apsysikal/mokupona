@@ -66,6 +66,92 @@ describe("Field description wiring", () => {
     expect(input.getAttribute("aria-invalid")).toBe("true");
   });
 
+  // Conform's getInputProps/getTextareaProps/getSelectProps put their own
+  // aria-describedby on the control the moment the field is invalid, and every
+  // field view spreads them onto these components. Passing hand-written props
+  // is the one shape that never occurs in the app.
+  const conformInvalidProps = {
+    name: "email",
+    id: "signup-email",
+    "aria-invalid": true,
+    "aria-describedby": "signup-email-error",
+  } as const;
+
+  it("merges the control's own aria-describedby instead of dropping either", () => {
+    render(
+      <Field
+        labelProps={{ children: "Email" }}
+        description={description}
+        errors={errors}
+        inputProps={conformInvalidProps}
+      />,
+    );
+
+    const ids = screen
+      .getByLabelText("Email")
+      .getAttribute("aria-describedby")!
+      .split(" ");
+
+    // conform's error id is the one this component mints, so it appears once
+    expect(ids).toEqual(["signup-email-description", "signup-email-error"]);
+    expect(document.getElementById(ids[0])?.textContent).toBe(description);
+    expect(document.getElementById(ids[1])?.textContent).toContain(errors[0]);
+  });
+
+  it("keeps an unrelated id the control brings along", () => {
+    render(
+      <Field
+        labelProps={{ children: "Email" }}
+        description={description}
+        inputProps={{ ...conformInvalidProps, "aria-describedby": "hint" }}
+      />,
+    );
+
+    expect(
+      screen.getByLabelText("Email").getAttribute("aria-describedby"),
+    ).toBe("signup-email-description hint");
+  });
+
+  it("merges on textarea, select and checkbox alike", () => {
+    const cases = [
+      <TextareaField
+        key="textarea"
+        labelProps={{ children: "Notes" }}
+        description={description}
+        errors={errors}
+        textareaProps={conformInvalidProps}
+      />,
+      <SelectField
+        key="select"
+        labelProps={{ children: "Notes" }}
+        description={description}
+        errors={errors}
+        selectProps={{
+          ...conformInvalidProps,
+          options: [{ label: "A", value: "a" }],
+        }}
+      />,
+      <CheckboxField
+        key="checkbox"
+        labelProps={{ children: "Notes" }}
+        description={description}
+        errors={errors}
+        buttonProps={conformInvalidProps}
+      />,
+    ];
+
+    for (const element of cases) {
+      const { unmount } = render(element);
+
+      expect(
+        screen.getByLabelText("Notes").getAttribute("aria-describedby"),
+        `${element.key} dropped an id`,
+      ).toBe("signup-email-description signup-email-error");
+
+      unmount();
+    }
+  });
+
   it("still references the error alone when there is no description", () => {
     render(
       <Field

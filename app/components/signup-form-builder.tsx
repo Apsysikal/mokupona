@@ -71,8 +71,7 @@ const NEW_ROW: BuilderItemRow = {
   required: false,
 };
 
-const DESCRIPTION_HINT =
-  "Shown to guests under the label. Keep it short and concise.";
+const DESCRIPTION_HINT = `Shown to guests under the label. Keep it short and concise. Up to ${MAX_FIELD_DESCRIPTION_LENGTH} characters.`;
 
 function DescriptionField({
   field,
@@ -82,11 +81,11 @@ function DescriptionField({
   return (
     <TextareaField
       labelProps={{ children: "Help text" }}
+      description={DESCRIPTION_HINT}
       textareaProps={{
         ...getTextareaProps(field),
         rows: 2,
         maxLength: MAX_FIELD_DESCRIPTION_LENGTH,
-        placeholder: DESCRIPTION_HINT,
       }}
       errors={field.errors}
     />

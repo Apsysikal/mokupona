@@ -24,14 +24,23 @@ function useFieldIds(
   id: string | undefined,
   errors?: ListOfErrors,
   description?: string,
+  ariaDescribedBy?: string,
 ) {
   const fallbackId = useId();
   const resolvedId = id ?? fallbackId;
   const errorId = errors?.length ? `${resolvedId}-error` : undefined;
   const descriptionId = description ? `${resolvedId}-description` : undefined;
 
-  const describedBy =
-    [descriptionId, errorId].filter(Boolean).join(" ") || undefined;
+  // Conform's prop helpers put their own aria-describedby on the control as
+  // soon as it is invalid, so the ids are merged rather than overwritten in
+  // either direction; its error id is ours, hence the dedupe.
+  const ids = new Set(
+    [descriptionId, errorId, ariaDescribedBy]
+      .filter((value) => Boolean(value))
+      .flatMap((value) => value!.split(" ")),
+  );
+
+  const describedBy = [...ids].join(" ") || undefined;
 
   return { id: resolvedId, errorId, descriptionId, describedBy };
 }
@@ -47,7 +56,13 @@ export function FieldDescription({
 }) {
   if (!children) return null;
   return (
-    <p id={id} className={cn("text-foreground/65 text-sm", className)}>
+    <p
+      id={id}
+      className={cn(
+        "text-foreground/65 text-sm whitespace-pre-line",
+        className,
+      )}
+    >
       {children}
     </p>
   );
@@ -86,6 +101,7 @@ export function Field({
     inputProps.id,
     errors,
     description,
+    inputProps["aria-describedby"],
   );
 
   return (
@@ -95,8 +111,8 @@ export function Field({
       <Input
         id={id}
         aria-invalid={errorId ? true : undefined}
-        aria-describedby={describedBy}
         {...inputProps}
+        aria-describedby={describedBy}
       />
       {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
     </div>
@@ -116,6 +132,7 @@ export function TextareaField({
     textareaProps.id,
     errors,
     description,
+    textareaProps["aria-describedby"],
   );
 
   return (
@@ -125,8 +142,8 @@ export function TextareaField({
       <Textarea
         id={id}
         aria-invalid={errorId ? true : undefined}
-        aria-describedby={describedBy}
         {...textareaProps}
+        aria-describedby={describedBy}
       />
       {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
     </div>
@@ -148,6 +165,7 @@ export function SelectField({
     selectProps.id,
     errors,
     description,
+    selectProps["aria-describedby"],
   );
 
   const {
@@ -165,13 +183,13 @@ export function SelectField({
         <select
           id={id}
           aria-invalid={errorId ? true : undefined}
-          aria-describedby={describedBy}
           className={cn(
             fieldShellClassName,
             "focus-visible:inset-ring-ring flex w-full appearance-none py-1 pr-9 focus-visible:border-0 focus-visible:inset-ring-2 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
             selectClassName,
           )}
           {...props}
+          aria-describedby={describedBy}
         >
           {options?.map(({ label, value }) => (
             <option key={value} value={value}>
@@ -202,6 +220,7 @@ export function CheckboxField({
     buttonProps.id,
     errors,
     description,
+    buttonProps["aria-describedby"],
   );
 
   return (

@@ -175,7 +175,7 @@ export default function LoginPage({
             <Label htmlFor={fields.password.id}>password</Label>
             <Link
               to="/forgot-password"
-              className="text-primary text-sm font-semibold hover:underline"
+              className="text-primary font-semibold hover:underline"
             >
               forgot password?
             </Link>
