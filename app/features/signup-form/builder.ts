@@ -3,6 +3,7 @@ import { z } from "zod";
 import { DEFAULT_FORM } from "./default-form";
 import { SignupFormSchema } from "./schema";
 
+import { MAX_FIELD_DESCRIPTION_LENGTH } from "~/features/forms/bounds";
 import type { FieldDescriptor } from "~/features/forms/fields";
 import { FIELD_KEY_REGEX } from "~/features/forms/fields/base";
 import {
@@ -30,9 +31,10 @@ const BuilderItemRowSchema = z.object({
     .regex(FIELD_KEY_REGEX, { error: FIELD_KEY_ERROR }),
   label: z.string({ error: "Label is required" }).trim().min(1),
   required: z.boolean().default(false),
-  // optional helper text for guests; length is bounded by BaseFieldData on the
-  // transformed descriptor, whose issue path maps back onto this row
-  description: z.string().trim().optional(),
+  // optional helper text for guests; the bound is restated here (BaseFieldData
+  // enforces it again on the transformed descriptor) so Conform's constraint
+  // reaches the textarea
+  description: z.string().trim().max(MAX_FIELD_DESCRIPTION_LENGTH).optional(),
   // select only: one option per line; SelectFieldSchema bounds the parsed
   // list via the profile validation below
   options: z.string().optional(),
