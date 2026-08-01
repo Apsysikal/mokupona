@@ -85,7 +85,6 @@ function DescriptionField({
       textareaProps={{
         ...getTextareaProps(field),
         rows: 2,
-        maxLength: MAX_FIELD_DESCRIPTION_LENGTH,
       }}
       errors={field.errors}
     />
