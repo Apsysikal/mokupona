@@ -72,13 +72,8 @@ const NEW_ROW: BuilderItemRow = {
 };
 
 const DESCRIPTION_HINT =
-  "Optional. Shown to guests under the label — keep it to one short sentence.";
+  "Shown to guests under the label. Keep it short and concise.";
 
-// Labelled "Help text", not "Description", even though the stored property is
-// `description`: this builder lives on the dinner edit page, which already has
-// its own "Description" field for the dinner itself. Two controls with the same
-// visible label on one page are ambiguous for guests-of-the-admin and for
-// label-based queries alike.
 function DescriptionField({
   field,
 }: {
@@ -540,8 +535,6 @@ function PinnedIdentityRowView({ row }: { row: RowMetadata }) {
 
   return (
     <div className="flex flex-col gap-3">
-      {/* pinned values ride along as hidden inputs (disabled inputs would
-          not submit); the server re-validates the profile regardless */}
       <input {...getInputProps(rowFields.type, { type: "hidden" })} />
       <input {...getInputProps(rowFields.name, { type: "hidden" })} />
       <input type="hidden" name={rowFields.required.name} value="on" />
@@ -553,8 +546,8 @@ function PinnedIdentityRowView({ row }: { row: RowMetadata }) {
       />
       <DescriptionField field={rowFields.description} />
       <p className="text-foreground/65 text-xs">
-        Type and field key are fixed for identity fields — only the label and
-        help text guests see can change. Always required.
+        These fields are always required. You can still change the label that
+        users see.
       </p>
     </div>
   );
@@ -671,10 +664,7 @@ function EditableRowView({
                 type: String(rowFields.type.value ?? "text"),
                 name: keyValue,
                 label: String(rowFields.label.value ?? "") || keyValue,
-                // the twin asks the same question, so it starts from the same
-                // helper text; authors can reword it for the other audience
                 description: String(rowFields.description.value ?? ""),
-                // twins must match in type; a select twin needs the options
                 ...(isSelect
                   ? { options: String(rowFields.options.value ?? "") }
                   : {}),

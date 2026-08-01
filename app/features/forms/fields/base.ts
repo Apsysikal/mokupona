@@ -13,13 +13,5 @@ export const BaseFieldData = z.object({
   name: z.string().regex(FIELD_KEY_REGEX),
   label: z.string().trim().min(1),
   required: z.boolean().default(false),
-  // Optional helper text shown to guests under the label. Purely
-  // informational: it never reaches validation, answers, or CSV columns.
-  //
-  // `.optional()` and deliberately NOT `.default("")` — saveFormSchemaInTx
-  // decides whether to mint a new FormVersion with isDeepStrictEqual, which
-  // distinguishes an absent key from an empty one. A default would make every
-  // pre-existing form look changed on its next save. Writers must omit the
-  // key entirely when there is no description.
   description: z.string().trim().max(MAX_FIELD_DESCRIPTION_LENGTH).optional(),
 });
