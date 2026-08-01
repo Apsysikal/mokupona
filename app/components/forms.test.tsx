@@ -1,0 +1,123 @@
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+
+import { CheckboxField, Field, SelectField, TextareaField } from "./forms";
+
+// The accessible description is the whole point of the feature: helper text
+// that is visible but not announced is decoration. These assertions pin the
+// aria-describedby composition — including the two failure modes that are easy
+// to reintroduce: a dangling IDREF when no description renders, and an empty
+// aria-describedby="" attribute when nothing describes the control at all.
+
+const description = "We only use this to confirm your seat.";
+const errors = ["Enter your email address"];
+
+describe("Field description wiring", () => {
+  it("renders the description and points the input at it", () => {
+    render(
+      <Field
+        labelProps={{ children: "Email" }}
+        description={description}
+        inputProps={{ name: "email" }}
+      />,
+    );
+
+    const input = screen.getByLabelText("Email");
+    const describedBy = input.getAttribute("aria-describedby");
+
+    expect(screen.getByText(description)).toBeTruthy();
+    expect(describedBy).toBeTruthy();
+    expect(document.getElementById(describedBy!)?.textContent).toBe(
+      description,
+    );
+  });
+
+  it("omits aria-describedby entirely when there is nothing to describe", () => {
+    render(
+      <Field
+        labelProps={{ children: "Email" }}
+        inputProps={{ name: "email" }}
+      />,
+    );
+
+    // an empty attribute is not the same as an absent one, and a reference to
+    // a description node that never rendered is a dangling IDREF
+    expect(
+      screen.getByLabelText("Email").hasAttribute("aria-describedby"),
+    ).toBe(false);
+  });
+
+  it("references both the description and the error, description first", () => {
+    render(
+      <Field
+        labelProps={{ children: "Email" }}
+        description={description}
+        errors={errors}
+        inputProps={{ name: "email" }}
+      />,
+    );
+
+    const input = screen.getByLabelText("Email");
+    const ids = input.getAttribute("aria-describedby")!.split(" ");
+
+    expect(ids).toHaveLength(2);
+    expect(document.getElementById(ids[0])?.textContent).toBe(description);
+    expect(document.getElementById(ids[1])?.textContent).toContain(errors[0]);
+    expect(input.getAttribute("aria-invalid")).toBe("true");
+  });
+
+  it("still references the error alone when there is no description", () => {
+    render(
+      <Field
+        labelProps={{ children: "Email" }}
+        errors={errors}
+        inputProps={{ name: "email" }}
+      />,
+    );
+
+    const ids = screen
+      .getByLabelText("Email")
+      .getAttribute("aria-describedby")!
+      .split(" ");
+
+    expect(ids).toHaveLength(1);
+    expect(document.getElementById(ids[0])?.textContent).toContain(errors[0]);
+  });
+
+  it("wires the description on textarea, select and checkbox alike", () => {
+    const cases = [
+      <TextareaField
+        key="textarea"
+        labelProps={{ children: "Notes" }}
+        description={description}
+        textareaProps={{ name: "notes" }}
+      />,
+      <SelectField
+        key="select"
+        labelProps={{ children: "Notes" }}
+        description={description}
+        selectProps={{ name: "notes", options: [{ label: "A", value: "a" }] }}
+      />,
+      <CheckboxField
+        key="checkbox"
+        labelProps={{ children: "Notes" }}
+        description={description}
+        buttonProps={{ name: "notes" }}
+      />,
+    ];
+
+    for (const element of cases) {
+      const { unmount } = render(element);
+
+      const control = screen.getByLabelText("Notes");
+      const describedBy = control.getAttribute("aria-describedby");
+
+      expect(describedBy, `${element.key} has no description`).toBeTruthy();
+      expect(document.getElementById(describedBy!)?.textContent).toBe(
+        description,
+      );
+
+      unmount();
+    }
+  });
+});

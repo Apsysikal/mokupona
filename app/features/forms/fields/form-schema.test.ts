@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { MAX_TOTAL_FIELDS } from "../bounds";
+import { MAX_FIELD_DESCRIPTION_LENGTH, MAX_TOTAL_FIELDS } from "../bounds";
 
 import {
   FormSchema,
@@ -142,5 +142,54 @@ describe("FormSchema", () => {
     expect(
       FormSchema.safeParse([textField("1starts_with_digit")]).success,
     ).toBe(false);
+  });
+});
+
+describe("field descriptions", () => {
+  it("accepts a description on every field type, including lists", () => {
+    // mutate in place rather than spreading: spreading a discriminated union
+    // widens `data` and loses the per-type correlation
+    const fields: FieldDescriptor[] = [
+      textField("title"),
+      checkboxField("agrees"),
+      listField("entries", [textField("name")]),
+    ];
+    for (const field of fields) field.data.description = "Helper text";
+
+    expect(FormSchema.safeParse(fields).success).toBe(true);
+  });
+
+  it("parses legacy descriptors that predate the field, leaving no key behind", () => {
+    // stored blobs have no `description`; an absent key must stay absent so
+    // saveFormSchemaInTx's isDeepStrictEqual check still sees "unchanged"
+    const result = FormSchema.safeParse([textField("title")]);
+
+    expect(result.success).toBe(true);
+    expect("description" in result.data![0].data).toBe(false);
+  });
+
+  it("trims surrounding whitespace", () => {
+    const field = textField("title");
+    field.data.description = "  Helper text  ";
+
+    const result = FormSchema.safeParse([field]);
+
+    expect(result.data?.[0].data.description).toBe("Helper text");
+  });
+
+  it("rejects a description longer than MAX_FIELD_DESCRIPTION_LENGTH", () => {
+    const field = textField("title");
+    field.data.description = "x".repeat(MAX_FIELD_DESCRIPTION_LENGTH + 1);
+
+    expect(FormSchema.safeParse([field]).success).toBe(false);
+  });
+
+  it("accepts a description on a list's itemFields", () => {
+    const item = textField("name");
+    item.data.description = "As it appears on their ID";
+
+    expect(FormSchema.safeParse([listField("entries", [item])]).success).toBe(
+      true,
+    );
   });
 });

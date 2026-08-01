@@ -30,6 +30,9 @@ const BuilderItemRowSchema = z.object({
     .regex(FIELD_KEY_REGEX, { error: FIELD_KEY_ERROR }),
   label: z.string({ error: "Label is required" }).trim().min(1),
   required: z.boolean().default(false),
+  // optional helper text for guests; length is bounded by BaseFieldData on the
+  // transformed descriptor, whose issue path maps back onto this row
+  description: z.string().trim().optional(),
   // select only: one option per line; SelectFieldSchema bounds the parsed
   // list via the profile validation below
   options: z.string().optional(),
@@ -87,6 +90,15 @@ export const SignupFormBuilderSchema = z
     }
   });
 
+// An empty description must leave NO key behind. saveFormSchemaInTx compares
+// descriptors with isDeepStrictEqual to decide whether to mint a new
+// FormVersion, and `{}` is not deep-equal to `{ description: undefined }` — a
+// blank textarea that emitted the key would spawn a new version on every save
+// of every form. Both conversion directions go through this helper.
+function descriptionEntry(description: string | undefined) {
+  return description ? { description } : {};
+}
+
 export function builderRowsToDescriptors(
   rows: BuilderRow[],
 ): FieldDescriptor[] {
@@ -99,6 +111,7 @@ export function builderRowsToDescriptors(
           name: row.name,
           label: row.label,
           required: false,
+          ...descriptionEntry(row.description),
           maxCount: row.maxCount ?? 0,
           addLabel: FRIENDS_ADD_LABEL,
           removeLabel: FRIENDS_REMOVE_LABEL,
@@ -114,6 +127,7 @@ export function builderRowsToDescriptors(
       name: row.name,
       label: row.label,
       required: row.required,
+      description: row.description,
       options: row.options,
     });
   });
@@ -128,6 +142,7 @@ function itemRowToDescriptor(row: BuilderItemRow): NonListFieldDescriptor {
         name: row.name,
         label: row.label,
         required: row.required,
+        ...descriptionEntry(row.description),
         options: splitOptions(row.options ?? ""),
       },
     };
@@ -136,7 +151,12 @@ function itemRowToDescriptor(row: BuilderItemRow): NonListFieldDescriptor {
   return {
     type: row.type,
     version: 1,
-    data: { name: row.name, label: row.label, required: row.required },
+    data: {
+      name: row.name,
+      label: row.label,
+      required: row.required,
+      ...descriptionEntry(row.description),
+    },
   };
 }
 
@@ -159,6 +179,7 @@ export function descriptorsToBuilderRows(
         name: descriptor.data.name,
         label: descriptor.data.label,
         required: false,
+        ...descriptionEntry(descriptor.data.description),
         maxCount: descriptor.data.maxCount,
         itemFields: descriptor.data.itemFields.map(descriptorToItemRow),
       };
@@ -176,6 +197,7 @@ function descriptorToItemRow(
     name: descriptor.data.name,
     label: descriptor.data.label,
     required: descriptor.data.required,
+    ...descriptionEntry(descriptor.data.description),
     ...(descriptor.type === "select"
       ? { options: descriptor.data.options.join("\n") }
       : {}),

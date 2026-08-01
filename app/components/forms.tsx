@@ -15,15 +15,54 @@ export const fileFieldClassName =
 
 export type FieldProps = {
   labelProps: React.ComponentProps<"label">;
+  /** Optional helper text shown under the label and read out as the
+   *  control's accessible description. */
+  description?: string;
   errors?: ListOfErrors;
   className?: string;
 };
 
-function useFieldIds(id: string | undefined, errors?: ListOfErrors) {
+function useFieldIds(
+  id: string | undefined,
+  errors?: ListOfErrors,
+  description?: string,
+) {
   const fallbackId = useId();
   const resolvedId = id ?? fallbackId;
   const errorId = errors?.length ? `${resolvedId}-error` : undefined;
-  return { id: resolvedId, errorId };
+  const descriptionId = description ? `${resolvedId}-description` : undefined;
+
+  // Both describing nodes go into one attribute, in DOM order. An id is only
+  // referenced when its node actually renders — a dangling IDREF is a real
+  // a11y defect — and the trailing `|| undefined` keeps the attribute off the
+  // element entirely rather than emitting aria-describedby="".
+  const describedBy =
+    [descriptionId, errorId].filter(Boolean).join(" ") || undefined;
+
+  return { id: resolvedId, errorId, descriptionId, describedBy };
+}
+
+export function FieldDescription({
+  id,
+  children,
+  className,
+}: {
+  id?: string;
+  children?: React.ReactNode;
+  className?: string;
+}) {
+  if (!children) return null;
+  return (
+    <p
+      id={id}
+      className={cn(
+        "text-foreground/65 text-sm leading-snug whitespace-pre-line",
+        className,
+      )}
+    >
+      {children}
+    </p>
+  );
 }
 
 export function ErrorList({
@@ -49,20 +88,26 @@ export function ErrorList({
 export function Field({
   labelProps,
   inputProps,
+  description,
   errors,
   className,
 }: FieldProps & {
   inputProps: React.InputHTMLAttributes<HTMLInputElement>;
 }) {
-  const { id, errorId } = useFieldIds(inputProps.id, errors);
+  const { id, errorId, descriptionId, describedBy } = useFieldIds(
+    inputProps.id,
+    errors,
+    description,
+  );
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <Label htmlFor={id} {...labelProps} />
+      <FieldDescription id={descriptionId}>{description}</FieldDescription>
       <Input
         id={id}
         aria-invalid={errorId ? true : undefined}
-        aria-describedby={errorId}
+        aria-describedby={describedBy}
         {...inputProps}
       />
       {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
@@ -73,20 +118,26 @@ export function Field({
 export function TextareaField({
   labelProps,
   textareaProps,
+  description,
   errors,
   className,
 }: FieldProps & {
   textareaProps: React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 }) {
-  const { id, errorId } = useFieldIds(textareaProps.id, errors);
+  const { id, errorId, descriptionId, describedBy } = useFieldIds(
+    textareaProps.id,
+    errors,
+    description,
+  );
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <Label htmlFor={id} {...labelProps} />
+      <FieldDescription id={descriptionId}>{description}</FieldDescription>
       <Textarea
         id={id}
         aria-invalid={errorId ? true : undefined}
-        aria-describedby={errorId}
+        aria-describedby={describedBy}
         {...textareaProps}
       />
       {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
@@ -97,6 +148,7 @@ export function TextareaField({
 export function SelectField({
   labelProps,
   selectProps,
+  description,
   errors,
   className,
 }: FieldProps & {
@@ -104,7 +156,11 @@ export function SelectField({
     options?: Array<{ label: string; value: string }>;
   };
 }) {
-  const { id, errorId } = useFieldIds(selectProps.id, errors);
+  const { id, errorId, descriptionId, describedBy } = useFieldIds(
+    selectProps.id,
+    errors,
+    description,
+  );
 
   const {
     children,
@@ -116,11 +172,12 @@ export function SelectField({
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <Label htmlFor={id} {...labelProps} />
+      <FieldDescription id={descriptionId}>{description}</FieldDescription>
       <div className="relative">
         <select
           id={id}
           aria-invalid={errorId ? true : undefined}
-          aria-describedby={errorId}
+          aria-describedby={describedBy}
           className={cn(
             fieldShellClassName,
             "focus-visible:inset-ring-ring flex w-full appearance-none py-1 pr-9 focus-visible:border-0 focus-visible:inset-ring-2 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
@@ -147,12 +204,17 @@ export function SelectField({
 export function CheckboxField({
   labelProps,
   buttonProps,
+  description,
   errors,
   className,
 }: FieldProps & {
   buttonProps: React.ComponentProps<"input"> & { name: string };
 }) {
-  const { id, errorId } = useFieldIds(buttonProps.id, errors);
+  const { id, errorId, descriptionId, describedBy } = useFieldIds(
+    buttonProps.id,
+    errors,
+    description,
+  );
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
@@ -161,7 +223,7 @@ export function CheckboxField({
           {...buttonProps}
           id={id}
           aria-invalid={errorId ? true : undefined}
-          aria-describedby={errorId}
+          aria-describedby={describedBy}
         />
         {/* checkbox labels read as body copy, not as field labels */}
         <Label
@@ -173,6 +235,11 @@ export function CheckboxField({
           )}
         />
       </div>
+      {/* the checkbox and its label sit on one line, so the description goes
+          beneath the pair, indented past the box to read as its continuation */}
+      <FieldDescription id={descriptionId} className="pl-6">
+        {description}
+      </FieldDescription>
       {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
     </div>
   );

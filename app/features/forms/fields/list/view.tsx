@@ -5,7 +5,7 @@ import { getViewForNonListField } from "../non-list";
 
 import type { ListFieldSchema } from "./model";
 
-import { ErrorList } from "~/components/forms";
+import { ErrorList, FieldDescription } from "~/components/forms";
 
 type ListItem = Record<string, unknown>;
 
@@ -22,7 +22,8 @@ export function ListField({
   fieldMetadata: metadata,
 }: ListFieldProps) {
   const form = useFormMetadata();
-  const { label, maxCount, addLabel, removeLabel, itemFields } = config.data;
+  const { label, description, maxCount, addLabel, removeLabel, itemFields } =
+    config.data;
 
   if (maxCount === 0) return null;
 
@@ -32,9 +33,15 @@ export function ListField({
     <>
       <div aria-hidden className="bg-border my-1 h-px" />
 
-      <div className="flex items-center justify-between">
-        <span className="text-foreground/65 text-sm">{label}</span>
-        <span className="text-foreground/50 text-xs">up to {maxCount}</span>
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center justify-between">
+          <span className="text-foreground/65 text-sm">{label}</span>
+          <span className="text-foreground/50 text-xs">up to {maxCount}</span>
+        </div>
+        {/* A list heads a group, not a single control, so there is no input to
+            hang aria-describedby off — this reads as section copy. Guests see
+            it either way; screen readers reach it in document order. */}
+        <FieldDescription>{description}</FieldDescription>
       </div>
 
       {items.length > 0 ? (
