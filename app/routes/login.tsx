@@ -11,6 +11,10 @@ import { CheckboxField, ErrorList, Field } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  GOOGLE_DISABLED_ERROR,
+  GOOGLE_DISABLED_MESSAGE,
+} from "~/features/auth/auth-settings";
 import { auth } from "~/features/auth/auth.server";
 import { GoogleSignInButton } from "~/features/auth/components/google-button";
 import { emailSchema, parseRequestForm } from "~/features/auth/form-schemas";
@@ -18,10 +22,6 @@ import {
   anonymousAuthPageLoader,
   requestLoggerContext,
 } from "~/features/auth/middleware.server";
-import {
-  GOOGLE_SIGNUP_CLOSED_MESSAGE,
-  OAUTH_SIGNUP_DISABLED_ERROR,
-} from "~/features/auth/signup-settings";
 import { getClientIPAddress, safeRedirect } from "~/shared/http.server";
 
 const schema = z.object({
@@ -115,9 +115,8 @@ export default function LoginPage({
     },
   });
   const credentialsRejected = authError?.kind === "credentials";
-  // set by the OAuth callback when it refused to register a new Google user
-  const oauthSignupRejected =
-    searchParams.get("error") === OAUTH_SIGNUP_DISABLED_ERROR;
+  // set by the OAuth callback when it turned a google sign-in away
+  const googleRefused = searchParams.get("error") === GOOGLE_DISABLED_ERROR;
 
   return (
     <AuthShell mode="login" search={searchParams.toString()}>
@@ -136,12 +135,12 @@ export default function LoginPage({
             try again.
           </AuthNotice>
         ) : null}
-        {oauthSignupRejected ? (
+        {googleRefused ? (
           <AuthNotice
             variant="destructive"
-            title="that google account isn't registered here"
+            title="google sign-in is turned off"
           >
-            {GOOGLE_SIGNUP_CLOSED_MESSAGE}
+            {GOOGLE_DISABLED_MESSAGE}
           </AuthNotice>
         ) : null}
         {authError?.kind === "unverified" ? (

@@ -18,6 +18,7 @@ import { pillVariants } from "~/components/section";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { isAuthToggleEnabled } from "~/features/auth/auth-settings.server";
 import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { GoogleSignInButton } from "~/features/auth/components/google-button";
 import { displayNameSchema } from "~/features/auth/form-schemas";
@@ -28,7 +29,6 @@ import {
 } from "~/features/auth/middleware.server";
 import { passwordSchema } from "~/features/auth/password-schema";
 import { landingPathForRole } from "~/features/auth/roles";
-import { isSignupEnabled } from "~/features/auth/signup-settings.server";
 import { normalizeInvitableRole } from "~/features/users/invite.shared";
 import { requestLogger } from "~/logger/request-context.server";
 import {
@@ -81,12 +81,7 @@ export const loader = async ({ params, context }: Route.LoaderArgs) => {
       email: invite.email,
       roleName: invite.roleName,
       inviterName: invite.createdBy.name,
-      // Accepting an invite through Google still *creates* an account, and
-      // better-auth's registration switch is provider-wide — it cannot tell
-      // an invited callback from a public one. So while Google signup is off
-      // the invite stays open through the password form below, and the button
-      // that would be rejected at the callback is not offered.
-      googleEnabled: googleAuthEnabled && isSignupEnabled("google"),
+      googleEnabled: googleAuthEnabled && isAuthToggleEnabled("google"),
     };
   }
 

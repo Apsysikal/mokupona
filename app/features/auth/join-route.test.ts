@@ -4,11 +4,11 @@
 import { RouterContextProvider } from "react-router";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { SIGNUP_CLOSED_MESSAGE } from "./signup-settings";
+import { SIGNUP_CLOSED_MESSAGE } from "./auth-settings";
 import {
-  resetSignupSettings,
-  setSignupEnabled,
-} from "./signup-settings.server";
+  resetAuthSettings,
+  setAuthToggleEnabled,
+} from "./auth-settings.server";
 
 import {
   HONEYPOT_FIELD_NAME,
@@ -58,7 +58,7 @@ async function expectFakeSuccess(result: Awaited<ReturnType<typeof action>>) {
 }
 
 afterEach(() => {
-  resetSignupSettings();
+  resetAuthSettings();
 });
 
 function submit(body: Record<string, string>) {
@@ -89,7 +89,7 @@ function readReply(result: Awaited<ReturnType<typeof action>>) {
 
 describe("join action", () => {
   it("rejects a direct post with a 403 once email signup is closed", async () => {
-    setSignupEnabled("email", false);
+    setAuthToggleEnabled("emailSignup", false);
 
     // an otherwise perfectly valid submission — only the toggle stops it
     expect(readReply(await submit(fromBrowser(VALID_SIGNUP)))).toEqual({
@@ -107,8 +107,8 @@ describe("join action", () => {
     });
   });
 
-  it("keeps email signup open when only google signup is closed", async () => {
-    setSignupEnabled("google", false);
+  it("keeps email signup open when only google is closed", async () => {
+    setAuthToggleEnabled("google", false);
 
     expect(readReply(await submit(fromBrowser())).status).toBe(200);
   });
@@ -118,7 +118,7 @@ describe("join action", () => {
   });
 
   it("answers a filled spam trap identically once signup is closed", async () => {
-    setSignupEnabled("email", false);
+    setAuthToggleEnabled("emailSignup", false);
 
     // the trap is checked first, so a bot cannot probe the toggle either
     await expectFakeSuccess(await submit(fromBot()));

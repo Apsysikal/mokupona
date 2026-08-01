@@ -148,7 +148,9 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
                 case "logout":
                   return (
                     <Form key="logout" action="/logout" method="POST">
-                      <button className="hover:text-foreground">logout</button>
+                      <button className={sectionLinkClasses(false)}>
+                        logout
+                      </button>
                     </Form>
                   );
               }

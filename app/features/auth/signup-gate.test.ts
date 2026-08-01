@@ -5,9 +5,9 @@ import { RouterContextProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
-  resetSignupSettings,
-  setSignupEnabled,
-} from "./signup-settings.server";
+  resetAuthSettings,
+  setAuthToggleEnabled,
+} from "./auth-settings.server";
 
 import { action } from "~/routes/api.auth.$";
 
@@ -23,7 +23,7 @@ vi.mock("~/features/auth/auth.server", () => ({
 const DELEGATED = new Response("delegated");
 
 afterEach(() => {
-  resetSignupSettings();
+  resetAuthSettings();
   mocks.handler.mockReset();
 });
 
@@ -41,7 +41,7 @@ describe("better-auth endpoint gate", () => {
   });
 
   it("refuses registration with a 403 once email signup is closed", async () => {
-    setSignupEnabled("email", false);
+    setAuthToggleEnabled("emailSignup", false);
 
     const response = await post("/api/auth/sign-up/email");
 
@@ -53,7 +53,7 @@ describe("better-auth endpoint gate", () => {
   });
 
   it("leaves every other endpoint alone while email signup is closed", async () => {
-    setSignupEnabled("email", false);
+    setAuthToggleEnabled("emailSignup", false);
 
     for (const path of [
       "/api/auth/sign-in/email",

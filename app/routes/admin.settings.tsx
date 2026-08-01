@@ -9,19 +9,19 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import {
+  AUTH_TOGGLE_COPY,
+  AUTH_TOGGLES,
+  type AuthSettings,
+  type AuthToggle,
+} from "~/features/auth/auth-settings";
+import {
+  getAuthSettings,
+  setAuthToggleEnabled,
+} from "~/features/auth/auth-settings.server";
+import {
   requestLoggerContext,
   requireResolvedUserRoleMiddleware,
 } from "~/features/auth/middleware.server";
-import {
-  SIGNUP_METHOD_COPY,
-  SIGNUP_METHODS,
-  type SignupMethod,
-  type SignupSettings,
-} from "~/features/auth/signup-settings";
-import {
-  getSignupSettings,
-  setSignupEnabled,
-} from "~/features/auth/signup-settings.server";
 import { redirectWithToast } from "~/utils/toast.server";
 
 export const middleware: Route.MiddlewareFunction[] = [
@@ -29,12 +29,12 @@ export const middleware: Route.MiddlewareFunction[] = [
 ];
 
 const schema = z.object({
-  method: z.enum(SIGNUP_METHODS),
+  toggle: z.enum(AUTH_TOGGLES),
   enabled: z.enum(["true", "false"]).transform((value) => value === "true"),
 });
 
 export async function loader() {
-  return { signupSettings: getSignupSettings() };
+  return { authSettings: getAuthSettings() };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -47,13 +47,13 @@ export async function action({ request, context }: Route.ActionArgs) {
     throw new Response("Bad request", { status: 400 });
   }
 
-  const { method, enabled } = submission.value;
-  setSignupEnabled(method, enabled);
+  const { toggle, enabled } = submission.value;
+  setAuthToggleEnabled(toggle, enabled);
 
-  logger.info({ method, enabled }, "Self-signup setting changed");
+  logger.info({ toggle, enabled }, "Self-service auth setting changed");
 
   return redirectWithToast("/admin/settings", {
-    title: `${SIGNUP_METHOD_COPY[method].label} sign-ups ${enabled ? "enabled" : "disabled"}`,
+    title: `${AUTH_TOGGLE_COPY[toggle].label} ${enabled ? "enabled" : "disabled"}`,
     type: "success",
   });
 }
@@ -63,28 +63,28 @@ export const meta: Route.MetaFunction = () => [{ title: "Admin - Settings" }];
 export default function AdminSettingsPage({
   loaderData,
 }: Route.ComponentProps) {
-  const { signupSettings } = loaderData;
+  const { authSettings } = loaderData;
 
   return (
     <div className="animate-page-in">
       <AdminPageHeader
         eyebrow="settings"
-        title="Sign-ups"
-        subtitle="Decide how people can create an account on their own. Invitations keep working either way."
+        title="Access"
+        subtitle="Decide how people can sign up or sign in on their own. Invitations keep working either way."
       />
 
       <Card className="p-4 md:p-5">
-        <h2 className="text-base font-semibold">Self-signup</h2>
+        <h2 className="text-base font-semibold">Self-service</h2>
         <p className="text-foreground/50 mt-1 text-sm">
           These switches reset to enabled whenever the server restarts.
         </p>
 
         <div className="mt-3 flex flex-col">
-          {SIGNUP_METHODS.map((method) => (
-            <SignupMethodRow
-              key={method}
-              method={method}
-              settings={signupSettings}
+          {AUTH_TOGGLES.map((toggle) => (
+            <AuthToggleRow
+              key={toggle}
+              toggle={toggle}
+              settings={authSettings}
             />
           ))}
         </div>
@@ -93,33 +93,33 @@ export default function AdminSettingsPage({
   );
 }
 
-function SignupMethodRow({
-  method,
+function AuthToggleRow({
+  toggle,
   settings,
 }: {
-  method: SignupMethod;
-  settings: SignupSettings;
+  toggle: AuthToggle;
+  settings: AuthSettings;
 }) {
-  const enabled = settings[method];
+  const enabled = settings[toggle];
 
   return (
     <div className="flex flex-wrap items-center gap-3 border-b py-3 last:border-b-0">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold">
-            {SIGNUP_METHOD_COPY[method].label}
+            {AUTH_TOGGLE_COPY[toggle].label}
           </p>
           <Badge variant={enabled ? "info" : "secondary"} pill>
             {enabled ? "open" : "closed"}
           </Badge>
         </div>
         <p className="text-foreground/65 mt-1 text-sm">
-          {SIGNUP_METHOD_COPY[method].description}
+          {AUTH_TOGGLE_COPY[toggle].description}
         </p>
       </div>
 
       <Form method="post" replace>
-        <input type="hidden" name="method" value={method} />
+        <input type="hidden" name="toggle" value={toggle} />
         <input
           type="hidden"
           name="enabled"

@@ -21,6 +21,7 @@ import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { fieldShellClassName, Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { isAuthToggleEnabled } from "~/features/auth/auth-settings.server";
 import { authClient } from "~/features/auth/auth.client";
 import { auth, googleAuthEnabled } from "~/features/auth/auth.server";
 import { GoogleMark } from "~/features/auth/components/google-button";
@@ -68,7 +69,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
       role: { name: user.role.name },
     },
     ...authOverview,
-    googleEnabled: googleAuthEnabled,
+    googleEnabled: googleAuthEnabled && isAuthToggleEnabled("google"),
   };
 };
 
@@ -190,6 +191,7 @@ export default function MeRoute({ loaderData }: Route.ComponentProps) {
       {googleEnabled || googleLinked ? (
         <ConnectedAccountsCard
           email={user.email}
+          googleEnabled={googleEnabled}
           googleLinked={googleLinked}
           hasPassword={hasPassword}
         />
@@ -378,10 +380,12 @@ function PasswordCard({ hasPassword }: { hasPassword: boolean }) {
 
 function ConnectedAccountsCard({
   email,
+  googleEnabled,
   googleLinked,
   hasPassword,
 }: {
   email: string;
+  googleEnabled: boolean;
   googleLinked: boolean;
   hasPassword: boolean;
 }) {
@@ -416,7 +420,7 @@ function ConnectedAccountsCard({
               unlink
             </Button>
           </fetcher.Form>
-        ) : (
+        ) : googleEnabled ? (
           <Button
             type="button"
             size="sm"
@@ -430,7 +434,7 @@ function ConnectedAccountsCard({
           >
             link
           </Button>
-        )}
+        ) : null}
       </div>
       {unlinkBlocked ? (
         <p className="text-foreground/50 text-sm">

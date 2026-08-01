@@ -6,6 +6,7 @@ import {
   type RouterContextProvider,
 } from "react-router";
 
+import { isAuthToggleEnabled } from "./auth-settings.server";
 import { googleAuthEnabled } from "./auth.server";
 import {
   getUserWithRole,
@@ -14,7 +15,6 @@ import {
   type ValidatedUser,
 } from "./guards.server";
 import type { RoleName } from "./roles";
-import { getSignupSettings } from "./signup-settings.server";
 
 import { withRequestLogger } from "~/logger/request-context.server";
 import { logger } from "~/logger.server";
@@ -34,15 +34,13 @@ export const requestLoggerContext = createContext<Logger>(logger);
 
 /**
  * Mint the request id and hang the request-scoped logger off both the router
- * context and an AsyncLocalStorage store. Honouring `fly-request-id` where the
- * platform set one correlates our records with Fly's.
+ * context and an AsyncLocalStorage store.
  */
 export const requestLoggerMiddleware: MiddlewareFunction<Response> = (
-  { request, context },
+  { context },
   next,
 ) => {
-  const requestId =
-    request.headers.get("fly-request-id") ?? crypto.randomUUID();
+  const requestId = crypto.randomUUID();
   const requestLogger = logger.child({ requestId });
   context.set(requestLoggerContext, requestLogger);
   return withRequestLogger(requestLogger, next);
@@ -76,8 +74,8 @@ export async function requireResolvedUser(
 
 /**
  * Loader shared by the anonymous-only auth pages (login/join): bounce
- * signed-in users home, expose whether Google sign-in is configured, and
- * report which self-signup methods the admin toggles currently leave open.
+ * signed-in users home, and report whether Google sign-in and email sign-ups
+ * are on the table right now.
  */
 export async function anonymousAuthPageLoader({
   context,
@@ -87,8 +85,8 @@ export async function anonymousAuthPageLoader({
   const user = await context.get(optionalUserContext)();
   if (user) throw redirect("/");
   return {
-    googleEnabled: googleAuthEnabled,
-    signupEnabled: getSignupSettings(),
+    googleEnabled: googleAuthEnabled && isAuthToggleEnabled("google"),
+    emailSignupEnabled: isAuthToggleEnabled("emailSignup"),
   };
 }
 
