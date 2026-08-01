@@ -3,6 +3,10 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import invariant from "tiny-invariant";
 
 import { googleGate } from "./google-gate.server";
+import {
+  gatedHashPassword,
+  gatedVerifyPassword,
+} from "./password-hash-gate.server";
 
 import { prisma } from "~/db.server";
 import { sendTemplate } from "~/features/mail/mail.server";
@@ -52,6 +56,8 @@ export const auth = singleton("better-auth", () => {
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: true,
+      // same scrypt as the default, one derivation at a time — see the gate
+      password: { hash: gatedHashPassword, verify: gatedVerifyPassword },
       sendResetPassword: ({ user, url }) =>
         sendTemplate("resetPassword", user.email, { url }),
       onPasswordReset: ({ user }) => setUserEmailVerified(user.id),
