@@ -15,8 +15,6 @@ export const fileFieldClassName =
 
 export type FieldProps = {
   labelProps: React.ComponentProps<"label">;
-  /** Optional helper text shown under the label and read out as the
-   *  control's accessible description. */
   description?: string;
   errors?: ListOfErrors;
   className?: string;
@@ -32,10 +30,6 @@ function useFieldIds(
   const errorId = errors?.length ? `${resolvedId}-error` : undefined;
   const descriptionId = description ? `${resolvedId}-description` : undefined;
 
-  // Both describing nodes go into one attribute, in DOM order. An id is only
-  // referenced when its node actually renders — a dangling IDREF is a real
-  // a11y defect — and the trailing `|| undefined` keeps the attribute off the
-  // element entirely rather than emitting aria-describedby="".
   const describedBy =
     [descriptionId, errorId].filter(Boolean).join(" ") || undefined;
 
@@ -53,13 +47,7 @@ export function FieldDescription({
 }) {
   if (!children) return null;
   return (
-    <p
-      id={id}
-      className={cn(
-        "text-foreground/65 text-sm leading-snug whitespace-pre-line",
-        className,
-      )}
-    >
+    <p id={id} className={cn("text-foreground/65 text-sm", className)}>
       {children}
     </p>
   );
@@ -235,8 +223,6 @@ export function CheckboxField({
           )}
         />
       </div>
-      {/* the checkbox and its label sit on one line, so the description goes
-          beneath the pair, indented past the box to read as its continuation */}
       <FieldDescription id={descriptionId} className="pl-6">
         {description}
       </FieldDescription>
