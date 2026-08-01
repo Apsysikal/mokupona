@@ -1,3 +1,5 @@
+import { isDeepStrictEqual } from "node:util";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -8,6 +10,8 @@ import {
   slugifyFieldKey,
 } from "./builder";
 import { DEFAULT_FORM } from "./default-form";
+
+import { MAX_FIELD_DESCRIPTION_LENGTH } from "~/features/forms/bounds";
 
 describe("builder row transforms", () => {
   it("round-trips DEFAULT_FORM exactly (deep-equal skip must keep working)", () => {
@@ -156,6 +160,74 @@ describe("SignupFormBuilderSchema", () => {
     const result = SignupFormBuilderSchema.safeParse(rows);
 
     expect(result.success).toBe(false);
+  });
+});
+
+describe("description round-trip", () => {
+  // saveFormSchemaInTx decides whether to mint a new FormVersion with
+  // isDeepStrictEqual, which — unlike vitest's toEqual — treats an absent key
+  // and an undefined-valued key as different. These assertions must use it, or
+  // they would pass while every save of every legacy form spawned a version.
+  it("leaves no description key when the builder textarea is empty", () => {
+    for (const empty of [undefined, "", "   "]) {
+      const rows = defaultBuilderRows().map((row) => ({
+        ...row,
+        description: empty,
+      }));
+
+      const descriptors = builderRowsToDescriptors(
+        SignupFormBuilderSchema.parse(rows),
+      );
+
+      expect(
+        descriptors.every((d) => !("description" in d.data)),
+        `empty description ${JSON.stringify(empty)} left a key behind`,
+      ).toBe(true);
+    }
+  });
+
+  it("round-trips DEFAULT_FORM under isDeepStrictEqual, not just toEqual", () => {
+    const rows = descriptorsToBuilderRows(DEFAULT_FORM);
+
+    expect(
+      isDeepStrictEqual(builderRowsToDescriptors(rows), DEFAULT_FORM),
+    ).toBe(true);
+  });
+
+  it("carries a description both ways for fields and lists", () => {
+    const descriptors = DEFAULT_FORM.map((descriptor) => ({
+      ...descriptor,
+      data: {
+        ...descriptor.data,
+        description: `About ${descriptor.data.name}`,
+      },
+    })) as typeof DEFAULT_FORM;
+
+    const rows = descriptorsToBuilderRows(descriptors);
+
+    expect(rows.every((row) => row.description?.startsWith("About "))).toBe(
+      true,
+    );
+    expect(isDeepStrictEqual(builderRowsToDescriptors(rows), descriptors)).toBe(
+      true,
+    );
+  });
+
+  it("reports an over-long description on the row that owns it", () => {
+    const rows = defaultBuilderRows().map((row, index) =>
+      index === 0
+        ? { ...row, description: "x".repeat(MAX_FIELD_DESCRIPTION_LENGTH + 1) }
+        : row,
+    );
+
+    const result = SignupFormBuilderSchema.safeParse(rows);
+
+    expect(result.success).toBe(false);
+    const issue = result.error?.issues.find(
+      (candidate) => candidate.path.at(-1) === "description",
+    );
+    // the "data" segment is stripped so the path addresses the builder row
+    expect(issue?.path).toEqual([0, "description"]);
   });
 });
 

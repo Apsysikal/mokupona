@@ -17,6 +17,7 @@ export function TextareaField({
   return (
     <BaseTextareaField
       labelProps={{ children: config.data.label }}
+      description={config.data.description}
       textareaProps={{
         ...getTextareaProps(metadata),
       }}

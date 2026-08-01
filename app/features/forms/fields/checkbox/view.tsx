@@ -17,6 +17,7 @@ export function CheckboxField({
   return (
     <BaseCheckboxField
       labelProps={{ children: config.data.label }}
+      description={config.data.description}
       buttonProps={{
         ...getInputProps(metadata, { type: "checkbox" }),
       }}

@@ -17,6 +17,7 @@ export function SelectField({
   return (
     <BaseSelectField
       labelProps={{ children: config.data.label }}
+      description={config.data.description}
       selectProps={{
         ...getSelectProps(metadata),
         options: [

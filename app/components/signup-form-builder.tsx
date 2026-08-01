@@ -28,6 +28,7 @@ import {
   CollapsibleTrigger,
 } from "./ui/collapsible";
 
+import { MAX_FIELD_DESCRIPTION_LENGTH } from "~/features/forms/bounds";
 import {
   NON_LIST_FIELD_TYPES,
   type NonListFieldType,
@@ -69,6 +70,30 @@ const NEW_ROW: BuilderItemRow = {
   label: "",
   required: false,
 };
+
+const DESCRIPTION_HINT =
+  "Optional. Shown to guests under the label — keep it to one short sentence.";
+
+// Identity, custom and list rows all edit the description the same way; only
+// the surrounding row chrome differs.
+function DescriptionField({
+  field,
+}: {
+  field: FieldMetadata<string | undefined>;
+}) {
+  return (
+    <TextareaField
+      labelProps={{ children: "Description" }}
+      textareaProps={{
+        ...getTextareaProps(field),
+        rows: 2,
+        maxLength: MAX_FIELD_DESCRIPTION_LENGTH,
+        placeholder: DESCRIPTION_HINT,
+      }}
+      errors={field.errors}
+    />
+  );
+}
 
 const REMOVE_RESPONDED_FIELD_MESSAGE =
   "This form already has signups; answers to this field will disappear from future versions. Remove it anyway?";
@@ -523,9 +548,10 @@ function PinnedIdentityRowView({ row }: { row: RowMetadata }) {
         inputProps={{ ...getInputProps(rowFields.label, { type: "text" }) }}
         errors={rowFields.label.errors}
       />
+      <DescriptionField field={rowFields.description} />
       <p className="text-foreground/65 text-xs">
-        Type and field key are fixed for identity fields — only the label guests
-        see can change. Always required.
+        Type and field key are fixed for identity fields — only the label and
+        description guests see can change. Always required.
       </p>
     </div>
   );
@@ -601,6 +627,7 @@ function EditableRowView({
           Field keys are locked because this form already has signups.
         </p>
       ) : null}
+      <DescriptionField field={rowFields.description} />
       {isSelect ? (
         <TextareaField
           labelProps={{ children: "Options (one per line)" }}
@@ -641,6 +668,9 @@ function EditableRowView({
                 type: String(rowFields.type.value ?? "text"),
                 name: keyValue,
                 label: String(rowFields.label.value ?? "") || keyValue,
+                // the twin asks the same question, so it starts from the same
+                // helper text; authors can reword it for the other audience
+                description: String(rowFields.description.value ?? ""),
                 // twins must match in type; a select twin needs the options
                 ...(isSelect
                   ? { options: String(rowFields.options.value ?? "") }
@@ -704,6 +734,8 @@ function FriendsRowView({
           errors={rowFields.maxCount.errors}
         />
       </div>
+
+      <DescriptionField field={rowFields.description} />
 
       <div className="flex flex-col gap-3">
         <span className="text-sm font-semibold">Questions per friend</span>
