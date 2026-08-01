@@ -74,8 +74,11 @@ const NEW_ROW: BuilderItemRow = {
 const DESCRIPTION_HINT =
   "Optional. Shown to guests under the label — keep it to one short sentence.";
 
-// Identity, custom and list rows all edit the description the same way; only
-// the surrounding row chrome differs.
+// Labelled "Help text", not "Description", even though the stored property is
+// `description`: this builder lives on the dinner edit page, which already has
+// its own "Description" field for the dinner itself. Two controls with the same
+// visible label on one page are ambiguous for guests-of-the-admin and for
+// label-based queries alike.
 function DescriptionField({
   field,
 }: {
@@ -83,7 +86,7 @@ function DescriptionField({
 }) {
   return (
     <TextareaField
-      labelProps={{ children: "Description" }}
+      labelProps={{ children: "Help text" }}
       textareaProps={{
         ...getTextareaProps(field),
         rows: 2,
@@ -551,7 +554,7 @@ function PinnedIdentityRowView({ row }: { row: RowMetadata }) {
       <DescriptionField field={rowFields.description} />
       <p className="text-foreground/65 text-xs">
         Type and field key are fixed for identity fields — only the label and
-        description guests see can change. Always required.
+        help text guests see can change. Always required.
       </p>
     </div>
   );
