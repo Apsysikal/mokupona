@@ -3,21 +3,27 @@
 **Date:** 2026-08-02
 **Scope:** Where the app's memory actually goes, beyond the password-hashing
 spike covered in [login-memory-investigation](../login-memory-investigation/findings.md).
-One fix applied, one earlier claim corrected, one suspected problem ruled out.
+Two fixes applied, one earlier claim corrected, one suspected problem ruled out.
 
 ## Headline
 
-The single largest consumer is not application code. It is **Prisma 7's WASM
-query compiler**, which costs ~60 MB of boot-time peak on top of everything
-else. Prisma ships a smaller build of that compiler, selectable with one line of
-generator config, and on this workload it is **not slower**. That change is
-applied here.
+Neither of the two largest consumers is application code.
+
+The bigger one is **Prisma 7's WASM query compiler**, worth ~60 MB of boot-time
+peak. Prisma ships a smaller build of it, selectable with one line of generator
+config, and on this workload it is **not slower**.
+
+The other is the **entrypoint**: `start.sh` ran the server under `npm run
+start`, which left an idle npm process resident for the life of the container.
 
 | 256 MB machine, boot + login + route crawl | before | after      |
 | ------------------------------------------ | ------ | ---------- |
-| Peak RSS                                   | 196 MB | **134 MB** |
-| RSS after boot + first login               | 115 MB | 103 MB     |
+| Peak RSS                                   | 196 MB | **113 MB** |
+| RSS after boot + first login               | 115 MB | 102 MB     |
 | Settled RSS after 20 route crawls          | 169 MB | 154 MB     |
+
+Both changes are applied here. Neither changes behaviour: same query semantics,
+same server, and signal handling gets _more_ direct rather than less.
 
 ## Method
 
@@ -125,6 +131,53 @@ remainder is V8 code and metadata outside the object graph, WASM, and native
 allocations. This matters for tuning: most of this app's footprint is not
 reachable by GC tuning at all.
 
+### 4. The entrypoint kept an idle npm process resident
+
+`start.sh` ran `npx prisma migrate deploy` and then `exec npm run start`. Both
+wrappers are full Node processes, and the second one never exits — `npm run
+start` sits there for the life of the container supervising a process Fly is
+already supervising.
+
+The process listing makes it look worse than it is, and the difference is worth
+understanding before trusting either number:
+
+```
+processes in the cgroup, `npm run start`:
+  pid 32431     63 MB   npm run start
+  pid 32445      1 MB   sh -c react-router-serve ./build/server/index.js
+  pid 32446    158 MB   node .../react-router-serve ./build/server/index.js
+  -------------------
+  total       224 MB   (sum of per-process RSS)
+  cgroup charged: 117 MB
+```
+
+Summing RSS across processes double-counts every shared page — chiefly the
+mapped Node binary, which both Node processes share and the kernel charges once.
+**The cgroup figure is the real one**, and by that measure the wrapper costs
+~18 MB, not 63 MB:
+
+| entrypoint, warm server, 256 MB cgroup             | charged                |
+| -------------------------------------------------- | ---------------------- |
+| `exec npm run start`                               | 117 / 119 / 122 MB     |
+| `exec node ./node_modules/.bin/react-router-serve` | **105 / 101 / 102 MB** |
+
+The migration step is the same story: `npx prisma migrate deploy` peaks at
+141 MB, `node ./node_modules/.bin/prisma migrate deploy` at 120 MB. It runs to
+completion before the server starts, so it never stacks with the server's
+footprint — but it is 21 MB of pure wrapper during the boot window when Fly is
+already health-checking.
+
+Both wrappers are now invoked through `node` directly in
+[`start.sh`](../../start.sh). Measured after the change: one process, **102 MB
+charged**, 113 MB peak including the migration, clean `SIGINT` shutdown with the
+log sink flushed.
+
+The second benefit is signal handling. `fly.toml` sets `kill_signal = "SIGINT"`
+with a 5 s `kill_timeout`, and [`logger.server.ts`](../../app/logger.server.ts)
+flushes the file sink on that signal. Going through `npm` put two hops (npm,
+then `sh`) between Fly and that handler; the server now receives the signal
+directly.
+
 ## Ruled out
 
 ### There is no leak
@@ -177,9 +230,21 @@ Ranked by measured effect on a 256 MB machine:
 1. **`compilerBuild = "small"`** — 62 MB off the boot peak. Applied.
 2. **The scrypt gate** — 98 MB off the sign-in peak. Applied
    ([previous investigation](../login-memory-investigation/findings.md)).
-3. **`fly scale memory 512`** — the only change that creates actual headroom
+3. **Dropping the npm/npx wrappers from `start.sh`** — ~18 MB of permanently
+   resident process, plus 21 MB during the boot migration. Applied.
+4. **`fly scale memory 512`** — the only change that creates actual headroom
    rather than reducing demand. Still recommended, still not applied (needs
    Fly access, ~$2/month).
 
-With 1 and 2 applied the peak measured on a simulated 256 MB machine falls from
-196 MB to 134 MB — from 77 % of the machine to 52 %.
+With 1–3 applied the peak on a simulated 256 MB machine falls from 196 MB to
+113 MB — from 77 % of the machine to 44 %.
+
+## Two measurement traps, since both bit during this work
+
+1. **A fresh process overstates a library's cost by ~12 MB** (module-loader
+   warm-up, charged to whatever imports first). Measure marginal cost in one
+   process instead. This produced the wrong `pino-pretty` number.
+2. **Summing per-process RSS overstates a process tree**, because shared pages
+   — above all the mapped Node binary — are counted once per process. Read the
+   cgroup, or production looks 100 MB heavier than it is. This nearly turned an
+   18 MB finding into a 63 MB one.
