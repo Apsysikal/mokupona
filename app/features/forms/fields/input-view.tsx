@@ -18,6 +18,7 @@ export function makeInputFieldView<Descriptor extends InputFieldDescriptor>(
     return (
       <Field
         labelProps={{ children: config.data.label }}
+        description={config.data.description}
         inputProps={{
           ...getInputProps(metadata, { type: inputType }),
         }}
@@ -28,5 +29,5 @@ export function makeInputFieldView<Descriptor extends InputFieldDescriptor>(
 }
 
 interface InputFieldDescriptor {
-  data: { label: string };
+  data: { label: string; description?: string };
 }

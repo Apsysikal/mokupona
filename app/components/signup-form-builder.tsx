@@ -28,6 +28,7 @@ import {
   CollapsibleTrigger,
 } from "./ui/collapsible";
 
+import { MAX_FIELD_DESCRIPTION_LENGTH } from "~/features/forms/bounds";
 import {
   NON_LIST_FIELD_TYPES,
   type NonListFieldType,
@@ -69,6 +70,26 @@ const NEW_ROW: BuilderItemRow = {
   label: "",
   required: false,
 };
+
+const DESCRIPTION_HINT = `Shown to guests under the label. Keep it short and concise. Up to ${MAX_FIELD_DESCRIPTION_LENGTH} characters.`;
+
+function DescriptionField({
+  field,
+}: {
+  field: FieldMetadata<string | undefined>;
+}) {
+  return (
+    <TextareaField
+      labelProps={{ children: "Help text" }}
+      description={DESCRIPTION_HINT}
+      textareaProps={{
+        ...getTextareaProps(field),
+        rows: 2,
+      }}
+      errors={field.errors}
+    />
+  );
+}
 
 const REMOVE_RESPONDED_FIELD_MESSAGE =
   "This form already has signups; answers to this field will disappear from future versions. Remove it anyway?";
@@ -512,8 +533,6 @@ function PinnedIdentityRowView({ row }: { row: RowMetadata }) {
 
   return (
     <div className="flex flex-col gap-3">
-      {/* pinned values ride along as hidden inputs (disabled inputs would
-          not submit); the server re-validates the profile regardless */}
       <input {...getInputProps(rowFields.type, { type: "hidden" })} />
       <input {...getInputProps(rowFields.name, { type: "hidden" })} />
       <input type="hidden" name={rowFields.required.name} value="on" />
@@ -523,9 +542,10 @@ function PinnedIdentityRowView({ row }: { row: RowMetadata }) {
         inputProps={{ ...getInputProps(rowFields.label, { type: "text" }) }}
         errors={rowFields.label.errors}
       />
+      <DescriptionField field={rowFields.description} />
       <p className="text-foreground/65 text-xs">
-        Type and field key are fixed for identity fields — only the label guests
-        see can change. Always required.
+        These fields are always required. You can still change the label that
+        users see.
       </p>
     </div>
   );
@@ -601,6 +621,7 @@ function EditableRowView({
           Field keys are locked because this form already has signups.
         </p>
       ) : null}
+      <DescriptionField field={rowFields.description} />
       {isSelect ? (
         <TextareaField
           labelProps={{ children: "Options (one per line)" }}
@@ -641,7 +662,7 @@ function EditableRowView({
                 type: String(rowFields.type.value ?? "text"),
                 name: keyValue,
                 label: String(rowFields.label.value ?? "") || keyValue,
-                // twins must match in type; a select twin needs the options
+                description: String(rowFields.description.value ?? ""),
                 ...(isSelect
                   ? { options: String(rowFields.options.value ?? "") }
                   : {}),
@@ -704,6 +725,8 @@ function FriendsRowView({
           errors={rowFields.maxCount.errors}
         />
       </div>
+
+      <DescriptionField field={rowFields.description} />
 
       <div className="flex flex-col gap-3">
         <span className="text-sm font-semibold">Questions per friend</span>
