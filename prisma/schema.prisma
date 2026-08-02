@@ -1,6 +1,10 @@
 generator client {
-  provider = "prisma-client"
-  output   = "./generated"
+  provider      = "prisma-client"
+  output        = "./generated"
+  // The WASM query compiler is the app's single largest allocation: the default
+  // "fast" build costs ~60 MB more boot-time peak on a 256 MB Fly machine, and
+  // measured no faster on our query shapes. See docs/memory-profile/findings.md.
+  compilerBuild = "small"
 }
 
 datasource db {
