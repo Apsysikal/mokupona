@@ -149,16 +149,23 @@ versioned-hash scheme (`verify` tries the new parameters, falls back to legacy,
 rehashes on success). That is a fair amount of security-critical machinery to
 avoid a $2/month machine. Only worth revisiting if the machine cannot grow.
 
-### 3. `pino-pretty` is loaded in production for nothing — 13.7 MB
+### 3. `pino-pretty` is loaded in production for nothing — ~2 MB
 
 [`app/logger.server.ts:5`](../../app/logger.server.ts) imports it statically,
-but only ever calls it on the non-production branch. Measured cost of the import
-alone: **13.7 MB RSS**, ~5 % of a 256 MB machine, permanently resident.
+but only ever calls it on the non-production branch.
 
-A `createRequire(import.meta.url)("pino-pretty")` inside the non-production
-branch keeps `createLogger` synchronous and lets the dependency move to
-`devDependencies` (shrinking the image too). Left alone here because it touches
-the logging setup this repo treats deliberately — worth its own small change.
+**Corrected figure.** An earlier revision of this document put the cost at
+13.7 MB, measured by importing `pino-pretty` alone in a fresh process. That
+number is wrong: a fresh Node process pays ~12 MB of module-loader warm-up on
+its first real import, which the measurement attributed to the library. Imported
+_after_ `pino` — which the app loads regardless, and which is where nearly all
+the shared dependency graph comes from — the marginal cost is **2.0 MB**. See
+[memory-profile/findings.md](../memory-profile/findings.md) for the method.
+
+Still worth doing eventually (a `createRequire` inside the non-production branch
+keeps `createLogger` synchronous and lets the dependency move to
+`devDependencies`, shrinking the image too), but at 2 MB it is housekeeping, not
+a fix.
 
 ### 4. Session lookups (latency, not memory)
 
