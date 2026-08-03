@@ -22,14 +22,14 @@ import {
 } from "~/features/events/components/event-view";
 import { isPastEvent } from "~/features/events/event-status";
 import { toEventDetailModel } from "~/features/events/view-models";
-import { EventGallerySection } from "~/features/gallery/components/event-gallery-section";
-import { loadEventGallerySection } from "~/features/gallery/event-section.server";
 import { getViewForField, type FieldDescriptor } from "~/features/forms/fields";
 import { HONEYPOT_RETRY_MESSAGE } from "~/features/forms/honeypot";
 import { HoneypotField } from "~/features/forms/honeypot-field";
 import { checkHoneypot } from "~/features/forms/honeypot.server";
 import { normalizeSubmissionValues } from "~/features/forms/normalize-submission";
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
+import { EventGallerySection } from "~/features/gallery/components/event-gallery-section";
+import { loadEventGallerySection } from "~/features/gallery/event-section.server";
 import { buildSignupSchema } from "~/features/signup-form/build-schema";
 import { cn } from "~/lib/utils";
 import { getEventWithCurrentFormVersion } from "~/models/event.server";

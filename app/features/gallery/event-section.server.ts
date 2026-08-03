@@ -2,10 +2,7 @@ import {
   DEFAULT_GALLERY_FOUNDATION_ID,
   getGalleryFoundation,
 } from "./foundations/index.server";
-import {
-  DEFAULT_GALLERY_LAYOUT_ID,
-  getGalleryLayout,
-} from "./layouts";
+import { DEFAULT_GALLERY_LAYOUT_ID, getGalleryLayout } from "./layouts";
 import type { GalleryImageModel } from "./view-models";
 
 export interface EventGallerySectionData {

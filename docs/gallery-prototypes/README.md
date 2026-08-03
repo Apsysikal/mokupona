@@ -88,11 +88,11 @@ images point at an album.
 See each module's `layout.description` for the one-line version; they are shown
 under the switcher in the app.
 
-| id | shape | bet |
-| --- | --- | --- |
-| `grid` | uniform square tiles + lightbox | detail lives behind a click; the page stays an even, calm field |
-| `mosaic` | CSS-column masonry, intrinsic ratios | the wall itself is the experience; no crop, no modal |
-| `stream` | grouped by dinner, hero + run per chapter | the gallery is an archive of evenings, not a pile of photos |
+| id       | shape                                     | bet                                                             |
+| -------- | ----------------------------------------- | --------------------------------------------------------------- |
+| `grid`   | uniform square tiles + lightbox           | detail lives behind a click; the page stays an even, calm field |
+| `mosaic` | CSS-column masonry, intrinsic ratios      | the wall itself is the experience; no crop, no modal            |
+| `stream` | grouped by dinner, hero + run per chapter | the gallery is an archive of evenings, not a pile of photos     |
 
 ## What has to happen before any of this ships
 

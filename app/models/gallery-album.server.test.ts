@@ -90,7 +90,9 @@ describe("getAllAlbumImages", () => {
 
   it("puts dinner-backed albums before standalone ones", async () => {
     const event = await createEvent(await buildEventData());
-    const dinnerAlbum = await ensureAlbumForEvent(event.id, { title: "Dinner" });
+    const dinnerAlbum = await ensureAlbumForEvent(event.id, {
+      title: "Dinner",
+    });
     await addImagesToAlbum(dinnerAlbum.id, buildImages(1));
     const standalone = await trackStandaloneAlbum("the team");
     await addImagesToAlbum(standalone.id, buildImages(1));

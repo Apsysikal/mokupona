@@ -23,7 +23,8 @@ export function GalleryPrototypeSwitcher({
 }) {
   const current =
     foundations.find(({ id }) => id === currentFoundationId) ?? null;
-  const currentLayout = layouts.find(({ id }) => id === currentLayoutId) ?? null;
+  const currentLayout =
+    layouts.find(({ id }) => id === currentLayoutId) ?? null;
 
   return (
     <div className="border-primary/20 bg-primary/5 mb-9 flex flex-col gap-4 rounded-2xl border border-dashed p-5">

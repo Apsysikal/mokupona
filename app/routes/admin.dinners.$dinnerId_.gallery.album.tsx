@@ -28,7 +28,6 @@ import {
   destroyImages,
   storeImage,
 } from "~/features/images/image-storage.server";
-import { MAX_GALLERY_FILES } from "~/features/images/image-upload.server";
 import { getEventById } from "~/models/event.server";
 import {
   addImagesToAlbum,
@@ -40,7 +39,11 @@ import {
   updateAlbum,
 } from "~/models/gallery-album.server";
 import { requireFound, unknownIntent } from "~/shared/http.server";
-import { imageFileSchema, VALID_IMAGE_TYPES } from "~/shared/image";
+import {
+  imageFileSchema,
+  MAX_GALLERY_FILES,
+  VALID_IMAGE_TYPES,
+} from "~/shared/image";
 
 // The album title is the alt-text fallback for every image in it, so it may
 // not be blank the way an optional field may.
@@ -232,7 +235,9 @@ export default function AdminDinnerGalleryAlbumPage({
 
           <Field
             labelProps={{ children: "Title" }}
-            inputProps={{ ...getInputProps(albumFields.title, { type: "text" }) }}
+            inputProps={{
+              ...getInputProps(albumFields.title, { type: "text" }),
+            }}
             errors={albumFields.title.errors}
           />
 
@@ -303,11 +308,7 @@ export default function AdminDinnerGalleryAlbumPage({
                 ) : null}
                 <Form method="POST" replace>
                   <input type="hidden" name="intent" value="remove" />
-                  <input
-                    type="hidden"
-                    name="imageId"
-                    value={entry.image.id}
-                  />
+                  <input type="hidden" name="imageId" value={entry.image.id} />
                   <Button type="submit" variant="destructive" size="sm">
                     Remove
                   </Button>

@@ -84,6 +84,12 @@ export const RESPONSIVE_IMAGE_WIDTHS = [432, 648, 864, 1080] as const;
 
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
 export const MAX_STAGED_IMAGE_BYTES = 4 * 1024 * 1024;
+/**
+ * How many files a gallery upload may carry in one submission. Policy, not
+ * plumbing: the admin pages print it in their field description, so it has to
+ * live in a module the client bundle is allowed to reach.
+ */
+export const MAX_GALLERY_FILES = 12;
 export const IMAGE_SIZE_ERROR = "File cannot be greater than 3MB";
 export const VALID_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export const IMAGE_TYPE_ERROR = "File must be a JPEG, PNG or WebP image";

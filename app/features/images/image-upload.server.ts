@@ -12,9 +12,6 @@ import { IMAGE_SIZE_ERROR, MAX_STAGED_IMAGE_BYTES } from "~/shared/image";
 // above it are rejected mid-parse with the same policy-owned error message.
 const MAX_FILES = 1;
 
-/** How many files a gallery upload may carry in one submission. */
-export const MAX_GALLERY_FILES = 12;
-
 export type ImageUploadSuccess = {
   success: true;
   formData: FormData;

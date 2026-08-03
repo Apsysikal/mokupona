@@ -122,7 +122,8 @@ function compareAlbums(
   a: { event: { date: Date } | null },
   b: { event: { date: Date } | null },
 ): number {
-  if (a.event && b.event) return b.event.date.getTime() - a.event.date.getTime();
+  if (a.event && b.event)
+    return b.event.date.getTime() - a.event.date.getTime();
   if (a.event) return -1;
   if (b.event) return 1;
   return 0;
@@ -211,7 +212,9 @@ export async function ensureAlbumForEvent(
   });
 }
 
-export async function createStandaloneAlbum(data: AlbumDefaults): Promise<Album> {
+export async function createStandaloneAlbum(
+  data: AlbumDefaults,
+): Promise<Album> {
   return prisma.album.create({
     data: { title: data.title, description: data.description ?? "" },
   });

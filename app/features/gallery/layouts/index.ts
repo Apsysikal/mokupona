@@ -3,7 +3,11 @@ import { layout as mosaic } from "./mosaic";
 import { layout as stream } from "./stream";
 import type { GalleryLayout } from "./types";
 
-export type { GalleryLayout, GalleryLayoutProps, GalleryLayoutVariant } from "./types";
+export type {
+  GalleryLayout,
+  GalleryLayoutProps,
+  GalleryLayoutVariant,
+} from "./types";
 
 /** Switcher order — safe first, most opinionated last. */
 export const GALLERY_LAYOUTS: readonly GalleryLayout[] = [grid, mosaic, stream];

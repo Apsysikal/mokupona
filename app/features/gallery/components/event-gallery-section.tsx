@@ -1,9 +1,6 @@
 import { Link } from "react-router";
 
-import {
-  GALLERY_LAYOUTS,
-  getGalleryLayout,
-} from "../layouts";
+import { GALLERY_LAYOUTS, getGalleryLayout } from "../layouts";
 import type { GalleryImageModel } from "../view-models";
 
 import { SectionDivider } from "~/components/section";
@@ -35,10 +32,7 @@ export function EventGallerySection({
 
       <Component images={images} variant="section" />
 
-      <GalleryPrototypeHint
-        foundationId={foundationId}
-        layoutId={layoutId}
-      />
+      <GalleryPrototypeHint foundationId={foundationId} layoutId={layoutId} />
     </section>
   );
 }

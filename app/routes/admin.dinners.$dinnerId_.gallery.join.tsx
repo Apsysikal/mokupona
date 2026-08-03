@@ -17,7 +17,6 @@ import {
   destroyImages,
   storeImage,
 } from "~/features/images/image-storage.server";
-import { MAX_GALLERY_FILES } from "~/features/images/image-upload.server";
 import { getEventById } from "~/models/event.server";
 import {
   createGalleryImagesForEvent,
@@ -28,7 +27,11 @@ import {
   removeGalleryEntry,
 } from "~/models/gallery-join.server";
 import { requireFound, unknownIntent } from "~/shared/http.server";
-import { imageFileSchema, VALID_IMAGE_TYPES } from "~/shared/image";
+import {
+  imageFileSchema,
+  MAX_GALLERY_FILES,
+  VALID_IMAGE_TYPES,
+} from "~/shared/image";
 
 // The files are validated one by one against imageFileSchema() below, so the
 // schema only owns the batch's own fields.
@@ -141,8 +144,8 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
   return [
     {
       title: loaderData
-        ? `Admin - Dinner - ${loaderData.dinner.title} - Gallery`
-        : "Admin - Dinner - Gallery",
+        ? `Admin - Gallery - ${loaderData.dinner.title} - Join table`
+        : "Admin - Gallery - Join table",
     },
   ];
 };

@@ -37,7 +37,12 @@ describe("withParsedImageForm", () => {
       status: "error",
       error: { cover: ["Upload failed"] },
     });
-    expect(parseImageFormDataMock).toHaveBeenCalledWith(request, "cover");
+    // maxFiles is forwarded verbatim; unset means the parser's own default
+    expect(parseImageFormDataMock).toHaveBeenCalledWith(
+      request,
+      "cover",
+      undefined,
+    );
     expect(onSuccess).not.toHaveBeenCalled();
   });
 

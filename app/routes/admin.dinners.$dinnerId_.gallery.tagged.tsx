@@ -16,14 +16,17 @@ import {
   destroyImages,
   storeImage,
 } from "~/features/images/image-storage.server";
-import { MAX_GALLERY_FILES } from "~/features/images/image-upload.server";
 import { getEventById } from "~/models/event.server";
 import {
   addTaggedGalleryImages,
   removeTaggedGalleryImage,
 } from "~/models/gallery-tagged.server";
 import { requireFound } from "~/shared/http.server";
-import { imageFileSchema, VALID_IMAGE_TYPES } from "~/shared/image";
+import {
+  imageFileSchema,
+  MAX_GALLERY_FILES,
+  VALID_IMAGE_TYPES,
+} from "~/shared/image";
 
 // Both submissions this page makes go through one action because the upload
 // is multipart: a separate delete route would have to re-parse the body
