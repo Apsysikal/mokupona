@@ -39,6 +39,9 @@ export default function DinnerPage({ loaderData }: Route.ComponentProps) {
             <Link to="signups">View Signups</Link>
           </Button>
           <Button variant="ghost" size="sm" asChild>
+            <Link to="gallery">Gallery</Link>
+          </Button>
+          <Button variant="ghost" size="sm" asChild>
             <Link to="edit">Edit</Link>
           </Button>
           <Form method="POST" action="delete">

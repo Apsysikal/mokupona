@@ -146,6 +146,14 @@ model Event {
 
   form   Form   @relation(fields: [formId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   formId String @unique // non-nullable: every event has a form (backfilled)
+
+  // ── gallery prototypes ────────────────────────────────────────────────
+  // One back-relation per competing foundation (see the Gallery block at the
+  // bottom of this file). Exactly one of these survives the prototype phase;
+  // the other two go out with their tables.
+  galleryImages  Image[]             @relation("EventGallery") // A — tagged
+  galleryEntries EventGalleryEntry[] // B — join
+  album          Album? // C — album
 }
 
 model Form {
@@ -232,6 +240,73 @@ model Image {
 
   boardMember   BoardMember? @relation(fields: [boardMemberId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   boardMemberId String?      @unique
+
+  // the cover slot — @unique, so at most one per event
+  event   Event?  @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  eventId String? @unique
+
+  // ── gallery prototypes ────────────────────────────────────────────────
+  // Shared by the foundations that hang their metadata off the image row
+  // itself (A and C); foundation B keeps caption/position on its join row so
+  // the same image can read differently in two galleries.
+  caption  String?
+  position Int     @default(0)
+
+  // A — "tagged": a second, non-unique event FK next to the cover's. Cheapest
+  // possible change; an image belongs to at most one dinner's gallery.
+  galleryEvent   Event?  @relation("EventGallery", fields: [galleryEventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  galleryEventId String?
+
+  // B — "join": membership lives on EventGalleryEntry, so one image can
+  // appear in several dinners (and in none).
+  galleryEntries EventGalleryEntry[]
+
+  // C — "album": images belong to an album, which may or may not belong to
+  // an event.
+  album   Album?  @relation(fields: [albumId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  albumId String?
+
+  @@index([galleryEventId])
+  @@index([albumId])
+}
+
+// ── Gallery foundation B: "join" ────────────────────────────────────────
+// Image rows stay ownerless; an entry grants one image membership in one
+// dinner's gallery. Deleting an entry unlinks without destroying the asset,
+// and the same photo can be shown under two dinners with different captions.
+model EventGalleryEntry {
+  id       String  @id @default(cuid())
+  caption  String?
+  position Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  eventId String
+
+  image   Image  @relation(fields: [imageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  imageId String
+
+  // one membership per (dinner, image) pair — re-adding is idempotent
+  @@unique([eventId, imageId])
+  @@index([eventId])
+  @@index([imageId])
+}
+
+// ── Gallery foundation C: "album" ───────────────────────────────────────
+// Galleries become first-class: an album carries its own title/description
+// and MAY belong to an event (@unique — at most one album per dinner), so
+// standalone albums ("kitchen life") cost nothing extra.
+model Album {
+  id          String @id @default(cuid())
+  title       String
+  description String @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  images Image[]
 
   event   Event?  @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   eventId String? @unique

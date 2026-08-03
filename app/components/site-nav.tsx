@@ -51,6 +51,12 @@ function buildNavItems({
       to: "/dinners",
       isActive: (pathname) => pathname.startsWith("/dinners"),
     },
+    {
+      kind: "link",
+      label: "gallery",
+      to: "/gallery",
+      isActive: (pathname) => pathname.startsWith("/gallery"),
+    },
     { kind: "instagram" },
   ];
 

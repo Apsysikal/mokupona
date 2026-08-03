@@ -22,6 +22,8 @@ import {
 } from "~/features/events/components/event-view";
 import { isPastEvent } from "~/features/events/event-status";
 import { toEventDetailModel } from "~/features/events/view-models";
+import { EventGallerySection } from "~/features/gallery/components/event-gallery-section";
+import { loadEventGallerySection } from "~/features/gallery/event-section.server";
 import { getViewForField, type FieldDescriptor } from "~/features/forms/fields";
 import { HONEYPOT_RETRY_MESSAGE } from "~/features/forms/honeypot";
 import { HoneypotField } from "~/features/forms/honeypot-field";
@@ -41,17 +43,24 @@ import { withOpenGraphUrls } from "~/shared/meta";
 import { getImageConfig } from "~/shared/root-data";
 import { redirectWithToast } from "~/utils/toast.server";
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params, request }: Route.LoaderArgs) {
   const { dinnerId } = params;
 
   const { event, version } = requireFound(
     await getEventWithCurrentFormVersion(dinnerId),
   );
 
+  // the gallery belongs to evenings that already happened; upcoming dinners
+  // pay nothing for it
+  const gallery = isPastEvent(event.date, new Date())
+    ? await loadEventGallerySection(request, event.id)
+    : null;
+
   return {
     event: toEventDetailModel(event),
     formFields: parseStoredFormSchemaOrLog(version),
     formVersionId: version.id,
+    gallery,
   };
 }
 
@@ -232,7 +241,7 @@ export default function DinnerPage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const { event, formFields, formVersionId } = loaderData;
+  const { event, formFields, formVersionId, gallery } = loaderData;
 
   const eventIsPast = isPastEvent(new Date(event.date), new Date());
   const signupFields = eventIsPast ? null : formFields;
@@ -276,6 +285,8 @@ export default function DinnerPage({
           </Card>
         ) : null}
       </div>
+
+      {gallery ? <EventGallerySection {...gallery} /> : null}
     </PageContainer>
   );
 }
