@@ -71,9 +71,7 @@ describe("addTaggedGalleryImages", () => {
       `${KEY_PREFIX}/b`,
       `${KEY_PREFIX}/c`,
     ]);
-    await expect(
-      countTaggedGalleryImagesForEvent(dinner.id),
-    ).resolves.toBe(3);
+    await expect(countTaggedGalleryImagesForEvent(dinner.id)).resolves.toBe(3);
   });
 
   it("writes nothing for an empty batch", async () => {
@@ -171,7 +169,9 @@ describe("removeTaggedGalleryImage", () => {
       where: { eventId: dinner.id },
     });
 
-    await expect(removeTaggedGalleryImage("does-not-exist")).resolves.toBeNull();
+    await expect(
+      removeTaggedGalleryImage("does-not-exist"),
+    ).resolves.toBeNull();
     await expect(removeTaggedGalleryImage(cover.id)).resolves.toBeNull();
     await expect(
       prisma.image.findUnique({ where: { id: cover.id } }),

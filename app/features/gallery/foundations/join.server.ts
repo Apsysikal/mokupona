@@ -1,6 +1,6 @@
-import type { GalleryFoundation } from "./types";
-
 import type { GalleryImageModel } from "../view-models";
+
+import type { GalleryFoundation } from "./types";
 
 import {
   getGalleryEntries,

@@ -5,6 +5,7 @@ import {
   isGalleryFoundationId,
   type GalleryFoundation,
   type GalleryFoundationId,
+  type GalleryFoundationOption,
 } from "./types";
 
 export {

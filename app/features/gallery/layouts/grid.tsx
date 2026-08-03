@@ -35,7 +35,10 @@ function lightboxSize(image: GalleryImageModel) {
   const height = image.image.height ?? 3;
   const scale = Math.min(1, LIGHTBOX_MAX_EDGE / Math.max(width, height));
 
-  return { width: Math.round(width * scale), height: Math.round(height * scale) };
+  return {
+    width: Math.round(width * scale),
+    height: Math.round(height * scale),
+  };
 }
 
 function eventLine(event: NonNullable<GalleryImageModel["event"]>) {
@@ -49,7 +52,11 @@ export function GalleryGrid({ images, variant = "page" }: GalleryLayoutProps) {
 
   const isSection = variant === "section";
   const total = images.length;
-  const open = activeIndex !== null;
+  // an index can outlive the list it pointed into (an admin removes an entry
+  // while the lightbox is open) — read that as closed, not as a blank frame
+  const active =
+    activeIndex !== null && activeIndex < total ? images[activeIndex] : null;
+  const open = active !== null;
 
   // arrows are bound to the window rather than the dialog content: radix moves
   // focus around inside the lightbox (close button, prev/next), and the keys
@@ -96,7 +103,6 @@ export function GalleryGrid({ images, variant = "page" }: GalleryLayoutProps) {
 
   const visible = isSection ? images.slice(0, SECTION_TILE_CAP) : images;
   const hiddenCount = total - visible.length;
-  const active = activeIndex === null ? null : images[activeIndex];
 
   return (
     <>
@@ -109,7 +115,8 @@ export function GalleryGrid({ images, variant = "page" }: GalleryLayoutProps) {
         )}
       >
         {visible.map((image, index) => {
-          const isOverflowTile = hiddenCount > 0 && index === visible.length - 1;
+          const isOverflowTile =
+            hiddenCount > 0 && index === visible.length - 1;
 
           return (
             <li key={image.id}>
@@ -160,7 +167,9 @@ export function GalleryGrid({ images, variant = "page" }: GalleryLayoutProps) {
         }}
       >
         {active && activeIndex !== null ? (
-          <DialogContent className="max-w-3xl gap-4 p-4 sm:p-5">
+          // pt leaves the built-in close button a strip of its own rather than
+          // floating it over the photo
+          <DialogContent className="max-w-3xl gap-4 p-4 pt-13 sm:p-5 sm:pt-13">
             <OptimizedImage
               key={active.id}
               image={active.image}

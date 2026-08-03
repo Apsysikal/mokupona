@@ -70,7 +70,9 @@ export async function action({ request, params }: Route.ActionArgs) {
       const fileSchema = imageFileSchema();
       const errors = files.flatMap((file) => {
         const result = fileSchema.safeParse(file);
-        return result.success ? [] : result.error.issues.map((i) => i.message);
+        return result.success
+          ? []
+          : result.error.issues.map((issue) => issue.message);
       });
       if (files.length === 0) errors.push("You must select at least one image");
 

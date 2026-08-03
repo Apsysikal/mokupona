@@ -174,7 +174,9 @@ describe("gallery grid layout", () => {
   it("shows a quiet empty state on the page variant", () => {
     renderGrid({ images: [] });
 
-    expect(screen.getByText(/no photos from the table yet/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/no photos from the table yet/),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 

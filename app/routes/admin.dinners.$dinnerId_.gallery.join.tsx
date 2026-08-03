@@ -84,10 +84,11 @@ export async function action({ request, params }: Route.ActionArgs) {
         if (files.length === 0) errors.push("Choose at least one image");
 
         if (errors.length > 0) {
-          return {
+          const failed: SubmissionResult = {
             status: "error",
             error: { images: [...new Set(errors)] },
-          } satisfies SubmissionResult;
+          };
+          return failed;
         }
 
         const stored = await Promise.all(
