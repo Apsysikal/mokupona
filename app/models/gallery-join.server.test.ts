@@ -52,7 +52,9 @@ afterEach(async () => {
   const ids = eventIds.splice(0);
   if (ids.length > 0) {
     // cascades the dinners' entries and cover images
-    await prisma.$transaction((tx) => deleteEventsInTx(tx, { id: { in: ids } }));
+    await prisma.$transaction((tx) =>
+      deleteEventsInTx(tx, { id: { in: ids } }),
+    );
   }
   await prisma.image.deleteMany({
     where: { storageKey: { startsWith: GALLERY_KEY_PREFIX } },
@@ -185,7 +187,10 @@ describe("removeGalleryEntry", () => {
 
     const removed = await removeGalleryEntry(entry.id);
 
-    expect(removed).toMatchObject({ storageKey: data.storageKey, orphaned: true });
+    expect(removed).toMatchObject({
+      storageKey: data.storageKey,
+      orphaned: true,
+    });
     // the row survives the unlink; collecting it is a separate, checked step
     await expect(
       prisma.image.findUnique({ where: { id: entry.imageId } }),

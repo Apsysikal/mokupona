@@ -233,7 +233,8 @@ export default function AdminDinnerGalleryJoinPage({
 
                     {entry.sharedWith.length > 0 ? (
                       <Badge variant="info" pill className="self-start">
-                        Also in {entry.sharedWith.map((e) => e.title).join(", ")}
+                        Also in{" "}
+                        {entry.sharedWith.map((e) => e.title).join(", ")}
                       </Badge>
                     ) : null}
 

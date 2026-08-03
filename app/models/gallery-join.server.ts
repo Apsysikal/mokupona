@@ -115,7 +115,9 @@ function toGalleryEntry(row: EntryRow): GalleryEntry {
   };
 }
 
-function toGalleryEntryWithReuse(row: EntryWithReuseRow): GalleryEntryWithReuse {
+function toGalleryEntryWithReuse(
+  row: EntryWithReuseRow,
+): GalleryEntryWithReuse {
   const { altText, galleryEntries, ...image } = row.image;
 
   return {
@@ -316,7 +318,9 @@ export async function getLinkableImages(
     select: {
       ...IMAGE_METADATA_SELECT,
       altText: true,
-      galleryEntries: { select: { event: { select: { id: true, title: true } } } },
+      galleryEntries: {
+        select: { event: { select: { id: true, title: true } } },
+      },
     },
     orderBy: { createdAt: "desc" },
   });

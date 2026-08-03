@@ -109,10 +109,11 @@ export async function action({ request, params }: Route.ActionArgs) {
             const messages = new Set(
               uploads.error.issues.map((issue) => issue.message),
             );
-            return {
+            const failed: SubmissionResult = {
               status: "error",
               error: { images: [...messages] },
-            } satisfies SubmissionResult;
+            };
+            return failed;
           }
 
           const dinner = requireFound(await getEventById(dinnerId));
