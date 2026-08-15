@@ -212,7 +212,10 @@ export function fillDinnerForm(values: ReturnType<typeof dinnerFormValues>) {
   cy.findByLabelText(/^title$/i)
     .clear()
     .type(values.title);
-  cy.findByLabelText(/^description$/i)
+  // the friends card in the signup-form builder carries a Description of its
+  // own further down the page; the dinner's is the first one
+  cy.findAllByLabelText(/^description$/i)
+    .first()
     .clear()
     .type(values.description);
   cy.findByLabelText(/^menu$/i)
