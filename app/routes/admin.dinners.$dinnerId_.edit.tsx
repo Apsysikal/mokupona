@@ -21,6 +21,7 @@ import {
   defaultBuilderRows,
   descriptorsToBuilderRows,
 } from "~/features/signup-form/builder";
+import { getAnswerCountsByFieldKey } from "~/features/signup-form/read.server";
 import { getAddresses } from "~/models/address.server";
 import {
   getEventWithCurrentFormVersion,
@@ -33,11 +34,13 @@ import { nullableStringUpdateValue } from "~/utils/nullable-update-field.server"
 export async function loader({ params }: Route.LoaderArgs) {
   const { dinnerId } = params;
 
-  const [addresses, eventWithVersion, formHasSubmissions] = await Promise.all([
-    getAddresses(),
-    getEventWithCurrentFormVersion(dinnerId).then(requireFound),
-    eventHasSignups(dinnerId),
-  ]);
+  const [addresses, eventWithVersion, formHasSubmissions, answerCounts] =
+    await Promise.all([
+      getAddresses(),
+      getEventWithCurrentFormVersion(dinnerId).then(requireFound),
+      eventHasSignups(dinnerId),
+      getAnswerCountsByFieldKey(dinnerId),
+    ]);
   const { event, version } = eventWithVersion;
 
   // an unparseable stored schema (a bug state) surfaces as the default form;
@@ -47,6 +50,7 @@ export async function loader({ params }: Route.LoaderArgs) {
   return {
     addresses,
     formHasSubmissions,
+    answerCounts,
     signupForm: storedFields
       ? descriptorsToBuilderRows(storedFields)
       : defaultBuilderRows(),
@@ -135,7 +139,8 @@ export default function AdminDinnerEditPage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const { addresses, dinner, signupForm, formHasSubmissions } = loaderData;
+  const { addresses, dinner, signupForm, formHasSubmissions, answerCounts } =
+    loaderData;
   const addressOptions = toAddressOptions(addresses);
 
   return (
@@ -148,6 +153,7 @@ export default function AdminDinnerEditPage({
       pageTitle="Edit dinner"
       cancelHref={`/admin/dinners/${dinner.id}`}
       lockFieldKeys={formHasSubmissions}
+      answerCounts={answerCounts}
     />
   );
 }
