@@ -20,6 +20,7 @@ const event = {
     height: 800,
     blurDataUrl: "data:image/webp;base64,tiny",
   },
+  imageId: "image-id",
   addressId: "address-id",
   createdById: "user-id",
   formId: "form-id",

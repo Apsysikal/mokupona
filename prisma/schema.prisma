@@ -128,7 +128,9 @@ model Event {
   price               Int
   discounts           String?
 
-  image Image?
+  // the cover slot — deleting the image leaves the event standing (SetNull)
+  image   Image?  @relation(fields: [imageId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  imageId String? @unique
 
   addressId String
   address   Address @relation(fields: [addressId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -141,13 +143,7 @@ model Event {
   form   Form   @relation(fields: [formId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   formId String @unique // non-nullable: every event has a form (backfilled)
 
-  // ── gallery prototypes ────────────────────────────────────────────────
-  // One back-relation per competing foundation (see the Gallery block at the
-  // bottom of this file). Exactly one of these survives the prototype phase;
-  // the other two go out with their tables.
-  galleryImages  Image[]             @relation("EventGallery") // A — tagged
-  galleryEntries EventGalleryEntry[] // B — join
-  album          Album? // C — album
+  galleryImages EventGalleryImage[]
 }
 
 model Form {
@@ -214,6 +210,9 @@ model Address {
   @@unique([streetName, houseNumber, zip, city])
 }
 
+// A pure stored asset: provider metadata only, no owner FKs. Whatever shows
+// an image points here — the cover/portrait slots via their own imageId, the
+// galleries via EventGalleryImage links.
 model Image {
   id          String  @id @default(cuid())
   altText     String?
@@ -232,43 +231,15 @@ model Image {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  boardMember   BoardMember? @relation(fields: [boardMemberId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  boardMemberId String?      @unique
-
-  // the cover slot — @unique, so at most one per event
-  event   Event?  @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  eventId String? @unique
-
-  // ── gallery prototypes ────────────────────────────────────────────────
-  // Shared by the foundations that hang their metadata off the image row
-  // itself (A and C); foundation B keeps caption/position on its join row so
-  // the same image can read differently in two galleries.
-  caption  String?
-  position Int     @default(0)
-
-  // A — "tagged": a second, non-unique event FK next to the cover's. Cheapest
-  // possible change; an image belongs to at most one dinner's gallery.
-  galleryEvent   Event?  @relation("EventGallery", fields: [galleryEventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  galleryEventId String?
-
-  // B — "join": membership lives on EventGalleryEntry, so one image can
-  // appear in several dinners (and in none).
-  galleryEntries EventGalleryEntry[]
-
-  // C — "album": images belong to an album, which may or may not belong to
-  // an event.
-  album   Album?  @relation(fields: [albumId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  albumId String?
-
-  @@index([galleryEventId])
-  @@index([albumId])
+  event        Event?
+  boardMember  BoardMember?
+  galleryLinks EventGalleryImage[]
 }
 
-// ── Gallery foundation B: "join" ────────────────────────────────────────
-// Image rows stay ownerless; an entry grants one image membership in one
-// dinner's gallery. Deleting an entry unlinks without destroying the asset,
-// and the same photo can be shown under two dinners with different captions.
-model EventGalleryEntry {
+// Grants one image membership in one dinner's gallery. Deleting a link
+// unlinks without destroying the asset, and the same photo can be shown
+// under two dinners with different captions.
+model EventGalleryImage {
   id       String  @id @default(cuid())
   caption  String?
   position Int     @default(0)
@@ -288,30 +259,13 @@ model EventGalleryEntry {
   @@index([imageId])
 }
 
-// ── Gallery foundation C: "album" ───────────────────────────────────────
-// Galleries become first-class: an album carries its own title/description
-// and MAY belong to an event (@unique — at most one album per dinner), so
-// standalone albums ("kitchen life") cost nothing extra.
-model Album {
-  id          String @id @default(cuid())
-  title       String
-  description String @default("")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  images Image[]
-
-  event   Event?  @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  eventId String? @unique
-}
-
 model BoardMember {
   id       String @id @default(cuid())
   name     String
   position String
 
-  image Image?
+  image   Image?  @relation(fields: [imageId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  imageId String? @unique
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

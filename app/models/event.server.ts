@@ -16,10 +16,8 @@ import {
 
 export type { Address, Event } from "#prisma/generated/client";
 
-// The cover FK lives on Image (eventId), so routes can't read a scalar
-// imageId off Event anymore — getters join the relation and project the
-// metadata components need for URLs and blur-up (null renders the UI
-// fallback artwork).
+// Getters join the cover relation and project the metadata components need
+// for URLs and blur-up (null renders the UI fallback artwork).
 export type EventWithImage = Event & { image: ImageMetadata | null };
 
 const EVENT_IMAGE_INCLUDE = {
@@ -152,8 +150,10 @@ export async function createEvent(
       },
     });
 
+    const cover = await tx.image.create({ data: image });
+
     return tx.event.create({
-      data: { ...eventData, formId: form.id, image: { create: image } },
+      data: { ...eventData, formId: form.id, imageId: cover.id },
     });
   });
 }
@@ -174,17 +174,21 @@ export async function updateEvent(
     let replacedImageKey: string | null = null;
 
     if (image) {
-      const replaced = await tx.image.findUnique({
-        where: { eventId: id },
-        select: { storageKey: true },
+      const current = await tx.event.findUnique({
+        where: { id },
+        select: { image: { select: { id: true, storageKey: true } } },
       });
-      replacedImageKey = replaced?.storageKey ?? null;
-      await tx.image.deleteMany({ where: { eventId: id } });
+      if (current?.image) {
+        replacedImageKey = current.image.storageKey;
+        await tx.image.delete({ where: { id: current.image.id } });
+      }
     }
+
+    const cover = image ? await tx.image.create({ data: image }) : null;
 
     const event = await tx.event.update({
       where: { id },
-      data: { ...eventData, ...(image && { image: { create: image } }) },
+      data: { ...eventData, ...(cover && { imageId: cover.id }) },
     });
 
     if (formFields) {
@@ -204,13 +208,16 @@ export async function deleteEventsInTx(
     select: {
       id: true,
       formId: true,
-      image: { select: { storageKey: true } },
+      image: { select: { id: true, storageKey: true } },
     },
   });
   if (events.length === 0) return [];
 
   const eventIds = events.map((event) => event.id);
   const formIds = events.map((event) => event.formId);
+  const coverIds = events.flatMap((event) =>
+    event.image ? [event.image.id] : [],
+  );
 
   await tx.formSubmission.deleteMany({
     where: { formVersion: { formId: { in: formIds } } },
@@ -218,6 +225,7 @@ export async function deleteEventsInTx(
   await tx.formVersion.deleteMany({ where: { formId: { in: formIds } } });
   await tx.event.deleteMany({ where: { id: { in: eventIds } } });
   await tx.form.deleteMany({ where: { id: { in: formIds } } });
+  await tx.image.deleteMany({ where: { id: { in: coverIds } } });
 
   return events.map(({ image, ...event }) => ({
     ...event,

@@ -54,20 +54,15 @@ async function seed() {
     /** */
   });
 
-  // Gallery entries cascade with their event, but pool images belong to
+  // Gallery links cascade with their event, but pool images belong to
   // nothing and would survive every reseed.
-  await prisma.eventGalleryEntry.deleteMany().catch(() => {
+  await prisma.eventGalleryImage.deleteMany().catch(() => {
     /** */
   });
 
   await prisma.image
     .deleteMany({
-      where: {
-        eventId: null,
-        boardMemberId: null,
-        galleryEventId: null,
-        albumId: null,
-      },
+      where: { event: null, boardMember: null },
     })
     .catch(() => {
       /** */

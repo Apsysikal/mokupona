@@ -64,13 +64,16 @@ export async function deleteBoardMember(
   id: string,
 ): Promise<{ boardMember: BoardMember; imageKey: string | null }> {
   return prisma.$transaction(async (tx) => {
-    const portrait = await tx.image.findUnique({
-      where: { boardMemberId: id },
-      select: { storageKey: true },
+    const current = await tx.boardMember.findUnique({
+      where: { id },
+      select: { image: { select: { id: true, storageKey: true } } },
     });
     const boardMember = await tx.boardMember.delete({ where: { id } });
+    if (current?.image) {
+      await tx.image.delete({ where: { id: current.image.id } });
+    }
 
-    return { boardMember, imageKey: portrait?.storageKey ?? null };
+    return { boardMember, imageKey: current?.image?.storageKey ?? null };
   });
 }
 
@@ -88,12 +91,14 @@ export async function updateBoardMember(
     let replacedImageKey: string | null = null;
 
     if (image) {
-      const replaced = await tx.image.findUnique({
-        where: { boardMemberId: id },
-        select: { storageKey: true },
+      const current = await tx.boardMember.findUnique({
+        where: { id },
+        select: { image: { select: { id: true, storageKey: true } } },
       });
-      replacedImageKey = replaced?.storageKey ?? null;
-      await tx.image.deleteMany({ where: { boardMemberId: id } });
+      if (current?.image) {
+        replacedImageKey = current.image.storageKey;
+        await tx.image.delete({ where: { id: current.image.id } });
+      }
     }
 
     const boardMember = await tx.boardMember.update({

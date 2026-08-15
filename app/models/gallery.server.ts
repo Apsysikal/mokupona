@@ -1,4 +1,4 @@
-import type { EventGalleryEntry, Prisma } from "#prisma/generated/client";
+import type { EventGalleryImage, Prisma } from "#prisma/generated/client";
 
 import { prisma } from "~/db.server";
 import {
@@ -7,7 +7,7 @@ import {
   type ImageMetadata,
 } from "~/models/image.server";
 
-export type { EventGalleryEntry };
+export type { EventGalleryImage };
 
 /** The dinner an entry hangs in, as much as the gallery reads of it. */
 export interface GalleryEntryEvent {
@@ -64,7 +64,7 @@ const ENTRY_SELECT = {
   position: true,
   image: { select: { ...IMAGE_METADATA_SELECT, altText: true } },
   event: { select: { id: true, title: true, date: true } },
-} satisfies Prisma.EventGalleryEntrySelect;
+} satisfies Prisma.EventGalleryImageSelect;
 
 const ENTRY_WITH_REUSE_SELECT = {
   ...ENTRY_SELECT,
@@ -72,33 +72,30 @@ const ENTRY_WITH_REUSE_SELECT = {
     select: {
       ...IMAGE_METADATA_SELECT,
       altText: true,
-      galleryEntries: {
+      galleryLinks: {
         select: { eventId: true, event: { select: { id: true, title: true } } },
       },
     },
   },
-} satisfies Prisma.EventGalleryEntrySelect;
+} satisfies Prisma.EventGalleryImageSelect;
 
 // newest dinner first, then the dinner's own display order
 const ENTRY_ORDER_BY = [
   { event: { date: "desc" } },
   { position: "asc" },
-] satisfies Prisma.EventGalleryEntryOrderByWithRelationInput[];
+] satisfies Prisma.EventGalleryImageOrderByWithRelationInput[];
 
 // The picker (and the orphan rule) treat an image as gallery material only
-// when no other slot owns it: not a dinner cover, not a board portrait, and
-// not claimed by the competing "tagged"/"album" prototypes.
+// when no slot owns it: not a dinner cover, not a board portrait.
 const UNOWNED_IMAGE: Prisma.ImageWhereInput = {
-  eventId: null,
-  boardMemberId: null,
-  galleryEventId: null,
-  albumId: null,
+  event: null,
+  boardMember: null,
 };
 
-type EntryRow = Prisma.EventGalleryEntryGetPayload<{
+type EntryRow = Prisma.EventGalleryImageGetPayload<{
   select: typeof ENTRY_SELECT;
 }>;
-type EntryWithReuseRow = Prisma.EventGalleryEntryGetPayload<{
+type EntryWithReuseRow = Prisma.EventGalleryImageGetPayload<{
   select: typeof ENTRY_WITH_REUSE_SELECT;
 }>;
 
@@ -118,7 +115,7 @@ function toGalleryEntry(row: EntryRow): GalleryEntry {
 function toGalleryEntryWithReuse(
   row: EntryWithReuseRow,
 ): GalleryEntryWithReuse {
-  const { altText, galleryEntries, ...image } = row.image;
+  const { altText, galleryLinks, ...image } = row.image;
 
   return {
     id: row.id,
@@ -127,7 +124,7 @@ function toGalleryEntryWithReuse(
     altText,
     image,
     event: row.event,
-    sharedWith: galleryEntries
+    sharedWith: galleryLinks
       .filter((entry) => entry.eventId !== row.event.id)
       .map((entry) => entry.event),
   };
@@ -137,7 +134,7 @@ async function nextPositionInTx(
   tx: Prisma.TransactionClient,
   eventId: string,
 ): Promise<number> {
-  const { _max } = await tx.eventGalleryEntry.aggregate({
+  const { _max } = await tx.eventGalleryImage.aggregate({
     where: { eventId },
     _max: { position: true },
   });
@@ -147,7 +144,7 @@ async function nextPositionInTx(
 
 /** Every membership in the app, newest dinner first. */
 export async function getGalleryEntries(): Promise<GalleryEntry[]> {
-  const entries = await prisma.eventGalleryEntry.findMany({
+  const entries = await prisma.eventGalleryImage.findMany({
     select: ENTRY_SELECT,
     orderBy: ENTRY_ORDER_BY,
   });
@@ -158,7 +155,7 @@ export async function getGalleryEntries(): Promise<GalleryEntry[]> {
 export async function getGalleryEntriesForEvent(
   eventId: string,
 ): Promise<GalleryEntryWithReuse[]> {
-  const entries = await prisma.eventGalleryEntry.findMany({
+  const entries = await prisma.eventGalleryImage.findMany({
     where: { eventId },
     select: ENTRY_WITH_REUSE_SELECT,
     orderBy: { position: "asc" },
@@ -175,12 +172,12 @@ export async function getGalleryEntriesForEvent(
 export async function createGalleryImagesForEvent(
   eventId: string,
   images: GalleryImageCreateData[],
-): Promise<EventGalleryEntry[]> {
+): Promise<EventGalleryImage[]> {
   if (images.length === 0) return [];
 
   return prisma.$transaction(async (tx) => {
     let position = await nextPositionInTx(tx, eventId);
-    const entries: EventGalleryEntry[] = [];
+    const entries: EventGalleryImage[] = [];
 
     for (const { altText, caption, ...image } of images) {
       const created = await tx.image.create({
@@ -188,7 +185,7 @@ export async function createGalleryImagesForEvent(
       });
 
       entries.push(
-        await tx.eventGalleryEntry.create({
+        await tx.eventGalleryImage.create({
           data: {
             eventId,
             imageId: created.id,
@@ -212,13 +209,13 @@ export async function createGalleryImagesForEvent(
 export async function linkExistingImagesToEvent(
   eventId: string,
   imageIds: string[],
-): Promise<EventGalleryEntry[]> {
+): Promise<EventGalleryImage[]> {
   const ids = [...new Set(imageIds)];
   if (ids.length === 0) return [];
 
   return prisma.$transaction(async (tx) => {
     const [linked, known] = await Promise.all([
-      tx.eventGalleryEntry.findMany({
+      tx.eventGalleryImage.findMany({
         where: { eventId, imageId: { in: ids } },
         select: { imageId: true },
       }),
@@ -232,10 +229,10 @@ export async function linkExistingImagesToEvent(
 
     let position = await nextPositionInTx(tx, eventId);
 
-    const entries: EventGalleryEntry[] = [];
+    const entries: EventGalleryImage[] = [];
     for (const imageId of toLink) {
       entries.push(
-        await tx.eventGalleryEntry.create({
+        await tx.eventGalleryImage.create({
           data: { eventId, imageId, position: position++ },
         }),
       );
@@ -255,36 +252,32 @@ export async function removeGalleryEntry(
   entryId: string,
 ): Promise<RemovedGalleryEntry | null> {
   return prisma.$transaction(async (tx) => {
-    const entry = await tx.eventGalleryEntry.findUnique({
+    const entry = await tx.eventGalleryImage.findUnique({
       where: { id: entryId },
       select: {
         imageId: true,
         image: {
           select: {
             storageKey: true,
-            eventId: true,
-            boardMemberId: true,
-            galleryEventId: true,
-            albumId: true,
+            event: { select: { id: true } },
+            boardMember: { select: { id: true } },
           },
         },
       },
     });
     if (!entry) return null;
 
-    await tx.eventGalleryEntry.delete({ where: { id: entryId } });
+    await tx.eventGalleryImage.delete({ where: { id: entryId } });
 
-    const remaining = await tx.eventGalleryEntry.count({
+    const remaining = await tx.eventGalleryImage.count({
       where: { imageId: entry.imageId },
     });
-    const { storageKey, ...owners } = entry.image;
+    const { storageKey, event, boardMember } = entry.image;
 
     return {
       imageId: entry.imageId,
       storageKey,
-      orphaned:
-        remaining === 0 &&
-        Object.values(owners).every((owner) => owner === null),
+      orphaned: remaining === 0 && event === null && boardMember === null,
     };
   });
 }
@@ -299,7 +292,7 @@ export async function deleteOrphanedImage(
 ): Promise<string | null> {
   return prisma.$transaction(async (tx) => {
     const image = await tx.image.findFirst({
-      where: { id: imageId, galleryEntries: { none: {} }, ...UNOWNED_IMAGE },
+      where: { id: imageId, galleryLinks: { none: {} }, ...UNOWNED_IMAGE },
       select: { storageKey: true },
     });
     if (!image) return null;
@@ -314,20 +307,20 @@ export async function getLinkableImages(
   eventId: string,
 ): Promise<LinkableImage[]> {
   const images = await prisma.image.findMany({
-    where: { galleryEntries: { none: { eventId } }, ...UNOWNED_IMAGE },
+    where: { galleryLinks: { none: { eventId } }, ...UNOWNED_IMAGE },
     select: {
       ...IMAGE_METADATA_SELECT,
       altText: true,
-      galleryEntries: {
+      galleryLinks: {
         select: { event: { select: { id: true, title: true } } },
       },
     },
     orderBy: { createdAt: "desc" },
   });
 
-  return images.map(({ altText, galleryEntries, ...image }) => ({
+  return images.map(({ altText, galleryLinks, ...image }) => ({
     image,
     altText,
-    usedIn: galleryEntries.map((entry) => entry.event),
+    usedIn: galleryLinks.map((entry) => entry.event),
   }));
 }

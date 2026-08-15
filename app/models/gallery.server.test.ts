@@ -51,7 +51,7 @@ async function uploadOne(eventId: string, caption?: string) {
 afterEach(async () => {
   const ids = eventIds.splice(0);
   if (ids.length > 0) {
-    // cascades the dinners' entries and cover images
+    // takes the dinners' entries and cover images with them
     await prisma.$transaction((tx) =>
       deleteEventsInTx(tx, { id: { in: ids } }),
     );
@@ -75,10 +75,12 @@ describe("createGalleryImagesForEvent", () => {
     expect(entry).toMatchObject({ eventId: dinner.id, position: 0 });
     const image = await prisma.image.findUniqueOrThrow({
       where: { id: entry.imageId },
+      include: { event: true, boardMember: true },
     });
     expect(image.storageKey).toBe(data.storageKey);
-    // the image stays ownerless — the entry, not the row, ties it to a dinner
-    expect(image.eventId).toBeNull();
+    // the image stays ownerless — the entry, not a slot, ties it to a dinner
+    expect(image.event).toBeNull();
+    expect(image.boardMember).toBeNull();
 
     const [read] = await getGalleryEntriesForEvent(dinner.id);
     expect(read).toMatchObject({
@@ -145,7 +147,7 @@ describe("linkExistingImagesToEvent", () => {
     ).resolves.toEqual([]);
 
     await expect(
-      prisma.eventGalleryEntry.count({
+      prisma.eventGalleryImage.count({
         where: { eventId: dinner.id, imageId: entry.imageId },
       }),
     ).resolves.toBe(1);
@@ -205,13 +207,15 @@ describe("removeGalleryEntry", () => {
 
   it("does not call an image orphaned while another slot owns it", async () => {
     const dinner = await createDinner();
+    const portrait = await prisma.image.create({ data: buildGalleryImage() });
     const member = await prisma.boardMember.create({
-      data: { name: faker.person.fullName(), position: "Cook" },
+      data: {
+        name: faker.person.fullName(),
+        position: "Cook",
+        image: { connect: { id: portrait.id } },
+      },
     });
     boardMemberIds.push(member.id);
-    const portrait = await prisma.image.create({
-      data: { ...buildGalleryImage(), boardMemberId: member.id },
-    });
     const [entry] = await linkExistingImagesToEvent(dinner.id, [portrait.id]);
 
     const removed = await removeGalleryEntry(entry.id);
@@ -238,7 +242,7 @@ describe("deleting a dinner", () => {
     eventIds.splice(eventIds.indexOf(first.id), 1);
 
     await expect(
-      prisma.eventGalleryEntry.findUnique({ where: { id: entry.id } }),
+      prisma.eventGalleryImage.findUnique({ where: { id: entry.id } }),
     ).resolves.toBeNull();
     await expect(
       prisma.image.findUnique({ where: { id: entry.imageId } }),
