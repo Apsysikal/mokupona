@@ -89,7 +89,7 @@ function renderEditScreen(rows: BuilderRow[]) {
 
   const html = renderToString(<Stub initialEntries={["/"]} />);
 
-  return { html, document: new DOMParser().parseFromString(html, "text/html") };
+  return { document: new DOMParser().parseFromString(html, "text/html") };
 }
 
 function friendRowPrefix(rows: BuilderRow[]): string {
@@ -185,10 +185,11 @@ describe("signup form builder markup", () => {
   });
 
   it("carries the linkage in the meta prose of both rows", () => {
-    const { html } = renderEditScreen(linkedPairRows());
+    const { document } = renderEditScreen(linkedPairRows());
+    const text = document.body.textContent ?? "";
 
-    expect(html).toContain("linked to friends");
-    expect(html).toContain("linked to the signer’s");
+    expect(text).toContain("linked to friends");
+    expect(text).toContain("linked to the signer's");
   });
 
   it("opens its dialogs without submitting the form", () => {
@@ -207,7 +208,7 @@ describe("signup form builder markup", () => {
     const dialog = document.querySelector("#unlink-dialog-restrictions");
     const keyInput = dialog?.querySelector('input[type="text"]');
 
-    expect(dialog?.textContent).toContain("Unlink from the signer’s question?");
+    expect(dialog?.textContent).toContain("Unlink from the signer's question?");
     expect(keyInput?.getAttribute("value")).toBe("restrictions_2");
     // the dialog's key field never travels with the builder's own payload
     expect(keyInput?.hasAttribute("name")).toBe(false);

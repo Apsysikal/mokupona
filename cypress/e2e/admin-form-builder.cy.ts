@@ -253,7 +253,7 @@ describe("admin signup form builder", () => {
         // carry the copy's curly quotes — match plainly, assert on the text
         cy.contains("Mirrors the signer")
           .should("be.visible")
-          .and("contain.text", "signer’s “Allergies”");
+          .and("contain.text", "signer's “Allergies”");
         cy.findAllByDisplayValue("Allergies")
           .filter(":visible")
           .should("have.length", 1)
@@ -300,7 +300,7 @@ describe("admin signup form builder", () => {
         .should("be.visible")
         .within(() => {
           cy.findByRole("heading", {
-            name: /unlink from the signer’s question\?/i,
+            name: /unlink from the signer's question\?/i,
           }).should("be.visible");
           // keep the offered key
           cy.findByLabelText(/new field key/i).should(
@@ -359,12 +359,14 @@ describe("admin signup form builder", () => {
         "have.length",
         1,
       );
+      // confirming the link opens the friends card and the mirrored row and
+      // moves focus into it, so the sentence is both visible and focused
       withinLastRow(FRIEND_RESTRICTIONS, () => {
-        cy.contains("Mirrors the signer").should(
-          "contain.text",
-          "signer’s “Dietary restrictions”",
-        );
+        cy.contains("Mirrors the signer")
+          .should("be.visible")
+          .and("contain.text", "signer's “Dietary restrictions”");
       });
+      cy.focused().should("contain.text", "Mirrors the signer");
     });
   });
 
