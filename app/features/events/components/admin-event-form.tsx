@@ -237,6 +237,13 @@ export function AdminEventForm({
               }}
               errors={fields.cover.errors}
             />
+            <noscript>
+              <p className="text-foreground/65 text-sm">
+                Without JavaScript, the form&apos;s buttons reload the page and
+                a chosen cover file does not survive the reload — pick the cover
+                image last, right before saving.
+              </p>
+            </noscript>
 
             <SelectField
               labelProps={{ children: "Address" }}
