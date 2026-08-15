@@ -1237,8 +1237,6 @@ function EditableRowView({
   );
 }
 
-// the recessed look rides on the dashed border and the muted text; the surface
-// stays the field shell's own bg-foreground/5 rather than a fractional step
 const mirrorControlClassName =
   "border-dashed text-foreground/65 disabled:cursor-not-allowed disabled:opacity-100";
 
