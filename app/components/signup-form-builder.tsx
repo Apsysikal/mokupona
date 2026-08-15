@@ -661,7 +661,7 @@ function RowHeader({
   const form = useFormMetadata();
 
   return (
-    <div className="flex items-center gap-2 p-2.5 sm:p-3">
+    <div className="flex items-center gap-2 p-2 sm:p-3">
       {/* the flex layout lives on an inner span because Safari mishandles
           buttons as flex containers */}
       <CollapsibleTrigger className="min-w-0 flex-1 cursor-pointer text-left">
@@ -717,7 +717,7 @@ function RowHeader({
           "text-foreground/65 shrink-0 [&[data-state=open]>svg]:rotate-180",
         )}
       >
-        <ChevronDownIcon />
+        <ChevronDownIcon className="transition-transform duration-300" />
       </CollapsibleTrigger>
     </div>
   );
@@ -823,7 +823,7 @@ function DialogCancelButton({ dialogId }: { dialogId: string }) {
 
 function DialogCallout({ children }: { children: ReactNode }) {
   return (
-    <p className="rounded-lg border border-sky-300/35 bg-sky-300/10 p-3 text-[13px] leading-relaxed text-sky-300">
+    <p className="rounded-lg border border-sky-300/35 bg-sky-300/10 p-3 text-sm leading-snug text-sky-300">
       {children}
     </p>
   );
@@ -845,7 +845,7 @@ function BuilderDialog({
       id={id}
       aria-labelledby={labelId}
       onClose={onClose}
-      className="bg-card text-foreground backdrop:bg-background/70 m-auto w-[min(420px,calc(100vw-2rem))] flex-col gap-4 rounded-2xl border p-5 open:flex"
+      className="bg-card text-foreground backdrop:bg-background/70 m-auto w-[calc(100%-2rem)] max-w-md flex-col gap-4 rounded-2xl border p-5 shadow-lg open:flex"
     >
       {children}
     </dialog>
@@ -890,7 +890,7 @@ function LinkDialog({ signerRow }: { signerRow: RowMetadata }) {
       labelId={headingId}
       onClose={() => setChoice("new")}
     >
-      <h3 id={headingId} className="text-xl font-semibold">
+      <h3 id={headingId} className="text-xl font-light tracking-tight">
         Also ask each friend this question?
       </h3>
       <p className="text-foreground/65 text-sm">
@@ -924,7 +924,7 @@ function LinkDialog({ signerRow }: { signerRow: RowMetadata }) {
       </div>
       <noscript>
         <style>{`#${dialogId} [data-candidate]{display:none}`}</style>
-        <p className="text-foreground/50 text-[13px]">
+        <p className="text-foreground/50 text-sm">
           Without JavaScript, confirming applies the default option.
         </p>
       </noscript>
@@ -989,7 +989,7 @@ function LinkChoiceOption({
       data-candidate={candidate ? "" : undefined}
       className={cn(
         "flex cursor-pointer gap-2 rounded-lg border p-3",
-        checked ? "border-primary/50 bg-primary/12" : "hover:bg-foreground/4",
+        checked ? "border-primary/35 bg-primary/10" : "hover:bg-foreground/5",
       )}
     >
       {/* the form attribute names no element on purpose: the radios group for
@@ -1004,7 +1004,7 @@ function LinkChoiceOption({
       />
       <span className="flex min-w-0 flex-col gap-0.5">
         <span className="text-sm font-semibold">{title}</span>
-        <span className="text-foreground/65 text-[13px]">{explanation}</span>
+        <span className="text-foreground/65 text-sm">{explanation}</span>
       </span>
     </label>
   );
@@ -1040,7 +1040,7 @@ function UnlinkDialog({
         if (inputRef.current) inputRef.current.value = defaultKey;
       }}
     >
-      <h3 id={headingId} className="text-xl font-semibold">
+      <h3 id={headingId} className="text-xl font-light tracking-tight">
         Unlink from the signer's question?
       </h3>
       <p className="text-foreground/65 text-sm">
@@ -1060,12 +1060,12 @@ function UnlinkDialog({
           defaultValue={defaultKey}
           aria-describedby={hintId}
         />
-        <p id={hintId} className="text-foreground/50 text-[13px]">
+        <p id={hintId} className="text-foreground/50 text-sm">
           Becomes a second CSV column beside <strong>{sharedKey}</strong>.
           Lowercase letters, numbers and underscores.
         </p>
         <noscript>
-          <p className="text-foreground/50 text-[13px]">
+          <p className="text-foreground/50 text-sm">
             Without JavaScript, the prefilled key applies.
           </p>
         </noscript>
@@ -1135,7 +1135,7 @@ function PinnedIdentityRowView({ row }: { row: RowMetadata }) {
         errors={rowFields.label.errors}
       />
       <DescriptionField field={rowFields.description} />
-      <p className="text-foreground/65 text-[13px]">
+      <p className="text-foreground/65 text-sm">
         These fields are always required. You can still change the label that
         users see.
       </p>
@@ -1201,7 +1201,7 @@ function EditableRowView({
         />
       </div>
       {keyLocked ? (
-        <p className="text-foreground/50 text-[13px]">
+        <p className="text-foreground/50 text-sm">
           Field keys are locked because this form already has signups.
         </p>
       ) : null}
@@ -1237,8 +1237,10 @@ function EditableRowView({
   );
 }
 
+// the recessed look rides on the dashed border and the muted text; the surface
+// stays the field shell's own bg-foreground/5 rather than a fractional step
 const mirrorControlClassName =
-  "border-dashed bg-foreground/3 text-foreground/65 disabled:cursor-not-allowed disabled:opacity-100";
+  "border-dashed text-foreground/65 disabled:cursor-not-allowed disabled:opacity-100";
 
 function MirrorFieldLabel({ children }: { children: ReactNode }) {
   return <span className="text-foreground/65 font-semibold">{children}</span>;
@@ -1352,7 +1354,7 @@ function MirrorRowView({
     >
       <p
         id={sentenceId}
-        className="text-foreground/65 max-w-[70ch] text-sm leading-relaxed text-pretty"
+        className="text-foreground/65 max-w-md text-sm leading-snug text-pretty"
       >
         Mirrors the signer's “{signer.label || "this question"}”. Type, label,
         help text and Required are edited on that row, and the field key is
