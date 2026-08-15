@@ -1,9 +1,6 @@
 generator client {
   provider      = "prisma-client"
   output        = "./generated"
-  // The WASM query compiler is the app's single largest allocation: the default
-  // "fast" build costs ~60 MB more boot-time peak on a 256 MB Fly machine, and
-  // measured no faster on our query shapes. See docs/memory-profile/findings.md.
   compilerBuild = "small"
 }
 
@@ -131,8 +128,6 @@ model Event {
   price               Int
   discounts           String?
 
-  // cover lives on Image (eventId, Cascade) like BoardMember portraits, so
-  // deleting an image can never take the event with it
   image Image?
 
   addressId String
@@ -140,7 +135,6 @@ model Event {
 
   eventResponses EventResponse[]
 
-  // authorship metadata only — events outlive their creator
   createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull, onUpdate: Cascade)
   createdById String?
 
@@ -163,16 +157,16 @@ model Form {
   updatedAt DateTime @updatedAt
 
   versions FormVersion[]
-  event    Event? // back-relation only; Form itself stays event-agnostic
+  event    Event?
 }
 
 model FormVersion {
   id      String @id @default(cuid())
   version Int
-  schema  Json // FieldDescriptor[]; validated by SignupFormSchema on every write
+  schema  Json
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt // mutated in place only while no submissions reference it
+  updatedAt DateTime @updatedAt
 
   form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   formId String
