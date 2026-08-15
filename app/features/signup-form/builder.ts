@@ -101,10 +101,104 @@ function descriptionEntry(description: string | undefined) {
   return description ? { description } : {};
 }
 
+// same absent-key rule as descriptionEntry: a mirrored row must not carry an
+// options key the canonical row does not have
+function optionsEntry(options: string | undefined) {
+  return options ? { options } : {};
+}
+
+// What a shared field key ties together. The key itself is the identity, not
+// a synced property; nothing scope-local may join this list.
+export const LINKED_ROW_PROPS = [
+  "type",
+  "label",
+  "required",
+  "options",
+  "description",
+] as const;
+
+type LinkedProps = Pick<BuilderItemRow, (typeof LINKED_ROW_PROPS)[number]>;
+
+// Rows sharing a field key are one question asked in two scopes — the sharing
+// read.server.ts splits submission-level from per-attendee answers on. The
+// canonical side is the first occurrence in flattened order (all top-level
+// rows, then the friends list's itemFields): the same order and the same
+// first-wins reference FormSchema.superRefine reports type mismatches against.
+// Pure, and on the only path to persistence, so a form posted with JavaScript
+// disabled is stored correctly synced with zero client code.
+export function syncLinkedRows(rows: BuilderRow[]): BuilderRow[] {
+  const canonical = new Map<string, LinkedProps>();
+
+  // undefined = this row is the canonical one and stays as it is; otherwise
+  // the props to rebuild it from, so a stale options/description cannot
+  // survive as a leftover key
+  const claim = (
+    row: BuilderRow | BuilderItemRow,
+    type: LinkedProps["type"],
+  ): LinkedProps | undefined => {
+    const first = canonical.get(row.name);
+
+    if (first !== undefined) return first;
+
+    canonical.set(row.name, {
+      type,
+      label: row.label,
+      required: row.required,
+      ...optionsEntry(row.options),
+      ...descriptionEntry(row.description),
+    });
+
+    return undefined;
+  };
+
+  // lists are containers, not questions — the friends row's own name never
+  // links (a top-level field colliding with it is a same-scope duplicate,
+  // which FormSchema already rejects)
+  const claimed = rows.map((row): BuilderRow => {
+    if (row.type === "list") return row;
+
+    const props = claim(row, row.type);
+
+    return props === undefined ? row : { name: row.name, ...props };
+  });
+
+  // second pass: every signer row has claimed before any item row mirrors
+  return claimed.map((row): BuilderRow => {
+    if (row.type !== "list" || row.itemFields === undefined) return row;
+
+    return {
+      ...row,
+      itemFields: row.itemFields.map((item): BuilderItemRow => {
+        const props = claim(item, item.type);
+
+        return props === undefined ? item : { name: item.name, ...props };
+      }),
+    };
+  });
+}
+
+// The same rule the sync runs on, for callers that only hold field keys: a key
+// is linked when it is asked of the signer and of each friend. Top-level keys
+// are the non-list rows' keys — a list's own name is a container, not a
+// question.
+export function linkedFieldKeys(
+  topLevelKeys: Array<string | undefined>,
+  itemKeys: Array<string | undefined>,
+): Set<string> {
+  const asked = new Set(itemKeys);
+  const linked = new Set<string>();
+
+  for (const key of topLevelKeys) {
+    if (key !== undefined && asked.has(key)) linked.add(key);
+  }
+
+  return linked;
+}
+
 export function builderRowsToDescriptors(
   rows: BuilderRow[],
 ): FieldDescriptor[] {
-  return rows.map((row): FieldDescriptor => {
+  return syncLinkedRows(rows).map((row): FieldDescriptor => {
     if (row.type === "list") {
       return {
         type: "list",
