@@ -9,9 +9,18 @@ import {
   ArrowDownIcon,
   ArrowUpIcon,
   ChevronDownIcon,
+  Link2Icon,
+  LinkBreak2Icon,
   TrashIcon,
 } from "@radix-ui/react-icons";
-import { useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 import {
   CheckboxField,
@@ -20,21 +29,23 @@ import {
   SelectField,
   TextareaField,
 } from "./forms";
-import { Badge } from "./ui/badge";
 import { Button, buttonVariants } from "./ui/button";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "./ui/collapsible";
+import { fieldShellClassName, Input } from "./ui/input";
 
 import { MAX_FIELD_DESCRIPTION_LENGTH } from "~/features/forms/bounds";
+import { FIELD_KEY_REGEX } from "~/features/forms/fields/base";
 import {
   NON_LIST_FIELD_TYPES,
   type NonListFieldType,
 } from "~/features/forms/fields/non-list";
 import {
   defaultBuilderRows,
+  linkedFieldKeys,
   slugifyFieldKey,
   type BuilderItemRow,
   type BuilderItemRowInput,
@@ -99,14 +110,81 @@ type RowMetadata = FieldMetadata<BuilderRowInput>;
 type ItemRowMetadata = FieldMetadata<BuilderItemRowInput>;
 type EditableRowMetadata = RowMetadata | ItemRowMetadata;
 
-interface TwinTarget {
-  listName: string;
-  existingKeys: Set<string>;
-  buttonLabel: string;
+function fieldTypeLabel(type: string): string {
+  return TYPE_LABELS[type as NonListFieldType] ?? "Field";
 }
 
-function typeChipLabel(type: string): string {
-  return TYPE_LABELS[type as NonListFieldType] ?? "Field";
+function metaLine(...segments: Array<string | false | undefined>): string {
+  return segments.filter(Boolean).join(" · ");
+}
+
+function nextFreeKey(base: string, taken: Set<string>): string {
+  let counter = 2;
+  while (taken.has(`${base}_${counter}`)) counter += 1;
+  return `${base}_${counter}`;
+}
+
+function linkDialogId(key: string): string {
+  return `link-dialog-${key}`;
+}
+
+function unlinkDialogId(key: string): string {
+  return `unlink-dialog-${key}`;
+}
+
+function getDialog(id: string): HTMLDialogElement | null {
+  const element = document.getElementById(id);
+  return element instanceof HTMLDialogElement ? element : null;
+}
+
+interface SignerSnapshot {
+  type: string;
+  label: string;
+  required: boolean;
+  description: string;
+  options: string;
+}
+
+function readSigner(row: RowMetadata): SignerSnapshot {
+  const fields = row.getFieldset();
+  return {
+    type: String(fields.type.value ?? "text"),
+    label: String(fields.label.value ?? ""),
+    required: Boolean(fields.required.value),
+    description: String(fields.description.value ?? ""),
+    options: String(fields.options.value ?? ""),
+  };
+}
+
+function mirroredRowValue(signer: SignerSnapshot, name: string) {
+  return {
+    type: signer.type,
+    name,
+    label: signer.label,
+    required: signer.required,
+    ...(signer.description ? { description: signer.description } : {}),
+    ...(signer.options ? { options: signer.options } : {}),
+  };
+}
+
+interface BuilderLinks {
+  linkedKeys: Set<string>;
+  signerByKey: Map<string, RowMetadata>;
+  itemFieldsMeta: FieldMetadata<BuilderItemRowInput[]> | undefined;
+  takenKeys: Set<string>;
+  answerCounts: AnswerCountsByFieldKey;
+  ensureRowOpen: (rowKey: string | undefined) => void;
+  friendsRowKey: string | undefined;
+}
+
+const BuilderLinksContext = createContext<BuilderLinks | null>(null);
+
+function useBuilderLinks(): BuilderLinks {
+  const value = useContext(BuilderLinksContext);
+  if (value === null) {
+    throw new Error("useBuilderLinks must be used inside SignupFormBuilder");
+  }
+  return value;
 }
 
 export function SignupFormBuilder({
@@ -118,8 +196,7 @@ export function SignupFormBuilder({
   // true once the event's form has submissions: existing keys become
   // immutable and removals of existing fields ask for confirmation
   lockFieldKeys?: boolean;
-  // per-field answer counts for the link/unlink dialogs (a later stage
-  // renders these; unused for now)
+  // per-field answer counts for the link/unlink dialog callouts
   answerCounts?: AnswerCountsByFieldKey;
 }) {
   const form = useFormMetadata();
@@ -133,7 +210,7 @@ export function SignupFormBuilder({
 
   // The rows present when the screen loaded, identified by Conform's stable
   // row keys. `initialValue` cannot distinguish stored rows from new ones —
-  // intents (the label auto-slug update, the twin insert) write it too — and
+  // intents (the label auto-slug update, the link insert) write it too — and
   // pinning/locking must never trap a row the admin just created.
   const initialRowKeysRef = useRef<Set<string> | null>(null);
   initialRowKeysRef.current ??= new Set(
@@ -166,51 +243,110 @@ export function SignupFormBuilder({
       return next;
     });
   };
-
-  const topLevelKeys = collectKeys(
-    rows.filter((row) => row !== friendsRow) as RowMetadata[],
-  );
-  const itemKeys = collectKeys(
-    (itemFieldsMeta?.getFieldList() ?? []) as ItemRowMetadata[],
-  );
-
-  const friendTwinTarget: TwinTarget | undefined = itemFieldsMeta
-    ? {
-        listName: itemFieldsMeta.name,
-        existingKeys: itemKeys,
-        buttonLabel: "Also ask each friend",
-      }
-    : undefined;
-  const signerTwinTarget: TwinTarget = {
-    listName: field.name,
-    existingKeys: topLevelKeys,
-    buttonLabel: "Also ask the signer",
+  const ensureRowOpen = (rowKey: string | undefined) => {
+    if (rowKey !== undefined && !isRowOpen(rowKey)) toggleRow(rowKey);
   };
+
+  const topLevelRows = rows.filter(
+    (row) => row !== friendsRow,
+  ) as RowMetadata[];
+  const itemRows = (itemFieldsMeta?.getFieldList() ?? []) as ItemRowMetadata[];
+  const keyOf = (row: EditableRowMetadata) => {
+    const value = row.getFieldset().name.value;
+    return value ? String(value) : undefined;
+  };
+  const topLevelKeyValues = topLevelRows.map(keyOf);
+  const itemKeyValues = itemRows.map(keyOf);
+
+  const linkedKeys = linkedFieldKeys(topLevelKeyValues, itemKeyValues);
+  const signerByKey = new Map<string, RowMetadata>();
+  topLevelRows.forEach((row, index) => {
+    const key = topLevelKeyValues[index];
+    if (key !== undefined && !signerByKey.has(key)) signerByKey.set(key, row);
+  });
+  const takenKeys = new Set(
+    [...topLevelKeyValues, ...itemKeyValues].filter(
+      (key): key is string => key !== undefined,
+    ),
+  );
+
+  const links: BuilderLinks = {
+    linkedKeys,
+    signerByKey,
+    itemFieldsMeta,
+    takenKeys,
+    answerCounts,
+    ensureRowOpen,
+    friendsRowKey: friendsRow?.key,
+  };
+
+  const linkableRows = topLevelRows.filter((row, index) => {
+    const key = topLevelKeyValues[index];
+    return (
+      key !== undefined &&
+      !linkedKeys.has(key) &&
+      !(
+        PINNED_IDENTITY_KEYS.has(
+          String(row.getFieldset().name.initialValue ?? ""),
+        ) && isStoredRow(row.key)
+      ) &&
+      signerByKey.get(key) === row
+    );
+  });
+  const linkedPairs = [...linkedKeys].flatMap((key) => {
+    const signerRow = signerByKey.get(key);
+    const friendRow = itemRows[itemKeyValues.indexOf(key)];
+    return signerRow && friendRow ? [{ key, signerRow, friendRow }] : [];
+  });
 
   return (
     // heading and border come from the surrounding "Signup form" section card;
     // min-w-0 opts out of the fieldset default min-width:min-content, which
     // would otherwise let row headers push the card past small viewports
     <fieldset className="flex min-w-0 flex-col gap-4">
+      <noscript>
+        <style>{`[data-row-body]{display:block !important}`}</style>
+      </noscript>
+      <p aria-live="polite" className="sr-only">
+        {linkedKeys.size > 0
+          ? `Questions asked of the signer and of each friend: ${[...linkedKeys].sort().join(", ")}.`
+          : "No questions are linked to friends."}
+      </p>
       <ErrorList id={field.errorId} errors={field.errors} />
 
-      <ul className="flex flex-col gap-3">
-        {rows.map((row, index) => (
-          <BuilderRowView
-            key={row.key}
-            row={row as RowMetadata}
-            listName={field.name}
-            index={index}
-            count={rows.length}
-            lockFieldKeys={lockFieldKeys}
-            isStoredRow={isStoredRow}
-            isRowOpen={isRowOpen}
-            toggleRow={toggleRow}
-            friendTwinTarget={friendTwinTarget}
-            signerTwinTarget={signerTwinTarget}
+      <BuilderLinksContext.Provider value={links}>
+        <ul className="flex flex-col gap-3">
+          {rows.map((row, index) => (
+            <BuilderRowView
+              key={row.key}
+              row={row as RowMetadata}
+              listName={field.name}
+              index={index}
+              count={rows.length}
+              lockFieldKeys={lockFieldKeys}
+              isStoredRow={isStoredRow}
+              isRowOpen={isRowOpen}
+              toggleRow={toggleRow}
+            />
+          ))}
+        </ul>
+
+        {/* dialogs live outside every collapsible: a <dialog> inside a
+            display:none row body cannot render, even from the top layer */}
+        {itemFieldsMeta
+          ? linkableRows.map((row) => (
+              <LinkDialog key={row.key} signerRow={row} />
+            ))
+          : null}
+        {linkedPairs.map(({ key, signerRow, friendRow }) => (
+          <UnlinkDialog
+            key={key}
+            sharedKey={key}
+            signerRow={signerRow}
+            friendRow={friendRow}
           />
         ))}
-      </ul>
+      </BuilderLinksContext.Provider>
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button
@@ -243,14 +379,6 @@ export function SignupFormBuilder({
   );
 }
 
-function collectKeys(rows: (RowMetadata | ItemRowMetadata)[]): Set<string> {
-  return new Set(
-    rows
-      .map((row) => String(row.getFieldset().name.value ?? ""))
-      .filter(Boolean),
-  );
-}
-
 function BuilderRowView({
   row,
   listName,
@@ -260,8 +388,6 @@ function BuilderRowView({
   isStoredRow,
   isRowOpen,
   toggleRow,
-  friendTwinTarget,
-  signerTwinTarget,
 }: {
   row: RowMetadata;
   listName: string;
@@ -271,19 +397,19 @@ function BuilderRowView({
   isStoredRow: (rowKey: string | undefined) => boolean;
   isRowOpen: (rowKey: string | undefined) => boolean;
   toggleRow: (rowKey: string | undefined) => void;
-  friendTwinTarget?: TwinTarget;
-  signerTwinTarget: TwinTarget;
 }) {
+  const { linkedKeys, signerByKey, itemFieldsMeta } = useBuilderLinks();
   const rowFields = row.getFieldset();
   const type = String(rowFields.type.value ?? "");
   const initialKey = String(rowFields.name.initialValue ?? "");
+  const keyValue = String(rowFields.name.value ?? "");
   const labelValue = String(rowFields.label.value ?? "");
   // the single lock predicate: the row was stored when the screen loaded AND
   // the form already has signups
   const rowLocked = lockFieldKeys && isStoredRow(row.key);
 
   if (type === "list") {
-    const itemCount = rowFields.itemFields.getFieldList().length;
+    const maxCountValue = String(rowFields.maxCount.value ?? "");
 
     return (
       <RowCard
@@ -293,9 +419,15 @@ function BuilderRowView({
         toggleRow={toggleRow}
         header={
           <RowHeader
-            chip={<Badge variant="info">Friends</Badge>}
             title={labelValue || "Friends"}
-            meta={`${itemCount} ${itemCount === 1 ? "question" : "questions"} per friend`}
+            meta={metaLine(
+              "Group",
+              maxCountValue === "0"
+                ? "friends disabled"
+                : maxCountValue !== "" &&
+                    `up to ${maxCountValue} ${maxCountValue === "1" ? "friend" : "friends"}`,
+            )}
+            metaClassName="text-sky-300"
             listName={listName}
             index={index}
             count={count}
@@ -308,7 +440,6 @@ function BuilderRowView({
           isStoredRow={isStoredRow}
           isRowOpen={isRowOpen}
           toggleRow={toggleRow}
-          signerTwinTarget={signerTwinTarget}
         />
       </RowCard>
     );
@@ -318,6 +449,10 @@ function BuilderRowView({
   // "email" must not morph into an unremovable pinned row
   const isPinnedIdentity =
     PINNED_IDENTITY_KEYS.has(initialKey) && isStoredRow(row.key);
+  const isLinked =
+    keyValue !== "" &&
+    linkedKeys.has(keyValue) &&
+    signerByKey.get(keyValue) === row;
 
   return (
     <RowCard
@@ -330,35 +465,46 @@ function BuilderRowView({
       toggleRow={toggleRow}
       header={
         <RowHeader
-          chip={
-            isPinnedIdentity ? (
-              <Badge>Pinned</Badge>
-            ) : (
-              <Badge variant="secondary">{typeChipLabel(type)}</Badge>
-            )
-          }
           title={
             labelValue || (isPinnedIdentity ? initialKey : "Untitled field")
           }
-          meta={isPinnedIdentity ? "always required" : undefined}
+          meta={metaLine(
+            fieldTypeLabel(type),
+            isLinked && "linked to friends",
+            isPinnedIdentity && "always required",
+          )}
           listName={listName}
           index={index}
           count={count}
-          removable={!isPinnedIdentity}
-          confirmRemoveMessage={
-            rowLocked ? REMOVE_RESPONDED_FIELD_MESSAGE : undefined
-          }
         />
       }
     >
       {isPinnedIdentity ? (
         <PinnedIdentityRowView row={row} />
       ) : (
-        <EditableRowView
-          row={row}
-          keyLocked={rowLocked}
-          twinTarget={friendTwinTarget}
-        />
+        <>
+          <EditableRowView row={row} keyLocked={rowLocked} />
+          <ActionRow>
+            {isLinked ? (
+              <DialogTriggerButton dialogId={unlinkDialogId(keyValue)}>
+                <LinkBreak2Icon />
+                Unlink
+              </DialogTriggerButton>
+            ) : keyValue !== "" && itemFieldsMeta ? (
+              <DialogTriggerButton dialogId={linkDialogId(keyValue)}>
+                <Link2Icon />
+                Link to friends
+              </DialogTriggerButton>
+            ) : null}
+            <RemoveButton
+              listName={listName}
+              index={index}
+              confirmMessage={
+                rowLocked ? REMOVE_RESPONDED_FIELD_MESSAGE : undefined
+              }
+            />
+          </ActionRow>
+        </>
       )}
     </RowCard>
   );
@@ -395,7 +541,11 @@ function RowCard({
       >
         {header}
         <RowErrors id={row.errorId} errors={row.errors} />
-        <CollapsibleContent forceMount className="data-[state=closed]:hidden">
+        <CollapsibleContent
+          forceMount
+          data-row-body
+          className="data-[state=closed]:hidden"
+        >
           <div className={cn("border-t", small ? "p-3" : "p-3 sm:p-4")}>
             {children}
           </div>
@@ -416,64 +566,52 @@ function RowErrors({ id, errors }: { id?: string; errors?: string[] }) {
   );
 }
 
-// Header of a collapsible row card: type chip + title + optional meta text
-// form the toggle trigger; reorder is free for every row, removal only for
-// custom fields. Icon-only buttons keep the list scannable.
+// Header of a collapsible row card: the stacked title and meta line form the
+// toggle trigger; the linked state is carried by the meta prose alone, so it
+// is announced by screen readers and survives JavaScript being off.
 function RowHeader({
-  chip,
   title,
   meta,
+  metaClassName,
   listName,
   index,
   count,
-  removable = false,
-  confirmRemoveMessage,
-  small = false,
 }: {
-  chip: ReactNode;
   title: string;
   meta?: string;
+  metaClassName?: string;
   listName: string;
   index: number;
   count: number;
-  removable?: boolean;
-  confirmRemoveMessage?: string;
-  // nested per-friend rows render a compact header
-  small?: boolean;
 }) {
   const form = useFormMetadata();
-  // nested per-friend rows use the compact icon button size
-  const iconSize = small ? "icon-sm" : "icon";
 
   return (
-    <div className={cn("flex items-center gap-1", small ? "p-2" : "p-3")}>
-      {/* the chip always stacks above the title; the flex layout lives on an
-          inner span because Safari mishandles buttons as flex containers */}
+    <div className="flex items-center gap-2 p-3">
+      {/* the flex layout lives on an inner span because Safari mishandles
+          buttons as flex containers */}
       <CollapsibleTrigger className="min-w-0 flex-1 cursor-pointer text-left">
         <span className="flex min-w-0 flex-col items-start gap-1">
-          {chip}
-          <span className="flex w-full min-w-0 items-baseline gap-2">
+          <span className="w-full truncate text-base font-semibold tracking-tight">
+            {title}
+          </span>
+          {meta ? (
             <span
               className={cn(
-                "truncate font-semibold",
-                small ? "text-xs" : "text-sm",
+                "text-foreground/65 text-xs text-pretty",
+                metaClassName,
               )}
             >
-              {title}
+              {meta}
             </span>
-            {meta ? (
-              <span className="text-foreground/50 ml-auto hidden shrink-0 pr-1 text-xs sm:inline">
-                {meta}
-              </span>
-            ) : null}
-          </span>
+          ) : null}
         </span>
       </CollapsibleTrigger>
 
       <Button
-        variant="outline"
-        size={iconSize}
-        className="shrink-0"
+        variant="ghost"
+        size="icon"
+        className="text-foreground/65 shrink-0"
         aria-label="Move up"
         disabled={index === 0}
         {...form.reorder.getButtonProps({
@@ -485,9 +623,9 @@ function RowHeader({
         <ArrowUpIcon />
       </Button>
       <Button
-        variant="outline"
-        size={iconSize}
-        className="shrink-0"
+        variant="ghost"
+        size="icon"
+        className="text-foreground/65 shrink-0"
         aria-label="Move down"
         disabled={index === count - 1}
         {...form.reorder.getButtonProps({
@@ -498,36 +636,378 @@ function RowHeader({
       >
         <ArrowDownIcon />
       </Button>
-      {removable ? (
-        <Button
-          variant="destructive-outline"
-          size={iconSize}
-          className="shrink-0"
-          aria-label="Remove"
-          {...form.remove.getButtonProps({ name: listName, index })}
-          onClick={
-            confirmRemoveMessage
-              ? (event) => {
-                  if (!window.confirm(confirmRemoveMessage)) {
-                    event.preventDefault();
-                  }
-                }
-              : undefined
-          }
-        >
-          <TrashIcon />
-        </Button>
-      ) : null}
       <CollapsibleTrigger
         aria-label="Toggle details"
         className={cn(
-          buttonVariants({ variant: "ghost", size: iconSize }),
-          "data-[state=open]:text-primary shrink-0 [&[data-state=open]>svg]:rotate-180",
+          buttonVariants({ variant: "ghost", size: "icon" }),
+          "text-foreground/65 data-[state=open]:text-primary shrink-0 [&[data-state=open]>svg]:rotate-180",
         )}
       >
         <ChevronDownIcon className="transition-transform duration-300" />
       </CollapsibleTrigger>
     </div>
+  );
+}
+
+// The full-bleed action strip at the bottom of an expanded row body.
+function ActionRow({
+  small = false,
+  children,
+}: {
+  small?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "-mx-3 mt-4 -mb-3 flex flex-wrap justify-end gap-2 border-t px-3 pt-3 pb-3",
+        !small && "sm:-mx-4 sm:-mb-4 sm:px-4 sm:pb-4",
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+function RemoveButton({
+  listName,
+  index,
+  confirmMessage,
+}: {
+  listName: string;
+  index: number;
+  confirmMessage?: string;
+}) {
+  const form = useFormMetadata();
+
+  return (
+    <Button
+      variant="destructive-outline"
+      size="sm"
+      {...form.remove.getButtonProps({ name: listName, index })}
+      onClick={
+        confirmMessage
+          ? (event) => {
+              if (!window.confirm(confirmMessage)) {
+                event.preventDefault();
+              }
+            }
+          : undefined
+      }
+    >
+      <TrashIcon />
+      Remove
+    </Button>
+  );
+}
+
+// Opens a builder dialog declaratively (Invoker Commands work without JS);
+// the click fallback covers browsers that predate commandfor.
+function DialogTriggerButton({
+  dialogId,
+  children,
+}: {
+  dialogId: string;
+  children: ReactNode;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      {...({ commandfor: dialogId, command: "show-modal" } as Record<
+        string,
+        unknown
+      >)}
+      onClick={() => {
+        const dialog = getDialog(dialogId);
+        if (dialog && !dialog.open) dialog.showModal();
+      }}
+    >
+      {children}
+    </Button>
+  );
+}
+
+function DialogCancelButton({ dialogId }: { dialogId: string }) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      className="text-foreground/80"
+      {...({ commandfor: dialogId, command: "close" } as Record<
+        string,
+        unknown
+      >)}
+      onClick={() => getDialog(dialogId)?.close()}
+    >
+      Cancel
+    </Button>
+  );
+}
+
+function DialogCallout({ children }: { children: ReactNode }) {
+  return (
+    <p className="rounded-lg border border-sky-300/35 bg-sky-300/10 p-3 text-xs leading-relaxed text-sky-300">
+      {children}
+    </p>
+  );
+}
+
+function BuilderDialog({
+  id,
+  labelId,
+  onClose,
+  children,
+}: {
+  id: string;
+  labelId: string;
+  onClose?: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <dialog
+      id={id}
+      aria-labelledby={labelId}
+      onClose={onClose}
+      className="bg-card text-foreground backdrop:bg-background/70 m-auto w-[min(420px,calc(100vw-2rem))] flex-col gap-4 rounded-2xl border p-5 open:flex"
+    >
+      {children}
+    </dialog>
+  );
+}
+
+function LinkDialog({ signerRow }: { signerRow: RowMetadata }) {
+  const form = useFormMetadata();
+  const {
+    linkedKeys,
+    itemFieldsMeta,
+    answerCounts,
+    ensureRowOpen,
+    friendsRowKey,
+  } = useBuilderLinks();
+  const signer = readSigner(signerRow);
+  const key = String(signerRow.getFieldset().name.value ?? "");
+  const [choice, setChoice] = useState("new");
+  const headingId = useId();
+  const dialogId = linkDialogId(key);
+  const friendCount = answerCounts[key]?.friends ?? 0;
+
+  const itemRows = (itemFieldsMeta?.getFieldList() ?? []) as ItemRowMetadata[];
+  const candidates = itemRows.flatMap((itemRow) => {
+    const fields = itemRow.getFieldset();
+    const itemKey = String(fields.name.value ?? "");
+    if (itemKey !== "" && linkedKeys.has(itemKey)) return [];
+    const itemLabel = String(fields.label.value ?? "");
+    const matches =
+      itemKey === key ||
+      (itemLabel.trim() !== "" &&
+        itemLabel.trim().toLowerCase() === signer.label.trim().toLowerCase());
+    return matches
+      ? [{ rowName: itemRow.name, rowKey: itemRow.key, label: itemLabel }]
+      : [];
+  });
+
+  if (!itemFieldsMeta) return null;
+
+  return (
+    <BuilderDialog id={dialogId} labelId={headingId}>
+      <h3 id={headingId} className="text-xl font-semibold">
+        Also ask each friend this question?
+      </h3>
+      <p className="text-foreground/65 text-sm">
+        “{signer.label || key}” stays editable on the signer’s row. The friend’s
+        copy follows it and shares the field key <strong>{key}</strong>, so both
+        answers export in one column.
+      </p>
+      <div className="flex flex-col gap-2" role="radiogroup">
+        <LinkChoiceOption
+          checked={choice === "new"}
+          onSelect={() => setChoice("new")}
+          title="Add a new mirrored row"
+          explanation="Appears last under Questions per friend."
+        />
+        {candidates.map((candidate) => (
+          <LinkChoiceOption
+            key={candidate.rowName}
+            checked={choice === candidate.rowName}
+            onSelect={() => setChoice(candidate.rowName)}
+            title={`Mirror onto “${candidate.label}”`}
+            explanation="Same field key. Its label, help text, type and Required are replaced by the signer’s."
+          />
+        ))}
+      </div>
+      {friendCount > 0 ? (
+        <DialogCallout>
+          {friendCount === 1
+            ? "1 friend has already answered this question."
+            : `${friendCount} friends have already answered this question.`}{" "}
+          Their answers move into the merged <strong>{key}</strong> column.
+        </DialogCallout>
+      ) : null}
+      <div className="flex justify-end gap-2">
+        <DialogCancelButton dialogId={dialogId} />
+        <Button
+          size="sm"
+          {...form.insert.getButtonProps({
+            name: itemFieldsMeta.name,
+            defaultValue: mirroredRowValue(signer, key) as never,
+          })}
+          onClick={(event) => {
+            event.preventDefault();
+            const candidate = candidates.find((c) => c.rowName === choice);
+            if (candidate) {
+              form.update({
+                name: candidate.rowName,
+                value: mirroredRowValue(signer, key),
+              });
+              ensureRowOpen(candidate.rowKey);
+            } else {
+              form.insert({
+                name: itemFieldsMeta.name,
+                defaultValue: mirroredRowValue(signer, key) as never,
+              });
+            }
+            ensureRowOpen(friendsRowKey);
+            getDialog(dialogId)?.close();
+          }}
+        >
+          Link to friends
+        </Button>
+      </div>
+    </BuilderDialog>
+  );
+}
+
+function LinkChoiceOption({
+  checked,
+  onSelect,
+  title,
+  explanation,
+}: {
+  checked: boolean;
+  onSelect: () => void;
+  title: string;
+  explanation: string;
+}) {
+  return (
+    <label
+      className={cn(
+        "flex cursor-pointer flex-col gap-1 rounded-lg border p-3",
+        checked ? "border-primary/50 bg-primary/10" : "hover:bg-foreground/5",
+      )}
+    >
+      <span className="flex items-center gap-2">
+        <input
+          type="radio"
+          checked={checked}
+          onChange={onSelect}
+          className="accent-primary size-4"
+        />
+        <span className="text-sm font-semibold">{title}</span>
+      </span>
+      <span className="text-foreground/65 pl-6 text-xs">{explanation}</span>
+    </label>
+  );
+}
+
+function UnlinkDialog({
+  sharedKey,
+  signerRow,
+  friendRow,
+}: {
+  sharedKey: string;
+  signerRow: RowMetadata;
+  friendRow: ItemRowMetadata;
+}) {
+  const form = useFormMetadata();
+  const { takenKeys, answerCounts } = useBuilderLinks();
+  const signer = readSigner(signerRow);
+  const defaultKey = nextFreeKey(sharedKey, takenKeys);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const headingId = useId();
+  const inputId = useId();
+  const hintId = useId();
+  const dialogId = unlinkDialogId(sharedKey);
+  const total = answerCounts[sharedKey]?.total ?? 0;
+
+  return (
+    <BuilderDialog
+      id={dialogId}
+      labelId={headingId}
+      onClose={() => setError(null)}
+    >
+      <h3 id={headingId} className="text-xl font-semibold">
+        Unlink from the signer’s question?
+      </h3>
+      <p className="text-foreground/65 text-sm">
+        The friend’s copy becomes its own question, keeping the wording it has
+        now. The signer’s “{signer.label || sharedKey}” is unchanged. Editing
+        one will no longer change the other.
+      </p>
+      <div className="flex flex-col gap-2">
+        <label htmlFor={inputId} className="text-sm font-semibold">
+          New field key for the friend’s question
+        </label>
+        <Input
+          ref={inputRef}
+          id={inputId}
+          type="text"
+          defaultValue={defaultKey}
+          aria-describedby={hintId}
+        />
+        <p id={hintId} className="text-foreground/50 text-xs">
+          Becomes a second CSV column beside <strong>{sharedKey}</strong>.
+          Lowercase letters, numbers and underscores.
+        </p>
+        {error ? (
+          <p className="text-destructive-light text-sm">{error}</p>
+        ) : null}
+      </div>
+      {total > 0 ? (
+        <DialogCallout>
+          {total === 1
+            ? "1 answer was collected under the shared key."
+            : `${total} answers were collected under the shared key.`}{" "}
+          They stay in <strong>{sharedKey}</strong>; answers from now on are
+          recorded under the new key.
+        </DialogCallout>
+      ) : null}
+      <div className="flex justify-end gap-2">
+        <DialogCancelButton dialogId={dialogId} />
+        <Button
+          variant="outline"
+          size="sm"
+          {...form.update.getButtonProps({
+            name: friendRow.name,
+            value: mirroredRowValue(signer, defaultKey),
+          })}
+          onClick={(event) => {
+            event.preventDefault();
+            const typed = (inputRef.current?.value ?? defaultKey).trim();
+            const problem = !FIELD_KEY_REGEX.test(typed)
+              ? "Use a key that starts with a letter and contains only lowercase letters, digits and underscores."
+              : takenKeys.has(typed)
+                ? "This key is already used by another question."
+                : null;
+            if (problem) {
+              setError(problem);
+              return;
+            }
+            form.update({
+              name: friendRow.name,
+              value: mirroredRowValue(signer, typed),
+            });
+            getDialog(dialogId)?.close();
+          }}
+        >
+          <LinkBreak2Icon />
+          Unlink
+        </Button>
+      </div>
+    </BuilderDialog>
   );
 }
 
@@ -559,26 +1039,18 @@ function PinnedIdentityRowView({ row }: { row: RowMetadata }) {
 function EditableRowView({
   row,
   keyLocked = false,
-  twinTarget,
 }: {
   row: EditableRowMetadata;
   // keys are the merge/answers link — immutable once submissions exist; new
   // fields still pick theirs freely (the parent derives this from mount-time
   // row identity)
   keyLocked?: boolean;
-  twinTarget?: TwinTarget;
 }) {
   const form = useFormMetadata();
   const rowFields = row.getFieldset();
   const labelInputProps = getInputProps(rowFields.label, { type: "text" });
 
-  const keyValue = String(rowFields.name.value ?? "");
   const isSelect = String(rowFields.type.value ?? "") === "select";
-
-  const showTwinButton =
-    twinTarget !== undefined &&
-    keyValue !== "" &&
-    !twinTarget.existingKeys.has(keyValue);
 
   return (
     <div className="flex flex-col gap-3">
@@ -646,39 +1118,163 @@ function EditableRowView({
           readOnly
         />
       )}
-      <div className="flex flex-wrap items-center gap-4">
-        <CheckboxField
-          labelProps={{ children: "Required" }}
-          buttonProps={{
-            ...getInputProps(rowFields.required, { type: "checkbox" }),
-          }}
-          errors={rowFields.required.errors}
+      <CheckboxField
+        labelProps={{ children: "Required" }}
+        buttonProps={{
+          ...getInputProps(rowFields.required, { type: "checkbox" }),
+        }}
+        errors={rowFields.required.errors}
+      />
+    </div>
+  );
+}
+
+const mirrorControlClassName =
+  "border-dashed bg-foreground/3 text-foreground/65 disabled:cursor-not-allowed disabled:opacity-100";
+
+function MirrorFieldLabel({ children }: { children: ReactNode }) {
+  return (
+    <span className="text-foreground/65 text-sm font-semibold">{children}</span>
+  );
+}
+
+function MirrorInput({
+  label,
+  value,
+  emphasized = false,
+}: {
+  label: ReactNode;
+  value: string;
+  emphasized?: boolean;
+}) {
+  return (
+    <div className="flex min-w-0 grow flex-col gap-2">
+      <MirrorFieldLabel>{label}</MirrorFieldLabel>
+      <Input
+        type="text"
+        disabled
+        value={value}
+        className={cn(
+          mirrorControlClassName,
+          emphasized && "text-foreground/80",
+        )}
+      />
+    </div>
+  );
+}
+
+function MirrorTextarea({ label, value }: { label: ReactNode; value: string }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <MirrorFieldLabel>{label}</MirrorFieldLabel>
+      <textarea
+        disabled
+        value={value}
+        rows={2}
+        className={cn(
+          "bg-foreground/5 flex w-full rounded-lg border px-3 py-3",
+          mirrorControlClassName,
+          "resize-none",
+        )}
+      />
+    </div>
+  );
+}
+
+function MirrorSelect({ label, value }: { label: ReactNode; value: string }) {
+  return (
+    <div className="flex min-w-0 grow flex-col gap-2">
+      <MirrorFieldLabel>{label}</MirrorFieldLabel>
+      <div className="relative">
+        <select
+          disabled
+          className={cn(
+            fieldShellClassName,
+            "flex w-full appearance-none py-1 pr-9",
+            mirrorControlClassName,
+          )}
+        >
+          <option>{value}</option>
+        </select>
+        <ChevronDownIcon
+          aria-hidden
+          className="text-foreground/50 pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2"
         />
-        {showTwinButton ? (
-          <Button
-            variant="outline"
-            size="sm"
-            {...form.insert.getButtonProps({
-              name: twinTarget.listName,
-              // the two twin targets carry different Conform name brands, so
-              // the payload type can't be inferred here — it is a plain row
-              defaultValue: {
-                ...NEW_ROW,
-                type: String(rowFields.type.value ?? "text"),
-                name: keyValue,
-                label: String(rowFields.label.value ?? "") || keyValue,
-                description: String(rowFields.description.value ?? ""),
-                ...(isSelect
-                  ? { options: String(rowFields.options.value ?? "") }
-                  : {}),
-              } satisfies Record<string, unknown> as never,
-            })}
-          >
-            {twinTarget.buttonLabel}
-          </Button>
-        ) : null}
       </div>
     </div>
+  );
+}
+
+// The friend side of a linked pair: the visible controls carry no name and
+// are purely cosmetic; the hidden inputs render the signer row's live values,
+// so the payload can never drift from what the mirror shows.
+function MirrorRowView({
+  itemRow,
+  signerRow,
+}: {
+  itemRow: ItemRowMetadata;
+  signerRow: RowMetadata;
+}) {
+  const itemFields = itemRow.getFieldset();
+  const signer = readSigner(signerRow);
+  const sharedKey = String(itemFields.name.value ?? "");
+  const isSelect = signer.type === "select";
+  const sentenceId = useId();
+
+  return (
+    <fieldset
+      aria-describedby={sentenceId}
+      className="flex min-w-0 flex-col gap-3"
+    >
+      <p
+        id={sentenceId}
+        className="text-foreground/65 max-w-[70ch] text-sm leading-relaxed text-pretty"
+      >
+        Mirrors the signer’s “{signer.label || "this question"}”. Type, label,
+        help text and Required are edited on that row, and the field key is
+        locked because the shared key is the link itself.
+      </p>
+
+      <input type="hidden" name={itemFields.type.name} value={signer.type} />
+      <input type="hidden" name={itemFields.name.name} value={sharedKey} />
+      <input type="hidden" name={itemFields.label.name} value={signer.label} />
+      {signer.required ? (
+        <input type="hidden" name={itemFields.required.name} value="on" />
+      ) : null}
+      {signer.description ? (
+        <input
+          type="hidden"
+          name={itemFields.description.name}
+          value={signer.description}
+        />
+      ) : null}
+      {isSelect && signer.options ? (
+        <input
+          type="hidden"
+          name={itemFields.options.name}
+          value={signer.options}
+        />
+      ) : null}
+
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <MirrorSelect label="Type" value={fieldTypeLabel(signer.type)} />
+        <MirrorInput label="Label" value={signer.label} />
+        <MirrorInput label="Field key" value={sharedKey} emphasized />
+      </div>
+      <MirrorTextarea label="Help text" value={signer.description} />
+      {isSelect ? (
+        <MirrorTextarea label="Options (one per line)" value={signer.options} />
+      ) : null}
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          disabled
+          checked={signer.required}
+          className="accent-primary size-4 cursor-not-allowed"
+        />
+        <MirrorFieldLabel>Required</MirrorFieldLabel>
+      </div>
+    </fieldset>
   );
 }
 
@@ -690,16 +1286,15 @@ function FriendsRowView({
   isStoredRow,
   isRowOpen,
   toggleRow,
-  signerTwinTarget,
 }: {
   row: RowMetadata;
   lockFieldKeys: boolean;
   isStoredRow: (rowKey: string | undefined) => boolean;
   isRowOpen: (rowKey: string | undefined) => boolean;
   toggleRow: (rowKey: string | undefined) => void;
-  signerTwinTarget: TwinTarget;
 }) {
   const form = useFormMetadata();
+  const { linkedKeys, signerByKey } = useBuilderLinks();
   const rowFields = row.getFieldset();
   const itemFields = rowFields.itemFields.getFieldList();
 
@@ -744,7 +1339,12 @@ function FriendsRowView({
             const itemLocked = lockFieldKeys && isStoredRow(itemRow.key);
             const itemRowFields = (itemRow as ItemRowMetadata).getFieldset();
             const itemType = String(itemRowFields.type.value ?? "");
+            const itemKey = String(itemRowFields.name.value ?? "");
             const itemLabel = String(itemRowFields.label.value ?? "");
+            const signerRow =
+              itemKey !== "" && linkedKeys.has(itemKey)
+                ? signerByKey.get(itemKey)
+                : undefined;
 
             return (
               <RowCard
@@ -755,28 +1355,66 @@ function FriendsRowView({
                 toggleRow={toggleRow}
                 header={
                   <RowHeader
-                    small
-                    chip={
-                      <Badge variant="secondary">
-                        {typeChipLabel(itemType)}
-                      </Badge>
+                    title={
+                      (signerRow
+                        ? String(signerRow.getFieldset().label.value ?? "")
+                        : itemLabel) || "Untitled field"
                     }
-                    title={itemLabel || "Untitled field"}
+                    meta={metaLine(
+                      fieldTypeLabel(
+                        signerRow
+                          ? String(signerRow.getFieldset().type.value ?? "")
+                          : itemType,
+                      ),
+                      signerRow !== undefined && "linked to the signer’s",
+                    )}
                     listName={rowFields.itemFields.name}
                     index={index}
                     count={itemFields.length}
-                    removable
-                    confirmRemoveMessage={
-                      itemLocked ? REMOVE_RESPONDED_FIELD_MESSAGE : undefined
-                    }
                   />
                 }
               >
-                <EditableRowView
-                  row={itemRow as ItemRowMetadata}
-                  keyLocked={itemLocked}
-                  twinTarget={signerTwinTarget}
-                />
+                {signerRow ? (
+                  <>
+                    <MirrorRowView
+                      itemRow={itemRow as ItemRowMetadata}
+                      signerRow={signerRow}
+                    />
+                    <ActionRow small>
+                      <DialogTriggerButton dialogId={unlinkDialogId(itemKey)}>
+                        <LinkBreak2Icon />
+                        Unlink
+                      </DialogTriggerButton>
+                      <RemoveButton
+                        listName={rowFields.itemFields.name}
+                        index={index}
+                        confirmMessage={
+                          itemLocked
+                            ? REMOVE_RESPONDED_FIELD_MESSAGE
+                            : undefined
+                        }
+                      />
+                    </ActionRow>
+                  </>
+                ) : (
+                  <>
+                    <EditableRowView
+                      row={itemRow as ItemRowMetadata}
+                      keyLocked={itemLocked}
+                    />
+                    <ActionRow small>
+                      <RemoveButton
+                        listName={rowFields.itemFields.name}
+                        index={index}
+                        confirmMessage={
+                          itemLocked
+                            ? REMOVE_RESPONDED_FIELD_MESSAGE
+                            : undefined
+                        }
+                      />
+                    </ActionRow>
+                  </>
+                )}
               </RowCard>
             );
           })}
