@@ -25,10 +25,15 @@ Asset-intrinsic metadata (`altText`, dimensions, blur placeholder) lives on
 
 ## Delete semantics
 
-**Deleting content never destroys an asset; deleting an asset SetNulls slots
-and Cascades links away.** Deleting a dinner or a board member leaves every
-image row standing; deleting an image row leaves the dinner and the member
-standing (their slots go null) and takes only the gallery memberships with it.
+**Deleting content releases its images; deleting an asset SetNulls slots and
+Cascades links away.** When a dinner, a board member, a slot image (on
+replace) or a gallery membership goes, each image it referenced is checked
+against the reference registry: an image nothing else references — no cover
+slot, no portrait slot, no gallery membership — is deleted, row and provider
+asset together; an image anything still references stays untouched
+(`releaseImagesIfUnreferenced`, `app/models/image.server.ts`). In the other
+direction, deleting an image row leaves the dinner and the member standing
+(their slots go null) and takes only the gallery memberships with it.
 
 ## Guardrails
 
@@ -46,8 +51,8 @@ Two seams are deliberate: undecided design questions, not TODOs.
 
 ### Orphaned-image lifecycle
 
-`deleteOrphanedImage` (`app/models/gallery.server.ts`) deletes an image on
-last-unlink when nothing else uses it, and the caller destroys the provider
+`releaseImagesIfUnreferenced` (`app/models/image.server.ts`) deletes an image
+on last-unlink when nothing else uses it, and the caller destroys the provider
 asset. The alternative is a pool/sweep model: unlinked images rest in a pool
 and a periodic sweep collects them after an upload grace window. Undecided —
 delete-on-last-unlink stands until the pool earns its keep.

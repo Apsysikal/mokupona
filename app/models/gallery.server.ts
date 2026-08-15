@@ -3,7 +3,8 @@ import type { EventGalleryImage, Prisma } from "#prisma/generated/client";
 import { prisma } from "~/db.server";
 import {
   IMAGE_METADATA_SELECT,
-  UNREFERENCED_IMAGE_WHERE,
+  releaseImagesIfUnreferenced,
+  UNOWNED_IMAGE_WHERE,
   type ImageCreateData,
   type ImageMetadata,
 } from "~/models/image.server";
@@ -54,9 +55,8 @@ export type GalleryImageCreateData = ImageCreateData & {
 
 export interface RemovedGalleryEntry {
   imageId: string;
-  storageKey: string;
-  /** nothing references the image anymore — the caller may collect it */
-  orphaned: boolean;
+  /** set iff the unlink released the image — destroy the provider asset */
+  deletedStorageKey: string | null;
 }
 
 const ENTRY_SELECT = {
@@ -85,13 +85,6 @@ const ENTRY_ORDER_BY = [
   { event: { date: "desc" } },
   { position: "asc" },
 ] satisfies Prisma.EventGalleryImageOrderByWithRelationInput[];
-
-// The picker treats an image as gallery material only when no slot owns it:
-// not a dinner cover, not a board portrait.
-const UNOWNED_IMAGE: Prisma.ImageWhereInput = {
-  event: null,
-  boardMember: null,
-};
 
 type EntryRow = Prisma.EventGalleryImageGetPayload<{
   select: typeof ENTRY_SELECT;
@@ -153,7 +146,21 @@ export async function getGalleryEntries(): Promise<GalleryEntry[]> {
   return entries.map(toGalleryEntry);
 }
 
+/** One dinner's memberships in display order — the public page's read. */
 export async function getGalleryEntriesForEvent(
+  eventId: string,
+): Promise<GalleryEntry[]> {
+  const entries = await prisma.eventGalleryImage.findMany({
+    where: { eventId },
+    select: ENTRY_SELECT,
+    orderBy: { position: "asc" },
+  });
+
+  return entries.map(toGalleryEntry);
+}
+
+/** The admin read: each entry plus the other dinners showing its image. */
+export async function getGalleryEntriesForEventWithReuse(
   eventId: string,
 ): Promise<GalleryEntryWithReuse[]> {
   const entries = await prisma.eventGalleryImage.findMany({
@@ -202,10 +209,10 @@ export async function createGalleryImagesForEvent(
 }
 
 /**
- * Reuse path: grant existing images membership in this dinner. Unknown ids
- * and images already in the gallery are skipped — SQLite has no
- * `skipDuplicates`, and the (eventId, imageId) unique would otherwise turn a
- * double-submitted picker into a 500.
+ * Reuse path: grant existing images membership in this dinner. Unknown ids,
+ * slot-owned images (covers, portraits) and images already in the gallery
+ * are skipped — SQLite has no `skipDuplicates`, and the (eventId, imageId)
+ * unique would otherwise turn a double-submitted picker into a 500.
  */
 export async function linkExistingImagesToEvent(
   eventId: string,
@@ -220,7 +227,10 @@ export async function linkExistingImagesToEvent(
         where: { eventId, imageId: { in: ids } },
         select: { imageId: true },
       }),
-      tx.image.findMany({ where: { id: { in: ids } }, select: { id: true } }),
+      tx.image.findMany({
+        where: { id: { in: ids }, ...UNOWNED_IMAGE_WHERE },
+        select: { id: true },
+      }),
     ]);
 
     const alreadyLinked = new Set(linked.map((entry) => entry.imageId));
@@ -244,62 +254,32 @@ export async function linkExistingImagesToEvent(
 }
 
 /**
- * Unlink one image from one dinner. The image row survives by design — it may
- * still hang in another dinner's gallery, and destroying it there is the bug
- * the link table exists to prevent. `orphaned` reports that nothing
- * references it anymore, leaving the collect-or-keep call to the caller.
+ * Unlink one image from one dinner, scoped to that dinner — an entry hanging
+ * elsewhere reads as not found. An image still referenced anywhere (another
+ * gallery, a cover or portrait slot) survives the unlink; only the last
+ * unlink deletes the row, and its storageKey comes back for the caller's
+ * post-commit provider destroy.
  */
 export async function removeGalleryEntry(
+  eventId: string,
   entryId: string,
 ): Promise<RemovedGalleryEntry | null> {
   return prisma.$transaction(async (tx) => {
-    const entry = await tx.eventGalleryImage.findUnique({
-      where: { id: entryId },
-      select: {
-        imageId: true,
-        image: {
-          select: {
-            storageKey: true,
-            event: { select: { id: true } },
-            boardMember: { select: { id: true } },
-          },
-        },
-      },
+    const entry = await tx.eventGalleryImage.findFirst({
+      where: { id: entryId, eventId },
+      select: { imageId: true },
     });
     if (!entry) return null;
 
     await tx.eventGalleryImage.delete({ where: { id: entryId } });
-
-    const remaining = await tx.eventGalleryImage.count({
-      where: { imageId: entry.imageId },
-    });
-    const { storageKey, event, boardMember } = entry.image;
+    const { storageKeys } = await releaseImagesIfUnreferenced(tx, [
+      entry.imageId,
+    ]);
 
     return {
       imageId: entry.imageId,
-      storageKey,
-      orphaned: remaining === 0 && event === null && boardMember === null,
+      deletedStorageKey: storageKeys[0] ?? null,
     };
-  });
-}
-
-/**
- * Collect an image the last unlink left behind. Ownership is re-checked
- * inside the transaction, so an image re-linked in the meantime is kept and
- * `null` comes back; a returned storageKey is safe to destroy at the provider.
- */
-export async function deleteOrphanedImage(
-  imageId: string,
-): Promise<string | null> {
-  return prisma.$transaction(async (tx) => {
-    const image = await tx.image.findFirst({
-      where: { id: imageId, ...UNREFERENCED_IMAGE_WHERE },
-      select: { storageKey: true },
-    });
-    if (!image) return null;
-
-    await tx.image.delete({ where: { id: imageId } });
-    return image.storageKey;
   });
 }
 
@@ -308,7 +288,7 @@ export async function getLinkableImages(
   eventId: string,
 ): Promise<LinkableImage[]> {
   const images = await prisma.image.findMany({
-    where: { galleryLinks: { none: { eventId } }, ...UNOWNED_IMAGE },
+    where: { galleryLinks: { none: { eventId } }, ...UNOWNED_IMAGE_WHERE },
     select: {
       ...IMAGE_METADATA_SELECT,
       altText: true,

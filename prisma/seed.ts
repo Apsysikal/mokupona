@@ -12,6 +12,7 @@ import { ROLE_NAMES } from "~/features/auth/roles";
 import { storeImage } from "~/features/images/image-storage.server";
 import { createEvent } from "~/models/event.server";
 import { createGalleryImagesForEvent } from "~/models/gallery.server";
+import { UNOWNED_IMAGE_WHERE } from "~/models/image.server";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -62,7 +63,7 @@ async function seed() {
 
   await prisma.image
     .deleteMany({
-      where: { event: null, boardMember: null },
+      where: UNOWNED_IMAGE_WHERE,
     })
     .catch(() => {
       /** */

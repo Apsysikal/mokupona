@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { GalleryImageModel } from "../view-models";
 
-import { MosaicGallery, layout } from "./mosaic";
+import { MosaicGallery } from "./mosaic";
 import type { GalleryLayoutProps } from "./types";
 
 import type { ImageProviderConfig } from "~/shared/image";
@@ -202,11 +202,5 @@ describe("mosaic layout", () => {
     const { container } = renderMosaic({ images: [], variant: "section" });
 
     expect(container).toBeEmptyDOMElement();
-  });
-
-  it("exports itself for the layout registry", () => {
-    expect(layout.id).toBe("mosaic");
-    expect(layout.label).toBe(layout.label.toLowerCase());
-    expect(layout.Component).toBe(MosaicGallery);
   });
 });

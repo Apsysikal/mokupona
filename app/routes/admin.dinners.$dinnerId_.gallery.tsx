@@ -21,8 +21,7 @@ import {
 import { getEventById } from "~/models/event.server";
 import {
   createGalleryImagesForEvent,
-  deleteOrphanedImage,
-  getGalleryEntriesForEvent,
+  getGalleryEntriesForEventWithReuse,
   getLinkableImages,
   linkExistingImagesToEvent,
   removeGalleryEntry,
@@ -46,7 +45,7 @@ export async function loader({ params }: Route.LoaderArgs) {
 
   const [dinner, entries, linkable] = await Promise.all([
     getEventById(dinnerId).then(requireFound),
-    getGalleryEntriesForEvent(dinnerId),
+    getGalleryEntriesForEventWithReuse(dinnerId),
     getLinkableImages(dinnerId),
   ]);
 
@@ -62,6 +61,10 @@ export async function loader({ params }: Route.LoaderArgs) {
 export async function action({ request, params }: Route.ActionArgs) {
   const { dinnerId } = params;
   const galleryPath = `/admin/dinners/${dinnerId}/gallery`;
+
+  // before any upload is stored: a dinner deleted in another tab must yield
+  // a 404, not stranded provider assets
+  await getEventById(dinnerId).then(requireFound);
 
   // The upload arrives as multipart and has to stream through the image
   // parser before any field is readable; link and remove are plain posts, so
@@ -127,11 +130,11 @@ export async function action({ request, params }: Route.ActionArgs) {
     const entryId = formData.get("entryId");
 
     if (typeof entryId === "string") {
-      const removed = await removeGalleryEntry(entryId);
-      // the image survives an unlink; only a photo no dinner (and no cover or
-      // portrait) references anymore is collected, bytes last
-      if (removed?.orphaned) {
-        await destroyImages([await deleteOrphanedImage(removed.imageId)]);
+      const removed = await removeGalleryEntry(dinnerId, entryId);
+      // the image survives an unlink while anything still references it;
+      // only the last unlink hands back a key to destroy, bytes last
+      if (removed?.deletedStorageKey) {
+        await destroyImages([removed.deletedStorageKey]);
       }
     }
 

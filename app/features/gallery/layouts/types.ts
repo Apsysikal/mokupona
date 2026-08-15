@@ -1,5 +1,3 @@
-import type { ComponentType } from "react";
-
 import type { GalleryImageModel } from "../view-models";
 
 /**
@@ -17,14 +15,4 @@ export type GalleryLayoutVariant = "page" | "section";
 export interface GalleryLayoutProps {
   images: GalleryImageModel[];
   variant?: GalleryLayoutVariant;
-}
-
-/** What every layout module exports as `layout`. */
-export interface GalleryLayout {
-  id: string;
-  /** lowercase, matching the site's voice ("mosaic", not "Mosaic") */
-  label: string;
-  /** the one-line version of the layout's bet */
-  description: string;
-  Component: ComponentType<GalleryLayoutProps>;
 }

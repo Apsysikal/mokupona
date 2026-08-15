@@ -3,6 +3,7 @@ import type { BoardMember } from "#prisma/generated/client";
 import { prisma } from "~/db.server";
 import {
   IMAGE_METADATA_SELECT,
+  releaseImagesIfUnreferenced,
   type ImageCreateData,
   type ImageMetadata,
 } from "~/models/image.server";
@@ -64,23 +65,26 @@ export async function deleteBoardMember(
   id: string,
 ): Promise<{ boardMember: BoardMember; imageKey: string | null }> {
   return prisma.$transaction(async (tx) => {
-    const current = await tx.boardMember.findUnique({
-      where: { id },
-      select: { image: { select: { id: true, storageKey: true } } },
-    });
     const boardMember = await tx.boardMember.delete({ where: { id } });
-    if (current?.image) {
-      await tx.image.delete({ where: { id: current.image.id } });
+
+    // released only after the member is gone, so the portrait survives when
+    // a gallery still shows it
+    let imageKey: string | null = null;
+    if (boardMember.imageId) {
+      const { storageKeys } = await releaseImagesIfUnreferenced(tx, [
+        boardMember.imageId,
+      ]);
+      imageKey = storageKeys[0] ?? null;
     }
 
-    return { boardMember, imageKey: current?.image?.storageKey ?? null };
+    return { boardMember, imageKey };
   });
 }
 
-// Replaces the portrait iff a new image is provided: the old image row is
-// deleted and the new one created in the same transaction as the update.
-// The replaced portrait's storageKey comes back for the caller's post-commit
-// provider destroy; null when nothing was replaced.
+// Replaces the portrait iff a new image is provided: the new row is created
+// in the same transaction as the update, and the old one released — deleted
+// only when no gallery still shows it. A destroyed portrait's storageKey
+// comes back for the caller's post-commit provider destroy; null otherwise.
 export async function updateBoardMember(
   id: string,
   data: BoardMemberData,
@@ -88,17 +92,14 @@ export async function updateBoardMember(
   const { name, position, image } = data;
 
   return prisma.$transaction(async (tx) => {
-    let replacedImageKey: string | null = null;
+    let previousImageId: string | null = null;
 
     if (image) {
       const current = await tx.boardMember.findUnique({
         where: { id },
-        select: { image: { select: { id: true, storageKey: true } } },
+        select: { imageId: true },
       });
-      if (current?.image) {
-        replacedImageKey = current.image.storageKey;
-        await tx.image.delete({ where: { id: current.image.id } });
-      }
+      previousImageId = current?.imageId ?? null;
     }
 
     const boardMember = await tx.boardMember.update({
@@ -109,6 +110,14 @@ export async function updateBoardMember(
         ...(image && { image: { create: image } }),
       },
     });
+
+    let replacedImageKey: string | null = null;
+    if (previousImageId) {
+      const { storageKeys } = await releaseImagesIfUnreferenced(tx, [
+        previousImageId,
+      ]);
+      replacedImageKey = storageKeys[0] ?? null;
+    }
 
     return { boardMember, replacedImageKey };
   });

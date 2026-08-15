@@ -2,7 +2,7 @@ import { Link } from "react-router";
 
 import type { GalleryImageModel } from "../view-models";
 
-import type { GalleryLayout, GalleryLayoutProps } from "./types";
+import type { GalleryLayoutProps } from "./types";
 
 import { OptimizedImage } from "~/components/optimized-image";
 import { Eyebrow } from "~/components/section";
@@ -139,11 +139,3 @@ export function MosaicGallery({
     </div>
   );
 }
-
-export const layout: GalleryLayout = {
-  id: "mosaic",
-  label: "mosaic",
-  description:
-    "a masonry wall that keeps every photo's own shape — good for mixed portraits and panoramas, bad at reading in order.",
-  Component: MosaicGallery,
-};

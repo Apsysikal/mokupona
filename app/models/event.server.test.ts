@@ -269,16 +269,16 @@ describe("event image lifecycle", () => {
     const result = await deleteEvent(event.id);
 
     expect(result.event.id).toBe(event.id);
-    expect(result.imageKey).toBe(data.image.storageKey);
+    expect(result.imageKeys).toEqual([data.image.storageKey]);
   });
 
-  it("deleteEvent returns a null key for a coverless event", async () => {
+  it("deleteEvent returns no keys for a coverless event", async () => {
     const event = await createEvent(await buildEventData());
     await prisma.image.deleteMany({ where: { event: { id: event.id } } });
 
     const result = await deleteEvent(event.id);
 
-    expect(result.imageKey).toBeNull();
+    expect(result.imageKeys).toEqual([]);
   });
 
   it("updateEvent returns the replaced cover's storageKey on a swap", async () => {
