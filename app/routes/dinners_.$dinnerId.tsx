@@ -43,7 +43,7 @@ import { withOpenGraphUrls } from "~/shared/meta";
 import { getImageConfig } from "~/shared/root-data";
 import { redirectWithToast } from "~/utils/toast.server";
 
-export async function loader({ params, request }: Route.LoaderArgs) {
+export async function loader({ params }: Route.LoaderArgs) {
   const { dinnerId } = params;
 
   const { event, version } = requireFound(
@@ -53,7 +53,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   // the gallery belongs to evenings that already happened; upcoming dinners
   // pay nothing for it
   const gallery = isPastEvent(event.date, new Date())
-    ? await loadEventGallerySection(request, event.id)
+    ? await loadEventGallerySection(event.id)
     : null;
 
   return {

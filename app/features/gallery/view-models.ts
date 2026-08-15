@@ -1,11 +1,6 @@
-// Client-safe: the one render-ready shape every gallery foundation maps its
-// rows into, so the layouts never learn which foundation produced them.
-//
-// The gallery ships as three competing foundations (see
-// app/features/gallery/foundations) and three layouts
-// (app/features/gallery/layouts). This file is the seam between them: a
-// foundation may only ever hand out `GalleryImageModel[]`, and a layout may
-// only ever consume it.
+// Client-safe: the render-ready shape gallery rows are mapped into (see
+// app/features/gallery/gallery.server.ts), so the layout never learns which
+// tables produced them.
 
 import type { SerializableDate } from "~/features/events/view-models";
 import type { ImageMetadata } from "~/models/image.server";
@@ -20,15 +15,15 @@ export interface GalleryEventRef {
 export interface GalleryImageModel {
   /**
    * Entry identity — what the admin UI removes. Deliberately NOT the image
-   * id: under the "join" foundation one image can hold several memberships,
-   * and removing one must not touch the others.
+   * id: one image can hold several memberships, and removing one must not
+   * touch the others.
    */
   id: string;
   image: ImageMetadata;
-  /** never null — foundations fall back to the dinner title */
+  /** never null — falls back to the dinner title */
   alt: string;
   caption: string | null;
-  /** null for images no dinner claims ("join" and "album" both allow it) */
+  /** null for images no dinner claims */
   event: GalleryEventRef | null;
 }
 
@@ -39,9 +34,9 @@ export interface GalleryGroup {
 }
 
 /**
- * Group a flat gallery feed by dinner, preserving the order the foundation
- * returned (foundations sort newest dinner first, images in display order).
- * Unclaimed images collect in a single trailing `event: null` group.
+ * Group a flat gallery feed by dinner, preserving the incoming order (newest
+ * dinner first, images in display order). Unclaimed images collect in a
+ * single trailing `event: null` group.
  */
 export function groupGalleryImagesByEvent(
   images: GalleryImageModel[],

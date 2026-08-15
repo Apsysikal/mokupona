@@ -13,7 +13,7 @@ import {
   linkExistingImagesToEvent,
   removeGalleryEntry,
   type GalleryImageCreateData,
-} from "./gallery-join.server";
+} from "./gallery.server";
 
 import { prisma } from "~/db.server";
 

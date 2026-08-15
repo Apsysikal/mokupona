@@ -11,13 +11,7 @@ import { createUserViaAuth } from "~/features/auth/create-user.server";
 import { ROLE_NAMES } from "~/features/auth/roles";
 import { storeImage } from "~/features/images/image-storage.server";
 import { createEvent } from "~/models/event.server";
-import {
-  addImagesToAlbum,
-  createStandaloneAlbum,
-  ensureAlbumForEvent,
-} from "~/models/gallery-album.server";
-import { createGalleryImagesForEvent } from "~/models/gallery-join.server";
-import { addTaggedGalleryImages } from "~/models/gallery-tagged.server";
+import { createGalleryImagesForEvent } from "~/models/gallery.server";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -60,14 +54,9 @@ async function seed() {
     /** */
   });
 
-  // Gallery prototypes. Entries and dinner-owned albums cascade with their
-  // event, but standalone albums (foundation "album") and pool images
-  // (foundation "join") belong to nothing and would survive every reseed.
+  // Gallery entries cascade with their event, but pool images belong to
+  // nothing and would survive every reseed.
   await prisma.eventGalleryEntry.deleteMany().catch(() => {
-    /** */
-  });
-
-  await prisma.album.deleteMany().catch(() => {
     /** */
   });
 
@@ -162,9 +151,7 @@ async function seed() {
     });
   }
 
-  // The gallery only shows on dinners that already happened, so the
-  // prototypes need one — and it gets filled three times over, once per
-  // foundation, because the three write to tables that cannot see each other.
+  // The gallery only shows on dinners that already happened, so it needs one.
   const pastEvent = await seedEvent(faker.date.recent({ days: 45 }));
 
   const storeGalleryImages = async (count: number, caption: string) =>
@@ -182,34 +169,9 @@ async function seed() {
       })),
     );
 
-  await addTaggedGalleryImages(
-    pastEvent.id,
-    await storeGalleryImages(7, "the table, plate"),
-  );
-
   await createGalleryImagesForEvent(
     pastEvent.id,
     await storeGalleryImages(7, "hands and glasses, frame"),
-  );
-
-  const eventAlbum = await ensureAlbumForEvent(pastEvent.id, {
-    title: pastEvent.title,
-    description: "everything we managed to photograph before it was eaten.",
-  });
-  await addImagesToAlbum(
-    eventAlbum.id,
-    await storeGalleryImages(7, "the evening, moment"),
-  );
-
-  // only the album foundation can hold a gallery that is about no dinner at
-  // all — seeded so that capability is visible instead of theoretical
-  const standaloneAlbum = await createStandaloneAlbum({
-    title: "kitchen life",
-    description: "the half of the evening nobody at the table sees.",
-  });
-  await addImagesToAlbum(
-    standaloneAlbum.id,
-    await storeGalleryImages(4, "prep, step"),
   );
 
   console.log(`Database has been seeded. 🌱`);
