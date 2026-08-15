@@ -24,7 +24,7 @@ export interface GalleryLayout {
   id: string;
   /** lowercase, matching the site's voice ("mosaic", not "Mosaic") */
   label: string;
-  /** one line, shown in the layout switcher */
+  /** the one-line version of the layout's bet */
   description: string;
   Component: ComponentType<GalleryLayoutProps>;
 }

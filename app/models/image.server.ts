@@ -46,3 +46,56 @@ export interface ImageCreateData {
 export async function getImageById(id: string): Promise<Image | null> {
   return prisma.image.findUnique({ where: { id } });
 }
+
+/**
+ * Every `Image` relation that counts as the image being in use, each paired
+ * with the where-fragment matching images unused at that site. Usage lookups
+ * and cleanup logic derive from this one list; the completeness test in
+ * image.server.test.ts fails when the schema grows a relation to `Image`
+ * this registry does not know about.
+ */
+export const IMAGE_REFERENCE_SITES = {
+  event: { event: null },
+  boardMember: { boardMember: null },
+  galleryLinks: { galleryLinks: { none: {} } },
+} as const satisfies Record<string, Prisma.ImageWhereInput>;
+
+export type ImageReferenceSite = keyof typeof IMAGE_REFERENCE_SITES;
+
+// Models-internal plumbing: matches images no reference site points at —
+// the precondition for destroying an asset.
+export const UNREFERENCED_IMAGE_WHERE: Prisma.ImageWhereInput = {
+  AND: Object.values(IMAGE_REFERENCE_SITES),
+};
+
+// One select per reference site; the Record constraint keeps it covering
+// exactly the registry.
+const IMAGE_USAGE_SELECT = {
+  event: { select: { id: true } },
+  boardMember: { select: { id: true } },
+  galleryLinks: { select: { eventId: true } },
+} satisfies Prisma.ImageSelect & Record<ImageReferenceSite, object>;
+
+export interface ImageUsage {
+  /** the dinner whose cover slot holds the image */
+  coverOfEventId: string | null;
+  /** the board member whose portrait slot holds the image */
+  portraitOfBoardMemberId: string | null;
+  /** the dinners whose galleries link the image */
+  galleryEventIds: string[];
+}
+
+/** Where an image is used, across every reference site. Null: no such image. */
+export async function getImageUsage(id: string): Promise<ImageUsage | null> {
+  const image = await prisma.image.findUnique({
+    where: { id },
+    select: IMAGE_USAGE_SELECT,
+  });
+  if (!image) return null;
+
+  return {
+    coverOfEventId: image.event?.id ?? null,
+    portraitOfBoardMemberId: image.boardMember?.id ?? null,
+    galleryEventIds: image.galleryLinks.map((link) => link.eventId),
+  };
+}

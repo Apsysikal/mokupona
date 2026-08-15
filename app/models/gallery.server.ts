@@ -3,6 +3,7 @@ import type { EventGalleryImage, Prisma } from "#prisma/generated/client";
 import { prisma } from "~/db.server";
 import {
   IMAGE_METADATA_SELECT,
+  UNREFERENCED_IMAGE_WHERE,
   type ImageCreateData,
   type ImageMetadata,
 } from "~/models/image.server";
@@ -85,8 +86,8 @@ const ENTRY_ORDER_BY = [
   { position: "asc" },
 ] satisfies Prisma.EventGalleryImageOrderByWithRelationInput[];
 
-// The picker (and the orphan rule) treat an image as gallery material only
-// when no slot owns it: not a dinner cover, not a board portrait.
+// The picker treats an image as gallery material only when no slot owns it:
+// not a dinner cover, not a board portrait.
 const UNOWNED_IMAGE: Prisma.ImageWhereInput = {
   event: null,
   boardMember: null,
@@ -245,7 +246,7 @@ export async function linkExistingImagesToEvent(
 /**
  * Unlink one image from one dinner. The image row survives by design — it may
  * still hang in another dinner's gallery, and destroying it there is the bug
- * this foundation exists to prevent. `orphaned` reports that nothing
+ * the link table exists to prevent. `orphaned` reports that nothing
  * references it anymore, leaving the collect-or-keep call to the caller.
  */
 export async function removeGalleryEntry(
@@ -292,7 +293,7 @@ export async function deleteOrphanedImage(
 ): Promise<string | null> {
   return prisma.$transaction(async (tx) => {
     const image = await tx.image.findFirst({
-      where: { id: imageId, galleryLinks: { none: {} }, ...UNOWNED_IMAGE },
+      where: { id: imageId, ...UNREFERENCED_IMAGE_WHERE },
       select: { storageKey: true },
     });
     if (!image) return null;
