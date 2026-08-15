@@ -150,19 +150,58 @@ async function seed() {
   // The gallery only shows on dinners that already happened, so it needs one.
   const pastEvent = await seedEvent(faker.date.recent({ days: 45 }));
 
+  const galleryVariants = [
+    { width: 1200, height: 800 },
+    { width: 800, height: 1200 },
+    { width: 1000, height: 1000 },
+    { width: 960, height: 1200 },
+    { width: 1280, height: 720 },
+  ];
+
+  const galleryImageSvg = (
+    label: string,
+    width: number,
+    height: number,
+    hue: number,
+  ) =>
+    [
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
+      `<rect width="${width}" height="${height}" fill="hsl(${hue} 45% 35%)"/>`,
+      `<rect width="${width}" height="${Math.round(height / 2)}" fill="hsl(${hue} 50% 45%)"/>`,
+      `<text x="50%" y="50%" fill="hsl(${hue} 30% 92%)" font-family="sans-serif" font-size="${Math.round(width / 8)}" text-anchor="middle" dominant-baseline="central">${label}</text>`,
+      `</svg>`,
+    ].join("");
+
+  const galleryBlurDataUrl = (width: number, height: number, hue: number) =>
+    `data:image/svg+xml,${encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round((width / height) * 8)}" height="8"><rect width="100%" height="100%" fill="hsl(${hue} 45% 35%)"/></svg>`,
+    )}`;
+
   const storeGalleryImages = async (count: number, caption: string) =>
     Promise.all(
-      Array.from({ length: count }, async (_unused, index) => ({
-        contentType: "image/jpeg",
-        // one stored file per row: sharing a storageKey would make any single
-        // removal destroy the bytes out from under its siblings
-        ...(await storeImage(
-          new File([defaultImage], "gallery.jpg", { type: "image/jpeg" }),
-          "dinner-gallery",
-        )),
-        altText: `${pastEvent.title} — photo ${index + 1}`,
-        caption: index % 2 === 0 ? `${caption} ${index + 1}` : null,
-      })),
+      Array.from({ length: count }, async (_unused, index) => {
+        const { width, height } =
+          galleryVariants[index % galleryVariants.length];
+        const hue = (index * 47) % 360;
+        const svg = galleryImageSvg(`photo ${index + 1}`, width, height, hue);
+
+        return {
+          contentType: "image/svg+xml",
+          // one stored file per row: sharing a storageKey would make any single
+          // removal destroy the bytes out from under its siblings
+          ...(await storeImage(
+            new File([svg], `gallery-${index + 1}.svg`, {
+              type: "image/svg+xml",
+            }),
+            "dinner-gallery",
+          )),
+          width,
+          height,
+          blurDataUrl: galleryBlurDataUrl(width, height, hue),
+          altText: `${pastEvent.title} — photo ${index + 1}`,
+          caption: index % 2 === 0 ? `${caption} ${index + 1}` : null,
+        };
+      }),
     );
 
   await createGalleryImagesForEvent(
