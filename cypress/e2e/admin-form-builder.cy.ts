@@ -24,17 +24,40 @@ describe("admin signup form builder", () => {
     });
   });
 
-  // Both the signer field and the friend item carry this label; this edits
-  // the signer one (first in DOM order — the friend twin's collapsed header
-  // is hidden inside the collapsed friends row).
-  function relabelDietaryToAllergies() {
-    cy.findAllByRole("button", { name: /dietary restrictions/i })
-      .first()
-      .click();
-    cy.findAllByDisplayValue("Dietary restrictions")
-      .first()
-      .clear()
-      .type("Allergies");
+  // A row header announces as "<label> <type> · <linked phrase>", so the two
+  // copies of a linked question differ only in that phrase.
+  const RESTRICTIONS = /dietary restrictions/i;
+  const LINKED_RESTRICTIONS = /dietary restrictions.*linked/i;
+  const FRIEND_RESTRICTIONS = /dietary restrictions.*linked to the signer/i;
+  const FRIENDS_CARD = /^friends group/i;
+
+  // Row bodies stay collapsed until their header is clicked; every field and
+  // action button goes through here. Rows inside the collapsed friends card
+  // are display:none, so they are invisible to the role queries until it is
+  // opened.
+  function openRow(name: RegExp) {
+    cy.findAllByRole("button", { name }).first().click();
+  }
+
+  function withinRow(name: RegExp, run: () => void) {
+    cy.findAllByRole("button", { name }).first().closest("li").within(run);
+  }
+
+  function openLastRow(name: RegExp) {
+    cy.findAllByRole("button", { name }).last().click();
+  }
+
+  function withinLastRow(name: RegExp, run: () => void) {
+    cy.findAllByRole("button", { name }).last().closest("li").within(run);
+  }
+
+  function relabelSignerRestrictions(label: string) {
+    openRow(RESTRICTIONS);
+    withinRow(RESTRICTIONS, () => {
+      cy.findByLabelText(/^label$/i)
+        .clear()
+        .type(label);
+    });
   }
 
   function saveDinnerExpectingDetail(title: string) {
@@ -76,9 +99,7 @@ describe("admin signup form builder", () => {
       // builder round-trip: the edit screen shows the authored field again
       // (stored rows load collapsed — expand via the row header first)
       cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
-      cy.findAllByRole("button", { name: /favorite dish/i })
-        .first()
-        .click();
+      openRow(/favorite dish/i);
       cy.findByDisplayValue("Favorite dish").should("be.visible");
       cy.findByDisplayValue("favorite_dish").should("be.visible");
 
@@ -143,7 +164,7 @@ describe("admin signup form builder", () => {
         "have.length.greaterThan",
         0,
       );
-      relabelDietaryToAllergies();
+      relabelSignerRestrictions("Allergies");
       saveDinnerExpectingDetail(values.title);
 
       // v2 signup (solo) against the renamed field
@@ -190,10 +211,8 @@ describe("admin signup form builder", () => {
 
       // relabel a default field and disable friends
       cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
-      relabelDietaryToAllergies();
-      cy.findAllByRole("button", { name: /friends/i })
-        .first()
-        .click();
+      relabelSignerRestrictions("Allergies");
+      openRow(FRIENDS_CARD);
       cy.findByLabelText(/max per signup/i)
         .clear()
         .type("0");
@@ -201,16 +220,202 @@ describe("admin signup form builder", () => {
 
       // reload shows the edited form
       cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
-      cy.findAllByRole("button", { name: /allergies/i })
-        .first()
-        .click();
-      cy.findByDisplayValue("Allergies").should("be.visible");
+      openRow(/allergies/i);
+      withinRow(/allergies/i, () => {
+        cy.findByLabelText(/^label$/i).should("have.value", "Allergies");
+      });
+      openRow(FRIENDS_CARD);
       cy.findByLabelText(/max per signup/i).should("have.value", "0");
 
       // the public page reflects it: relabeled field, no friends button
       cy.visitAndCheck(`/dinners/${dinnerId}`);
       cy.findAllByRole("textbox", { name: /allergies/i }).should("exist");
       cy.findByRole("button", { name: /add a friend/i }).should("not.exist");
+    });
+  });
+
+  it("mirrors the signer's wording onto the friend's row as it is typed", () => {
+    const suffix = uniqueSuffix();
+    const values = dinnerFormValues(`builder-mirror-${suffix}`);
+
+    createDinnerViaAdminForm(values);
+    saveDinnerAndCaptureId(values.title).then((dinnerId) => {
+      dinnersToCleanup.push(dinnerId);
+
+      cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
+      relabelSignerRestrictions("Allergies");
+
+      // no save in between: the friend's copy follows the keystrokes
+      openRow(FRIENDS_CARD);
+      openRow(/allergies.*linked to the signer/i);
+      withinRow(/allergies.*linked to the signer/i, () => {
+        // cy.contains compiles a regex into a selector string, which cannot
+        // carry the copy's curly quotes — match plainly, assert on the text
+        cy.contains("Mirrors the signer")
+          .should("be.visible")
+          .and("contain.text", "signer’s “Allergies”");
+        cy.findAllByDisplayValue("Allergies")
+          .filter(":visible")
+          .should("have.length", 1)
+          .and("be.disabled");
+      });
+
+      saveDinnerExpectingDetail(values.title);
+
+      // both questions ask the new wording on the public page
+      cy.visitAndCheck(`/dinners/${dinnerId}`);
+      cy.findAllByRole("textbox", { name: /allergies/i }).should(
+        "have.length",
+        1,
+      );
+      cy.findByRole("button", { name: /add a friend/i }).click();
+      cy.findAllByRole("textbox", { name: /allergies/i }).should(
+        "have.length",
+        2,
+      );
+    });
+  });
+
+  it("unlinks a pair from the friend's row and links it back", () => {
+    const suffix = uniqueSuffix();
+    const values = dinnerFormValues(`builder-unlink-${suffix}`);
+
+    createDinnerViaAdminForm(values);
+    saveDinnerAndCaptureId(values.title).then((dinnerId) => {
+      dinnersToCleanup.push(dinnerId);
+
+      cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
+      openRow(FRIENDS_CARD);
+      openLastRow(FRIEND_RESTRICTIONS);
+      withinLastRow(FRIEND_RESTRICTIONS, () => {
+        cy.findByRole("button", { name: /^unlink$/i }).click();
+      });
+
+      // the trigger opened a dialog instead of submitting the builder
+      cy.location("pathname").should(
+        "equal",
+        `/admin/dinners/${dinnerId}/edit`,
+      );
+      cy.get("#unlink-dialog-restrictions")
+        .should("be.visible")
+        .within(() => {
+          cy.findByRole("heading", {
+            name: /unlink from the signer’s question\?/i,
+          }).should("be.visible");
+          // keep the offered key
+          cy.findByLabelText(/new field key/i).should(
+            "have.value",
+            "restrictions_2",
+          );
+          cy.findByRole("button", { name: /^unlink$/i }).click();
+        });
+
+      // two ordinary questions now: the friend's row is editable and the
+      // linked prose is gone from both headers
+      cy.findByDisplayValue("restrictions_2").should("be.enabled");
+      cy.findAllByRole("button", { name: LINKED_RESTRICTIONS }).should(
+        "not.exist",
+      );
+
+      saveDinnerExpectingDetail(values.title);
+
+      // the split survived the save
+      cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
+      openRow(FRIENDS_CARD);
+      cy.findAllByRole("button", { name: RESTRICTIONS }).should(
+        "have.length",
+        2,
+      );
+      openLastRow(RESTRICTIONS);
+      withinLastRow(RESTRICTIONS, () => {
+        cy.findByLabelText(/^field key$/i).should(
+          "have.value",
+          "restrictions_2",
+        );
+      });
+
+      // and the signer's row offers the way back
+      openRow(RESTRICTIONS);
+      withinRow(RESTRICTIONS, () => {
+        cy.findByRole("button", { name: /link to friends/i }).click();
+      });
+      cy.get("#link-dialog-restrictions")
+        .should("be.visible")
+        .within(() => {
+          cy.findByRole("heading", {
+            name: /also ask each friend this question\?/i,
+          }).should("be.visible");
+          // the friend's question matches by label, so it is offered as a
+          // mirror target beside the "add a new row" default
+          cy.contains("Mirror onto")
+            .should("contain.text", "“Dietary restrictions”")
+            .click();
+          cy.findByRole("button", { name: /link to friends/i }).click();
+        });
+
+      // every linked friend row carries a mirror sentence, so scope the
+      // assertion to the pair under test
+      cy.findAllByRole("button", { name: FRIEND_RESTRICTIONS }).should(
+        "have.length",
+        1,
+      );
+      withinLastRow(FRIEND_RESTRICTIONS, () => {
+        cy.contains("Mirrors the signer").should(
+          "contain.text",
+          "signer’s “Dietary restrictions”",
+        );
+      });
+    });
+  });
+
+  it("warns about collected answers when unlinking an answered pair", () => {
+    const suffix = uniqueSuffix();
+    const values = dinnerFormValues(`builder-answers-${suffix}`);
+    const signerName = `Answered Signer ${suffix}`;
+    const friendName = `Answered Friend ${suffix}`;
+
+    createDinnerViaAdminForm(values);
+    saveDinnerAndCaptureId(values.title).then((dinnerId) => {
+      dinnersToCleanup.push(dinnerId);
+
+      // one signup answers the shared question on both sides
+      cy.visitAndCheck(`/dinners/${dinnerId}`);
+      fillSignupContact({
+        name: signerName,
+        email: `answers-${suffix}@example.com`,
+      });
+      cy.findByRole("button", { name: /add a friend/i }).click();
+      cy.findAllByRole("textbox", { name: /^name$/i })
+        .should("have.length", 2)
+        .last()
+        .type(friendName);
+      cy.findAllByRole("textbox", { name: RESTRICTIONS })
+        .should("have.length", 2)
+        .each(($field) => {
+          cy.wrap($field).type("nuts");
+        });
+      acceptPrivacyAndJoin();
+
+      // the pair is locked by the submissions, but unlinking stays on offer
+      cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
+      cy.findAllByLabelText(/field key \(locked/i).should(
+        "have.length.greaterThan",
+        0,
+      );
+      openRow(FRIENDS_CARD);
+      openLastRow(FRIEND_RESTRICTIONS);
+      withinLastRow(FRIEND_RESTRICTIONS, () => {
+        cy.findByRole("button", { name: /^unlink$/i }).click();
+      });
+
+      cy.get("#unlink-dialog-restrictions")
+        .should("be.visible")
+        .within(() => {
+          cy.contains(/2 answers were collected under the shared key/i).should(
+            "be.visible",
+          );
+          cy.contains("strong", "restrictions").should("be.visible");
+        });
     });
   });
 });
