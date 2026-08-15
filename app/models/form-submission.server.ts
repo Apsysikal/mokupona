@@ -47,25 +47,6 @@ export async function createFormSubmission({
   });
 }
 
-// Whether anyone has signed up for the event — the builder locks field keys
-// once this is true. Legacy EventResponse rows count too: they merge into
-// the roster under the same DEFAULT_FORM keys, so renaming a key splits
-// their columns just as it would for FormSubmission answers.
-export async function eventHasSignups(eventId: string) {
-  const [submission, legacyResponse] = await Promise.all([
-    prisma.formSubmission.findFirst({
-      where: { formVersion: { form: { event: { id: eventId } } } },
-      select: { id: true },
-    }),
-    prisma.eventResponse.findFirst({
-      where: { eventId },
-      select: { id: true },
-    }),
-  ]);
-
-  return submission !== null || legacyResponse !== null;
-}
-
 // Bulk variant for the admin lists: only the answers (for party sizing) and
 // the owning event id, across many events in one query.
 export async function getFormSubmissionAnswersByEvent(eventIds: string[]) {

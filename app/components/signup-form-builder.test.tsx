@@ -258,6 +258,39 @@ describe("signup form builder markup", () => {
     expect(stored.data.description).toBe(SIGNER_DESCRIPTION);
   });
 
+  it("offers no unlink for the identity pair", () => {
+    const { document } = renderEditScreen(linkedPairRows());
+
+    // "name" is linked in DEFAULT_FORM, but the roster reads friends' names
+    // by that exact key — the pair renders as a mirror with no way out
+    expect(document.querySelector("#unlink-dialog-name")).toBeNull();
+    expect(
+      document.querySelector('[commandfor="unlink-dialog-name"]'),
+    ).toBeNull();
+    expect(
+      document.querySelector("#unlink-dialog-restrictions"),
+    ).not.toBeNull();
+  });
+
+  it("names the no-JS behaviour inside both dialogs", () => {
+    const { document } = renderEditScreen(linkedPairRows());
+
+    const noscriptText = (selector: string) =>
+      [
+        ...(document.querySelector(selector)?.querySelectorAll("noscript") ??
+          []),
+      ]
+        .map((element) => element.textContent ?? "")
+        .join(" ");
+
+    expect(noscriptText("#link-dialog-comment")).toContain(
+      "Without JavaScript, confirming applies the default option.",
+    );
+    expect(noscriptText("#unlink-dialog-restrictions")).toContain(
+      "Without JavaScript, the prefilled key applies.",
+    );
+  });
+
   it("leaves an unlinked friend question editable and independent", () => {
     const rows = linkedPairRows();
     const { document } = renderEditScreen(rows);

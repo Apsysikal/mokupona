@@ -195,6 +195,39 @@ export function linkedFieldKeys(
   return linked;
 }
 
+// Which keys the sync would rewrite: stored forms whose pairs drifted under
+// the old one-shot twin copy lose the friend's own wording on the next save,
+// so the routes log the affected keys before persisting.
+export function syncChangedFieldKeys(rows: BuilderRow[]): string[] {
+  const synced = syncLinkedRows(rows);
+  const changed = new Set<string>();
+
+  const compare = (
+    before: BuilderRow | BuilderItemRow,
+    after: BuilderRow | BuilderItemRow,
+  ) => {
+    if (LINKED_ROW_PROPS.some((prop) => before[prop] !== after[prop])) {
+      changed.add(before.name);
+    }
+  };
+
+  rows.forEach((row, index) => {
+    const syncedRow = synced[index];
+    if (row.type === "list") {
+      const syncedItems =
+        syncedRow.type === "list" ? (syncedRow.itemFields ?? []) : [];
+      (row.itemFields ?? []).forEach((item, itemIndex) => {
+        const syncedItem = syncedItems[itemIndex];
+        if (syncedItem) compare(item, syncedItem);
+      });
+    } else if (syncedRow.type !== "list") {
+      compare(row, syncedRow);
+    }
+  });
+
+  return [...changed].sort();
+}
+
 export function builderRowsToDescriptors(
   rows: BuilderRow[],
 ): FieldDescriptor[] {

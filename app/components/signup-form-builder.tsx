@@ -39,6 +39,7 @@ import {
 } from "./ui/collapsible";
 import { fieldShellClassName, Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { Textarea } from "./ui/textarea";
 
 import { MAX_FIELD_DESCRIPTION_LENGTH } from "~/features/forms/bounds";
 import { FIELD_KEY_REGEX } from "~/features/forms/fields/base";
@@ -222,7 +223,7 @@ export function SignupFormBuilder({
   // The rows present when the screen loaded, identified by Conform's stable
   // row keys. `initialValue` cannot distinguish stored rows from new ones —
   // intents (the label auto-slug update, the link insert) write it too — and
-  // pinning/locking must never trap a row the admin just created.
+  // pinning must never trap a row the admin just created.
   const initialRowKeysRef = useRef<Set<string> | null>(null);
   initialRowKeysRef.current ??= new Set(
     [
@@ -244,6 +245,19 @@ export function SignupFormBuilder({
   };
   const topLevelKeyValues = topLevelRows.map(keyOf);
   const itemKeyValues = itemRows.map(keyOf);
+
+  // Locking tracks mount-time key VALUES, not Conform row keys: an update
+  // intent (mirror-onto, unlink) regenerates a row's Conform key, and the
+  // answers a lock protects live under the field key either way.
+  const initialFieldKeysRef = useRef<Set<string> | null>(null);
+  initialFieldKeysRef.current ??= new Set(
+    [...topLevelKeyValues, ...itemKeyValues].filter(
+      (key): key is string => key !== undefined && key !== "",
+    ),
+  );
+  const initialFieldKeys = initialFieldKeysRef.current;
+  const isStoredKey = (keyValue: string) =>
+    keyValue !== "" && initialFieldKeys.has(keyValue);
 
   // The row a confirmed link just wrote, tracked by the shared field key: an
   // update intent hands the row a fresh Conform key, so a marker kept against
@@ -333,7 +347,10 @@ export function SignupFormBuilder({
       signerByKey.get(key) === row
     );
   });
+  // identity keys never unlink: the roster reads a friend's name (and the
+  // party contact) by these exact keys, so splitting one breaks every export
   const linkedPairs = [...linkedKeys].flatMap((key) => {
+    if (PINNED_IDENTITY_KEYS.has(key)) return [];
     const signerRow = signerByKey.get(key);
     const friendRow = itemRows[itemKeyValues.indexOf(key)];
     return signerRow && friendRow ? [{ key, signerRow, friendRow }] : [];
@@ -365,6 +382,7 @@ export function SignupFormBuilder({
               count={rows.length}
               lockFieldKeys={lockFieldKeys}
               isStoredRow={isStoredRow}
+              isStoredKey={isStoredKey}
               isRowOpen={isRowOpen}
               toggleRow={toggleRow}
             />
@@ -426,6 +444,7 @@ function BuilderRowView({
   count,
   lockFieldKeys,
   isStoredRow,
+  isStoredKey,
   isRowOpen,
   toggleRow,
 }: {
@@ -435,18 +454,20 @@ function BuilderRowView({
   count: number;
   lockFieldKeys: boolean;
   isStoredRow: (rowKey: string | undefined) => boolean;
+  isStoredKey: (keyValue: string) => boolean;
   isRowOpen: (rowKey: string | undefined) => boolean;
   toggleRow: (rowKey: string | undefined) => void;
 }) {
+  const form = useFormMetadata();
   const { linkedKeys, signerByKey, itemFieldsMeta } = useBuilderLinks();
   const rowFields = row.getFieldset();
   const type = String(rowFields.type.value ?? "");
   const initialKey = String(rowFields.name.initialValue ?? "");
   const keyValue = String(rowFields.name.value ?? "");
   const labelValue = String(rowFields.label.value ?? "");
-  // the single lock predicate: the row was stored when the screen loaded AND
-  // the form already has signups
-  const rowLocked = lockFieldKeys && isStoredRow(row.key);
+  // the single lock predicate: the key carries stored answers AND the form
+  // already has signups
+  const rowLocked = lockFieldKeys && isStoredKey(keyValue);
 
   if (type === "list") {
     const maxCountValue = String(rowFields.maxCount.value ?? "");
@@ -477,7 +498,7 @@ function BuilderRowView({
         <FriendsRowView
           row={row}
           lockFieldKeys={lockFieldKeys}
-          isStoredRow={isStoredRow}
+          isStoredKey={isStoredKey}
           isRowOpen={isRowOpen}
           toggleRow={toggleRow}
         />
@@ -524,12 +545,12 @@ function BuilderRowView({
         <>
           <EditableRowView row={row} keyLocked={rowLocked} />
           <ActionRow>
-            {isLinked ? (
+            {isLinked && !PINNED_IDENTITY_KEYS.has(keyValue) ? (
               <DialogTriggerButton dialogId={unlinkDialogId(keyValue)}>
                 <LinkBreak2Icon />
                 Unlink
               </DialogTriggerButton>
-            ) : isCanonical && itemFieldsMeta ? (
+            ) : !isLinked && isCanonical && itemFieldsMeta ? (
               <DialogTriggerButton dialogId={linkDialogId(keyValue)}>
                 <Link2Icon />
                 Link to friends
@@ -540,6 +561,25 @@ function BuilderRowView({
               index={index}
               confirmMessage={
                 rowLocked ? REMOVE_RESPONDED_FIELD_MESSAGE : undefined
+              }
+              beforeRemove={
+                isLinked
+                  ? () => {
+                      const signer = readSigner(row);
+                      for (const itemRow of itemFieldsMeta?.getFieldList() ??
+                        []) {
+                        const itemFields = (
+                          itemRow as ItemRowMetadata
+                        ).getFieldset();
+                        if (String(itemFields.name.value ?? "") === keyValue) {
+                          form.update({
+                            name: itemRow.name,
+                            value: mirroredRowValue(signer, keyValue),
+                          });
+                        }
+                      }
+                    }
+                  : undefined
               }
             />
           </ActionRow>
@@ -692,14 +732,19 @@ function ActionRow({ children }: { children: ReactNode }) {
   );
 }
 
+// beforeRemove runs extra intents ahead of the removal (a linked signer row
+// first writes its wording into the mirrors, so they keep it); ordering both
+// through the imperative API keeps them deterministic.
 function RemoveButton({
   listName,
   index,
   confirmMessage,
+  beforeRemove,
 }: {
   listName: string;
   index: number;
   confirmMessage?: string;
+  beforeRemove?: () => void;
 }) {
   const form = useFormMetadata();
 
@@ -709,10 +754,16 @@ function RemoveButton({
       size="sm"
       {...form.remove.getButtonProps({ name: listName, index })}
       onClick={
-        confirmMessage
+        confirmMessage || beforeRemove
           ? (event) => {
-              if (!window.confirm(confirmMessage)) {
+              if (confirmMessage && !window.confirm(confirmMessage)) {
                 event.preventDefault();
+                return;
+              }
+              if (beforeRemove) {
+                event.preventDefault();
+                beforeRemove();
+                form.remove({ name: listName, index });
               }
             }
           : undefined
@@ -810,7 +861,6 @@ function LinkDialog({ signerRow }: { signerRow: RowMetadata }) {
   const [choice, setChoice] = useState("new");
   const headingId = useId();
   const dialogId = linkDialogId(key);
-  const friendCount = answerCounts[key]?.friends ?? 0;
 
   const itemRows = (itemFieldsMeta?.getFieldList() ?? []) as ItemRowMetadata[];
   const candidates = itemRows.flatMap((itemRow) => {
@@ -822,13 +872,24 @@ function LinkDialog({ signerRow }: { signerRow: RowMetadata }) {
       itemKey === key ||
       (itemLabel.trim() !== "" &&
         itemLabel.trim().toLowerCase() === signer.label.trim().toLowerCase());
-    return matches ? [{ rowName: itemRow.name, label: itemLabel }] : [];
+    return matches
+      ? [{ rowName: itemRow.name, key: itemKey, label: itemLabel }]
+      : [];
   });
+  // the callout speaks about the answers the confirmed choice would merge:
+  // the signer's key for a new row, the candidate's own key for mirror-onto
+  const chosenCandidate = candidates.find((c) => c.rowName === choice);
+  const countedKey = chosenCandidate?.key || key;
+  const friendCount = answerCounts[countedKey]?.friends ?? 0;
 
   if (!itemFieldsMeta) return null;
 
   return (
-    <BuilderDialog id={dialogId} labelId={headingId}>
+    <BuilderDialog
+      id={dialogId}
+      labelId={headingId}
+      onClose={() => setChoice("new")}
+    >
       <h3 id={headingId} className="text-xl font-semibold">
         Also ask each friend this question?
       </h3>
@@ -857,9 +918,16 @@ function LinkDialog({ signerRow }: { signerRow: RowMetadata }) {
             onSelect={() => setChoice(candidate.rowName)}
             title={`Mirror onto “${candidate.label}”`}
             explanation="Same field key. Its label, help text, type and Required are replaced by the signer's."
+            candidate
           />
         ))}
       </div>
+      <noscript>
+        <style>{`#${dialogId} [data-candidate]{display:none}`}</style>
+        <p className="text-foreground/50 text-[13px]">
+          Without JavaScript, confirming applies the default option.
+        </p>
+      </noscript>
       {friendCount > 0 ? (
         <DialogCallout>
           {friendCount === 1
@@ -907,15 +975,18 @@ function LinkChoiceOption({
   onSelect,
   title,
   explanation,
+  candidate = false,
 }: {
   name: string;
   checked: boolean;
   onSelect: () => void;
   title: string;
   explanation: string;
+  candidate?: boolean;
 }) {
   return (
     <label
+      data-candidate={candidate ? "" : undefined}
       className={cn(
         "flex cursor-pointer gap-2 rounded-lg border p-3",
         checked ? "border-primary/50 bg-primary/12" : "hover:bg-foreground/4",
@@ -964,7 +1035,10 @@ function UnlinkDialog({
     <BuilderDialog
       id={dialogId}
       labelId={headingId}
-      onClose={() => setError(null)}
+      onClose={() => {
+        setError(null);
+        if (inputRef.current) inputRef.current.value = defaultKey;
+      }}
     >
       <h3 id={headingId} className="text-xl font-semibold">
         Unlink from the signer's question?
@@ -979,6 +1053,7 @@ function UnlinkDialog({
           New field key for the friend's question
         </label>
         <Input
+          key={defaultKey}
           ref={inputRef}
           id={inputId}
           type="text"
@@ -989,6 +1064,11 @@ function UnlinkDialog({
           Becomes a second CSV column beside <strong>{sharedKey}</strong>.
           Lowercase letters, numbers and underscores.
         </p>
+        <noscript>
+          <p className="text-foreground/50 text-[13px]">
+            Without JavaScript, the prefilled key applies.
+          </p>
+        </noscript>
         {error ? (
           <p className="text-destructive-light text-sm">{error}</p>
         ) : null}
@@ -1205,14 +1285,11 @@ function MirrorTextarea({
   return (
     <div className="flex flex-col gap-2">
       <MirrorFieldLabel>{label}</MirrorFieldLabel>
-      <textarea
+      <Textarea
         disabled
         value={value}
         rows={rows}
-        className={cn(
-          "bg-foreground/5 flex min-h-20 w-full resize-none rounded-lg border px-3 py-3",
-          mirrorControlClassName,
-        )}
+        className={cn("resize-none", mirrorControlClassName)}
       />
     </div>
   );
@@ -1335,13 +1412,13 @@ function MirrorRowView({
 function FriendsRowView({
   row,
   lockFieldKeys,
-  isStoredRow,
+  isStoredKey,
   isRowOpen,
   toggleRow,
 }: {
   row: RowMetadata;
   lockFieldKeys: boolean;
-  isStoredRow: (rowKey: string | undefined) => boolean;
+  isStoredKey: (keyValue: string) => boolean;
   isRowOpen: (rowKey: string | undefined) => boolean;
   toggleRow: (rowKey: string | undefined) => void;
 }) {
@@ -1349,6 +1426,13 @@ function FriendsRowView({
   const { linkedKeys, signerByKey } = useBuilderLinks();
   const rowFields = row.getFieldset();
   const itemFields = rowFields.itemFields.getFieldList();
+  const itemKeys = itemFields.map((itemRow) =>
+    String((itemRow as ItemRowMetadata).getFieldset().name.value ?? ""),
+  );
+  // A row being edited never swaps into the mirror under the admin's cursor:
+  // typing a key that matches the signer's would otherwise unmount the
+  // focused editor mid-keystroke. The swap waits until focus leaves the row.
+  const [editingRowKey, setEditingRowKey] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-4">
@@ -1392,15 +1476,24 @@ function FriendsRowView({
         />
         <ul className="flex flex-col gap-2">
           {itemFields.map((itemRow, index) => {
-            const itemLocked = lockFieldKeys && isStoredRow(itemRow.key);
             const itemRowFields = (itemRow as ItemRowMetadata).getFieldset();
             const itemType = String(itemRowFields.type.value ?? "");
-            const itemKey = String(itemRowFields.name.value ?? "");
+            const itemKey = itemKeys[index];
+            const itemLocked = lockFieldKeys && isStoredKey(itemKey);
             const itemLabel = String(itemRowFields.label.value ?? "");
-            const signerRow =
+            const linkedSignerRow =
               itemKey !== "" && linkedKeys.has(itemKey)
                 ? signerByKey.get(itemKey)
                 : undefined;
+            const signerRow =
+              editingRowKey === itemRow.key ? undefined : linkedSignerRow;
+            // duplicate keys collapse onto one dialog, so only the first row
+            // with a key gets the unlink action; identity keys get none at
+            // all — the roster reads friends' names by that exact key
+            const offersUnlink =
+              signerRow !== undefined &&
+              itemKeys.indexOf(itemKey) === index &&
+              !PINNED_IDENTITY_KEYS.has(itemKey);
             const itemRequired = Boolean(
               (signerRow ? signerRow.getFieldset() : itemRowFields).required
                 .value,
@@ -1441,10 +1534,12 @@ function FriendsRowView({
                       signerRow={signerRow}
                     />
                     <ActionRow>
-                      <DialogTriggerButton dialogId={unlinkDialogId(itemKey)}>
-                        <LinkBreak2Icon />
-                        Unlink
-                      </DialogTriggerButton>
+                      {offersUnlink ? (
+                        <DialogTriggerButton dialogId={unlinkDialogId(itemKey)}>
+                          <LinkBreak2Icon />
+                          Unlink
+                        </DialogTriggerButton>
+                      ) : null}
                       <RemoveButton
                         listName={rowFields.itemFields.name}
                         index={index}
@@ -1457,7 +1552,20 @@ function FriendsRowView({
                     </ActionRow>
                   </>
                 ) : (
-                  <>
+                  <div
+                    onFocus={() => setEditingRowKey(itemRow.key ?? null)}
+                    onBlur={(event) => {
+                      if (
+                        !event.currentTarget.contains(
+                          event.relatedTarget as Node | null,
+                        )
+                      ) {
+                        setEditingRowKey((previous) =>
+                          previous === itemRow.key ? null : previous,
+                        );
+                      }
+                    }}
+                  >
                     <EditableRowView
                       row={itemRow as ItemRowMetadata}
                       keyLocked={itemLocked}
@@ -1473,7 +1581,7 @@ function FriendsRowView({
                         }
                       />
                     </ActionRow>
-                  </>
+                  </div>
                 )}
               </RowCard>
             );

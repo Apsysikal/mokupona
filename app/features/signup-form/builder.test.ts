@@ -9,6 +9,7 @@ import {
   linkedFieldKeys,
   SignupFormBuilderSchema,
   slugifyFieldKey,
+  syncChangedFieldKeys,
   syncLinkedRows,
 } from "./builder";
 import type { BuilderItemRow, BuilderRow } from "./builder";
@@ -423,6 +424,34 @@ describe("syncLinkedRows", () => {
         (item) => item.name === "vegetarian",
       )?.type,
     ).toBe("checkbox");
+  });
+});
+
+describe("syncChangedFieldKeys", () => {
+  it("reports nothing when every pair already agrees", () => {
+    expect(syncChangedFieldKeys(defaultBuilderRows())).toEqual([]);
+  });
+
+  it("names the keys whose rows the sync would rewrite", () => {
+    const rows = [
+      {
+        type: "text" as const,
+        name: "restrictions",
+        label: "Dietary restrictions",
+        required: false,
+      },
+      friendsRow([
+        {
+          type: "text",
+          name: "restrictions",
+          label: "Their restrictions",
+          required: true,
+        },
+        { type: "text", name: "nickname", label: "Nickname", required: false },
+      ]),
+    ];
+
+    expect(syncChangedFieldKeys(rows)).toEqual(["restrictions"]);
   });
 });
 
