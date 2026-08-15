@@ -119,15 +119,30 @@ export type AnswerCountsByFieldKey = Record<
 // needed, so this naturally unions every form version's submissions):
 // `friends` counts non-empty answers under the key among friend entries;
 // `total` adds non-empty top-level (signer) answers under the same key.
+// Legacy EventResponse rows count toward `total` under the same DEFAULT_FORM
+// keys legacyRowToAttendee exports them as; signer-ness was never recorded,
+// so they never count as friends. `hasResponses` is what locks field keys —
+// derived here so the loader needs no separate existence query.
 export async function getAnswerCountsByFieldKey(
   eventId: string,
-): Promise<AnswerCountsByFieldKey> {
+): Promise<{ counts: AnswerCountsByFieldKey; hasResponses: boolean }> {
   const counts: AnswerCountsByFieldKey = {};
-  const submissions = await getFormSubmissionAnswersByEvent([eventId]);
+  const [legacyRows, submissions] = await Promise.all([
+    getEventResponsesForEvent(eventId),
+    getFormSubmissionAnswersByEvent([eventId]),
+  ]);
 
   const bump = (key: string, part: "friends" | "total") => {
     (counts[key] ??= { friends: 0, total: 0 })[part] += 1;
   };
+
+  for (const row of legacyRows) {
+    for (const [key, value] of Object.entries(
+      legacyRowToAttendee(row).answers,
+    )) {
+      if (isAnsweredValue(value)) bump(key, "total");
+    }
+  }
 
   for (const { answers: rawAnswers } of submissions) {
     const answers = asRecord(rawAnswers);
@@ -152,7 +167,10 @@ export async function getAnswerCountsByFieldKey(
     }
   }
 
-  return counts;
+  return {
+    counts,
+    hasResponses: legacyRows.length > 0 || submissions.length > 0,
+  };
 }
 
 function isAnsweredValue(value: unknown): boolean {

@@ -12,7 +12,9 @@ import { storeImage } from "~/features/images/image-storage.server";
 import {
   builderRowsToDescriptors,
   defaultBuilderRows,
+  syncChangedFieldKeys,
 } from "~/features/signup-form/builder";
+import { requestLogger } from "~/logger/request-context.server";
 import { getAddresses } from "~/models/address.server";
 import { createEvent } from "~/models/event.server";
 
@@ -42,6 +44,14 @@ export async function action({ request, context }: Route.ActionArgs) {
         addressId,
         signupForm,
       } = value;
+
+      const changedKeys = syncChangedFieldKeys(signupForm);
+      if (changedKeys.length > 0) {
+        requestLogger.warn(
+          { fieldKeys: changedKeys },
+          "Linked-field sync changed submitted rows before persistence",
+        );
+      }
 
       const event = await createEvent(
         {

@@ -417,7 +417,80 @@ describe("admin signup form builder", () => {
             "be.visible",
           );
           cy.contains("strong", "restrictions").should("be.visible");
+          cy.findByRole("button", { name: /^unlink$/i }).click();
         });
+
+      // the split key is new, so it is not locked — the collected answers
+      // stay under the old column either way
+      cy.findByDisplayValue("restrictions_2")
+        .should("be.enabled")
+        .and("not.have.attr", "readonly");
+
+      // relinking counts the answers of whichever target is selected
+      openRow(RESTRICTIONS);
+      withinRow(RESTRICTIONS, () => {
+        cy.findByRole("button", { name: /link to friends/i }).click();
+      });
+      cy.get("#link-dialog-restrictions")
+        .should("be.visible")
+        .within(() => {
+          cy.contains(/1 friend has already answered this question/i).should(
+            "be.visible",
+          );
+          // the candidate kept its own key, which has no answers yet
+          cy.contains("Mirror onto").click();
+          cy.contains(/friend has already answered/i).should("not.exist");
+          cy.findByRole("button", { name: /link to friends/i }).click();
+        });
+
+      // the restored pair carries the answered key again, so removing the
+      // mirror still warns about the collected answers
+      const confirms: string[] = [];
+      cy.on("window:confirm", (message) => {
+        confirms.push(message);
+        return false;
+      });
+      withinLastRow(FRIEND_RESTRICTIONS, () => {
+        cy.findByRole("button", { name: /^remove$/i }).click();
+      });
+      cy.then(() => {
+        expect(confirms).to.have.length(1);
+        expect(confirms[0]).to.match(/already has signups/i);
+      });
+      cy.findAllByRole("button", { name: FRIEND_RESTRICTIONS }).should(
+        "have.length",
+        1,
+      );
+    });
+  });
+
+  it("keeps the session's wording on the friend when the signer row is removed", () => {
+    const suffix = uniqueSuffix();
+    const values = dinnerFormValues(`builder-keep-${suffix}`);
+
+    createDinnerViaAdminForm(values);
+    saveDinnerAndCaptureId(values.title).then((dinnerId) => {
+      dinnersToCleanup.push(dinnerId);
+
+      cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
+      relabelSignerRestrictions("Allergies");
+      withinRow(/allergies/i, () => {
+        cy.findByRole("button", { name: /^remove$/i }).click();
+      });
+
+      // the friend's row falls back to an ordinary question carrying the
+      // wording the mirror displayed, not its stored snapshot (the update
+      // intent hands the row a fresh key, so it renders expanded already)
+      openRow(FRIENDS_CARD);
+      withinLastRow(/allergies/i, () => {
+        cy.findByRole("button", { name: /toggle details/i }).then(($button) => {
+          if ($button.attr("data-state") === "closed") cy.wrap($button).click();
+        });
+        cy.findByLabelText(/^label$/i)
+          .should("have.value", "Allergies")
+          .and("be.enabled");
+        cy.findByLabelText(/^field key$/i).should("have.value", "restrictions");
+      });
     });
   });
 });

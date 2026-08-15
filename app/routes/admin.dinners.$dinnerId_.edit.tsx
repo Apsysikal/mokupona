@@ -20,28 +20,28 @@ import {
   builderRowsToDescriptors,
   defaultBuilderRows,
   descriptorsToBuilderRows,
+  syncChangedFieldKeys,
 } from "~/features/signup-form/builder";
 import { getAnswerCountsByFieldKey } from "~/features/signup-form/read.server";
+import { requestLogger } from "~/logger/request-context.server";
 import { getAddresses } from "~/models/address.server";
 import {
   getEventWithCurrentFormVersion,
   updateEvent,
 } from "~/models/event.server";
-import { eventHasSignups } from "~/models/form-submission.server";
 import { requireFound } from "~/shared/http.server";
 import { nullableStringUpdateValue } from "~/utils/nullable-update-field.server";
 
 export async function loader({ params }: Route.LoaderArgs) {
   const { dinnerId } = params;
 
-  const [addresses, eventWithVersion, formHasSubmissions, answerCounts] =
-    await Promise.all([
-      getAddresses(),
-      getEventWithCurrentFormVersion(dinnerId).then(requireFound),
-      eventHasSignups(dinnerId),
-      getAnswerCountsByFieldKey(dinnerId),
-    ]);
+  const [addresses, eventWithVersion, answerData] = await Promise.all([
+    getAddresses(),
+    getEventWithCurrentFormVersion(dinnerId).then(requireFound),
+    getAnswerCountsByFieldKey(dinnerId),
+  ]);
   const { event, version } = eventWithVersion;
+  const { counts: answerCounts, hasResponses: formHasSubmissions } = answerData;
 
   // an unparseable stored schema (a bug state) surfaces as the default form;
   // saving then repairs the event's form
@@ -81,6 +81,14 @@ export async function action({ request, params, context }: Route.ActionArgs) {
         addressId,
         signupForm,
       } = value;
+
+      const changedKeys = syncChangedFieldKeys(signupForm);
+      if (changedKeys.length > 0) {
+        requestLogger.warn(
+          { dinner: dinnerId, fieldKeys: changedKeys },
+          "Linked-field sync changed submitted rows before persistence",
+        );
+      }
 
       const menuDescriptionUpdateValue = nullableStringUpdateValue({
         formData,
