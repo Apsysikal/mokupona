@@ -28,6 +28,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import type { AnswerCountsByFieldKey } from "~/features/signup-form/read.server";
 import { cn } from "~/lib/utils";
 import { VALID_IMAGE_TYPES } from "~/shared/image";
 
@@ -43,6 +44,7 @@ type AdminEventFormProps = {
   cancelHref: string;
   // true once the event's form has submissions (edit screen only)
   lockFieldKeys?: boolean;
+  answerCounts?: AnswerCountsByFieldKey;
 };
 
 const SECTIONS = [
@@ -117,6 +119,7 @@ export function AdminEventForm({
   pageTitle,
   cancelHref,
   lockFieldKeys,
+  answerCounts,
 }: AdminEventFormProps) {
   return (
     <div className="flex flex-col gap-4 md:gap-6">
@@ -253,6 +256,7 @@ export function AdminEventForm({
             <SignupFormBuilder
               field={fields.signupForm}
               lockFieldKeys={lockFieldKeys}
+              answerCounts={answerCounts}
             />
           </SectionCard>
 

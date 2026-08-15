@@ -109,6 +109,58 @@ export async function getAttendeeCountsForEvents(
   return counts;
 }
 
+export type AnswerCountsByFieldKey = Record<
+  string,
+  { friends: number; total: number }
+>;
+
+// Per-field answer counts for the builder's link/unlink dialogs. Walks raw
+// submission JSON the same way getAttendeeCountsForEvents does (no schema
+// needed, so this naturally unions every form version's submissions):
+// `friends` counts non-empty answers under the key among friend entries;
+// `total` adds non-empty top-level (signer) answers under the same key.
+export async function getAnswerCountsByFieldKey(
+  eventId: string,
+): Promise<AnswerCountsByFieldKey> {
+  const counts: AnswerCountsByFieldKey = {};
+  const submissions = await getFormSubmissionAnswersByEvent([eventId]);
+
+  const bump = (key: string, part: "friends" | "total") => {
+    (counts[key] ??= { friends: 0, total: 0 })[part] += 1;
+  };
+
+  for (const { answers: rawAnswers } of submissions) {
+    const answers = asRecord(rawAnswers);
+    if (!answers) continue;
+
+    for (const [key, value] of Object.entries(answers)) {
+      if (key === FRIENDS_LIST_NAME) continue;
+      if (isAnsweredValue(value)) bump(key, "total");
+    }
+
+    const friends = Array.isArray(answers[FRIENDS_LIST_NAME])
+      ? (answers[FRIENDS_LIST_NAME] as unknown[])
+      : [];
+    for (const item of friends) {
+      const record = asRecord(item);
+      if (!record) continue;
+      for (const [key, value] of Object.entries(record)) {
+        if (!isAnsweredValue(value)) continue;
+        bump(key, "friends");
+        bump(key, "total");
+      }
+    }
+  }
+
+  return counts;
+}
+
+function isAnsweredValue(value: unknown): boolean {
+  if (typeof value === "string") return value.length > 0;
+  if (typeof value === "boolean") return value;
+  return false;
+}
+
 // The CSV export also needs the column union across versions; the table only
 // needs the attendees.
 export async function getAttendeeRosterForEvent(eventId: string): Promise<{

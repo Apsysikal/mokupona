@@ -40,6 +40,7 @@ import {
   type BuilderItemRowInput,
   type BuilderRowInput,
 } from "~/features/signup-form/builder";
+import type { AnswerCountsByFieldKey } from "~/features/signup-form/read.server";
 import {
   FIXED_IDENTITY_FIELDS,
   MAX_FRIENDS_COUNT,
@@ -111,11 +112,15 @@ function typeChipLabel(type: string): string {
 export function SignupFormBuilder({
   field,
   lockFieldKeys = false,
+  answerCounts = {},
 }: {
   field: FieldMetadata<BuilderRowInput[]>;
   // true once the event's form has submissions: existing keys become
   // immutable and removals of existing fields ask for confirmation
   lockFieldKeys?: boolean;
+  // per-field answer counts for the link/unlink dialogs (a later stage
+  // renders these; unused for now)
+  answerCounts?: AnswerCountsByFieldKey;
 }) {
   const form = useFormMetadata();
   const rows = field.getFieldList();
