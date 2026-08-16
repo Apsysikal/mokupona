@@ -81,8 +81,6 @@ export async function action({ params, request, context }: Route.ActionArgs) {
   const formFields = parseStoredFormSchemaOrLog(version);
 
   if (!formFields) {
-    // a bug — the loader hides the signup section for an unparseable schema,
-    // so no legitimate submission can arrive here
     throw new Response("Internal Server Error", { status: 500 });
   }
 
@@ -120,9 +118,6 @@ export async function action({ params, request, context }: Route.ActionArgs) {
     return submission.reply({ formErrors: [HONEYPOT_RETRY_MESSAGE] });
   }
 
-  // the answers must be validated and stored against the version the user
-  // actually saw — a schema change in between would silently strip answers
-  // to removed fields
   if (formData.get("formVersionId") !== version.id) {
     logger.info(
       {
@@ -263,9 +258,6 @@ export default function DinnerPage({
 
               <h2 className="text-xl font-light">reserve your seat</h2>
 
-              {/* keyed on the schema content: an in-place update keeps the
-                  version id but must still remount the form and rebuild the
-                  client schema */}
               <SignupForm
                 key={JSON.stringify(signupFields)}
                 formFields={signupFields}
@@ -289,8 +281,6 @@ function SignupForm({
   formVersionId: string;
   lastResult: Route.ComponentProps["actionData"];
 }) {
-  // any content change remounts the component (content-derived key), so the
-  // memo only saves rebuilds across same-data re-renders
   const schema = useMemo(() => buildSignupSchema(formFields), [formFields]);
 
   const [form, fields] = useForm({
@@ -309,14 +299,8 @@ function SignupForm({
         {...getFormProps(form)}
         className="flex flex-col gap-3"
       >
-        {/**
-         * This button is needed as hitting Enter would otherwise remove the first person.
-         * https://github.com/edmundhung/conform/issues/216
-         */}
         <button type="submit" hidden />
 
-        {/* the action verifies the submission was made against the version
-            it validates and stores with */}
         <input type="hidden" name="formVersionId" value={formVersionId} />
 
         <HoneypotField />

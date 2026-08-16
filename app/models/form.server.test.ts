@@ -62,8 +62,6 @@ describe("saveFormSchema (versioning policy)", () => {
   it("treats a non-normalized but semantically identical schema as unchanged", async () => {
     const form = await createFormWithV1();
 
-    // FormSchema trims labels on parse; without input normalization this
-    // padded-but-identical save would be misdetected as a change
     const result = await saveFormSchema(
       form.id,
       withCommentLabel("  Comment  "),
@@ -104,7 +102,6 @@ describe("saveFormSchema (versioning policy)", () => {
     expect(result.version).toBe(2);
     expect(result.schema).toEqual(edited);
 
-    // the submitted-against version is immutable and still referenced
     const v1After = await prisma.formVersion.findUniqueOrThrow({
       where: { id: v1.id },
       include: { _count: { select: { submissions: true } } },

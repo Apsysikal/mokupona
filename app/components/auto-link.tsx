@@ -3,12 +3,6 @@ import type { ReactNode } from "react";
 const URL_DELIMITER =
   /((?:https?:\/\/)?(?:(?:[a-z0-9]?(?:[a-z0-9\-]{1,61}[a-z0-9])?\.[^\.|\s])+[a-z\.]*[a-z]+|(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3})(?::\d{1,5})*[a-z0-9.,_\/~#&=;%+?\-\\(\\)]*)/gi;
 
-/**
- * Normalizes a regex-matched URL token into link URL + trailing text.
- * Rules:
- * - sentence punctuation at the end stays outside links
- * - unbalanced closing parens at the end stay outside links
- */
 function normalizeMatchedUrl(rawUrl: string): {
   url: string;
   trailingText: string;
@@ -52,10 +46,6 @@ function isValidUrlMatch(url: string): boolean {
 export type AutoLinkPart =
   { type: "text"; value: string } | { type: "link"; url: string };
 
-/**
- * Parses a plain-text string and returns an array of parts, where each part
- * is either a plain-text segment or a detected URL.
- */
 export function parseAutoLinks(text: string): AutoLinkPart[] {
   const matcher = new RegExp(URL_DELIMITER.source, URL_DELIMITER.flags);
   const parts: AutoLinkPart[] = [];
@@ -102,13 +92,6 @@ export function parseAutoLinks(text: string): AutoLinkPart[] {
   return parts;
 }
 
-/**
- * This function converts plain text with links into text
- * where the links have been replaced with an anchor tag.
- * Grabbed this from here: https://www.30secondsofcode.org/react/s/auto-link/
- * @param { text }
- * @returns A string of text where the detected links were replaced with anchor tags.
- */
 export function AutoLink({
   text,
   children,

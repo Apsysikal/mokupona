@@ -15,7 +15,6 @@ export interface BoardMemberData {
   image?: ImageCreateData;
 }
 
-// the admin tab bar shows a count pill per section
 export async function countBoardMembers(): Promise<number> {
   return prisma.boardMember.count();
 }
@@ -74,10 +73,6 @@ export async function deleteBoardMember(
   });
 }
 
-// Replaces the portrait iff a new image is provided: the old image row is
-// deleted and the new one created in the same transaction as the update.
-// The replaced portrait's storageKey comes back for the caller's post-commit
-// provider destroy; null when nothing was replaced.
 export async function updateBoardMember(
   id: string,
   data: BoardMemberData,

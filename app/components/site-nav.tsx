@@ -32,11 +32,6 @@ type NavItem =
   | { kind: "instagram" }
   | { kind: "logout" };
 
-/**
- * One authenticated item list drives both layouts; desktop and mobile keep
- * their own markup and may place items elsewhere (mobile renders instagram
- * in its footer instead of the link list).
- */
 function buildNavItems({
   loggedIn,
   isModerator,
@@ -98,7 +93,6 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
 
   const navItems = buildNavItems({ loggedIn, isModerator });
 
-  // the overlay must never survive a navigation
   useEffect(() => {
     setMenuOpen(false);
   }, [location.pathname]);
@@ -112,7 +106,6 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
   return (
     <>
       <nav className="border-b">
-        {/* desktop */}
         <div className="flex h-16 items-center justify-between px-10 max-md:hidden">
           <BrandLockup to="/" />
 
@@ -162,7 +155,6 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
           </div>
         </div>
 
-        {/* mobile */}
         <div className="flex h-14 items-center justify-between px-5 md:hidden">
           <BrandLockup to="/" />
           <button
@@ -227,7 +219,6 @@ function MobileMenu({
                   </MobileMenuLink>
                 );
               case "instagram":
-                // rendered in the footer below instead
                 return null;
               case "logout":
                 return (

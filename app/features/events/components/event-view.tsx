@@ -121,7 +121,6 @@ export function EventFactList({ event }: EventViewProps) {
   );
 }
 
-// stacked story + facts, used by the admin dinner preview
 export function EventView({ event }: EventViewProps) {
   return (
     <div className="flex flex-col gap-6">

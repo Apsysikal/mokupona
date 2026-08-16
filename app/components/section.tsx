@@ -100,8 +100,6 @@ export function Eyebrow({
   );
 }
 
-// "the next dinner" / "past dinners" — a tracked label with a hairline rule
-// running out to the edge.
 export function SectionDivider({
   className,
   children,

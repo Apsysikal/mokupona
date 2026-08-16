@@ -112,7 +112,6 @@ export const action = async ({
 
   if (intent === "logout-retry") {
     const mismatched = await context.get(optionalUserContext)();
-    // destroys the session, then lands back on this link for a clean retry
     const response = await logout(request);
     log.warn(
       { userId: mismatched?.id },
@@ -125,7 +124,6 @@ export const action = async ({
   const invite = await getInviteByToken(params.token);
   const validity = inviteValidity(invite);
   if (validity !== "valid" || !invite) {
-    // token went stale between render and submit — re-render the dead-end
     log.warn(
       { inviteId: invite?.id, reason: validity },
       "Invite submitted with a token that is no longer valid",
@@ -133,8 +131,6 @@ export const action = async ({
     return redirect(`/invite/${params.token}`);
   }
 
-  // Prisma types roleName as string; invites only ever carry an invitable
-  // role, so fall back the way the invite mailer does.
   const landingPath = landingPathForRole(
     normalizeInvitableRole(invite.roleName),
   );
@@ -189,8 +185,6 @@ export const action = async ({
     const created = await getUserByEmail(invite.email);
     if (!created) throw new Error("signup did not create a user");
 
-    // the invite link proves mailbox control: acceptance verifies the email
-    // and applies the role atomically — no verification mail hop needed
     await acceptCurrentInvite(invite, created.id, params.token);
 
     const { headers } = await auth.api.signInEmail({

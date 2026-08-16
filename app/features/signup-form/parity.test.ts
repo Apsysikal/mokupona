@@ -10,14 +10,6 @@ import {
   SignupPersonSchema,
 } from "~/utils/event-signup-validation";
 
-// The schema the signup route used before the registry rewrite, verbatim.
-// event-signup-validation.ts is the regression anchor: as long as this test
-// passes, DEFAULT_FORM accepts and rejects exactly what the old form did.
-//
-// Review marker (architecture review 2026-07-18): keep this parity suite and
-// app/utils/event-signup-validation.ts until the signup-form rewrite has ~3 months
-// of production mileage without signup regressions (review ~2026-10). Owner: Benedikt.
-// Delete both together.
 const legacySchema = z
   .object({
     signupPerson: SignupPersonSchema,
@@ -73,8 +65,6 @@ function appendPerson(
   }
 }
 
-// Input names as the registry-driven page submits them: flat top-level
-// fields plus friends[i] items.
 function newFormData(signup: Signup): FormData {
   const formData = new FormData();
   const keys = { vegetarian: "vegetarian", restrictions: "restrictions" };
@@ -93,8 +83,6 @@ function newFormData(signup: Signup): FormData {
   return formData;
 }
 
-// Input names as the pre-rewrite page submitted them: signupPerson.* plus
-// people[i].* with the old field vocabulary.
 function legacyFormData(signup: Signup): FormData {
   const formData = new FormData();
   const keys = {
@@ -120,9 +108,6 @@ function legacyFormData(signup: Signup): FormData {
   return formData;
 }
 
-// Both schemas leave unchecked checkboxes absent under Conform's coercion
-// (see the S2 deviation note); normalize to explicit booleans and the new
-// field vocabulary before comparing values.
 function normalizePerson(
   person: Person,
 ): Required<Omit<Person, "restrictions">> & Pick<Person, "restrictions"> {
@@ -201,9 +186,6 @@ describe("DEFAULT_FORM parity with the legacy signup schema", () => {
 
     expect(newResult.status).toBe(legacyResult.status);
 
-    // For accepted submissions the *values* must match too — a status-only
-    // check would miss trimming or key-mapping regressions that end up in
-    // EventResponse rows.
     if (newResult.status !== "success" || legacyResult.status !== "success") {
       return;
     }
@@ -228,9 +210,6 @@ describe("DEFAULT_FORM parity with the legacy signup schema", () => {
     });
   });
 
-  // Divergences below are deliberate improvements over the legacy schema,
-  // recorded in the session plan's deviation notes — these tests pin them so
-  // they stay intentional rather than accidental.
   describe("deliberate divergences from the legacy schema", () => {
     it("rejects a whitespace-only name that the legacy schema accepted as an empty name", () => {
       const signup: Signup = { ...validSignup, name: "   " };
@@ -271,9 +250,6 @@ describe("DEFAULT_FORM parity with the legacy signup schema", () => {
 
     expect(result.status).toBe("success");
     if (result.status !== "success") throw new Error("unreachable");
-    // Unchecked optional checkboxes are absent from Conform's parse output
-    // (the coercion layer short-circuits before zod's .default(false) runs);
-    // the signup action's adapter schema defaults them to false before writing.
     expect(result.value).toEqual({
       name: "Ada Lovelace",
       email: "ada@example.com",
@@ -284,9 +260,6 @@ describe("DEFAULT_FORM parity with the legacy signup schema", () => {
     });
   });
 
-  // Conform coerces a missing field list to [] at parse time (a plain
-  // schema.parse would reject the absent friends key) — the solo-signup path
-  // relies on this.
   it("accepts a submission without any friends key", () => {
     const result = parseWithZod(newFormData(validSignup), {
       schema: signupSchema,

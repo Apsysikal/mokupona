@@ -33,9 +33,6 @@ async function moderator(): Promise<ValidatedUser> {
   }) as Promise<ValidatedUser>;
 }
 
-// Serializes one builder row the way the server-rendered form's inputs do —
-// this is the request a browser with JavaScript switched off produces, mirror
-// hidden inputs and all.
 function appendRow(
   body: URLSearchParams,
   prefix: string,
@@ -71,8 +68,6 @@ function editBody(addressId: string, rows: BuilderRow[]): URLSearchParams {
   return body;
 }
 
-// The pair a scriptless client can post: the signer's row was relabelled, the
-// friend's copy still carries the wording it was stored with.
 function disagreeingRows(): BuilderRow[] {
   return defaultBuilderRows().map((row): BuilderRow => {
     if (row.type !== "list" && row.name === "restrictions") {
@@ -138,8 +133,6 @@ describe("admin dinner edit action", () => {
       (item) => item.data.name === "restrictions",
     );
 
-    // the server's normalization is the authority: no client code ran, and
-    // the friend's disagreeing label never reached storage
     expect(signer?.data.label).toBe(SIGNER_LABEL);
     expect(friend?.data.label).toBe(SIGNER_LABEL);
     expect(fields).not.toContainEqual(

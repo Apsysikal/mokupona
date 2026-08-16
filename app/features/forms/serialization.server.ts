@@ -2,9 +2,6 @@ import { parseStoredFormSchema } from "./serialization";
 
 import { requestLogger } from "~/logger/request-context.server";
 
-// The degraded path every reader of FormVersion.schema shares: a parse
-// failure is a bug (all writers validate), so it is flagged loudly and the
-// caller renders/derives nothing rather than something wrong.
 export function parseStoredFormSchemaOrLog(version: {
   id: string;
   schema: unknown;

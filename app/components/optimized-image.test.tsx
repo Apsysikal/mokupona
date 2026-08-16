@@ -6,7 +6,6 @@ import { OptimizedImage } from "./optimized-image";
 
 import type { ImageDisplaySource, ImageProviderConfig } from "~/shared/image";
 
-// the component reads delivery config from the root loader; pin it per test
 const mocks = vi.hoisted(() => ({
   useImageConfig: vi.fn<() => ImageProviderConfig>(() => ({
     imageProvider: "local",
@@ -38,7 +37,6 @@ function renderImage(overrides: Partial<ImageDisplaySource> = {}) {
   );
 }
 
-/** Pin HTMLImageElement.complete for the duration of one test. */
 function stubImageComplete(value: boolean) {
   const original = Object.getOwnPropertyDescriptor(
     HTMLImageElement.prototype,
@@ -69,7 +67,6 @@ describe("OptimizedImage blur-up", () => {
     );
     expect(placeholder).toBeInTheDocument();
     expect(placeholder).toHaveAttribute("aria-hidden");
-    // the backdrop-blur overlay smooths the upscaled 100px placeholder
     expect(container.querySelector(".backdrop-blur-2xl")).toBeInTheDocument();
 
     restore();
@@ -142,8 +139,6 @@ describe("OptimizedImage blur-up", () => {
   });
 
   it("provides a full-opacity noscript fallback so no-JS visitors never sit on the blur", () => {
-    // only the server render materializes noscript children (that is exactly
-    // the markup a no-JS visitor receives), so assert on renderToString
     const html = renderToString(
       <OptimizedImage image={image} width={640} height={480} alt="A table" />,
     );
@@ -157,7 +152,6 @@ describe("OptimizedImage blur-up", () => {
 
   it("renders the placeholder frame alone when no URL can be built (offline static asset)", () => {
     const restore = stubImageComplete(false);
-    // public_id-only asset, no cloud name configured → getImageUrl is ""
     const { container } = render(
       <OptimizedImage
         image={{ storageKey: "static/hero-image" }}
@@ -185,7 +179,6 @@ describe("OptimizedImage blur-up", () => {
       "src",
       "https://res.cloudinary.com/test-cloud/image/upload/f_auto,q_auto,c_fill,g_auto,w_640,h_480/v3/abc123",
     );
-    // 640/480 aspect carried into each rung's derived height
     expect(img.getAttribute("srcset")).toContain("w_432,h_324/v3/abc123 432w");
     expect(img.getAttribute("srcset")).toContain(
       "w_1080,h_810/v3/abc123 1080w",

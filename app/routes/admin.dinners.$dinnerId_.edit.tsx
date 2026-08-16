@@ -43,8 +43,6 @@ export async function loader({ params }: Route.LoaderArgs) {
   const { event, version } = eventWithVersion;
   const { counts: answerCounts, hasResponses: formHasSubmissions } = answerData;
 
-  // an unparseable stored schema (a bug state) surfaces as the default form;
-  // saving then repairs the event's form
   const storedFields = parseStoredFormSchemaOrLog(version);
 
   return {

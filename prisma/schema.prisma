@@ -1,9 +1,6 @@
 generator client {
   provider      = "prisma-client"
   output        = "./generated"
-  // The WASM query compiler is the app's single largest allocation: the default
-  // "fast" build costs ~60 MB more boot-time peak on a 256 MB Fly machine, and
-  // measured no faster on our query shapes. See docs/memory-profile/findings.md.
   compilerBuild = "small"
 }
 
@@ -32,10 +29,6 @@ model User {
   roleId String
 }
 
-// Session / Account / Verification are owned by better-auth (1.6 field set,
-// hand-merged — the CLI must never rewrite this file; our User carries the
-// roleId relation and events).
-
 model Session {
   id        String   @id @default(cuid())
   token     String   @unique
@@ -55,7 +48,6 @@ model Session {
 model Account {
   id String @id @default(cuid())
 
-  // provider user id ("credential" accounts reuse the user id)
   accountId  String
   providerId String
 
@@ -65,7 +57,6 @@ model Account {
   accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
   scope                 String?
-  // scrypt hash for providerId = "credential"
   password              String?
 
   createdAt DateTime @default(now())
@@ -79,9 +70,7 @@ model Account {
 
 model Invite {
   id         String    @id @default(cuid())
-  // bound address — must match at acceptance
   email      String
-  // "user" | "moderator"
   roleName   String
   tokenHash  String    @unique
   expiresAt  DateTime
@@ -110,7 +99,6 @@ model Verification {
 
 model Role {
   id          String @id @default(cuid())
-  // user, moderator, admin
   name        String @unique
   description String @default("")
 
@@ -131,8 +119,6 @@ model Event {
   price               Int
   discounts           String?
 
-  // cover lives on Image (eventId, Cascade) like BoardMember portraits, so
-  // deleting an image can never take the event with it
   image Image?
 
   addressId String
@@ -140,12 +126,11 @@ model Event {
 
   eventResponses EventResponse[]
 
-  // authorship metadata only — events outlive their creator
   createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull, onUpdate: Cascade)
   createdById String?
 
   form   Form   @relation(fields: [formId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  formId String @unique // non-nullable: every event has a form (backfilled)
+  formId String @unique
 }
 
 model Form {
@@ -155,16 +140,16 @@ model Form {
   updatedAt DateTime @updatedAt
 
   versions FormVersion[]
-  event    Event? // back-relation only; Form itself stays event-agnostic
+  event    Event?
 }
 
 model FormVersion {
   id      String @id @default(cuid())
   version Int
-  schema  Json // FieldDescriptor[]; validated by SignupFormSchema on every write
+  schema  Json
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt // mutated in place only while no submissions reference it
+  updatedAt DateTime @updatedAt
 
   form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   formId String
@@ -176,7 +161,7 @@ model FormVersion {
 
 model FormSubmission {
   id      String @id @default(cuid())
-  answers Json // nested: { name, email, …, friends: [{ name, … }] }
+  answers Json
 
   createdAt DateTime @default(now())
 
@@ -219,12 +204,9 @@ model Image {
   // provider key (Cloudinary public_id / local file key) — the row's only
   // link to its bytes since `blob` was dropped, so it is required
   storageKey  String
-  // Cloudinary asset version — versioned delivery URLs
   version     Int?
-  // intrinsic pixels, from the upload response
   width       Int?
   height      Int?
-  // base64 blur-up placeholder (~1–2 KB), generated at store/backfill time
   blurDataUrl String?
 
   createdAt DateTime @default(now())

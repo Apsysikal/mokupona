@@ -514,8 +514,6 @@ describe("description round-trip", () => {
       data: {
         ...descriptor.data,
         description: `About ${descriptor.data.name}`,
-        // the linked item fields carry the same description as their signer
-        // rows, or syncLinkedRows would add it on the way back
         ...(descriptor.type === "list"
           ? {
               itemFields: descriptor.data.itemFields.map((item) => ({

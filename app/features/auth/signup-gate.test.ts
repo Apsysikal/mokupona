@@ -1,5 +1,4 @@
 // @vitest-environment node
-// (happy-dom swaps the fetch primitives; Request/Response have to be real)
 
 import { RouterContextProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -11,8 +10,6 @@ import {
 
 import { action } from "~/routes/api.auth.$";
 
-// The pass-through case only needs to prove better-auth was handed the
-// request — standing up the real handler would say nothing extra.
 const mocks = vi.hoisted(() => ({ handler: vi.fn() }));
 
 vi.mock("~/features/auth/auth.server", () => ({

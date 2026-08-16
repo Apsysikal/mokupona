@@ -17,7 +17,6 @@ describe("contentDispositionAttachment", () => {
     expect(header).toContain(
       `filename*=UTF-8''Summer%20%27Special%27%20%28v2%29.csv`,
     );
-    // the quoted fallback contains no quotes or spaces
     expect(header).toContain(`filename="Summer-Special-v2-.csv"`);
   });
 

@@ -226,8 +226,6 @@ function InviteDialog() {
     },
   });
 
-  // fetcher.data is a fresh object per submission, so re-inviting the same
-  // address still closes the dialog
   const { data: fetcherData, state: fetcherState } = fetcher;
   useEffect(() => {
     if (fetcherData?.sentTo && fetcherState === "idle") {

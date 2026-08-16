@@ -49,7 +49,6 @@ describe("dinner signup", () => {
     const friendName = `Cypress Friend ${suffix}`;
 
     visitFirstDinner();
-    // wait for the client-side navigation to commit before capturing the id
     cy.location("pathname")
       .should("match", /^\/dinners\/[^/]+$/)
       .then((pathname) => {
@@ -64,8 +63,6 @@ describe("dinner signup", () => {
 
         cy.loginAsRole("moderator");
 
-        // the admin table shows one row per party: the signer fronts the
-        // row and the friend only bumps the party size
         cy.visitAndCheck(`/admin/dinners/${dinnerId}/signups`);
         cy.findByText(signerName)
           .closest("tr")
