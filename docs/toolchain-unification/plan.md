@@ -1,10 +1,16 @@
 # Unifying the toolchain on oxc — Plan
 
-Status: **exploration, 2026-08-16**. Nothing is wired up. This documents what
-was measured against the current `dev` tree, which pieces transfer cleanly,
-which do not, and a staged order to adopt them in. The candidate configs next
-to this file are runnable — copy them to the repo root to reproduce anything
-below.
+Status: **exploration, revised 2026-08-16**. Nothing is wired up. This
+documents what was measured against the current `dev` tree, which pieces
+transfer cleanly, which do not, and a staged order to adopt them in. The
+candidate configs next to this file are runnable — copy them to the repo root
+to reproduce anything below.
+
+The first revision was corrected in three places after the migration was
+actually carried out on a branch: the `import/order` warning count and what
+`sortImports` does to it (the reason it is now **deferred**), the type-aware
+finding count, and the stage ordering. Corrections are marked inline rather
+than quietly edited, since the original was already published.
 
 ## The finding
 
@@ -87,9 +93,20 @@ There is no oxlint port, and no near-equivalent under another name —
 probe file confirms ESLint catches `{items.length && <span/>}` today and
 oxlint says nothing about it.
 
-The cost is bounded, though: **the rule currently flags zero files in the
-repo.** It is purely preventive. So the choice is to accept the gap until oxc
-ports it, not to un-fix existing code.
+The cost is bounded, though. The rule flags zero files today, and a direct
+grep shows why: **there is not a single `&&` inside a JSX expression container
+anywhere in the repo.** All 27 `&&` occurrences in `app/**/*.tsx` are in
+`cn()` class strings, plain JS conditions, or object spreads. Conditional
+rendering is uniformly ternary (`{eyebrow ? (…) : null}`) — exactly the
+`validStrategies: ["ternary"]` the rule was configured for. So it has been
+enforcing a convention the codebase already follows by hand.
+
+Upstream status: no dedicated tracking issue, only the umbrella oxc#1022
+(open since 2023, _Help Wanted_). Four port attempts in eight months — two
+abandoned, one stalled, one (oxc#23536) ready-for-review since June with no
+maintainer review and no stated technical blocker. Plausible it lands; not
+something to plan a date around. Accept the gap: dropping it turns a
+convention from enforced to conventional, with zero current exposure.
 
 ### `import/order` is not coming, and that is on purpose
 
@@ -103,14 +120,43 @@ lint concern, which is a genuine change in how the repo thinks about it.
 ### Bonus: type-aware rules we do not have today
 
 `oxlint --type-aware` (via `oxlint-tsgolint`, tracking typescript-go) runs in
-**1.9s** and found real things on a clean tree:
+**1.9s** and found **10** real things on a clean tree (an earlier revision of
+this document said 6 — it listed only the notable ones):
 
 - 4 × `no-floating-promises` in `cypress/support/` (`create-invite.ts:38`,
-  `create-role-session.ts:24`, `create-user.ts:28`, `delete-user.ts:30`)
-- 1 × `no-base-to-string` at `app/routes/dinners_.$dinnerId.tsx:140` —
-  `submission.payload["email"]` may stringify as `[object Object]`
-- 1 × `unbound-method` at
-  `app/features/images/image-form-action.server.ts:18`
+  `create-role-session.ts:24`, `create-user.ts:28`, `delete-user.ts:30`) —
+  each entry script drops the promise from its async main
+- 3 × `no-base-to-string` (`app/routes/dinners_.$dinnerId.tsx:140`,
+  `join.tsx:55`, `join.tsx:105`) — a rejected Conform payload is unvalidated,
+  so `submission.payload["email"]` can be an object and writes
+  `[object Object]` into the field you then search on
+- 1 × `unbound-method` at `app/features/images/image-form-action.server.ts:18`
+- 1 × `restrict-template-expressions` in `app/features/forms/fields/non-list.ts`
+  — the exhaustiveness guard's message reads `Unhandled case for type:
+[object Object]`
+- 1 × `no-useless-default-assignment` in `app/features/cms/blocks/hero/view.tsx`
+
+Two more worth turning on deliberately, from a sweep of oxlint's full rule
+surface:
+
+- **`typescript/no-misused-promises`** — 4 hits, 2 of them live bugs in auth
+  UI. `app/features/auth/components/google-button.tsx:36` and
+  `app/routes/me.tsx:424` both do `onClick={() => authClient.someAsync(...)}`.
+  A network failure there is an unhandled rejection: sign-in or account
+  linking fails silently, with no feedback.
+- **`typescript/only-throw-error`** with
+  `allow: [{ from: "lib", name: "Response" }]` — bare it fires 13 times on our
+  own `throw new Response(...)` / `throw redirect(...)` idiom; with `Response`
+  allowlisted it is **exactly 0** while still catching a thrown string or
+  plain object. A free permanent guard on an idiom used in every loader,
+  action and guard.
+
+The rest of oxlint's ~626 rules are not worth sweeping in. `style` alone
+produces 5,906 findings and `restriction` 2,878. One trap to know about:
+the `suspicious` category looks reasonable at 1,303 findings, but **1,205 of
+those are `react/react-in-jsx-scope`**, which is simply wrong for React 19's
+automatic runtime. If that category is ever enabled, that rule must be
+explicitly `off`.
 
 Getting typed linting under ESLint would mean adding
 `typescript-eslint`'s type-checked configs and paying tsc-project-service
@@ -156,38 +202,90 @@ It also reformats `fly.toml`, which Prettier never touched — oxfmt formats
 TOML. The candidate config adds `fly.toml` to `ignorePatterns` to keep that
 out of scope.
 
-**The catch: oxfmt is at 0.63.0.** oxlint is at 1.78.0 and mature; the
-formatter is explicitly pre-1.0, and `sortImports` sits behind that. Two
-files of drift today says nothing about drift after the next six minor
-releases. This is the single biggest reason to stage rather than do it all at
-once.
+**The catch: oxfmt is at 0.63.0**, versus oxlint's mature 1.78.0. But the
+0.x label overstates the risk, and this was measured rather than assumed:
+the same 278 source files formatted with seven pinned oxfmt versions from
+0.30.0 (February) through 0.63.0 (August) — 34 minor releases, six months —
+produce byte-identical output in **all but one file**. And that one change was
+a _convergence_: 0.63.0's output for
+`app/features/images/providers/cloudinary.server.ts` is byte-identical to
+Prettier 3.9.6 where 0.57.0's was not. The drift moved toward the oracle.
 
-## The 117-file question
+What keeps this from being a non-issue:
 
-Turning on `sortImports` rewrites **117 files, +251/−281**. Two things about
-that:
+- **There is no 1.0 date.** oxfmt's Q3 2026 goal is removing the last Prettier
+  dependency for Markdown; the 1.0 on the roadmap is for the oxc compiler
+  core, not the formatter.
+- **Output changes ship as bug fixes, not breaking changes.** Across 64
+  releases, the 8 `[BREAKING]` entries are about which backend owns a file
+  type and about config schema — never JS layout. So the changelog will not
+  warn you before a reformat.
+- One open non-idempotency bug (oxc#24960, leading line comments on a
+  trailing call argument).
 
-It is not arbitrary churn — it _fixes_ the 11 `import/order` warnings ESLint
-has been emitting continuously (all "There should be no empty line within
-import group", across `app/models/*.server.ts` and friends). And oxfmt's
-default `internalPattern` is `["~/", "@/", "#"]`, which already matches both
-of our aliases, so `~/db.server` and `#prisma/generated/client` land in the
-internal group with no configuration:
+The mitigation is the version range: on a 0.x version npm's caret pins the
+minor, so `"oxfmt": "^0.63.0"` accepts 0.63.5 but not 0.64.0. Every
+output-affecting upgrade becomes a deliberate, reviewable act. That is what
+Sentry (`^0.60.0`), Turborepo (`^0.34.0`) and openclaw (exact `0.60.0`) all
+do. **Low risk if pinned; medium if left to float.**
 
-```diff
- import type { Prisma, Role, User } from "#prisma/generated/client";
--
- import { prisma } from "~/db.server";
+## The 117-file question — defer it
+
+**Correction.** An earlier revision of this document claimed the `sortImports`
+commit "fixes the 11 `import/order` warnings" and that "ESLint's 11 standing
+warnings go to zero." Both halves are wrong. That was inferred from reading a
+diff, not measured. Measured on a pristine `git archive` of HEAD with the
+generated Prisma client in place:
+
+| Tree                         | `import/order` warnings |
+| ---------------------------- | ----------------------- |
+| Today                        | **0**                   |
+| oxfmt, `sortImports` **off** | **0**                   |
+| oxfmt, `sortImports` **on**  | **156**                 |
+
+Two separate errors fed the wrong claim.
+
+**The 11 warnings were an environment artifact, not a standing debt.** They
+appear only when `prisma/generated/` is absent — `eslint-plugin-import-x`
+cannot resolve `#prisma/generated/client`, so it misclassifies the import
+group and objects to a blank line that is in fact correct. Isolated directly:
+
+```
+without prisma/generated  →  11 import/order warnings
+with    prisma/generated  →   0
 ```
 
-It also corrects grouping ESLint was missing. In `app/root.tsx` the
-`~/features/**` imports currently sit _after_ the `./`-relative ones; oxfmt
-moves them to the internal group ahead of parent/sibling, which is what
-`eslint.config.js` asks for and `import-x` was not enforcing (no resolver is
-configured for `~/`, so it never classified those as internal).
+There is no `postinstall` in `package.json`, and the CI lint job runs only
+`npm ci` before `npm run lint`. So those 11 warnings were **CI-only, and
+nobody could reproduce them locally.** That is worth fixing on its own merits,
+whatever happens to the linter (see "Two fixes worth making regardless").
 
-Practically: one mechanical commit, added to `.git-blame-ignore-revs`, landed
-on its own when no long-lived branches are open.
+**And `sortImports` does not resolve `import/order` — it collides with it.**
+156 warnings, of which 49 are "type import should occur before import of X".
+oxfmt and `eslint-plugin-import-x` disagree structurally on where type imports
+go and on how `~/` is classified. Tuning oxfmt toward perfectionist's
+documented group order makes it worse, not better (268 warnings, 128 files of
+churn).
+
+That collision is harmless _if_ ESLint is leaving at the same time — the rule
+disappears with it. What makes deferral the right call is the **rollback
+asymmetry**:
+
+- Reverting the formatter is free. Running our Prettier 3.9.6 +
+  `prettier-plugin-tailwindcss` over an oxfmt-formatted tree changes **0
+  files** — Prettier accepts oxfmt's output byte-for-byte, import order
+  included, because Prettier does not reorder imports.
+- Reverting the import sorting is not. `eslint --fix` over the sorted tree
+  touches 102 files and lands in a **third** distinct ordering, still
+  differing from today's tree in 108 files. You do not get your bytes back. A
+  `git revert` restores them exactly, but after months of development across a
+  116-file blast radius, expect conflicts in most of them.
+
+So `sortImports` is the one irreversible step in this migration, and the
+reason originally given for taking it early was false. Defer it. Revisit when
+oxfmt hits 1.0 or when `sortNamedImports` (oxc#23456) lands — by then ESLint
+is gone, there is no `import/order` to contradict, and it becomes a choice to
+_add_ import ordering rather than to _migrate_ it.
 
 ## Vite+
 
@@ -214,55 +312,94 @@ Nothing is lost by waiting: Vite+ reads the same `.oxlintrc.json` and
 `.oxfmtrc.json` we would write anyway, so adopting oxlint and oxfmt directly
 _is_ the migration path into Vite+, not a detour from it.
 
-## Recommendation — staged, formatter first
+## Two fixes worth making regardless
 
-The order matters: `import/order` can only be dropped from ESLint once oxfmt
-owns import sorting, so the formatter has to move first.
+Both surfaced while measuring this, and neither depends on migrating
+anything. They are the cheapest wins in the document.
 
-**Stage 1 — oxfmt replaces Prettier.** Drop `prettier`,
-`prettier-plugin-tailwindcss`, and the `prettier` block in `package.json`;
-add `oxfmt` and `.oxfmtrc.json` with `sortImports` **off**. One reformat
-commit, 2 files. `npm run format` becomes `oxfmt`. Reversible in a single
-revert.
+**1. The CI lint job never generates types.** It runs `npm ci` then
+`npm run lint`, with no `prisma generate` and no `react-router typegen`. That
+is the sole cause of the 11 phantom `import/order` warnings above, and under
+type-aware linting it would additionally produce 7 bogus
+`no-redundant-type-constituents` findings from unresolved error types. Two
+steps in `.github/workflows/ci.yml` fix it permanently.
 
-**Stage 2 — import sorting moves to the formatter.** Set
-`"sortImports": true`, delete the `import/order` block and the
-`eslint-plugin-import-x` dependency. One mechanical commit, 117 files,
-blame-ignored. ESLint's 11 standing warnings go to zero.
+**2. ESLint is not linting `cypress/` at all.** `cypress/eslint.config.js`
+exists, enables no rules, and names no `files` patterns. ESLint 10 resolves
+config from the linted file's directory, so that file shadows the root config
+for everything beneath it. Measured: of 257 files linted, **exactly one** is
+under `cypress/` — the config itself. All 16 spec and support files have been
+silently unlinted. Deleting that file brings them under the root config.
 
-**Stage 3 — oxlint replaces ESLint.** Add `oxlint` + `.oxlintrc.json`
-(candidate attached, verified), turn on `--type-aware` with
-`oxlint-tsgolint`, fix the 6 findings it surfaces, drop `eslint` and its six
-plugins. `npm run lint` becomes `oxlint --type-aware`; the ESLint CI job
-keeps its name. This is where we accept losing `react/jsx-no-leaked-render`
-(zero current violations) rather than keeping a second linter alive for one
-rule — running both would be the opposite of unifying.
+This also explains why the 4 `no-floating-promises` in `cypress/support/`
+survived: no linter was ever looking at them.
+
+## Recommendation — staged, and `sortImports` deferred
+
+The earlier revision sequenced formatter-first on the reasoning that
+"`import/order` can only be dropped from ESLint once oxfmt owns import
+sorting." That is false. `import/order` can simply be dropped — oxlint does
+not implement it, so it lapses when ESLint leaves, and nothing has to take
+ownership of it. Removing that false dependency frees the two migrations to
+be sequenced on their own merits.
+
+**Stage 1 — oxlint replaces ESLint.** Add `oxlint` + `.oxlintrc.json`, turn
+on `--type-aware` with `oxlint-tsgolint`, fix the 10 findings it surfaces,
+drop `eslint` and its seven plugins. Add the two generator steps to the CI
+lint job and delete `cypress/eslint.config.js`. Budget for oxlint's default
+rules surfacing ~34 findings ESLint never had — most are test-file style
+rules to scope or disable, and 5 are genuine false positives (chai property
+getters in Cypress, a custom assertion helper) that need config, not code
+changes. This stage is pure gain and depends on nothing else.
+
+**Stage 2 — oxfmt replaces Prettier, `sortImports` off.** Drop `prettier`,
+`prettier-plugin-tailwindcss`, and the `prettier` block in `package.json`.
+One reformat commit, **2 files**. Pin `"oxfmt": "^0.63.0"` — on a 0.x version
+the caret pins the minor, so every output-affecting upgrade becomes an
+explicit, reviewable act. Rollback verified free.
+
+**Stage 3 — `sortImports`, later and on its own merits.** See above. Not part
+of this migration.
 
 **Stage 4 — reassess Vite+.** Once oxfmt reaches 1.0 and someone has run `vp`
-on a branch. `vp check` and `vp test` would then replace three npm scripts,
-and the configs from stages 1–3 carry over unchanged.
-
-Stages 1–3 are each independently revertible and each land a real reduction.
-Stage 3 alone is also defensible as a first move if the 117-file commit is
-unwelcome right now — the type-aware findings do not depend on the formatter.
+on a branch.
 
 ## What I would not do
 
 - **Do not sell this on speed.** The wall-clock win is ~3s per CI job.
+- **Do not take `sortImports` with the formatter.** It is the only
+  irreversible step here, and the reason first given for it was wrong.
 - **Do not adopt `vp` as the entry point yet** — beta, untested here, and its
   strengths are monorepo problems this repo does not have.
 - **Do not run oxlint and ESLint side by side** beyond a short verification
-  window. Two linters is a worse position than either one alone.
+  window. Two linters is a worse position than either one alone. This
+  includes recovering `react/jsx-no-leaked-render` by loading
+  `eslint-plugin-react` through oxlint's alpha JS-plugin API — it costs an
+  alpha dependency to regain one preventive rule with zero exposure.
 
 ## Files here
 
-- `oxfmtrc.candidate.json` — output of `oxfmt --migrate=prettier`, plus
-  `sortImports: true` and the `fly.toml` ignore. Copy to `.oxfmtrc.json` to
-  reproduce.
+- `oxfmtrc.candidate.json` — output of `oxfmt --migrate=prettier`, with
+  `sortImports` **off** (deferred, see above) and `fly.toml` ignored because
+  oxfmt formats TOML and Prettier did not. The migrator's other
+  `ignorePatterns` were dropped: oxfmt reads `.gitignore` by default, which
+  already covers them, verified by identical `--list-different` output with
+  and without. One of them (`/app/styles/tailwind.css`) was a dead path
+  anyway — the file is at `app/tailwind.css`, so Prettier has been formatting
+  it all along despite the ignore.
 - `oxlintrc.candidate.json` — hand-translated from `eslint.config.js`, with
   the two unsupported rules removed and the vitest plugin scoped to test files
   (it otherwise fires `valid-expect` on Cypress specs). Copy to
-  `.oxlintrc.json`.
+  `.oxlintrc.json`. Note this is the _parity_ config; a real migration also
+  needs to disposition the ~34 findings oxlint's defaults add (mostly vitest
+  style rules, plus `no-unused-expressions` off for `cypress/**`, where chai
+  property getters read as unused expressions).
+
+Editor setup, for personal config — there is no devcontainer to pin it in:
+the official extension is **`oxc.oxc-vscode`**, and it covers both oxlint and
+oxfmt. Format-on-save needs `editor.formatOnSaveMode: "file"`, since oxfmt
+formats whole files and not ranges. Beware `alphatr.oxc-vscode-enhance`, a
+similarly-named third-party extension.
 
 Reproduce with:
 
