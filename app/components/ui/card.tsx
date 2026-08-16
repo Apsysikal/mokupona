@@ -2,9 +2,6 @@ import React from "react";
 
 import { cn } from "~/lib/utils";
 
-// Surfaces are elevated with a hairline border, never a shadow (shadows are
-// reserved for floating layers). `interactive` adds the hover-border treatment
-// the admin list/grid cards share.
 const Card = ({
   className,
   interactive = false,

@@ -11,7 +11,6 @@ export type InviteWithToken = Invite & { token: string };
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const INVITE_TTL_MS = SEVEN_DAYS_MS;
 
-// unsalted sha256 is enough: 32 random bytes leave nothing to brute-force
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("base64url");
 }
@@ -59,7 +58,6 @@ export async function upsertInvite({
   return { ...invite, token };
 }
 
-// Rotates the token and pushes the expiry out again (the "Re-send" action).
 export async function refreshInvite(
   id: string,
 ): Promise<InviteWithToken | null> {
@@ -103,8 +101,6 @@ export async function revokeInvite(id: string): Promise<void> {
   await prisma.invite.deleteMany({ where: { id } });
 }
 
-// Thrown when the single-use guard loses a race (double-click, second
-// device) — callers catch it to show the "already accepted" dead-end.
 export class InviteNoLongerValidError extends Error {
   constructor() {
     super("Invite is no longer valid");
@@ -119,7 +115,6 @@ export async function acceptInvite({
   userId: string;
 }): Promise<void> {
   const promotedTo = await prisma.$transaction(async (tx) => {
-    // single-use guard: only flips if still unaccepted and unexpired
     const consumed = await tx.invite.updateMany({
       where: { id: invite.id, acceptedAt: null, expiresAt: { gt: new Date() } },
       data: { acceptedAt: new Date() },
@@ -129,8 +124,6 @@ export async function acceptInvite({
       throw new InviteNoLongerValidError();
     }
 
-    // upgrade only: never touches admins, never downgrades a moderator.
-    // Plain "user" invites skip both lookups entirely.
     let promoteToRoleId: string | null = null;
     if (invite.roleName === "moderator") {
       const user = await tx.user.findUniqueOrThrow({
@@ -152,7 +145,6 @@ export async function acceptInvite({
     await tx.user.update({
       where: { id: userId },
       data: {
-        // mailbox control proven by the link — deliberate verification shortcut
         emailVerified: true,
         ...(promoteToRoleId && { role: { connect: { id: promoteToRoleId } } }),
       },

@@ -21,9 +21,6 @@ const schema = withPasswordConfirmation({
   token: z.string(),
 });
 
-// The mailed link goes through better-auth's API endpoint, which validates
-// the token and redirects here with ?token=… (or ?error=INVALID_TOKEN).
-// Completing a reset also verifies the email (auth.server.ts onPasswordReset).
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const url = new URL(request.url);
 
@@ -34,8 +31,6 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     return { state: "invalid" as const };
   }
 
-  // resolve the token to its user for the "resetting for …" subhead — and to
-  // dead-end immediately when it's stale
   const email = await getPasswordResetEmail(token);
   if (!email) return { state: "invalid" as const };
 
@@ -51,7 +46,6 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
   }
 
   const { password, token } = submission.value;
-  // resolvable only while the token is live, so it has to be read first
   const email = await getPasswordResetEmail(token);
 
   try {

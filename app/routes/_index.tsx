@@ -66,7 +66,6 @@ const visionSectionData: TextSectionBlockType = {
   },
 };
 
-// 2792×988 original — keep its aspect so c_fill never crops surprisingly
 const accentSectionData = (blurDataUrl: string | null): ImageBlockType => ({
   type: "image",
   version: 1,
@@ -126,7 +125,6 @@ export default function Index({ loaderData }: Route.ComponentProps) {
         { href: "/dinners", label: "see all dinners →", variant: "secondary" },
       ],
       meta: undefined,
-      // 6240×3304 original — keep its aspect so c_fill never crops surprisingly
       image: {
         src: HERO_IMAGE_ID,
         alt: "",

@@ -1,5 +1,4 @@
 // @vitest-environment node
-// (happy-dom swaps the fetch primitives; better-auth needs the real ones)
 
 import type { Logger } from "pino";
 import { RouterContextProvider, type MiddlewareFunction } from "react-router";
@@ -25,9 +24,6 @@ import { requestLogger } from "~/logger/request-context.server";
 import { logger } from "~/logger.server";
 import { getUserByIdWithRole } from "~/models/user.server";
 
-// Wrap the module in pass-through spies so the tests can (a) force the
-// stale-session branch (live session, user row lookup misses) and (b) count
-// user lookups to prove the nested middleware never repeats one.
 vi.mock("~/models/user.server", { spy: true });
 
 beforeAll(async () => {
@@ -38,8 +34,6 @@ function signedInAs(roleName: RoleName, path = "/admin") {
   return signedInRequest({ roleName, path });
 }
 
-// Drives a middleware the way the router does: same args shape, and a `next`
-// we control so tests can observe whether downstream handlers would run.
 async function runMiddleware(
   middleware: MiddlewareFunction<Response>,
   request: Request,
@@ -129,9 +123,6 @@ describe("resolved-user role middleware", () => {
   });
 
   it("rejects an anonymous direct POST before the action could run", async () => {
-    // the router only invokes downstream handlers (child middleware, then the
-    // action) via/after `next` — a middleware throw therefore precludes the
-    // mutation. `next` doubles as the run-detector here.
     let downstreamRan = false;
     const request = new Request("http://localhost:3000/admin/users", {
       method: "POST",
@@ -177,7 +168,6 @@ describe("resolved-user role middleware", () => {
     const context = new RouterContextProvider();
     await resolveUser(request, context);
 
-    // outer admin.tsx middleware: passes and stores the user
     await runMiddleware(
       requireResolvedUserRoleMiddleware(ADMIN_ROLE_NAMES),
       request,
@@ -219,13 +209,10 @@ describe("resolved-user role middleware", () => {
 
   it("logs out a stale session (live session, user row lookup misses)", async () => {
     const { request } = await signedInAs("moderator");
-    // the User FK cascades sessions away, so a plain row delete cannot
-    // produce this state — force the lookup miss the guard defends against
     vi.mocked(getUserByIdWithRole).mockResolvedValueOnce(null);
     const context = new RouterContextProvider();
     await resolveUser(request, context);
 
-    // resolution is lazy — the logout redirect surfaces at the first consumer
     const thrown = await context
       .get(optionalUserContext)()
       .catch((error) => error);
@@ -233,7 +220,6 @@ describe("resolved-user role middleware", () => {
     expect(thrown).toBeInstanceOf(Response);
     expect((thrown as Response).status).toBe(302);
     expect((thrown as Response).headers.get("location")).toBe("/");
-    // the logout redirect carries better-auth's session-revoking headers
     expect((thrown as Response).headers.get("set-cookie")).toContain(
       "session_token",
     );
@@ -276,7 +262,6 @@ describe("resolved-user role middleware", () => {
       request,
       context,
     );
-    // root middleware fetched once; both admin layers reused the contexts
     expect(getSessionSpy).toHaveBeenCalledTimes(1);
     expect(getUserByIdWithRole).toHaveBeenCalledTimes(1);
     getSessionSpy.mockRestore();
@@ -294,9 +279,6 @@ describe("resolved-user role middleware", () => {
     ).resolves.toBeUndefined();
     expect(context.get(userContext).id).toBe(user.id);
 
-    // control: the same cookieless request against an empty context proves
-    // the pass above came from the context, not from the request. Root then
-    // initializes the optional context before the parent role requirement.
     const fresh = new RouterContextProvider();
     await resolveUser(cookieless, fresh);
     const thrown = await runMiddleware(

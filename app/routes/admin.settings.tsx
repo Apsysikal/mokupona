@@ -41,8 +41,6 @@ export async function action({ request, context }: Route.ActionArgs) {
   const logger = context.get(requestLoggerContext);
   const submission = parseWithZod(await request.formData(), { schema });
 
-  // Two buttons per row, both server-rendered — a submission that misses the
-  // schema was hand-made, so there is no form state worth replying into.
   if (submission.status !== "success" || !submission.value) {
     throw new Response("Bad request", { status: 400 });
   }

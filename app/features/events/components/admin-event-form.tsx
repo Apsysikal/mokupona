@@ -42,7 +42,6 @@ type AdminEventFormProps = {
   submitText: string;
   pageTitle: string;
   cancelHref: string;
-  // true once the event's form has submissions (edit screen only)
   lockFieldKeys?: boolean;
   answerCounts?: AnswerCountsByFieldKey;
 };
@@ -67,11 +66,7 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card
-      id={id}
-      // scroll-mt clears the sticky chip nav when jumping via anchor links
-      className="scroll-mt-16 md:scroll-mt-8"
-    >
+    <Card id={id} className="scroll-mt-16 md:scroll-mt-8">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         {description ? <CardDescription>{description}</CardDescription> : null}

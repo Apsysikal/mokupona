@@ -14,9 +14,6 @@ import {
   type BuilderRow,
 } from "~/features/signup-form/builder";
 
-// What the signer's row says. The friend's stored row deliberately disagrees
-// with every one of these: while the pair is linked, nothing of the friend's
-// own wording may reach the screen or the payload.
 const SIGNER_LABEL = "Dietary restrictions";
 const SIGNER_DESCRIPTION = "Allergies, intolerances, anything we cook around.";
 const STALE_FRIEND_LABEL = "Whatever the friend once typed";
@@ -56,7 +53,6 @@ function linkedPairRows(): BuilderRow[] {
               }
             : item,
         ),
-        // an ordinary, unlinked friend question next to the mirrored one
         {
           type: "text" as const,
           name: "nickname",
@@ -101,8 +97,6 @@ function friendRowPrefix(rows: BuilderRow[]): string {
   return `signupForm[${listIndex}].itemFields[${itemIndex}]`;
 }
 
-// The payload a browser with JavaScript switched off would post: every named,
-// enabled control the server-rendered form carries.
 function scriptlessPayload(document: Document): FormData {
   const form = document.querySelector("form");
   if (!form) throw new Error("the edit screen rendered no form");
@@ -210,13 +204,9 @@ describe("signup form builder markup", () => {
 
     expect(dialog?.textContent).toContain("Unlink from the signer's question?");
     expect(keyInput?.getAttribute("value")).toBe("restrictions_2");
-    // the dialog's key field never travels with the builder's own payload
     expect(keyInput?.hasAttribute("name")).toBe(false);
   });
 
-  // The guard against the client mirror and the server's syncLinkedRows
-  // drifting apart: what the disabled controls show is what a scriptless
-  // submit stores, down to the props the sync copies.
   it("stores exactly what the mirrored row displays", () => {
     const rows = linkedPairRows();
     const { document } = renderEditScreen(rows);
@@ -253,7 +243,6 @@ describe("signup form builder markup", () => {
     expect(stored.data.label).toBe(displayed.label);
     expect(stored.data.required).toBe(displayed.required);
     expect(stored.data.description ?? "").toBe(displayed.description);
-    // and none of it is the friend row's own stored wording
     expect(stored.data.label).toBe(SIGNER_LABEL);
     expect(stored.data.description).toBe(SIGNER_DESCRIPTION);
   });
@@ -261,8 +250,6 @@ describe("signup form builder markup", () => {
   it("offers no unlink for the identity pair", () => {
     const { document } = renderEditScreen(linkedPairRows());
 
-    // "name" is linked in DEFAULT_FORM, but the roster reads friends' names
-    // by that exact key — the pair renders as a mirror with no way out
     expect(document.querySelector("#unlink-dialog-name")).toBeNull();
     expect(
       document.querySelector('[commandfor="unlink-dialog-name"]'),

@@ -6,15 +6,12 @@ import { requestLogger } from "~/logger/request-context.server";
 import { logger } from "~/logger.server";
 import { singleton } from "~/utils/singleton.server";
 
-/** The asset folders this app writes to, per owner entity. */
 export type ImageFolder = "dinners" | "board-members";
 
 function imageProviderName(env: NodeJS.ProcessEnv) {
   return env.IMAGE_PROVIDER ?? "local";
 }
 
-// Exported for tests; the app goes through the singleton below so an invalid
-// configuration fails on first import, not on first upload.
 export function createImageStorageProvider(
   env: NodeJS.ProcessEnv = process.env,
 ): ImageStorageProvider {
@@ -23,7 +20,6 @@ export function createImageStorageProvider(
     case "local":
       return createLocalProvider(env);
     case "cloudinary":
-      // the factory invariants the CLOUDINARY_* variables
       return createCloudinaryProvider(env);
     default:
       throw new Error(

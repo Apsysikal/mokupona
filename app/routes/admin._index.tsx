@@ -39,7 +39,6 @@ export async function loader() {
           seatsTaken: attendees.length,
         }
       : null,
-    // attendees arrive oldest-first; the card reads newest-first
     recentSignups: attendees
       .slice(-6)
       .reverse()

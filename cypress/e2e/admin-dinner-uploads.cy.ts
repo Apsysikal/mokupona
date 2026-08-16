@@ -70,11 +70,7 @@ describe("admin dinner uploads", () => {
         (dinner) => {
           expect(dinner.title).to.equal(values.title);
           expect(dinner.imageId).to.be.a("string").and.not.be.empty;
-          // uploads persist provider scalars now, never blob bytes
           expect(dinner.imageStorageKey).to.be.a("string").and.not.be.empty;
-          // the stored file must be servable back by the app — this pins the
-          // cross-process IMAGE_UPLOAD_FOLDER contract between the db helper
-          // and the server
           cy.request(`/file/${dinner.imageId}`).its("status").should("eq", 200);
         },
       );
@@ -136,8 +132,6 @@ describe("admin dinner uploads", () => {
       saveEditAndFetch(dinner.id).then((updatedDinner) => {
         expect(updatedDinner.title).to.equal(updatedTitle);
         expect(updatedDinner.imageId).to.not.equal(dinner.imageId);
-        // updateEvent deletes the replaced cover row in-transaction — no
-        // orphan row survives, so no defensive extra-image cleanup either
         runUploadDbCommand<ImageRecord | null>("get-image", {
           id: dinner.imageId,
         }).then((oldImage) => {

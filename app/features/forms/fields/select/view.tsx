@@ -21,8 +21,6 @@ export function SelectField({
       selectProps={{
         ...getSelectProps(metadata),
         options: [
-          // the empty option keeps "nothing chosen" representable — required
-          // selects reject it, optional ones coerce it to undefined
           { label: "Select…", value: "" },
           ...config.data.options.map((option) => ({
             label: option,

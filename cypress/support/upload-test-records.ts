@@ -127,7 +127,6 @@ function toDinnerResult(
     discounts: string | null;
     addressId: string;
   },
-  // the cover FK lives on Image (eventId), so these arrive via the relation
   image: { id: string; storageKey: string | null } | null,
 ): DinnerResult {
   return {
@@ -169,8 +168,6 @@ async function getDefaultImageInput(folder: ImageFolder) {
   const bytes = await readFile(defaultImagePath);
   const file = new File([bytes], "default.jpg", { type: "image/jpeg" });
 
-  // through the (local) image provider, like production writes — the dev
-  // server serves the stored file back via /file/:fileId
   return {
     contentType: "image/jpeg",
     ...(await storeImage(file, folder)),
@@ -212,8 +209,6 @@ async function createDinner(
     getDefaultImageInput("dinners"),
   ]);
 
-  // createEvent (not prisma.event.create) so the event gets its form and its
-  // cover image row in one transaction
   const event = await createEvent({
     title: payload.payload.title,
     description:
@@ -267,9 +262,6 @@ async function deleteDinner(
   });
 
   if (event) {
-    // deleteEvent (not prisma.event.delete) so the form data goes with it;
-    // the cover cascades at the DB level (Image.eventId), and replaced
-    // covers are deleted in-transaction by updateEvent — no orphan cleanup
     await deleteEvent(event.id);
   }
 
@@ -290,8 +282,6 @@ async function getImage(
 async function deleteImage(
   payload: Extract<CommandInput, { action: "delete-image" }>,
 ) {
-  // The FK lives on Image, so deleting an image never touches an event —
-  // an attached event simply loses its cover.
   await prisma.image.deleteMany({
     where: { id: payload.payload.id },
   });
@@ -299,9 +289,6 @@ async function deleteImage(
   return outputJson({ deleted: true, id: payload.payload.id });
 }
 
-// Legacy EventResponse rows can no longer be produced through the app (the
-// write path moved to FormSubmission); tests exercising the legacy merge
-// insert them directly.
 async function createLegacyResponse(
   payload: Extract<CommandInput, { action: "create-legacy-response" }>,
 ) {

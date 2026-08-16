@@ -15,25 +15,22 @@ import {
 import { getCurrentFormVersionForEvent } from "~/models/form.server";
 
 export interface Attendee {
-  submissionId: string; // groups a party; legacy rows use the row id
-  isSigner: boolean | null; // null = legacy row (signer-ness was never recorded)
+  submissionId: string;
+  isSigner: boolean | null;
   name: string;
-  email: string; // party contact (submission-level) for new data
+  email: string;
   phone: string;
-  answers: Record<string, string | boolean>; // flattened per-person view
+  answers: Record<string, string | boolean>;
   createdAt: Date;
 }
 
 export interface RosterColumn {
-  name: string; // field key — the answers key and CSV merge key
-  label: string; // header text, from the latest version containing the name
+  name: string;
+  label: string;
 }
 
 const FRIENDS_LIST_NAME = "friends";
 
-// Every drop below happens inside a loop over submissions, friend entries or
-// answer fields, so each is counted and reported once per load rather than
-// once per row.
 interface RosterDrops {
   versionsWithoutSchema: number;
   submissionsWithoutSchema: number;
@@ -68,9 +65,6 @@ export async function getAttendeesForEvent(
   return attendees;
 }
 
-// Seats taken per event for the admin lists: every attendee counts — the
-// signer plus each friends[i] item, plus one per legacy row. Counting is
-// structural (no schema parse), matching flattenSubmission's tolerance.
 export async function getAttendeeCountsForEvents(
   eventIds: string[],
 ): Promise<Record<string, number>> {
@@ -114,15 +108,6 @@ export type AnswerCountsByFieldKey = Record<
   { friends: number; total: number }
 >;
 
-// Per-field answer counts for the builder's link/unlink dialogs. Walks raw
-// submission JSON the same way getAttendeeCountsForEvents does (no schema
-// needed, so this naturally unions every form version's submissions):
-// `friends` counts non-empty answers under the key among friend entries;
-// `total` adds non-empty top-level (signer) answers under the same key.
-// Legacy EventResponse rows count toward `total` under the same DEFAULT_FORM
-// keys legacyRowToAttendee exports them as; signer-ness was never recorded,
-// so they never count as friends. `hasResponses` is what locks field keys —
-// derived here so the loader needs no separate existence query.
 export async function getAnswerCountsByFieldKey(
   eventId: string,
 ): Promise<{ counts: AnswerCountsByFieldKey; hasResponses: boolean }> {
@@ -179,19 +164,12 @@ function isAnsweredValue(value: unknown): boolean {
   return false;
 }
 
-// The CSV export also needs the column union across versions; the table only
-// needs the attendees.
 export async function getAttendeeRosterForEvent(eventId: string): Promise<{
   attendees: Attendee[];
   columns: RosterColumn[];
 }> {
   const { attendees, schemas, hasLegacyRows } = await loadRoster(eventId);
 
-  // columns: union across versions with submissions (latest first, so the
-  // newest order and labels win). An unsubmitted event falls back to its
-  // current version; legacy defaults merge in when legacy rows exist. The
-  // export must never come back header-less, so an empty union ends at
-  // DEFAULT_FORM.
   const columnSchemas = [...schemas];
   if (columnSchemas.length === 0) {
     const currentVersion = await getCurrentFormVersionForEvent(eventId);
@@ -213,7 +191,7 @@ type StoredFormSchema = NonNullable<
 
 async function loadRoster(eventId: string): Promise<{
   attendees: Attendee[];
-  schemas: StoredFormSchema[]; // parsed, latest version first
+  schemas: StoredFormSchema[];
   hasLegacyRows: boolean;
 }> {
   const [legacyRows, submissions] = await Promise.all([
@@ -221,7 +199,6 @@ async function loadRoster(eventId: string): Promise<{
     getFormSubmissionsForEvent(eventId),
   ]);
 
-  // parse every distinct version once — not once per submission
   const versions = [
     ...new Map(
       submissions.map(({ formVersion }) => [formVersion.id, formVersion]),
@@ -289,7 +266,6 @@ function flattenSubmission(
     if (field.type === "list") continue;
     const value = answers[field.data.name];
     if (typeof value !== "string" && typeof value !== "boolean") {
-      // an absent key is an unanswered optional field, not a drop
       if (value !== undefined) drops.answerValuesDropped += 1;
       continue;
     }
@@ -346,9 +322,6 @@ function flattenSubmission(
   return [signer, ...friends];
 }
 
-// One legacy row is one attendee. DEFAULT_FORM's field names equal the
-// EventResponse column names, so this is an identity mapping; nulls take the
-// values today's CSV export prints for them.
 function legacyRowToAttendee(row: EventResponse): Attendee {
   return {
     submissionId: row.id,
@@ -369,8 +342,6 @@ function legacyRowToAttendee(row: EventResponse): Attendee {
   };
 }
 
-// Schemas arrive latest-first: the newest schema fixes the column order and
-// labels, older versions' extra names are appended where first seen.
 function deriveColumns(schemas: StoredFormSchema[]): RosterColumn[] {
   const columns: RosterColumn[] = [];
   const seen = new Set<string>();

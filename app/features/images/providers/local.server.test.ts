@@ -22,8 +22,6 @@ describe("local image provider", () => {
 
     const stored = await provider.store(file, { folder: "dinners" });
 
-    // key = provider-generated (store() runs before any Image row exists),
-    // scoped by folder; no cloudinary-only metadata
     expect(stored.storageKey).toMatch(/^dinners\/[0-9a-f-]{36}$/);
     expect(stored.version).toBeUndefined();
     expect(stored.width).toBeUndefined();

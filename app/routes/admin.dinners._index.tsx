@@ -78,7 +78,6 @@ export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
         dinner.title.toLowerCase().includes(q) ||
         dinner.location.toLowerCase().includes(q),
     );
-  // no status badges — upcoming (soonest first) sort above past (newest first)
   const visible = orderEventsByStatus(filtered, now);
 
   return (

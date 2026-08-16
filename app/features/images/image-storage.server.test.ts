@@ -7,8 +7,6 @@ import {
   destroyImages,
 } from "./image-storage.server";
 
-// Selection must stay hermetic: both provider factories are mocked, the test
-// asserts only the routing/invariant behavior of the picker.
 const mocks = vi.hoisted(() => ({
   createLocalProvider: vi.fn(() => ({ kind: "local" })),
   createCloudinaryProvider: vi.fn(() => ({ kind: "cloudinary" })),

@@ -2,9 +2,6 @@ import { z } from "zod";
 
 import { imageFileSchema } from "~/shared/image";
 
-// Shared by the board-member new and edit routes: both validate the same
-// fields and advertise the same accepted image types.
-
 export const MemberSchema = z.object({
   name: z
     .string({ error: "You must enter a name for the board member" })

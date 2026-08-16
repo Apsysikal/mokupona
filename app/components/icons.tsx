@@ -1,5 +1,3 @@
-// line icons the radix set is missing; stroke follows currentColor so the
-// callers control color via text-* classes
 export function UtensilsIcon({ className }: { className?: string }) {
   return (
     <svg

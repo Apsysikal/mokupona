@@ -1,10 +1,5 @@
 import { isRouteErrorResponse } from "react-router";
 
-/**
- * Normalizes response/Error/unknown route errors into the shared inner
- * error markup. Routes keep their own surrounding layout (e.g. the admin
- * `<main>` wrapper) around this content.
- */
 export function RouteErrorContent({ error }: { error: unknown }) {
   let heading = "Unknown Error";
   let message: string | null = null;

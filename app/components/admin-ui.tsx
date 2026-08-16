@@ -84,8 +84,6 @@ export function FilterChip({
   );
 }
 
-// The bar is deliberately capped by its parent (max-w on the wrapping group)
-// rather than full-width.
 export function SeatProgress({
   taken,
   total,
@@ -93,7 +91,6 @@ export function SeatProgress({
 }: {
   taken: number;
   total: number;
-  /** past dinners fill in a faint tint instead of the accent */
   muted?: boolean;
 }) {
   const percent =
@@ -130,7 +127,6 @@ export function InitialsAvatar({
   className,
 }: {
   name: string;
-  /** list index — picks the tint so colors rotate down a list */
   seed: number;
   className?: string;
 }) {

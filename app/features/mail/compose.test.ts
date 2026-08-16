@@ -25,7 +25,6 @@ describe("compose", () => {
     expect(body.html).toContain(
       '<a href="https://example.com/go?token=abc">Do the thing</a>',
     );
-    // the drift this design exists to prevent: every block reaches both parts
     expect(body.html).toContain("Ignore this if it wasn&#39;t you.");
   });
 
@@ -57,7 +56,6 @@ describe("compose", () => {
       "<p>&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; &amp; co</p>",
     );
     expect(html).not.toContain("<script>");
-    // text is not markup — it stays exactly as written
     expect(text).toContain('<script>alert("x")</script> & co');
   });
 

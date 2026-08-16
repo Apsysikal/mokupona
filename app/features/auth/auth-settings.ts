@@ -19,11 +19,9 @@ export const AUTH_TOGGLE_COPY = {
 /** The error code the OAuth callback redirects with once Google is off. */
 export const GOOGLE_DISABLED_ERROR = "google_disabled";
 
-/** Shown wherever a closed sign-up path has to explain itself. */
 export const SIGNUP_CLOSED_MESSAGE =
   "sign-ups are closed right now. if you were invited, use the link in your invitation email.";
 
-/** The same message where Google is still an option on the very same page. */
 export const EMAIL_SIGNUP_CLOSED_MESSAGE =
   "email sign-ups are closed right now. you can still continue with google below.";
 

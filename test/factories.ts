@@ -30,22 +30,14 @@ export async function createTestUser(roleName = "user") {
   return createUserForRole(role.id);
 }
 
-// Builds the row graph an Event needs (role -> user, address) and returns
-// ready-to-use event create data. Every call creates fresh rows with unique
-// keys, so the tests sharing one database never contend on fixtures. The
-// cover image travels as ImageCreateData scalars (createEvent persists them
-// inside its transaction); the unique storageKey lets tests find the row it
-// became.
 export async function buildEventData() {
   const [user, address] = await Promise.all([
     prisma.role
-      // a unique role per call keeps tests sharing one database isolated
       .create({ data: { name: `test-role-${faker.string.uuid()}` } })
       .then((role) => createUserForRole(role.id)),
     prisma.address.create({
       data: {
         streetName: faker.location.street(),
-        // part of the address' compound unique key — keep it collision-free
         houseNumber: faker.string.uuid(),
         zip: faker.location.zipCode("####"),
         city: faker.location.city(),

@@ -14,7 +14,6 @@ function allEnabled(): AuthSettings {
   ) as AuthSettings;
 }
 
-/** A snapshot for loaders — mutating it does not touch the live state. */
 export function getAuthSettings(): AuthSettings {
   return { ...state };
 }
@@ -31,7 +30,6 @@ export function setAuthToggleEnabled(
   return getAuthSettings();
 }
 
-/** Test-only escape hatch: back to "everything open". */
 export function resetAuthSettings(): AuthSettings {
   for (const toggle of AUTH_TOGGLES) state[toggle] = true;
   return getAuthSettings();

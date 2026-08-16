@@ -2,8 +2,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createCloudinaryProvider } from "./cloudinary.server";
 
-// Dev/CI never talk to Cloudinary: the SDK is fully mocked, upload_stream's
-// callback style included.
 const mocks = vi.hoisted(() => ({
   config: vi.fn(),
   uploadStream: vi.fn(),
@@ -95,7 +93,6 @@ describe("createCloudinaryProvider", () => {
       { resource_type: "image", asset_folder: "test/dinners" },
       expect.any(Function),
     );
-    // the blur placeholder is fetched from the freshly uploaded, versioned asset
     expect(fetchMock).toHaveBeenCalledWith(
       "https://res.cloudinary.com/test-cloud/image/upload/w_100,q_auto,f_webp,e_blur:1000/v17/abc123",
     );

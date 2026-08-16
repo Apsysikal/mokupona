@@ -19,46 +19,26 @@ async function seed() {
   const moderatorEmail = "moderator@mokupona.ch";
   const adminEmail = "admin@mokupona.ch";
 
-  // cleanup the existing database
-  await prisma.user.deleteMany().catch(() => {
-    /** */
-  });
+  await prisma.user.deleteMany().catch(() => {});
 
-  await prisma.role.deleteMany().catch(() => {
-    /** */
-  });
+  await prisma.role.deleteMany().catch(() => {});
 
-  await prisma.event.deleteMany().catch(() => {
-    /** */
-  });
+  await prisma.event.deleteMany().catch(() => {});
 
-  // forms after events: Event.formId restricts deleting a referenced form
-  await prisma.formSubmission.deleteMany().catch(() => {
-    /** */
-  });
+  await prisma.formSubmission.deleteMany().catch(() => {});
 
-  await prisma.formVersion.deleteMany().catch(() => {
-    /** */
-  });
+  await prisma.formVersion.deleteMany().catch(() => {});
 
-  await prisma.form.deleteMany().catch(() => {
-    /** */
-  });
+  await prisma.form.deleteMany().catch(() => {});
 
-  await prisma.address.deleteMany().catch(() => {
-    /** */
-  });
+  await prisma.address.deleteMany().catch(() => {});
 
-  await prisma.eventResponse.deleteMany().catch(() => {
-    /** */
-  });
+  await prisma.eventResponse.deleteMany().catch(() => {});
 
   for (const role of ROLE_NAMES) {
     await prisma.role.create({ data: { name: role } });
   }
 
-  // through better-auth's API so hashes/accounts are shape-correct; the demo
-  // accounts are pre-verified so they can log in straight away
   await createUserViaAuth({
     email: userEmail,
     password: "mokupona",
@@ -94,11 +74,6 @@ async function seed() {
 
   const defaultImage = await readFile(path.join(__dirname, "default.jpg"));
 
-  // createEvent (not prisma.event.create) so every seeded event gets its
-  // form + first version and its own cover image row, like production
-  // writes; each event's cover is stored through the image provider (the
-  // local one under dev/e2e — offline), one stored file per event so a
-  // cover replacement can never orphan a sibling's file
   const seedEvent = async () =>
     createEvent({
       title: faker.lorem.sentence({ min: 3, max: 7 }),

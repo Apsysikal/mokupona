@@ -54,7 +54,6 @@ describe("FormSchema", () => {
   });
 
   it("counts fields recursively against MAX_TOTAL_FIELDS", () => {
-    // 38 top-level + 1 list + 1 itemField = 40: exactly at the limit
     const atLimit = [
       ...Array.from({ length: MAX_TOTAL_FIELDS - 2 }, (_, i) =>
         textField(`field_${i}`),
@@ -63,7 +62,6 @@ describe("FormSchema", () => {
     ];
     expect(FormSchema.safeParse(atLimit).success).toBe(true);
 
-    // one more itemField pushes the recursive count over the limit
     const overLimit = [
       ...Array.from({ length: MAX_TOTAL_FIELDS - 2 }, (_, i) =>
         textField(`field_${i}`),

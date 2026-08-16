@@ -22,8 +22,6 @@ import { prisma } from "~/db.server";
 import type { FieldDescriptor } from "~/features/forms/fields";
 import { DEFAULT_FORM } from "~/features/signup-form/default-form";
 
-// duplicate field names violate FormSchema's unique-name rule, making any
-// transaction that saves the schema throw mid-flight
 function duplicateNameFields(): FieldDescriptor[] {
   return [
     {
@@ -39,12 +37,10 @@ function duplicateNameFields(): FieldDescriptor[] {
   ];
 }
 
-/** The event's cover row; the FK lives on Image (eventId, unique). */
 function findCover(eventId: string) {
   return prisma.image.findUnique({ where: { eventId } });
 }
 
-/** Asserts the event with its form, versions, submissions, and image is gone. */
 async function expectEventGraphDeleted(event: { id: string; formId: string }) {
   await expect(
     prisma.event.findUnique({ where: { id: event.id } }),
@@ -172,13 +168,10 @@ describe("event image lifecycle", () => {
   it("leaves no image row when the create transaction fails after the image write", async () => {
     const data = await buildEventData();
 
-    // the invalid address FK makes tx.event.create throw AFTER the image was
-    // created inside the transaction — the rollback must take the image too
     await expect(
       createEvent({ ...data, addressId: "does-not-exist" }),
     ).rejects.toThrow();
 
-    // the factory storageKey is unique per call, so it identifies the leaked row
     await expect(
       prisma.image.count({ where: { storageKey: data.image.storageKey } }),
     ).resolves.toBe(0);
@@ -204,7 +197,6 @@ describe("event image lifecycle", () => {
     await expect(
       prisma.image.findUnique({ where: { id: oldImage.id } }),
     ).resolves.toBeNull();
-    // the event survived the old image's deletion (the FK is on Image)
     await expect(
       prisma.event.findUnique({ where: { id: event.id } }),
     ).resolves.not.toBeNull();
@@ -216,9 +208,6 @@ describe("event image lifecycle", () => {
       contentType: "image/png",
       storageKey: "test/dinners/never-persisted-cover",
     };
-    // the schema failure inside saveFormSchemaInTx happens AFTER the new
-    // image was created and the event repointed, so the whole swap must
-    // roll back
     const before = await prisma.image.findUniqueOrThrow({
       where: { eventId: event.id },
     });
@@ -308,7 +297,6 @@ describe("event image lifecycle", () => {
 
     await prisma.image.delete({ where: { id: cover.id } });
 
-    // the event stands, coverless — the UI renders the fallback artwork
     await expect(
       prisma.event.findUnique({ where: { id: event.id } }),
     ).resolves.not.toBeNull();
@@ -378,7 +366,6 @@ describe("createFormSubmission version guard", () => {
     const event = await createEvent(await buildEventData());
     const version = await getCurrentFormVersion(event.formId);
 
-    // simulate an in-place schema update racing the signup request
     await prisma.formVersion.update({
       where: { id: version.id },
       data: { updatedAt: new Date(version.updatedAt.getTime() + 5_000) },
@@ -416,7 +403,6 @@ describe("events outlive their supporting entities", () => {
     const data = await buildEventData();
     const event = await createEvent(data);
 
-    // Event.createdById is SetNull — the event, its form data and cover stay
     await deleteUserById(data.createdById);
 
     const after = await prisma.event.findUniqueOrThrow({

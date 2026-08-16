@@ -64,16 +64,12 @@ export async function action({ request, context }: Route.ActionArgs) {
           price,
           discounts,
           addressId,
-          // the provider stores the bytes first; the row created inside
-          // createEvent's transaction persists only the returned scalars (a
-          // failed write leaks at most a provider asset, never a row)
           image: {
             contentType: cover.type,
             ...(await storeImage(cover, "dinners")),
           },
           createdById: user.id,
         },
-        // validated by SignupFormSchema inside EventSchema's signupForm field
         builderRowsToDescriptors(signupForm),
       );
 

@@ -1,8 +1,5 @@
 import type { FieldDescriptor } from "~/features/forms/fields";
 
-// Reproduces today's live form. Field names equal the legacy EventResponse
-// column names, which makes the legacy merge in the read layer an identity
-// mapping and unifies CSV columns across old and new data.
 export const DEFAULT_FORM: Array<FieldDescriptor> = [
   {
     type: "text",

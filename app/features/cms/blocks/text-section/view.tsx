@@ -16,7 +16,6 @@ export function TextSectionBlockView({
   const { eyebrow, headline, body, variant } = data;
 
   if (variant === "slanted") {
-    // full accent band, skewed, dark copy (the "who we are" panel)
     return (
       <div className="relative mx-auto w-full max-w-5xl px-5" {...rest}>
         <div
@@ -40,7 +39,6 @@ export function TextSectionBlockView({
     );
   }
 
-  // editorial two-column grid: eyebrow + headline left, body right
   return (
     <PageContainer as="div" {...rest}>
       <section className="grid items-start gap-3 py-9 md:grid-cols-[1fr_1.2fr] md:gap-12 md:py-14">

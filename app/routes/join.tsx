@@ -171,15 +171,11 @@ export default function Join({ loaderData, actionData }: Route.ComponentProps) {
         {emailSignupOpen ? (
           <ErrorList id={form.errorId} errors={form.errors} />
         ) : (
-          // the loader's verdict replaces the equivalent form-level error, so
-          // a rejected direct post never says the same thing twice
           <AuthNotice variant="destructive">
             {googleOpen ? EMAIL_SIGNUP_CLOSED_MESSAGE : SIGNUP_CLOSED_MESSAGE}
           </AuthNotice>
         )}
 
-        {/* every credential control at once — nothing here can be submitted
-            while the toggle is off, and the greying-out is the explanation */}
         <fieldset
           disabled={!emailSignupOpen}
           className="flex flex-col gap-4 disabled:opacity-60"

@@ -21,7 +21,6 @@ const DEFAULT_BRAND: AuthShellBrandCopy = {
 };
 
 interface AuthShellProps {
-  /** omit to hide the login/sign-up toggle (status + reset surfaces) */
   mode?: "login" | "join";
   search?: string;
   brand?: AuthShellBrandCopy;
@@ -53,7 +52,6 @@ export function AuthShell({
         </div>
       </div>
 
-      {/* mobile brand header */}
       <div className="bg-card relative flex flex-col overflow-hidden border-b px-6 pt-6 pb-7 md:hidden">
         <Glow className="-top-24 -right-16 size-56" />
         <div className="relative flex flex-col gap-2">

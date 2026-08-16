@@ -21,7 +21,6 @@ async function sendInviteMail({
   });
 }
 
-// Create (or refresh a still-live invite for the same address) and mail it.
 export async function createAndSendInvite({
   email,
   roleName,
@@ -37,7 +36,6 @@ export async function createAndSendInvite({
   await sendInviteMail({ invite, origin });
 }
 
-// "Re-send": rotate token + expiry, then mail the fresh link.
 export async function resendInvite({
   id,
   origin,

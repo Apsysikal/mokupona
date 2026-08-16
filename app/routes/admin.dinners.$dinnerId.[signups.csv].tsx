@@ -23,8 +23,6 @@ export async function loader({ params }: Route.LoaderArgs) {
     attendees.map((attendee) => toCsvRow(attendee, columns)),
   );
 
-  // the helper emits an ASCII-safe filename= fallback plus an RFC 5987
-  // filename*, so umlauts in the title survive into the saved file's name
   const filename = `${event.title.split(" ").join("-")}-signups.csv`;
 
   return new Response(data.data, {

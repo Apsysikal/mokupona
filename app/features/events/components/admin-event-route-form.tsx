@@ -28,7 +28,6 @@ type AdminEventRouteFormProps = {
   answerCounts?: AnswerCountsByFieldKey;
 };
 
-/** Shared Conform and multipart shell for event create/edit route screens. */
 export function AdminEventRouteForm({
   schema,
   lastResult,

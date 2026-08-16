@@ -5,7 +5,6 @@ import { requestLogger } from "~/logger/request-context.server";
 
 export type { Address } from "#prisma/generated/client";
 
-// the admin tab bar shows a count pill per section
 export async function countAddresses(): Promise<number> {
   return prisma.address.count();
 }
@@ -14,8 +13,6 @@ export async function getAddresses(): Promise<Address[]> {
   return prisma.address.findMany();
 }
 
-// The admin locations list disables Delete for addresses that still host
-// events (deleteAddress would refuse anyway — Event.addressId is Restrict).
 export async function getAddressesWithEventCount(): Promise<
   (Address & { eventCount: number })[]
 > {
@@ -79,9 +76,6 @@ export async function updateAddress(
   });
 }
 
-// Event.addressId is onDelete: Restrict — an address in use can't be deleted
-// out from under its events. The guard lives in the write (null = blocked,
-// like deleteNonAdminUserById), not only in the UI's disabled button.
 export async function deleteAddress(id: string): Promise<Address | null> {
   return prisma.$transaction(async (tx) => {
     const inUse = await tx.event.count({ where: { addressId: id } });

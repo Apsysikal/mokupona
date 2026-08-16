@@ -3,31 +3,19 @@ import { z } from "zod";
 const IMAGE_FITS = ["cover", "contain", "fill"] as const;
 export type ImageFit = (typeof IMAGE_FITS)[number];
 
-/**
- * What URL building needs to know about an image. DB-backed images carry an
- * `id` (their `/file/:fileId` fallback identity); static marketing assets are
- * public_id-only (`storageKey`, no `id`).
- */
 export interface ImageUrlSource {
   id?: string | null;
   /** Cloudinary public_id / local file key — required on every row. */
   storageKey: string;
-  /** Cloudinary asset version — versioned URLs make CDN invalidation moot. */
   version?: number | null;
 }
 
-/**
- * What rendering components consume: URL identity plus intrinsic dimensions
- * (aspect-ratio reservation) and the blur-up placeholder. The models'
- * `ImageMetadata` projection satisfies this shape structurally.
- */
 export interface ImageDisplaySource extends ImageUrlSource {
   width?: number | null;
   height?: number | null;
   blurDataUrl?: string | null;
 }
 
-/** The root loader's public image-delivery fields (never the API secret). */
 export interface ImageProviderConfig {
   imageProvider: "local" | "cloudinary";
   cloudinaryCloudName: string | null;
@@ -39,7 +27,6 @@ export interface ImageTransformOptions {
   fit?: ImageFit;
 }
 
-// The CSS-ish fit names map onto Cloudinary's crop modes
 const CLOUDINARY_CROPS: Record<ImageFit, string> = {
   cover: "c_fill,g_auto",
   contain: "c_fit",
@@ -51,7 +38,6 @@ function cloudinaryTransform({
   height,
   fit = "cover",
 }: ImageTransformOptions) {
-  // f_auto,q_auto: per-browser format (avif/webp) and quality on the CDN
   const parts = ["f_auto", "q_auto"];
   if (width !== undefined || height !== undefined) {
     parts.push(CLOUDINARY_CROPS[fit]);
@@ -88,10 +74,6 @@ export const IMAGE_SIZE_ERROR = "File cannot be greater than 3MB";
 export const VALID_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export const IMAGE_TYPE_ERROR = "File must be a JPEG, PNG or WebP image";
 
-/**
- * The upload schema shared by cover and portrait images: size-capped and
- * MIME-allowlisted server-side.
- */
 export function imageFileSchema() {
   return z
     .instanceof(File, { message: "You must select a file" })
