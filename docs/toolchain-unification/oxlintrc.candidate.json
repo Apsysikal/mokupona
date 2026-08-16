@@ -1,0 +1,50 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/build/**",
+    "**/public/build**",
+    "**/.react-router/**",
+    "**/prisma/generated/**"
+  ],
+  "plugins": ["import", "react", "typescript"],
+  "categories": {},
+  "rules": {
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
+    "typescript/consistent-type-imports": "error"
+  },
+  "overrides": [
+    {
+      "files": ["app/**/*.{js,jsx,ts,tsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["~/db.server", "#prisma/generated/*"],
+                "message": "Only app/models/** may import the database layer. Use or add a model function instead."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "app/models/**",
+        "app/db.server.ts",
+        "app/features/auth/auth.server.ts",
+        "**/*.test.{js,jsx,ts,tsx}"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": ["**/*.test.{js,jsx,ts,tsx}"],
+      "plugins": ["vitest"]
+    }
+  ]
+}
