@@ -89,7 +89,6 @@ export function uploadFileInput(
   };
 }
 
-/** A file just over the Zod schema limit — rejected client-side with a form error. */
 export function oversizedZodUpload() {
   return uploadFileInput(ZOD_LIMIT_BYTES + 1, {
     fileName: "zod-too-large.jpg",
@@ -105,9 +104,6 @@ export function runUploadDbCommand<T>(
     : "";
   const payloadArg = encodedPayload ? ` "${encodedPayload}"` : "";
 
-  // This script's stdout is its return channel, but importing app modules emits
-  // the boot lines onto the same descriptor. Without silencing them JSON.parse
-  // receives the pretty-printed log first.
   return cy
     .exec(
       `npx cross-env LOG_LEVEL=silent tsx ./cypress/support/upload-test-records.ts "${action}"${payloadArg}`,
@@ -159,10 +155,6 @@ export function submitMultipartRequest({
   });
 }
 
-/**
- * Posts the form with a file just over the upload handler limit and asserts
- * the server rejects it gracefully (no 500, form error in the response).
- */
 export function expectHandlerLimitRejection({
   action,
   fields,
@@ -212,8 +204,6 @@ export function fillDinnerForm(values: ReturnType<typeof dinnerFormValues>) {
   cy.findByLabelText(/^title$/i)
     .clear()
     .type(values.title);
-  // the friends card in the signup-form builder carries a Description of its
-  // own further down the page; the dinner's is the first one
   cy.findAllByLabelText(/^description$/i)
     .first()
     .clear()
@@ -243,7 +233,6 @@ export function uploadDinnerCover(file: string | Cypress.FileReferenceObject) {
   cy.findByLabelText(/^cover$/i).selectFile(file, { force: true });
 }
 
-/** Visits the new-dinner form and fills it with a valid cover attached. */
 export function createDinnerViaAdminForm(
   values: ReturnType<typeof dinnerFormValues>,
 ) {
@@ -252,10 +241,6 @@ export function createDinnerViaAdminForm(
   uploadDinnerCover(VALID_UPLOAD_FIXTURE_PATH);
 }
 
-/**
- * Saves the dinner form, waits for the detail page, and yields the created
- * dinner's id (so the caller can register cleanup).
- */
 export function saveDinnerAndCaptureId(
   title: string,
 ): Cypress.Chainable<string> {
@@ -280,7 +265,6 @@ export function getDinnerIdFromPathname(pathname: string) {
   return dinnerId;
 }
 
-// Signup-page interactions shared by the specs that submit real signups.
 export function fillSignupContact({
   name,
   email,

@@ -16,7 +16,6 @@ export interface BoardMemberData {
   image?: ImageCreateData;
 }
 
-// the admin tab bar shows a count pill per section
 export async function countBoardMembers(): Promise<number> {
   return prisma.boardMember.count();
 }

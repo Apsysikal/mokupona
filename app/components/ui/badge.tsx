@@ -12,8 +12,6 @@ const badgeVariants = cva(
         secondary: "bg-card text-card-foreground",
         info: "border-sky-300/35 bg-sky-300/10 text-sky-300",
       },
-      // pill-shaped badges (the "next dinner" tag, admin filter shapes) vs the
-      // default rounded rectangle
       pill: {
         true: "rounded-full",
         false: "rounded-lg",

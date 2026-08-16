@@ -11,11 +11,6 @@ export function buildBlurVariantUrl(
   return `https://res.cloudinary.com/${cloudName}/image/upload/${BLUR_TRANSFORM}/${versionSegment}${publicId}`;
 }
 
-/**
- * Fetch the blurred variant and encode it as a base64 data URL (~1–2 KB).
- * Returns null on any failure — a missing placeholder degrades to the neutral
- * background, it must never fail the upload that triggered it.
- */
 export async function fetchBlurDataUrl({
   cloudName,
   publicId,
@@ -34,8 +29,6 @@ export async function fetchBlurDataUrl({
     const bytes = Buffer.from(await response.arrayBuffer());
     return `data:image/webp;base64,${bytes.toString("base64")}`;
   } catch (error) {
-    // getBlurDataUrl caches this promise for the process lifetime, so a single
-    // failure here degrades the landing page until the next deploy
     requestLogger.warn(
       { storageKey: publicId, error },
       "Blur placeholder fetch failed",
@@ -44,8 +37,6 @@ export async function fetchBlurDataUrl({
   }
 }
 
-// Static hero/accent assets have no Image row to persist a placeholder on;
-// cache per public_id for the lifetime of the process (one fetch per boot).
 const staticBlurCache = new Map<string, Promise<string | null>>();
 
 export function getBlurDataUrl(

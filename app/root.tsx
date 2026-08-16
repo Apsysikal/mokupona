@@ -56,8 +56,6 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const { toast, headers } = await getToast(request);
   const allowIndexing = process.env.ALLOW_INDEXING !== "false";
   const cypressSupport = process.env.CYPRESS_SUPPORT === "true";
-  // public image-delivery config (no bulk ENV mechanism — named fields);
-  // the cloud name is public by nature, it is in every delivery URL
   const imageProvider: "local" | "cloudinary" =
     process.env.IMAGE_PROVIDER === "cloudinary" ? "cloudinary" : "local";
   return data(
@@ -82,10 +80,6 @@ export default function App({ loaderData }: Route.ComponentProps) {
   return (
     <html lang="en" className="h-full scroll-smooth">
       <head>
-        {/* Cypress injects its bootstrap into this marker instead of
-            prepending nodes to <head>, which would break React hydration
-            (cypress-io/cypress#27204). Only rendered when the server runs
-            with CYPRESS_SUPPORT=true (the test:e2e:* scripts). */}
         {cypressSupport ? (
           <script data-cy-bootstrap suppressHydrationWarning>
             {"/* placeholder */"}
@@ -112,8 +106,6 @@ export default function App({ loaderData }: Route.ComponentProps) {
   );
 }
 
-// every surface — auth pages included — renders inside the shared
-// nav/footer chrome (design handoff: global chrome rework)
 function Document({
   toast,
   nextDinnerId,

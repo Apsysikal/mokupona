@@ -12,10 +12,6 @@ describe("EVENT_TIMEZONE", () => {
   });
 });
 
-/**
- * Round-trip tests: a date stored as UTC must come back as the original display
- * string after passing through both conversion functions.
- */
 describe("toUtcEventDate / toDisplayEventDate round-trip", () => {
   test("round-trips a stored UTC instant", () => {
     const original = new Date("2024-06-15T19:00:00.000Z");
@@ -33,7 +29,6 @@ describe("toUtcEventDate / toDisplayEventDate round-trip", () => {
   test("toDisplayEventDate returns a datetime-local compatible string", () => {
     const date = new Date("2024-06-15T19:00:00.000Z");
     const result = toDisplayEventDate(date);
-    // Must match YYYY-MM-DDTHH:mm exactly
     expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
   });
 
@@ -61,10 +56,6 @@ describe("toUtcEventDate / toDisplayEventDate round-trip", () => {
   });
 
   test("Zurich spring-forward gap: the nonexistent 02:30 resolves past the gap, independent of server timezone", () => {
-    // 2025-03-30 02:00–03:00 does not exist in Zurich (CET -> CEST). The
-    // wall clock is read off the string, so a server in a DST-observing zone
-    // no longer shifts it; the offset iteration settles on 01:30Z (03:30
-    // CEST) deterministically.
     const utc = toUtcEventDate("2025-03-30T02:30");
 
     expect(utc.toISOString()).toBe("2025-03-30T01:30:00.000Z");

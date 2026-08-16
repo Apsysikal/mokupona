@@ -11,8 +11,6 @@ import { requireFound } from "~/shared/http.server";
 export async function loader({ params }: Route.LoaderArgs) {
   const event = requireFound(await getEventById(params.dinnerId));
 
-  // the route ships the detail model, not the Prisma entity — the preview
-  // components and the meta title consume nothing else
   return { event: toEventDetailModel(event) };
 }
 

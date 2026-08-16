@@ -170,8 +170,6 @@ async function getDefaultImageInput(folder: ImageFolder) {
   const bytes = await readFile(defaultImagePath);
   const file = new File([bytes], "default.jpg", { type: "image/jpeg" });
 
-  // through the (local) image provider, like production writes — the dev
-  // server serves the stored file back via /file/:fileId
   return {
     contentType: "image/jpeg",
     ...(await storeImage(file, folder)),
@@ -213,8 +211,6 @@ async function createDinner(
     getDefaultImageInput("dinners"),
   ]);
 
-  // createEvent (not prisma.event.create) so the event gets its form and its
-  // cover image row in one transaction
   const event = await createEvent({
     title: payload.payload.title,
     description:
@@ -300,9 +296,6 @@ async function deleteImage(
   return outputJson({ deleted: true, id: payload.payload.id });
 }
 
-// Legacy EventResponse rows can no longer be produced through the app (the
-// write path moved to FormSubmission); tests exercising the legacy merge
-// insert them directly.
 async function createLegacyResponse(
   payload: Extract<CommandInput, { action: "create-legacy-response" }>,
 ) {

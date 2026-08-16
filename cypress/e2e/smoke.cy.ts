@@ -3,8 +3,6 @@ import { faker } from "@faker-js/faker";
 import { readLatestMailTo, visitMailLink } from "../support/mail";
 
 describe("smoke tests", () => {
-  // Fresh signup credentials, registered for cleanupUser via the
-  // "user" alias.
   function fakeSignupForm() {
     const loginForm = {
       name: faker.person.fullName(),
@@ -15,8 +13,6 @@ describe("smoke tests", () => {
     return loginForm;
   }
 
-  // Fills the join form and lands on the check-your-inbox interstitial —
-  // no session yet.
   function submitJoinForm(loginForm: {
     name: string;
     email: string;
@@ -50,14 +46,12 @@ describe("smoke tests", () => {
     cy.visitAndCheck("/");
 
     cy.findByRole("link", { name: /login/i }).click();
-    // the auth page shows "sign up" twice (segmented toggle + footer prompt)
     cy.findAllByRole("link", { name: /sign up/i })
       .first()
       .click();
 
     submitJoinForm(loginForm);
 
-    // follow the captured verification mail
     readLatestMailTo(loginForm.email).then((mail) => {
       visitMailLink(mail, "/verify-email");
     });
@@ -76,7 +70,6 @@ describe("smoke tests", () => {
     cy.visitAndCheck("/join");
     submitJoinForm(loginForm);
 
-    // logging in without verifying re-sends the link (there is no resend button)
     cy.visitAndCheck("/login");
     fillLoginForm(loginForm.email, loginForm.password);
 
@@ -92,7 +85,6 @@ describe("smoke tests", () => {
     cy.login().then((user) => {
       const { email } = user;
 
-      // the reset flow must work logged out — it's the recovery path
       cy.clearCookie("better-auth.session_token");
 
       cy.visitAndCheck("/forgot-password");
@@ -125,7 +117,6 @@ describe("smoke tests", () => {
     cy.login();
     cy.visitAndCheck("/");
 
-    // the nav CTA deep-links to the next dinner's page
     cy.findByRole("link", { name: /join a dinner/i }).click();
     cy.location("pathname").should("match", /^\/dinners\/[^/]+$/);
 

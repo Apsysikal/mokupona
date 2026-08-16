@@ -17,8 +17,6 @@ import {
 
 export type { Address, Event } from "#prisma/generated/client";
 
-// Getters join the cover relation and project the metadata components need
-// for URLs and blur-up (null renders the UI fallback artwork).
 export type EventWithImage = Event & { image: ImageMetadata | null };
 
 const EVENT_IMAGE_INCLUDE = {
@@ -41,12 +39,10 @@ export interface EventCreateData {
 
 export type EventUpdateData = Partial<EventCreateData>;
 
-// the admin tab bar shows a count pill per section
 export async function countEvents(): Promise<number> {
   return prisma.event.count();
 }
 
-// the public dinners page shows location ("8004 zürich") on the featured card
 export async function getEventsWithAddress(): Promise<
   (EventWithImage & { address: Address })[]
 > {
@@ -61,11 +57,6 @@ export async function getEventsWithAddress(): Promise<
   });
 }
 
-// the site chrome's "join a dinner" CTA and the landing hero point at the
-// next upcoming dinner. `date: { gte: new Date() }` is the DB-side twin of
-// app/features/events/event-status.ts#isPastEvent: `date >= now` is upcoming,
-// an event on `now` exactly included. Models cannot import features, so this
-// comment is the link — keep the two rules in sync.
 function nextEventArgs(now: Date) {
   return {
     where: { date: { gte: now } },
@@ -94,12 +85,6 @@ export async function getEventById(
   });
 }
 
-/**
- * Read the event detail and the latest version of its owned signup form as a
- * single model operation. Returning null for either missing row preserves the
- * routes' one consistent not-found outcome; every valid event has at least one
- * version by construction.
- */
 export async function getEventWithCurrentFormVersion(id: string): Promise<{
   event: EventWithImage & { address: Address };
   version: FormVersion;
@@ -126,12 +111,6 @@ export async function getEventWithCurrentFormVersion(id: string): Promise<{
   return { event, version };
 }
 
-// Every event owns a form (Event.formId is non-nullable) and a cover image,
-// so the image, the form and its first version are created in the same
-// transaction — a failed event write must not leave an orphan image row. The
-// fields re-parse through FormSchema so only valid, normalized descriptors
-// are ever stored; profile validation (SignupFormSchema) stays with the
-// callers.
 export async function createEvent(
   data: EventCreateData,
   formFields: FieldDescriptor[] = DEFAULT_FORM,
@@ -246,14 +225,10 @@ export async function deleteEventsInTx(
   return storageKeys;
 }
 
-// The caller destroys the returned imageKeys' provider assets AFTER this
-// transaction committed (a leaked asset on crash is acceptable, a dangling
-// DB reference is not).
 export async function deleteEvent(
   id: string,
 ): Promise<{ event: Event; imageKeys: string[] }> {
   return prisma.$transaction(async (tx) => {
-    // findUniqueOrThrow keeps prisma.event.delete's throw-on-missing behavior
     const event = await tx.event.findUniqueOrThrow({ where: { id } });
     const imageKeys = await deleteEventsInTx(tx, { id });
 

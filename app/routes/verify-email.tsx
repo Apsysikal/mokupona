@@ -7,10 +7,6 @@ import { AuthShell } from "~/components/auth-layout";
 import { AuthStatus } from "~/components/auth-status";
 import { Button } from "~/components/ui/button";
 
-// where the mailed verification link lands. better-auth's API endpoint
-// verifies the token and redirects here — plain for success, ?error=… for an
-// invalid/expired token. Recovery for the dead-end is simply logging in
-// (an unverified attempt re-sends a fresh link).
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const url = new URL(request.url);
   return {

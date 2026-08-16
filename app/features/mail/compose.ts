@@ -31,8 +31,6 @@ export function compose(subject: string, blocks: Block[]): MailBody {
   };
 }
 
-// Cypress finds mailed links by scanning `text` for absolute URLs, so an
-// action has to leave its URL bare on its own line (see cypress/support/mail).
 function renderText(blocks: Block[]): string {
   const lines = blocks.map((block) =>
     block.kind === "action" ? block.url : block.text,
@@ -43,7 +41,6 @@ function renderText(blocks: Block[]): string {
 const NOTE_STYLE = "color: #666; font-size: 13px;";
 
 function renderHtml(subject: string, blocks: Block[]): string {
-  // Hidden first line most clients show next to the subject in the inbox list.
   const preheader =
     blocks.find((block) => block.kind === "paragraph")?.text ?? subject;
   const body = blocks.map(renderBlock).join("\n      ");
@@ -87,9 +84,6 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-// Every link we mail is app-generated today, but a template is one feature
-// request away from interpolating something a user typed. Refuse anything that
-// isn't a plain web URL rather than trusting the escaper to catch `javascript:`.
 function assertWebUrl(url: string): void {
   let protocol: string;
   try {

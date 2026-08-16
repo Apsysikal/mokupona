@@ -2,14 +2,9 @@
 
 @plugin "tailwindcss-animate";
 
-/* moku pona is intentionally single-theme (dark-only) by design — see
-   docs/design-harmonization. This `dark` variant + the .dark-scoped plumbing
-   below are kept deliberately, unused, so a future light mode stays a
-   one-file change rather than a re-audit. Do not remove. */
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* "supper club" palette from tmp/design_handoff_website_redesign */
   --background: rgb(21 17 14); /* surface #15110E */
   --foreground: rgb(245 241 236); /* text primary #F5F1EC */
   --card: rgb(27 21 17); /* raised surface #1B1511 */
@@ -23,8 +18,6 @@
   --destructive: rgb(167 29 49);
   --destructive-foreground: rgb(245 241 236);
   --destructive-light: oklch(80.8% 0.114 19.571);
-  /* the one hairline: --border and the old --input merged onto a single
-     native opacity step (foreground/15), the brighter of the two kept */
   --border: rgb(245 241 236 / 0.15);
   --ring: rgb(237 130 94);
   --radius: 0.5rem;
@@ -52,9 +45,6 @@
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
 
-  /* the one remaining brand accent beyond primary (avatar tints, kickers).
-     The former fg-secondary/-muted/-label/-faint text tiers are gone — they
-     are now native foreground/80·65·50·40 opacity steps at the call site. */
   --color-accent-light: rgb(241 180 140); /* #F1B48C */
 
   --radius-lg: var(--radius);
@@ -97,11 +87,6 @@
   }
 }
 
-/* the corner accent glow, at native primary opacity steps (was ad-hoc raw
-   rgba at .16/.20). Anchor to a corner with position + size utilities; never
-   place it behind body text. The primary (#ED825E) is inlined with an alpha
-   here because the CSS optimiser flattens color-mix(var(--primary)…) to a
-   solid fill. */
 @utility glow-primary {
   background-image: radial-gradient(
     circle,
@@ -202,8 +187,6 @@
     src: url(/fonts/opensans-semibolditalic-webfont.woff2) format("woff2");
   }
 
-  /* the redesign leans on 600-weight for buttons/nav; the semibold file
-     doubles as both 500 and 600 so font-semibold doesn't fake-bolden */
   @font-face {
     font-family: "Open Sans";
     font-style: normal;

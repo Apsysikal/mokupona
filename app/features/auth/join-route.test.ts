@@ -1,5 +1,4 @@
 // @vitest-environment node
-// (happy-dom swaps the fetch primitives; better-auth needs the real ones)
 
 import { RouterContextProvider } from "react-router";
 import { afterEach, describe, expect, it } from "vitest";
@@ -71,8 +70,6 @@ function submit(body: Record<string, string>) {
   } as unknown as Parameters<typeof action>[0]);
 }
 
-// The action returns either a bare conform reply or one wrapped by `data()`
-// to carry a status — read both through the same lens.
 function readReply(result: Awaited<ReturnType<typeof action>>) {
   const wrapped = result as {
     init?: ResponseInit | null;
@@ -91,7 +88,6 @@ describe("join action", () => {
   it("rejects a direct post with a 403 once email signup is closed", async () => {
     setAuthToggleEnabled("emailSignup", false);
 
-    // an otherwise perfectly valid submission — only the toggle stops it
     expect(readReply(await submit(fromBrowser(VALID_SIGNUP)))).toEqual({
       status: 403,
       formErrors: [SIGNUP_CLOSED_MESSAGE],
@@ -99,8 +95,6 @@ describe("join action", () => {
   });
 
   it("leaves account creation alone while email signup is open", async () => {
-    // an empty submission fails validation before better-auth is reached, so
-    // this proves the gate is open without provisioning a user
     expect(readReply(await submit(fromBrowser()))).toEqual({
       status: 200,
       formErrors: [],

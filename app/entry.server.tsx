@@ -1,9 +1,3 @@
-/**
- * By default, Remix will handle generating the HTTP Response for you.
- * You are free to delete this file if you'd like to, but if you ever want it revealed again, you can run `npx remix reveal` ✨
- * For more information, see https://remix.run/docs/en/main/file-conventions/entry.server
- */
-
 import { PassThrough } from "node:stream";
 
 import { createReadableStreamFromReadable } from "@react-router/node";
@@ -28,8 +22,6 @@ export const handleError: HandleErrorFunction = (
   error,
   { request, context },
 ) => {
-  // React Router aborts requests as a matter of course — superseded client
-  // navigations, closed streams — and every one of those lands here.
   if (request.signal.aborted) return;
 
   const log = context?.get(requestLoggerContext) ?? logger;
@@ -46,8 +38,6 @@ export const handleError: HandleErrorFunction = (
   );
 };
 
-// Observational only: a throw in here is swallowed by the router, so nothing
-// load-bearing may live in it.
 export const instrumentations: ServerInstrumentation[] = [
   {
     handler(handler) {
@@ -81,8 +71,6 @@ export default function handleRequest(
   reactRouterContext: EntryContext,
   loadContext: RouterContextProvider,
 ) {
-  // bots wait for the full document so crawlers see complete markup;
-  // browsers stream as soon as the shell is ready
   const readyEvent = isbot(request.headers.get("user-agent"))
     ? "onAllReady"
     : "onShellReady";
@@ -110,10 +98,6 @@ function streamDocument(
   return new Promise((resolve, reject) => {
     let timeout: NodeJS.Timeout | undefined;
     let rendered = false;
-    // the abort below is a deadline for the whole render, not just the shell.
-    // onAllReady is the only completion signal that does not depend on someone
-    // reading the body: nobody ever reads a HEAD response's, so watching the
-    // stream instead leaves the deadline armed on every HEAD document request.
     const renderDone = () => {
       rendered = true;
       clearTimeout(timeout);
@@ -146,8 +130,6 @@ function streamDocument(
         },
         onShellError(error: unknown) {
           renderDone();
-          // the rejection reaches handleError, which logs the throwable; only
-          // the "nothing was sent yet" part of it is news here
           log.warn({ path }, "Document shell render failed");
           reject(error);
         },

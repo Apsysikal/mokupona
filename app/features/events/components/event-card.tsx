@@ -21,7 +21,6 @@ export function FeaturedEventCard({
   isNext = true,
 }: {
   event: EventCardModel;
-  /** the "next dinner" pill belongs on the soonest dinner only */
   isNext?: boolean;
 }) {
   return (
@@ -70,7 +69,6 @@ export function FeaturedEventCard({
   );
 }
 
-// quiet archive tile: image, month label, title
 export function PastEventCard({ event }: { event: EventCardModel }) {
   const eventDate = new Date(event.date);
 

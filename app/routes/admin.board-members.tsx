@@ -28,7 +28,6 @@ export default function AdminBoardMembersPage({
 }: Route.ComponentProps) {
   const { boardMembers } = loaderData;
   const location = useLocation();
-  // the new/edit forms render below the list via the Outlet
   const formOpen = location.pathname !== "/admin/board-members";
 
   return (

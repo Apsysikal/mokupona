@@ -5,10 +5,6 @@ import { auth } from "~/features/auth/auth.server";
 import { requestLoggerContext } from "~/features/auth/middleware.server";
 import { getClientIPAddress } from "~/shared/http.server";
 
-// better-auth's registration endpoint. Neither /join nor the invite flow
-// reaches it through this route — both call `auth.api.signUpEmail` directly —
-// so guarding here closes the direct-POST path without touching either. A
-// hand-rolled request has to be refused the same way the form is.
 // The Google toggle lives in `~/features/auth/google-gate.server`.
 const SIGN_UP_EMAIL_PATH = "/sign-up/email";
 

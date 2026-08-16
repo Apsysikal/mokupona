@@ -88,8 +88,6 @@ describe("getImageUrl — cloudinary provider", () => {
 
 describe("getImageUrl — static public_id-only assets", () => {
   it("uses cloudinary regardless of the provider when a cloud name exists", () => {
-    // delivery needs no credentials; static assets render from the CDN even
-    // while IMAGE_PROVIDER is still local (pre-cutover prod, local dev)
     expect(
       getImageUrl(
         { storageKey: "static/hero-image" },
@@ -138,8 +136,6 @@ describe("imageFileSchema", () => {
   it.each(["image/gif", "image/svg+xml", "application/pdf", ""])(
     "rejects the %s MIME type server-side",
     (type) => {
-      // uploads are forwarded to a third-party provider now — the allowlist
-      // is a real gate, not just the input's accept attribute
       expect(firstError(upload(10, type))).toBe(IMAGE_TYPE_ERROR);
     },
   );

@@ -232,7 +232,6 @@ export function CheckboxField({
           aria-invalid={errorId ? true : undefined}
           aria-describedby={describedBy}
         />
-        {/* checkbox labels read as body copy, not as field labels */}
         <Label
           htmlFor={id}
           {...labelProps}

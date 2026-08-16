@@ -2,9 +2,6 @@ import { getInputProps, type FieldMetadata } from "@conform-to/react";
 
 import { Field } from "~/components/forms";
 
-// The text, email, and phone views differ only in the rendered <input type>,
-// so they all come from this factory — changes to how simple input fields
-// render happen in one place.
 export function makeInputFieldView<Descriptor extends InputFieldDescriptor>(
   inputType: "text" | "email" | "tel",
 ) {

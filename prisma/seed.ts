@@ -21,39 +21,21 @@ async function seed() {
   const moderatorEmail = "moderator@mokupona.ch";
   const adminEmail = "admin@mokupona.ch";
 
-  // cleanup the existing database
-  await prisma.user.deleteMany().catch(() => {
-    /** */
-  });
+  await prisma.user.deleteMany().catch(() => {});
 
-  await prisma.role.deleteMany().catch(() => {
-    /** */
-  });
+  await prisma.role.deleteMany().catch(() => {});
 
-  await prisma.event.deleteMany().catch(() => {
-    /** */
-  });
+  await prisma.event.deleteMany().catch(() => {});
 
-  // forms after events: Event.formId restricts deleting a referenced form
-  await prisma.formSubmission.deleteMany().catch(() => {
-    /** */
-  });
+  await prisma.formSubmission.deleteMany().catch(() => {});
 
-  await prisma.formVersion.deleteMany().catch(() => {
-    /** */
-  });
+  await prisma.formVersion.deleteMany().catch(() => {});
 
-  await prisma.form.deleteMany().catch(() => {
-    /** */
-  });
+  await prisma.form.deleteMany().catch(() => {});
 
-  await prisma.address.deleteMany().catch(() => {
-    /** */
-  });
+  await prisma.address.deleteMany().catch(() => {});
 
-  await prisma.eventResponse.deleteMany().catch(() => {
-    /** */
-  });
+  await prisma.eventResponse.deleteMany().catch(() => {});
 
   // Gallery links cascade with their event, but pool images belong to
   // nothing and would survive every reseed.
@@ -73,8 +55,6 @@ async function seed() {
     await prisma.role.create({ data: { name: role } });
   }
 
-  // through better-auth's API so hashes/accounts are shape-correct; the demo
-  // accounts are pre-verified so they can log in straight away
   await createUserViaAuth({
     email: userEmail,
     password: "mokupona",

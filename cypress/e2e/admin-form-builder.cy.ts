@@ -24,17 +24,11 @@ describe("admin signup form builder", () => {
     });
   });
 
-  // A row header announces as "<label> <type> · <linked phrase>", so the two
-  // copies of a linked question differ only in that phrase.
   const RESTRICTIONS = /dietary restrictions/i;
   const LINKED_RESTRICTIONS = /dietary restrictions.*linked/i;
   const FRIEND_RESTRICTIONS = /dietary restrictions.*linked to the signer/i;
   const FRIENDS_CARD = /^friends group/i;
 
-  // Row bodies stay collapsed until their header is clicked; every field and
-  // action button goes through here. Rows inside the collapsed friends card
-  // are display:none, so they are invisible to the role queries until it is
-  // opened.
   function openRow(name: RegExp) {
     cy.findAllByRole("button", { name }).first().click();
   }
@@ -72,7 +66,6 @@ describe("admin signup form builder", () => {
 
     createDinnerViaAdminForm(values);
 
-    // add a custom signer question; the field key derives from the label
     cy.findByRole("button", { name: /^add field$/i }).click();
     cy.findAllByLabelText(/^label$/i)
       .last()
@@ -82,7 +75,6 @@ describe("admin signup form builder", () => {
       .last()
       .should("have.value", "favorite_dish");
 
-    // and a select question with an options editor
     cy.findByRole("button", { name: /^add field$/i }).click();
     cy.findAllByLabelText(/^type$/i)
       .last()
@@ -96,14 +88,11 @@ describe("admin signup form builder", () => {
     saveDinnerAndCaptureId(values.title).then((dinnerId) => {
       dinnersToCleanup.push(dinnerId);
 
-      // builder round-trip: the edit screen shows the authored field again
-      // (stored rows load collapsed — expand via the row header first)
       cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
       openRow(/favorite dish/i);
       cy.findByDisplayValue("Favorite dish").should("be.visible");
       cy.findByDisplayValue("favorite_dish").should("be.visible");
 
-      // the public signup page renders the custom question
       cy.visitAndCheck(`/dinners/${dinnerId}`);
       fillSignupContact({
         name: signerName,
@@ -113,7 +102,6 @@ describe("admin signup form builder", () => {
       cy.findByRole("combobox", { name: /menu choice/i }).select("Vegan");
       acceptPrivacyAndJoin();
 
-      // the answer reaches the admin table and the CSV column union
       cy.visitAndCheck(`/admin/dinners/${dinnerId}/signups`);
       cy.findByText(signerName);
 
@@ -139,13 +127,11 @@ describe("admin signup form builder", () => {
     saveDinnerAndCaptureId(values.title).then((dinnerId) => {
       dinnersToCleanup.push(dinnerId);
 
-      // legacy rows can't be written through the app anymore
       runUploadDbCommand("create-legacy-response", {
         eventId: dinnerId,
         name: legacyName,
       });
 
-      // v1 signup with a friend
       cy.visitAndCheck(`/dinners/${dinnerId}`);
       fillSignupContact({
         name: v1Signer,
@@ -158,7 +144,6 @@ describe("admin signup form builder", () => {
         .type(v1Friend);
       acceptPrivacyAndJoin();
 
-      // with submissions, existing field keys are locked and edits fork v2
       cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
       cy.findAllByLabelText(/field key \(locked/i).should(
         "have.length.greaterThan",
@@ -167,7 +152,6 @@ describe("admin signup form builder", () => {
       relabelSignerRestrictions("Allergies");
       saveDinnerExpectingDetail(values.title);
 
-      // v2 signup (solo) against the renamed field
       cy.visitAndCheck(`/dinners/${dinnerId}`);
       fillSignupContact({
         name: v2Signer,
@@ -178,9 +162,6 @@ describe("admin signup form builder", () => {
         .type("pollen");
       acceptPrivacyAndJoin();
 
-      // the roster groups each source into one party row — the v1 friend
-      // isn't named, they bump the signer's party size; the CSV below
-      // stays one row per person
       cy.visitAndCheck(`/admin/dinners/${dinnerId}/signups`);
       cy.findByText(legacyName);
       cy.findByText(v1Signer)
@@ -209,7 +190,6 @@ describe("admin signup form builder", () => {
     saveDinnerAndCaptureId(values.title).then((dinnerId) => {
       dinnersToCleanup.push(dinnerId);
 
-      // relabel a default field and disable friends
       cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
       relabelSignerRestrictions("Allergies");
       openRow(FRIENDS_CARD);
@@ -218,7 +198,6 @@ describe("admin signup form builder", () => {
         .type("0");
       saveDinnerExpectingDetail(values.title);
 
-      // reload shows the edited form
       cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
       openRow(/allergies/i);
       withinRow(/allergies/i, () => {
@@ -227,7 +206,6 @@ describe("admin signup form builder", () => {
       openRow(FRIENDS_CARD);
       cy.findByLabelText(/max per signup/i).should("have.value", "0");
 
-      // the public page reflects it: relabeled field, no friends button
       cy.visitAndCheck(`/dinners/${dinnerId}`);
       cy.findAllByRole("textbox", { name: /allergies/i }).should("exist");
       cy.findByRole("button", { name: /add a friend/i }).should("not.exist");
@@ -245,12 +223,9 @@ describe("admin signup form builder", () => {
       cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
       relabelSignerRestrictions("Allergies");
 
-      // no save in between: the friend's copy follows the keystrokes
       openRow(FRIENDS_CARD);
       openRow(/allergies.*linked to the signer/i);
       withinRow(/allergies.*linked to the signer/i, () => {
-        // cy.contains compiles a regex into a selector string, which cannot
-        // carry the copy's curly quotes — match plainly, assert on the text
         cy.contains("Mirrors the signer")
           .should("be.visible")
           .and("contain.text", "signer's “Allergies”");
@@ -262,7 +237,6 @@ describe("admin signup form builder", () => {
 
       saveDinnerExpectingDetail(values.title);
 
-      // both questions ask the new wording on the public page
       cy.visitAndCheck(`/dinners/${dinnerId}`);
       cy.findAllByRole("textbox", { name: /allergies/i }).should(
         "have.length",
@@ -291,7 +265,6 @@ describe("admin signup form builder", () => {
         cy.findByRole("button", { name: /^unlink$/i }).click();
       });
 
-      // the trigger opened a dialog instead of submitting the builder
       cy.location("pathname").should(
         "equal",
         `/admin/dinners/${dinnerId}/edit`,
@@ -302,7 +275,6 @@ describe("admin signup form builder", () => {
           cy.findByRole("heading", {
             name: /unlink from the signer's question\?/i,
           }).should("be.visible");
-          // keep the offered key
           cy.findByLabelText(/new field key/i).should(
             "have.value",
             "restrictions_2",
@@ -310,8 +282,6 @@ describe("admin signup form builder", () => {
           cy.findByRole("button", { name: /^unlink$/i }).click();
         });
 
-      // two ordinary questions now: the friend's row is editable and the
-      // linked prose is gone from both headers
       cy.findByDisplayValue("restrictions_2").should("be.enabled");
       cy.findAllByRole("button", { name: LINKED_RESTRICTIONS }).should(
         "not.exist",
@@ -319,7 +289,6 @@ describe("admin signup form builder", () => {
 
       saveDinnerExpectingDetail(values.title);
 
-      // the split survived the save
       cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
       openRow(FRIENDS_CARD);
       cy.findAllByRole("button", { name: RESTRICTIONS }).should(
@@ -334,7 +303,6 @@ describe("admin signup form builder", () => {
         );
       });
 
-      // and the signer's row offers the way back
       openRow(RESTRICTIONS);
       withinRow(RESTRICTIONS, () => {
         cy.findByRole("button", { name: /link to friends/i }).click();
@@ -345,22 +313,16 @@ describe("admin signup form builder", () => {
           cy.findByRole("heading", {
             name: /also ask each friend this question\?/i,
           }).should("be.visible");
-          // the friend's question matches by label, so it is offered as a
-          // mirror target beside the "add a new row" default
           cy.contains("Mirror onto")
             .should("contain.text", "“Dietary restrictions”")
             .click();
           cy.findByRole("button", { name: /link to friends/i }).click();
         });
 
-      // every linked friend row carries a mirror sentence, so scope the
-      // assertion to the pair under test
       cy.findAllByRole("button", { name: FRIEND_RESTRICTIONS }).should(
         "have.length",
         1,
       );
-      // confirming the link opens the friends card and the mirrored row and
-      // moves focus into it, so the sentence is both visible and focused
       withinLastRow(FRIEND_RESTRICTIONS, () => {
         cy.contains("Mirrors the signer")
           .should("be.visible")
@@ -380,7 +342,6 @@ describe("admin signup form builder", () => {
     saveDinnerAndCaptureId(values.title).then((dinnerId) => {
       dinnersToCleanup.push(dinnerId);
 
-      // one signup answers the shared question on both sides
       cy.visitAndCheck(`/dinners/${dinnerId}`);
       fillSignupContact({
         name: signerName,
@@ -398,7 +359,6 @@ describe("admin signup form builder", () => {
         });
       acceptPrivacyAndJoin();
 
-      // the pair is locked by the submissions, but unlinking stays on offer
       cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
       cy.findAllByLabelText(/field key \(locked/i).should(
         "have.length.greaterThan",
@@ -420,13 +380,10 @@ describe("admin signup form builder", () => {
           cy.findByRole("button", { name: /^unlink$/i }).click();
         });
 
-      // the split key is new, so it is not locked — the collected answers
-      // stay under the old column either way
       cy.findByDisplayValue("restrictions_2")
         .should("be.enabled")
         .and("not.have.attr", "readonly");
 
-      // relinking counts the answers of whichever target is selected
       openRow(RESTRICTIONS);
       withinRow(RESTRICTIONS, () => {
         cy.findByRole("button", { name: /link to friends/i }).click();
@@ -437,14 +394,11 @@ describe("admin signup form builder", () => {
           cy.contains(/1 friend has already answered this question/i).should(
             "be.visible",
           );
-          // the candidate kept its own key, which has no answers yet
           cy.contains("Mirror onto").click();
           cy.contains(/friend has already answered/i).should("not.exist");
           cy.findByRole("button", { name: /link to friends/i }).click();
         });
 
-      // the restored pair carries the answered key again, so removing the
-      // mirror still warns about the collected answers
       const confirms: string[] = [];
       cy.on("window:confirm", (message) => {
         confirms.push(message);
@@ -478,9 +432,6 @@ describe("admin signup form builder", () => {
         cy.findByRole("button", { name: /^remove$/i }).click();
       });
 
-      // the friend's row falls back to an ordinary question carrying the
-      // wording the mirror displayed, not its stored snapshot (the update
-      // intent hands the row a fresh key, so it renders expanded already)
       openRow(FRIENDS_CARD);
       withinLastRow(/allergies/i, () => {
         cy.findByRole("button", { name: /toggle details/i }).then(($button) => {

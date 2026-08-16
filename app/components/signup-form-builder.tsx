@@ -205,10 +205,7 @@ export function SignupFormBuilder({
   answerCounts = {},
 }: {
   field: FieldMetadata<BuilderRowInput[]>;
-  // true once the event's form has submissions: existing keys become
-  // immutable and removals of existing fields ask for confirmation
   lockFieldKeys?: boolean;
-  // per-field answer counts for the link/unlink dialog callouts
   answerCounts?: AnswerCountsByFieldKey;
 }) {
   const form = useFormMetadata();
@@ -220,10 +217,6 @@ export function SignupFormBuilder({
   ) as RowMetadata | undefined;
   const itemFieldsMeta = friendsRow?.getFieldset().itemFields;
 
-  // The rows present when the screen loaded, identified by Conform's stable
-  // row keys. `initialValue` cannot distinguish stored rows from new ones —
-  // intents (the label auto-slug update, the link insert) write it too — and
-  // pinning must never trap a row the admin just created.
   const initialRowKeysRef = useRef<Set<string> | null>(null);
   initialRowKeysRef.current ??= new Set(
     [
@@ -246,9 +239,6 @@ export function SignupFormBuilder({
   const topLevelKeyValues = topLevelRows.map(keyOf);
   const itemKeyValues = itemRows.map(keyOf);
 
-  // Locking tracks mount-time key VALUES, not Conform row keys: an update
-  // intent (mirror-onto, unlink) regenerates a row's Conform key, and the
-  // answers a lock protects live under the field key either way.
   const initialFieldKeysRef = useRef<Set<string> | null>(null);
   initialFieldKeysRef.current ??= new Set(
     [...topLevelKeyValues, ...itemKeyValues].filter(
@@ -259,9 +249,6 @@ export function SignupFormBuilder({
   const isStoredKey = (keyValue: string) =>
     keyValue !== "" && initialFieldKeys.has(keyValue);
 
-  // The row a confirmed link just wrote, tracked by the shared field key: an
-  // update intent hands the row a fresh Conform key, so a marker kept against
-  // the key read at click time would point at a row that no longer exists.
   const [pendingReveal, setPendingReveal] = useState<string | null>(null);
   const revealedRow =
     pendingReveal === null
@@ -273,8 +260,6 @@ export function SignupFormBuilder({
     ),
   );
 
-  // Collapse state overlay: stored rows start collapsed, rows added in this
-  // session start expanded; a toggle flips whichever default applies.
   const [toggledRows, setToggledRows] = useState<Set<string>>(new Set());
   const isRowOpen = (rowKey: string | undefined) => {
     if (rowKey === undefined) return true;
@@ -294,8 +279,6 @@ export function SignupFormBuilder({
       return next;
     });
   };
-  // Resolving the marker hands the reveal over to the overlay, against the
-  // keys the rows carry now, so they stay open once the marker is gone.
   const resolveReveal = () => {
     setToggledRows((previous) => {
       const next = new Set(previous);
@@ -347,8 +330,6 @@ export function SignupFormBuilder({
       signerByKey.get(key) === row
     );
   });
-  // identity keys never unlink: the roster reads a friend's name (and the
-  // party contact) by these exact keys, so splitting one breaks every export
   const linkedPairs = [...linkedKeys].flatMap((key) => {
     if (PINNED_IDENTITY_KEYS.has(key)) return [];
     const signerRow = signerByKey.get(key);
@@ -357,9 +338,6 @@ export function SignupFormBuilder({
   });
 
   return (
-    // heading and border come from the surrounding "Signup form" section card;
-    // min-w-0 opts out of the fieldset default min-width:min-content, which
-    // would otherwise let row headers push the card past small viewports
     <fieldset className="flex min-w-0 flex-col gap-4">
       <noscript>
         <style>{`[data-row-body]{display:block !important}`}</style>
@@ -389,8 +367,6 @@ export function SignupFormBuilder({
           ))}
         </ul>
 
-        {/* dialogs live outside every collapsible: a <dialog> inside a
-            display:none row body cannot render, even from the top layer */}
         {itemFieldsMeta
           ? linkableRows.map((row) => (
               <LinkDialog key={row.key} signerRow={row} />
@@ -420,8 +396,6 @@ export function SignupFormBuilder({
           type="button"
           variant="outline"
           onClick={() => {
-            // this discards every edit — and with signups, removed fields'
-            // answers disappear from future versions
             const message = lockFieldKeys
               ? "This replaces the whole signup form with the default fields. This form already has signups — answers to removed fields will disappear from future versions. Continue?"
               : "Replace the signup form with the default fields?";
@@ -465,8 +439,6 @@ function BuilderRowView({
   const initialKey = String(rowFields.name.initialValue ?? "");
   const keyValue = String(rowFields.name.value ?? "");
   const labelValue = String(rowFields.label.value ?? "");
-  // the single lock predicate: the key carries stored answers AND the form
-  // already has signups
   const rowLocked = lockFieldKeys && isStoredKey(keyValue);
 
   if (type === "list") {
@@ -506,8 +478,6 @@ function BuilderRowView({
     );
   }
 
-  // pinned-ness needs mount-time identity too: a custom row auto-slugged to
-  // "email" must not morph into an unremovable pinned row
   const isPinnedIdentity =
     PINNED_IDENTITY_KEYS.has(initialKey) && isStoredRow(row.key);
   const isCanonical = keyValue !== "" && signerByKey.get(keyValue) === row;
@@ -517,7 +487,6 @@ function BuilderRowView({
   return (
     <RowCard
       row={row}
-      // pinned identity cards carry the design's orange tint
       className={
         isPinnedIdentity ? "border-primary/35 bg-primary/10" : undefined
       }
@@ -589,9 +558,6 @@ function BuilderRowView({
   );
 }
 
-// The shared collapsible card shell around every builder row. A row with
-// validation errors anywhere in its subtree is forced open — otherwise a
-// failed submit could point at inputs hidden inside a collapsed panel.
 function RowCard({
   row,
   className,
@@ -629,7 +595,6 @@ function RowCard({
   );
 }
 
-// Row-level errors stay visible even while the row is collapsed.
 function RowErrors({ id, errors }: { id?: string; errors?: string[] }) {
   if (!errors?.length) return null;
 
@@ -640,9 +605,6 @@ function RowErrors({ id, errors }: { id?: string; errors?: string[] }) {
   );
 }
 
-// Header of a collapsible row card: the stacked title and meta line form the
-// toggle trigger; the linked state is carried by the meta prose alone, so it
-// is announced by screen readers and survives JavaScript being off.
 function RowHeader({
   title,
   meta,
@@ -662,8 +624,6 @@ function RowHeader({
 
   return (
     <div className="flex items-center gap-2 p-2 sm:p-3">
-      {/* the flex layout lives on an inner span because Safari mishandles
-          buttons as flex containers */}
       <CollapsibleTrigger className="min-w-0 flex-1 cursor-pointer text-left">
         <span className="flex min-w-0 flex-col items-start gap-1">
           <span className="w-full truncate text-base font-semibold tracking-tight">
@@ -723,7 +683,6 @@ function RowHeader({
   );
 }
 
-// The full-bleed action strip at the bottom of an expanded row body.
 function ActionRow({ children }: { children: ReactNode }) {
   return (
     <div className="-mx-4 mt-1 -mb-4 flex flex-wrap justify-end gap-2 border-t px-4 pt-3 pb-4">
@@ -732,9 +691,6 @@ function ActionRow({ children }: { children: ReactNode }) {
   );
 }
 
-// beforeRemove runs extra intents ahead of the removal (a linked signer row
-// first writes its wording into the mirrors, so they keep it); ordering both
-// through the imperative API keeps them deterministic.
 function RemoveButton({
   listName,
   index,
@@ -775,8 +731,6 @@ function RemoveButton({
   );
 }
 
-// Opens a builder dialog declaratively (Invoker Commands work without JS);
-// the click fallback covers browsers that predate commandfor.
 function DialogTriggerButton({
   dialogId,
   children,
@@ -876,8 +830,6 @@ function LinkDialog({ signerRow }: { signerRow: RowMetadata }) {
       ? [{ rowName: itemRow.name, key: itemKey, label: itemLabel }]
       : [];
   });
-  // the callout speaks about the answers the confirmed choice would merge:
-  // the signer's key for a new row, the candidate's own key for mirror-onto
   const chosenCandidate = candidates.find((c) => c.rowName === choice);
   const countedKey = chosenCandidate?.key || key;
   const friendCount = answerCounts[countedKey]?.friends ?? 0;
@@ -992,8 +944,6 @@ function LinkChoiceOption({
         checked ? "border-primary/35 bg-primary/10" : "hover:bg-foreground/5",
       )}
     >
-      {/* the form attribute names no element on purpose: the radios group for
-          arrow-key navigation without ever joining the builder's payload */}
       <input
         type="radio"
         name={name}
@@ -1118,8 +1068,6 @@ function UnlinkDialog({
   );
 }
 
-// Identity fields: label is editable, everything else is fixed and submitted
-// via hidden inputs (disabled inputs would not submit).
 function PinnedIdentityRowView({ row }: { row: RowMetadata }) {
   const rowFields = row.getFieldset();
 
@@ -1148,9 +1096,6 @@ function EditableRowView({
   keyLocked = false,
 }: {
   row: EditableRowMetadata;
-  // keys are the merge/answers link — immutable once submissions exist; new
-  // fields still pick theirs freely (the parent derives this from mount-time
-  // row identity)
   keyLocked?: boolean;
 }) {
   const form = useFormMetadata();
@@ -1177,7 +1122,6 @@ function EditableRowView({
           inputProps={{
             ...labelInputProps,
             onBlur: (event) => {
-              // new fields derive their machine key from the label
               if (!rowFields.name.value) {
                 form.update({
                   name: rowFields.name.name,
@@ -1217,8 +1161,6 @@ function EditableRowView({
           errors={rowFields.options.errors}
         />
       ) : (
-        // keep the typed options in play while the type is something else —
-        // toggling away from select and back must not discard them
         <input
           type="hidden"
           name={rowFields.options.name}
@@ -1319,9 +1261,6 @@ function MirrorSelect({ label, value }: { label: ReactNode; value: string }) {
   );
 }
 
-// The friend side of a linked pair: the visible controls carry no name and
-// are purely cosmetic; the hidden inputs render the signer row's live values,
-// so the payload can never drift from what the mirror shows.
 function MirrorRowView({
   itemRow,
   signerRow,
@@ -1407,8 +1346,6 @@ function MirrorRowView({
   );
 }
 
-// The friends list is pinned: it cannot be removed or renamed, and lists are
-// not addable — its item fields and maxCount are the only structural knobs.
 function FriendsRowView({
   row,
   lockFieldKeys,
@@ -1429,9 +1366,6 @@ function FriendsRowView({
   const itemKeys = itemFields.map((itemRow) =>
     String((itemRow as ItemRowMetadata).getFieldset().name.value ?? ""),
   );
-  // A row being edited never swaps into the mirror under the admin's cursor:
-  // typing a key that matches the signer's would otherwise unmount the
-  // focused editor mid-keystroke. The swap waits until focus leaves the row.
   const [editingRowKey, setEditingRowKey] = useState<string | null>(null);
 
   return (
@@ -1448,8 +1382,6 @@ function FriendsRowView({
         />
         <Field
           className="min-w-0 grow"
-          // long labels wrap and knock the side-by-side inputs out of
-          // alignment — keep it short, the range lives in min/max
           labelProps={{
             children: "Max per signup (0 disables)",
           }}
@@ -1487,9 +1419,6 @@ function FriendsRowView({
                 : undefined;
             const signerRow =
               editingRowKey === itemRow.key ? undefined : linkedSignerRow;
-            // duplicate keys collapse onto one dialog, so only the first row
-            // with a key gets the unlink action; identity keys get none at
-            // all — the roster reads friends' names by that exact key
             const offersUnlink =
               signerRow !== undefined &&
               itemKeys.indexOf(itemKey) === index &&

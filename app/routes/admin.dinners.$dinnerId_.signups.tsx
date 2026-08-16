@@ -22,9 +22,6 @@ import {
 import { getEventById } from "~/models/event.server";
 import { requireFound } from "~/shared/http.server";
 
-// The table reads one row per party: the signer fronts the row, friends only
-// bump the party size. Legacy rows never share a submissionId, so each stays
-// its own party of one.
 function toParties(attendees: Attendee[]) {
   const parties = new Map<
     string,

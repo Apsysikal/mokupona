@@ -14,8 +14,6 @@ function mailProviderName(env: NodeJS.ProcessEnv) {
   return env.MAIL_PROVIDER ?? "console";
 }
 
-// Exported for tests; the app goes through the singleton below so an invalid
-// configuration fails on first import, not on first send.
 export function createMailProvider(
   env: NodeJS.ProcessEnv = process.env,
 ): MailProvider {
@@ -43,8 +41,6 @@ const provider = singleton("mail-provider", () => {
   return instance;
 });
 
-// The way features send mail: name a template from ./templates and hand it the
-// props it declares. Subject, text and HTML all come from that one definition.
 export async function sendTemplate<Name extends MailTemplateName>(
   name: Name,
   to: string,
@@ -54,9 +50,6 @@ export async function sendTemplate<Name extends MailTemplateName>(
     props: MailTemplateProps<Name>,
   ) => MailBody;
 
-  // better-auth swallows a throw out of its sendResetPassword and
-  // sendVerificationEmail callbacks, so this is the only record those two
-  // flows can produce when delivery fails.
   try {
     await provider.send({ to, ...render(props) });
   } catch (error) {

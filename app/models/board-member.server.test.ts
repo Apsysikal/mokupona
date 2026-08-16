@@ -11,7 +11,6 @@ import { prisma } from "~/db.server";
 import type { ImageCreateData } from "~/models/image.server";
 
 function portrait(marker: string): ImageCreateData {
-  // unique per call — the tests share one database
   return {
     contentType: "image/jpeg",
     storageKey: `test/board-members/${marker}-${faker.string.uuid()}`,

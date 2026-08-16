@@ -8,10 +8,9 @@ export const ListFieldSchema = z.object({
   type: z.literal("list"),
   version: z.literal(1),
   data: BaseFieldData.extend({
-    maxCount: z.number().int().min(0).max(MAX_LIST_COUNT), // 0 = list disabled
+    maxCount: z.number().int().min(0).max(MAX_LIST_COUNT),
     addLabel: z.string().trim().min(1),
     removeLabel: z.string().trim().min(1),
-    // union of non-list types: a list inside a list is unrepresentable
     itemFields: z.array(NonListFieldDescriptorSchema).min(1),
   }),
 });

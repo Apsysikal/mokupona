@@ -11,13 +11,6 @@ import {
   type NonListFieldDescriptor,
 } from "~/features/forms/fields/non-list";
 
-// The admin builder's value model: one flat row shape for every field so
-// Conform's field arrays need no union handling. `maxCount`/`itemFields`
-// only carry data for the pinned friends list row; the profile rules run on
-// the transformed descriptors via SignupFormSchema, so builder and public
-// endpoint can never disagree.
-
-// Button labels are not exposed in the builder (v1); they stay DEFAULT_FORM's.
 const FRIENDS_ADD_LABEL = "Add a friend";
 const FRIENDS_REMOVE_LABEL = "Remove this person";
 
@@ -31,12 +24,7 @@ const BuilderItemRowSchema = z.object({
     .regex(FIELD_KEY_REGEX, { error: FIELD_KEY_ERROR }),
   label: z.string({ error: "Label is required" }).trim().min(1),
   required: z.boolean().default(false),
-  // optional helper text for guests; the bound is restated here (BaseFieldData
-  // enforces it again on the transformed descriptor) so Conform's constraint
-  // reaches the textarea
   description: z.string().trim().max(MAX_FIELD_DESCRIPTION_LENGTH).optional(),
-  // select only: one option per line; SelectFieldSchema bounds the parsed
-  // list via the profile validation below
   options: z.string().optional(),
 });
 
@@ -53,19 +41,12 @@ const BuilderRowSchema = BuilderItemRowSchema.extend({
 
 export type BuilderRow = z.infer<typeof BuilderRowSchema>;
 export type BuilderItemRow = z.infer<typeof BuilderItemRowSchema>;
-// the pre-coercion shapes Conform's field metadata carries
 export type BuilderRowInput = z.input<typeof BuilderRowSchema>;
 export type BuilderItemRowInput = z.input<typeof BuilderItemRowSchema>;
 
-// Rows validate by transforming to descriptors and running the same profile
-// schema the server persists with; issue paths are mapped back onto the rows
-// (descriptor paths carry an extra "data" segment).
 export const SignupFormBuilderSchema = z
   .array(BuilderRowSchema)
   .superRefine((rows, ctx) => {
-    // maxCount is optional in the shared row shape (non-list rows have none)
-    // but a list row must state it — a cleared input must not silently
-    // become "friends disabled"
     for (const [index, row] of rows.entries()) {
       if (row.type === "list" && row.maxCount === undefined) {
         ctx.addIssue({
@@ -80,8 +61,6 @@ export const SignupFormBuilderSchema = z
 
     for (const issue of result.success ? [] : result.error.issues) {
       const path = issue.path.filter((segment) => segment !== "data");
-      // per-element option issues ([i, "options", 3]) have no rendered field;
-      // collapse them onto the row's options textarea
       const optionsIndex = path.indexOf("options");
 
       ctx.addIssue({
@@ -101,14 +80,10 @@ function descriptionEntry(description: string | undefined) {
   return description ? { description } : {};
 }
 
-// same absent-key rule as descriptionEntry: a mirrored row must not carry an
-// options key the canonical row does not have
 function optionsEntry(options: string | undefined) {
   return options ? { options } : {};
 }
 
-// What a shared field key ties together. The key itself is the identity, not
-// a synced property; nothing scope-local may join this list.
 export const LINKED_ROW_PROPS = [
   "type",
   "label",
@@ -119,19 +94,9 @@ export const LINKED_ROW_PROPS = [
 
 type LinkedProps = Pick<BuilderItemRow, (typeof LINKED_ROW_PROPS)[number]>;
 
-// Rows sharing a field key are one question asked in two scopes — the sharing
-// read.server.ts splits submission-level from per-attendee answers on. The
-// canonical side is the first occurrence in flattened order (all top-level
-// rows, then the friends list's itemFields): the same order and the same
-// first-wins reference FormSchema.superRefine reports type mismatches against.
-// Pure, and on the only path to persistence, so a form posted with JavaScript
-// disabled is stored correctly synced with zero client code.
 export function syncLinkedRows(rows: BuilderRow[]): BuilderRow[] {
   const canonical = new Map<string, LinkedProps>();
 
-  // undefined = this row is the canonical one and stays as it is; otherwise
-  // the props to rebuild it from, so a stale options/description cannot
-  // survive as a leftover key
   const claim = (
     row: BuilderRow | BuilderItemRow,
     type: LinkedProps["type"],
@@ -151,9 +116,6 @@ export function syncLinkedRows(rows: BuilderRow[]): BuilderRow[] {
     return undefined;
   };
 
-  // lists are containers, not questions — the friends row's own name never
-  // links (a top-level field colliding with it is a same-scope duplicate,
-  // which FormSchema already rejects)
   const claimed = rows.map((row): BuilderRow => {
     if (row.type === "list") return row;
 
@@ -162,7 +124,6 @@ export function syncLinkedRows(rows: BuilderRow[]): BuilderRow[] {
     return props === undefined ? row : { name: row.name, ...props };
   });
 
-  // second pass: every signer row has claimed before any item row mirrors
   return claimed.map((row): BuilderRow => {
     if (row.type !== "list" || row.itemFields === undefined) return row;
 
@@ -177,10 +138,6 @@ export function syncLinkedRows(rows: BuilderRow[]): BuilderRow[] {
   });
 }
 
-// The same rule the sync runs on, for callers that only hold field keys: a key
-// is linked when it is asked of the signer and of each friend. Top-level keys
-// are the non-list rows' keys — a list's own name is a container, not a
-// question.
 export function linkedFieldKeys(
   topLevelKeys: Array<string | undefined>,
   itemKeys: Array<string | undefined>,
@@ -195,9 +152,6 @@ export function linkedFieldKeys(
   return linked;
 }
 
-// Which keys the sync would rewrite: stored forms whose pairs drifted under
-// the old one-shot twin copy lose the friend's own wording on the next save,
-// so the routes log the affected keys before persisting.
 export function syncChangedFieldKeys(rows: BuilderRow[]): string[] {
   const synced = syncLinkedRows(rows);
   const changed = new Set<string>();
@@ -249,8 +203,6 @@ export function builderRowsToDescriptors(
       };
     }
 
-    // row.type is narrowed past "list" here, but the object type is not —
-    // rebuild the item row explicitly
     return itemRowToDescriptor({
       type: row.type,
       name: row.name,
@@ -289,8 +241,6 @@ function itemRowToDescriptor(row: BuilderItemRow): NonListFieldDescriptor {
   };
 }
 
-// The builder edits options as one-per-line text; descriptors store them as
-// an array. Options are trimmed and non-empty, so the mapping round-trips.
 function splitOptions(text: string): string[] {
   return text
     .split("\n")
@@ -337,7 +287,6 @@ export function defaultBuilderRows(): BuilderRow[] {
   return descriptorsToBuilderRows(DEFAULT_FORM);
 }
 
-// "Field key" values are machine keys; new fields derive one from the label.
 export function slugifyFieldKey(label: string): string {
   const slug = label
     .toLowerCase()

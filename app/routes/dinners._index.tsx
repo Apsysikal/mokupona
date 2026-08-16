@@ -24,7 +24,6 @@ import { getEventsWithAddress } from "~/models/event.server";
 export const loader = async () => {
   const events = await getEventsWithAddress();
 
-  // the route ships the card model, not the Prisma entity
   return { events: events.map(toEventCardModel) };
 };
 
@@ -34,9 +33,7 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
   const { events } = loaderData;
 
   const now = new Date();
-  // events arrive sorted ascending, so the first upcoming one is the next
   const { upcoming: upcomingEvents, past } = partitionEvents(events, now);
-  // the archive reads newest-first
   const pastEvents = orderEventsByStatus(past, now);
 
   return (
