@@ -16,6 +16,8 @@ logs/
 
 .DS_Store
 
+.claude/worktrees/
+
 /prisma/generated
 
 tmp/
