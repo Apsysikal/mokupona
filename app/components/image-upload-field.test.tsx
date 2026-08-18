@@ -41,7 +41,7 @@ function tiles() {
 }
 
 function isFlagged(tile: HTMLElement) {
-  return tile.className.includes("border-destructive-light");
+  return tile.hasAttribute("data-invalid");
 }
 
 describe("ImageUploadField", () => {
@@ -77,7 +77,9 @@ describe("ImageUploadField", () => {
     fireEvent.click(screen.getByRole("button", { name: "Remove drop-me.jpg" }));
 
     expect(tiles()).toHaveLength(2);
-    expect(screen.queryByText("drop-me.jpg")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Remove drop-me.jpg" }),
+    ).not.toBeInTheDocument();
     expect(Array.from(input.files ?? []).map((file) => file.name)).toEqual([
       "keep-one.jpg",
       "keep-two.jpg",
@@ -106,10 +108,25 @@ describe("ImageUploadField", () => {
 
     const [first, second, third] = tiles();
 
-    expect(within(second).getByText("Upload failed")).toBeInTheDocument();
     expect(isFlagged(second)).toBe(true);
     expect(isFlagged(first)).toBe(false);
     expect(isFlagged(third)).toBe(false);
+    expect(screen.getByText("broken.jpg: Upload failed")).toBeInTheDocument();
+  });
+
+  it("keeps the message on the field instead of on the thumbnail", () => {
+    const { input, reportErrors } = renderField();
+
+    select(input, [imageFile("broken.jpg")]);
+    reportErrors({ fileErrors: { "broken.jpg": ["Upload failed"] } });
+
+    const list = screen.getByRole("list", { name: "Selected images" });
+    const message = screen.getByText("broken.jpg: Upload failed");
+
+    expect(list).not.toContainElement(message);
+    expect(
+      screen.getByRole("button", { name: "Remove broken.jpg" }),
+    ).toHaveAccessibleDescription("broken.jpg: Upload failed");
   });
 
   it("maps positional errors onto the matching preview", () => {
@@ -120,8 +137,9 @@ describe("ImageUploadField", () => {
 
     const [first, second] = tiles();
 
-    expect(within(second).getByText(TOO_LARGE)).toBeInTheDocument();
+    expect(isFlagged(second)).toBe(true);
     expect(isFlagged(first)).toBe(false);
+    expect(screen.getByText(`second.jpg: ${TOO_LARGE}`)).toBeInTheDocument();
   });
 
   it("retires positional errors once the selection shifts under them", () => {
@@ -131,7 +149,9 @@ describe("ImageUploadField", () => {
     reportErrors({ fileErrors: [undefined, [TOO_LARGE]] });
     fireEvent.click(screen.getByRole("button", { name: "Remove first.jpg" }));
 
-    expect(screen.queryByText(TOO_LARGE)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(`second.jpg: ${TOO_LARGE}`),
+    ).not.toBeInTheDocument();
     expect(isFlagged(tiles()[0])).toBe(false);
   });
 
@@ -142,7 +162,7 @@ describe("ImageUploadField", () => {
     reportErrors({ fileErrors: { "broken.jpg": ["Upload failed"] } });
     fireEvent.click(screen.getByRole("button", { name: "Remove fine.jpg" }));
 
-    expect(screen.getByText("Upload failed")).toBeInTheDocument();
+    expect(screen.getByText("broken.jpg: Upload failed")).toBeInTheDocument();
     expect(isFlagged(tiles()[0])).toBe(true);
   });
 
@@ -163,11 +183,13 @@ describe("ImageUploadField", () => {
 
     select(input, [imageFile("broken.jpg")]);
     reportErrors({ fileErrors: { "broken.jpg": ["Upload failed"] } });
-    expect(screen.getByText("Upload failed")).toBeInTheDocument();
+    expect(screen.getByText("broken.jpg: Upload failed")).toBeInTheDocument();
 
     select(input, [imageFile("broken.jpg")]);
 
-    expect(screen.queryByText("Upload failed")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("broken.jpg: Upload failed"),
+    ).not.toBeInTheDocument();
     expect(isFlagged(tiles()[0])).toBe(false);
   });
 

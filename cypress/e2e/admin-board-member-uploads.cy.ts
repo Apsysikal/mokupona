@@ -90,7 +90,7 @@ describe("admin board member uploads", () => {
     selectPhoto(VALID_UPLOAD_FIXTURE_PATH);
 
     cy.findByRole("list", { name: /selected images/i })
-      .findByText("upload-image.jpg")
+      .findByRole("button", { name: /remove upload-image\.jpg/i })
       .should("be.visible");
 
     cy.findByRole("button", { name: /remove upload-image\.jpg/i }).click();

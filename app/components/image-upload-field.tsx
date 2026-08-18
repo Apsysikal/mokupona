@@ -176,12 +176,34 @@ export function ImageUploadField({
 
   // A file field's own error is about the file it holds, so a lone selection
   // gets the same treatment as an explicitly reported per-file failure. It
-  // tracks the message under the input, stale or not, rather than contradicting
-  // it.
+  // tracks the message under the input, stale or not, rather than
+  // contradicting it.
   const selectionInvalid =
     !inputProps.multiple &&
     files.length === 1 &&
     Boolean(errors?.filter(Boolean).length);
+
+  // Per-file messages live with the field's own errors rather than on the
+  // thumbnail, which only carries the red frame. They name their file, since
+  // the tile is too small to.
+  const fileErrorEntries = files.flatMap((file, index) => {
+    const messages =
+      errorsForFile(fileErrors, errorScope, file, index)?.filter(Boolean) ?? [];
+
+    return messages.map((message, messageIndex) => ({
+      key: `${index}-${messageIndex}`,
+      elementId: `${id}-file-error-${index}-${messageIndex}`,
+      index,
+      file,
+      message: message as string,
+    }));
+  });
+
+  const fileErrorsId = fileErrorEntries.length
+    ? `${id}-file-errors`
+    : undefined;
+  const inputDescribedBy =
+    [describedBy, fileErrorsId].filter(Boolean).join(" ") || undefined;
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
@@ -192,38 +214,43 @@ export function ImageUploadField({
         <ul
           ref={listRef}
           aria-label="Selected images"
-          className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+          className="flex gap-3 overflow-x-auto p-0.5"
         >
           {files.map((file, index) => {
             const url = previewUrls.get(file);
-            const currentErrors = errorsForFile(
-              fileErrors,
-              errorScope,
-              file,
-              index,
+            const entries = fileErrorEntries.filter(
+              (entry) => entry.index === index,
             );
-            const invalid =
-              Boolean(currentErrors?.filter(Boolean).length) ||
-              selectionInvalid;
+            const invalid = entries.length > 0 || selectionInvalid;
 
             return (
               <li
                 key={fileKey(file, index)}
+                title={file.name}
                 data-invalid={invalid ? "" : undefined}
-                className={cn(
-                  "bg-foreground/5 relative flex flex-col overflow-hidden rounded-lg border",
-                  invalid ? "border-destructive-light" : "border-foreground/15",
-                )}
+                className="relative shrink-0"
               >
                 {url ? (
                   <img
                     src={url}
                     alt=""
-                    className="aspect-3/2 w-full object-cover"
+                    className={cn(
+                      "size-24 rounded-lg border object-cover",
+                      invalid
+                        ? "border-destructive-light ring-destructive-light ring-2"
+                        : "border-foreground/15",
+                    )}
                   />
                 ) : (
-                  <div className="text-foreground/50 flex aspect-3/2 w-full items-center justify-center px-2 text-center text-xs">
-                    No preview available
+                  <div
+                    className={cn(
+                      "bg-foreground/5 text-foreground/50 flex size-24 items-center justify-center rounded-lg border px-2 text-center text-xs",
+                      invalid
+                        ? "border-destructive-light ring-destructive-light ring-2"
+                        : "border-foreground/15",
+                    )}
+                  >
+                    {formatFileSize(file.size)}
                   </div>
                 )}
 
@@ -232,23 +259,14 @@ export function ImageUploadField({
                   data-remove-file=""
                   onClick={() => handleRemove(index)}
                   aria-label={`Remove ${file.name}`}
-                  className="bg-background/80 text-foreground hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-ring absolute top-1.5 right-1.5 flex size-7 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+                  aria-describedby={
+                    entries.map((entry) => entry.elementId).join(" ") ||
+                    undefined
+                  }
+                  className="bg-background/80 text-foreground hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-ring absolute top-1 right-1 flex size-6 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
                 >
-                  <Cross2Icon aria-hidden className="size-4" />
+                  <Cross2Icon aria-hidden className="size-3.5" />
                 </button>
-
-                <div className="flex flex-col gap-1 px-2 py-2">
-                  <p
-                    className="truncate text-xs font-semibold"
-                    title={file.name}
-                  >
-                    {file.name}
-                  </p>
-                  <p className="text-foreground/65 text-xs">
-                    {formatFileSize(file.size)}
-                  </p>
-                  <ErrorList errors={currentErrors} />
-                </div>
               </li>
             );
           })}
@@ -261,12 +279,26 @@ export function ImageUploadField({
         id={id}
         type="file"
         onChange={handleChange}
-        aria-invalid={errorId ? true : undefined}
-        aria-describedby={describedBy}
+        aria-invalid={errorId || fileErrorsId ? true : undefined}
+        aria-describedby={inputDescribedBy}
         className={cn(fileFieldClassName, inputProps.className)}
       />
 
       {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
+
+      {fileErrorsId ? (
+        <ul id={fileErrorsId} className="flex flex-col gap-1">
+          {fileErrorEntries.map((entry) => (
+            <li
+              key={entry.key}
+              id={entry.elementId}
+              className="text-destructive-light text-sm"
+            >
+              {entry.file.name}: {entry.message}
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
