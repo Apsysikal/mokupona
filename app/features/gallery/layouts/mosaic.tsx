@@ -107,7 +107,7 @@ function MosaicTile({
           tabIndex={0}
           className={cn(
             "text-foreground/80 focus-visible:ring-ring hidden flex-col gap-1 focus-visible:ring-2 focus-visible:outline-hidden",
-            "md:from-background md:absolute md:inset-0 md:flex md:justify-end md:rounded-2xl md:bg-gradient-to-t md:to-transparent md:to-60% md:px-4 md:pt-12 md:pb-4 md:text-sm",
+            "md:from-background md:absolute md:inset-0 md:flex md:justify-end md:rounded-2xl md:bg-linear-to-t md:to-transparent md:to-60% md:px-4 md:pt-12 md:pb-4 md:text-sm",
             "md:opacity-0 md:transition-opacity md:duration-200 md:group-focus-within:opacity-100 md:group-hover:opacity-100",
           )}
         >
