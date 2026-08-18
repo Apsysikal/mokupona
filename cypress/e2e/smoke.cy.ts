@@ -126,3 +126,10 @@ describe("smoke tests", () => {
     cy.findByRole("button", { name: /join/i }).click();
   });
 });
+
+describe("gallery", () => {
+  it("renders the gallery page", () => {
+    cy.visitAndCheck("/gallery");
+    cy.findByRole("heading", { name: /gallery/i });
+  });
+});

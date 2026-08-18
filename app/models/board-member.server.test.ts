@@ -17,6 +17,21 @@ function portrait(marker: string): ImageCreateData {
   };
 }
 
+/** The member's portrait row, joined via BoardMember.imageId. */
+async function findPortrait(memberId: string) {
+  const member = await prisma.boardMember.findUnique({
+    where: { id: memberId },
+    select: { image: true },
+  });
+  return member?.image ?? null;
+}
+
+async function findPortraitOrThrow(memberId: string) {
+  const image = await findPortrait(memberId);
+  if (!image) throw new Error(`Expected a portrait for member ${memberId}`);
+  return image;
+}
+
 describe("board member image lifecycle", () => {
   it("creates the portrait with the member", async () => {
     const member = await createBoardMember({
@@ -26,7 +41,7 @@ describe("board member image lifecycle", () => {
     });
 
     await expect(
-      prisma.image.count({ where: { boardMemberId: member.id } }),
+      prisma.image.count({ where: { boardMember: { id: member.id } } }),
     ).resolves.toBe(1);
   });
 
@@ -36,9 +51,7 @@ describe("board member image lifecycle", () => {
       position: "Test Position",
       image: portrait("old-portrait"),
     });
-    const oldImage = await prisma.image.findUniqueOrThrow({
-      where: { boardMemberId: member.id },
-    });
+    const oldImage = await findPortraitOrThrow(member.id);
 
     await updateBoardMember(member.id, {
       name: member.name,
@@ -50,7 +63,7 @@ describe("board member image lifecycle", () => {
       prisma.image.findUnique({ where: { id: oldImage.id } }),
     ).resolves.toBeNull();
     await expect(
-      prisma.image.count({ where: { boardMemberId: member.id } }),
+      prisma.image.count({ where: { boardMember: { id: member.id } } }),
     ).resolves.toBe(1);
   });
 
@@ -60,9 +73,7 @@ describe("board member image lifecycle", () => {
       position: "Test Position",
       image: portrait("kept-portrait"),
     });
-    const image = await prisma.image.findUniqueOrThrow({
-      where: { boardMemberId: member.id },
-    });
+    const image = await findPortraitOrThrow(member.id);
 
     await updateBoardMember(member.id, {
       name: "Renamed",
@@ -74,18 +85,19 @@ describe("board member image lifecycle", () => {
     ).resolves.not.toBeNull();
   });
 
-  it("cascades the portrait away with the member", async () => {
+  it("deletes the portrait image row with the member", async () => {
     const member = await createBoardMember({
       name: "Delete Portrait",
       position: "Test Position",
       image: portrait("deleted-portrait"),
     });
+    const image = await findPortraitOrThrow(member.id);
 
     await deleteBoardMember(member.id);
 
     await expect(
-      prisma.image.count({ where: { boardMemberId: member.id } }),
-    ).resolves.toBe(0);
+      prisma.image.findUnique({ where: { id: image.id } }),
+    ).resolves.toBeNull();
   });
 
   it("deleteBoardMember returns the captured portrait storageKey", async () => {

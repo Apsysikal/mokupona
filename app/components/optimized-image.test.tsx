@@ -166,6 +166,32 @@ describe("OptimizedImage blur-up", () => {
     restore();
   });
 
+  it("loads eagerly unless the caller asks for lazy", () => {
+    const restore = stubImageComplete(false);
+    const { rerender } = renderImage();
+
+    expect(screen.getByAltText("A dinner table")).toHaveAttribute(
+      "loading",
+      "eager",
+    );
+
+    rerender(
+      <OptimizedImage
+        image={image}
+        width={640}
+        height={480}
+        alt="A dinner table"
+        loading="lazy"
+      />,
+    );
+
+    expect(screen.getByAltText("A dinner table")).toHaveAttribute(
+      "loading",
+      "lazy",
+    );
+    restore();
+  });
+
   it("emits provider URLs for src and every srcSet rung", () => {
     mocks.useImageConfig.mockReturnValue({
       imageProvider: "cloudinary",

@@ -42,7 +42,7 @@ describe("deleteNonAdminUserById", () => {
       prisma.form.findUnique({ where: { id: event.formId } }),
     ).resolves.not.toBeNull();
     await expect(
-      prisma.image.findUnique({ where: { eventId: event.id } }),
+      prisma.image.findFirst({ where: { event: { id: event.id } } }),
     ).resolves.not.toBeNull();
   });
 

@@ -28,6 +28,7 @@ export function OptimizedImage({
   className,
   style,
   alt,
+  loading = "eager",
   ...props
 }: ImageProps) {
   const config = useImageConfig();
@@ -74,6 +75,7 @@ export function OptimizedImage({
             width={width}
             height={height}
             alt={alt}
+            loading={loading}
             onLoad={() => setLoaded(true)}
             className={cn(
               "absolute inset-0 size-full object-cover transition-opacity duration-300",
@@ -88,6 +90,7 @@ export function OptimizedImage({
               width={width}
               height={height}
               alt={alt}
+              loading={loading}
               className="absolute inset-0 size-full object-cover"
             />
           </noscript>

@@ -24,6 +24,7 @@ export type ImageUploadResult = ImageUploadSuccess | ImageUploadError;
 export async function parseImageFormData(
   request: Request,
   fieldName: string,
+  maxFiles: number = MAX_FILES,
 ): Promise<ImageUploadResult> {
   const uploadHandler = (fileUpload: FileUpload) => {
     if (fileUpload.fieldName === fieldName) {
@@ -34,7 +35,7 @@ export async function parseImageFormData(
   try {
     const formData = await parseFormData(
       request,
-      { maxFileSize: MAX_STAGED_IMAGE_BYTES, maxFiles: MAX_FILES },
+      { maxFileSize: MAX_STAGED_IMAGE_BYTES, maxFiles },
       uploadHandler,
     );
     return { success: true, formData };
@@ -43,7 +44,13 @@ export async function parseImageFormData(
       return { success: false, uploadError: IMAGE_SIZE_ERROR };
     }
     if (error instanceof MaxFilesExceededError) {
-      return { success: false, uploadError: "You can only upload one file" };
+      return {
+        success: false,
+        uploadError:
+          maxFiles === 1
+            ? "You can only upload one file"
+            : `You can only upload ${maxFiles} files at a time`,
+      };
     }
     throw error;
   }

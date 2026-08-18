@@ -6,6 +6,7 @@ import {
   storeImage,
   type ImageFolder,
 } from "~/features/images/image-storage.server";
+import { deleteBoardMember as deleteBoardMemberRecord } from "~/models/board-member.server";
 import { createEvent, deleteEvent } from "~/models/event.server";
 import { getUserByEmail } from "~/models/user.server";
 
@@ -127,6 +128,7 @@ function toDinnerResult(
     discounts: string | null;
     addressId: string;
   },
+  // the cover arrives via the Event.imageId relation
   image: { id: string; storageKey: string | null } | null,
 ): DinnerResult {
   return {
@@ -230,9 +232,9 @@ async function createDinner(
     image: imageData,
   });
 
-  const cover = await prisma.image.findUnique({
-    where: { eventId: event.id },
-    select: { id: true, storageKey: true },
+  const { image: cover } = await prisma.event.findUniqueOrThrow({
+    where: { id: event.id },
+    select: { image: { select: { id: true, storageKey: true } } },
   });
 
   return outputJson<DinnerResult>(toDinnerResult(event, cover));
@@ -346,7 +348,7 @@ async function getBoardMember(
   }
 
   const imageCount = await prisma.image.count({
-    where: { boardMemberId: boardMember.id },
+    where: { boardMember: { id: boardMember.id } },
   });
 
   return outputJson<BoardMemberResult>(
@@ -372,7 +374,7 @@ async function getBoardMemberByName(
   }
 
   const imageCount = await prisma.image.count({
-    where: { boardMemberId: boardMember.id },
+    where: { boardMember: { id: boardMember.id } },
   });
 
   return outputJson<BoardMemberResult>(
@@ -383,11 +385,17 @@ async function getBoardMemberByName(
 async function deleteBoardMember(
   payload: Extract<CommandInput, { action: "delete-board-member" }>,
 ) {
-  await prisma.boardMember.deleteMany({
+  const boardMember = await prisma.boardMember.findUnique({
     where: { id: payload.payload.id },
+    select: { id: true },
   });
 
-  return outputJson({ deleted: true, id: payload.payload.id });
+  if (boardMember) {
+    // through the model so the portrait image row goes with the member
+    await deleteBoardMemberRecord(boardMember.id);
+  }
+
+  return outputJson({ deleted: Boolean(boardMember), id: payload.payload.id });
 }
 
 function parseCommand(): CommandInput {

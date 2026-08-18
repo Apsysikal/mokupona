@@ -119,7 +119,9 @@ model Event {
   price               Int
   discounts           String?
 
-  image Image?
+  // the cover slot — deleting the image leaves the event standing (SetNull)
+  image   Image?  @relation(fields: [imageId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  imageId String? @unique
 
   addressId String
   address   Address @relation(fields: [addressId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -131,6 +133,8 @@ model Event {
 
   form   Form   @relation(fields: [formId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   formId String @unique
+
+  galleryImages EventGalleryImage[]
 }
 
 model Form {
@@ -197,6 +201,9 @@ model Address {
   @@unique([streetName, houseNumber, zip, city])
 }
 
+// A pure stored asset: provider metadata only, no owner FKs. Whatever shows
+// an image points here — the cover/portrait slots via their own imageId, the
+// galleries via EventGalleryImage links.
 model Image {
   id          String  @id @default(cuid())
   altText     String?
@@ -212,11 +219,32 @@ model Image {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  boardMember   BoardMember? @relation(fields: [boardMemberId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  boardMemberId String?      @unique
+  event        Event?
+  boardMember  BoardMember?
+  galleryLinks EventGalleryImage[]
+}
 
-  event   Event?  @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  eventId String? @unique
+// Grants one image membership in one dinner's gallery. Deleting a link
+// unlinks without destroying the asset, and the same photo can be shown
+// under two dinners with different captions.
+model EventGalleryImage {
+  id       String  @id @default(cuid())
+  caption  String?
+  position Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  eventId String
+
+  image   Image  @relation(fields: [imageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  imageId String
+
+  // one membership per (dinner, image) pair — re-adding is idempotent
+  @@unique([eventId, imageId])
+  @@index([eventId])
+  @@index([imageId])
 }
 
 model BoardMember {
@@ -224,7 +252,8 @@ model BoardMember {
   name     String
   position String
 
-  image Image?
+  image   Image?  @relation(fields: [imageId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  imageId String? @unique
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

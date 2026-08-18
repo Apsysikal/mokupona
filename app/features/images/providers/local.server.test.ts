@@ -2,7 +2,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, sep } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { createLocalProvider, getLocalImageFile } from "./local.server";
 
@@ -32,6 +32,48 @@ describe("local image provider", () => {
     await expect(new Response(roundTripped!.stream()).text()).resolves.toBe(
       "cover-bytes",
     );
+  });
+
+  it("measures intrinsic dimensions from real image bytes", async () => {
+    const env = testEnv();
+    const provider = createLocalProvider(env);
+    // a bare PNG signature + IHDR header declaring 40×30 — image-size reads
+    // dimensions from the header alone, no full decode
+    const png = Buffer.from(
+      "89504e470d0a1a0a0000000d49484452000000280000001e",
+      "hex",
+    );
+    const file = new File([png], "frame.png", { type: "image/png" });
+
+    const stored = await provider.store(file, { folder: "dinner-gallery" });
+
+    expect(stored.width).toBe(40);
+    expect(stored.height).toBe(30);
+  });
+
+  it("measures a multi-megabyte image without reading it whole a second time", async () => {
+    const env = testEnv();
+    const provider = createLocalProvider(env);
+    const png = Buffer.concat([
+      Buffer.from("89504e470d0a1a0a0000000d49484452000000280000001e", "hex"),
+      Buffer.alloc(3 * 1024 * 1024, 0x7a),
+    ]);
+    const file = new File([png], "big.png", { type: "image/png" });
+    const readWhole = vi.spyOn(file, "arrayBuffer");
+    const readSlice = vi.spyOn(file, "slice");
+
+    const stored = await provider.store(file, { folder: "dinner-gallery" });
+
+    expect(stored.width).toBe(40);
+    expect(stored.height).toBe(30);
+    expect(readWhole).not.toHaveBeenCalled();
+    expect(readSlice).toHaveBeenCalledTimes(1);
+    const [start, end] = readSlice.mock.calls[0] as [number, number];
+    expect(start).toBe(0);
+    expect(end).toBeLessThanOrEqual(512 * 1024);
+
+    const roundTripped = await getLocalImageFile(stored.storageKey, env);
+    expect(roundTripped?.size).toBe(png.byteLength);
   });
 
   it("generates a fresh key per store, never overwriting", async () => {

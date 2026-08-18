@@ -6,7 +6,8 @@ import { requestLogger } from "~/logger/request-context.server";
 import { logger } from "~/logger.server";
 import { singleton } from "~/utils/singleton.server";
 
-export type ImageFolder = "dinners" | "board-members";
+/** The asset folders this app writes to, per owner entity. */
+export type ImageFolder = "dinners" | "board-members" | "dinner-gallery";
 
 function imageProviderName(env: NodeJS.ProcessEnv) {
   return env.IMAGE_PROVIDER ?? "local";
@@ -45,6 +46,31 @@ export function storeImage(
   folder: ImageFolder,
 ): Promise<StoredImage> {
   return provider.store(file, { folder });
+}
+
+/**
+ * Store a batch, settled and in input order: one file's failure never discards
+ * the assets its siblings already put on the provider.
+ */
+export async function storeImages(
+  files: File[],
+  folder: ImageFolder,
+  providerOverride: ImageStorageProvider = provider,
+): Promise<PromiseSettledResult<StoredImage>[]> {
+  const results = await Promise.allSettled(
+    files.map((file) => providerOverride.store(file, { folder })),
+  );
+
+  results.forEach((result, index) => {
+    if (result.status === "rejected") {
+      requestLogger.warn(
+        { folder, fileName: files[index].name, error: result.reason },
+        "Failed to store image",
+      );
+    }
+  });
+
+  return results;
 }
 
 export async function destroyImages(

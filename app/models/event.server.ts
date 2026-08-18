@@ -10,6 +10,7 @@ import {
 } from "~/models/form.server";
 import {
   IMAGE_METADATA_SELECT,
+  releaseImagesIfUnreferenced,
   type ImageCreateData,
   type ImageMetadata,
 } from "~/models/image.server";
@@ -129,8 +130,10 @@ export async function createEvent(
       },
     });
 
+    const cover = await tx.image.create({ data: image });
+
     return tx.event.create({
-      data: { ...eventData, formId: form.id, image: { create: image } },
+      data: { ...eventData, formId: form.id, imageId: cover.id },
     });
   });
 }
@@ -148,46 +151,68 @@ export async function updateEvent(
   }
 
   return prisma.$transaction(async (tx) => {
-    let replacedImageKey: string | null = null;
+    let previousImageId: string | null = null;
 
     if (image) {
-      const replaced = await tx.image.findUnique({
-        where: { eventId: id },
-        select: { storageKey: true },
+      const current = await tx.event.findUnique({
+        where: { id },
+        select: { imageId: true },
       });
-      replacedImageKey = replaced?.storageKey ?? null;
-      await tx.image.deleteMany({ where: { eventId: id } });
+      previousImageId = current?.imageId ?? null;
     }
+
+    const cover = image ? await tx.image.create({ data: image }) : null;
 
     const event = await tx.event.update({
       where: { id },
-      data: { ...eventData, ...(image && { image: { create: image } }) },
+      data: { ...eventData, ...(cover && { imageId: cover.id }) },
     });
 
     if (formFields) {
       await saveFormSchemaInTx(tx, event.formId, formFields);
     }
 
+    // released only after the slot moved on, so the old cover survives when
+    // a gallery still shows it
+    let replacedImageKey: string | null = null;
+    if (previousImageId) {
+      const { storageKeys } = await releaseImagesIfUnreferenced(tx, [
+        previousImageId,
+      ]);
+      replacedImageKey = storageKeys[0] ?? null;
+    }
+
     return { event, replacedImageKey };
   });
 }
 
+/**
+ * Deletes the matched events with their forms, then releases every image the
+ * events referenced — cover slots and gallery links alike. An image another
+ * dinner or a slot still references survives; the storageKeys of those that
+ * fell come back for the caller's post-commit provider destroy.
+ */
 export async function deleteEventsInTx(
   tx: Prisma.TransactionClient,
   where: Prisma.EventWhereInput,
-): Promise<{ id: string; formId: string; imageKey: string | null }[]> {
+): Promise<string[]> {
   const events = await tx.event.findMany({
     where,
     select: {
       id: true,
       formId: true,
-      image: { select: { storageKey: true } },
+      imageId: true,
+      galleryImages: { select: { imageId: true } },
     },
   });
   if (events.length === 0) return [];
 
   const eventIds = events.map((event) => event.id);
   const formIds = events.map((event) => event.formId);
+  const imageIds = events.flatMap((event) => [
+    ...(event.imageId ? [event.imageId] : []),
+    ...event.galleryImages.map((link) => link.imageId),
+  ]);
 
   await tx.formSubmission.deleteMany({
     where: { formVersion: { formId: { in: formIds } } },
@@ -195,20 +220,18 @@ export async function deleteEventsInTx(
   await tx.formVersion.deleteMany({ where: { formId: { in: formIds } } });
   await tx.event.deleteMany({ where: { id: { in: eventIds } } });
   await tx.form.deleteMany({ where: { id: { in: formIds } } });
+  const { storageKeys } = await releaseImagesIfUnreferenced(tx, imageIds);
 
-  return events.map(({ image, ...event }) => ({
-    ...event,
-    imageKey: image?.storageKey ?? null,
-  }));
+  return storageKeys;
 }
 
 export async function deleteEvent(
   id: string,
-): Promise<{ event: Event; imageKey: string | null }> {
+): Promise<{ event: Event; imageKeys: string[] }> {
   return prisma.$transaction(async (tx) => {
     const event = await tx.event.findUniqueOrThrow({ where: { id } });
-    const [deleted] = await deleteEventsInTx(tx, { id });
+    const imageKeys = await deleteEventsInTx(tx, { id });
 
-    return { event, imageKey: deleted?.imageKey ?? null };
+    return { event, imageKeys };
   });
 }

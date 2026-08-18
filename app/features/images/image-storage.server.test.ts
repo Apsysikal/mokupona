@@ -5,6 +5,7 @@ import { loggerStub } from "../../../test/logger-stub";
 import {
   createImageStorageProvider,
   destroyImages,
+  storeImages,
 } from "./image-storage.server";
 
 const mocks = vi.hoisted(() => ({
@@ -76,5 +77,44 @@ describe("destroyImages", () => {
       expect.objectContaining({ storageKey: "dinners/a" }),
       "Failed to destroy stored image after DB commit",
     );
+  });
+});
+
+describe("storeImages", () => {
+  function file(name: string) {
+    return new File(["x"], name, { type: "image/jpeg" });
+  }
+
+  it("keeps the siblings of a failed store, settled in input order", async () => {
+    const store = vi
+      .fn()
+      .mockResolvedValueOnce({ storageKey: "dinner-gallery/a" })
+      .mockRejectedValueOnce(new Error("cloudinary 503"))
+      .mockResolvedValueOnce({ storageKey: "dinner-gallery/c" });
+
+    const results = await storeImages(
+      [file("a.jpg"), file("b.jpg"), file("c.jpg")],
+      "dinner-gallery",
+      { store, destroy: vi.fn() },
+    );
+
+    expect(results).toEqual([
+      { status: "fulfilled", value: { storageKey: "dinner-gallery/a" } },
+      { status: "rejected", reason: new Error("cloudinary 503") },
+      { status: "fulfilled", value: { storageKey: "dinner-gallery/c" } },
+    ]);
+    expect(loggerStub.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ fileName: "b.jpg", folder: "dinner-gallery" }),
+      "Failed to store image",
+    );
+  });
+
+  it("stores nothing for an empty batch", async () => {
+    const store = vi.fn();
+
+    await expect(
+      storeImages([], "dinner-gallery", { store, destroy: vi.fn() }),
+    ).resolves.toEqual([]);
+    expect(store).not.toHaveBeenCalled();
   });
 });

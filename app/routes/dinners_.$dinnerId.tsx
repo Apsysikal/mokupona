@@ -28,6 +28,8 @@ import { HoneypotField } from "~/features/forms/honeypot-field";
 import { checkHoneypot } from "~/features/forms/honeypot.server";
 import { normalizeSubmissionValues } from "~/features/forms/normalize-submission";
 import { parseStoredFormSchemaOrLog } from "~/features/forms/serialization.server";
+import { EventGallerySection } from "~/features/gallery/components/event-gallery-section";
+import { loadEventGallerySection } from "~/features/gallery/event-section.server";
 import { buildSignupSchema } from "~/features/signup-form/build-schema";
 import { cn } from "~/lib/utils";
 import { getEventWithCurrentFormVersion } from "~/models/event.server";
@@ -48,10 +50,17 @@ export async function loader({ params }: Route.LoaderArgs) {
     await getEventWithCurrentFormVersion(dinnerId),
   );
 
+  // the gallery belongs to evenings that already happened; upcoming dinners
+  // pay nothing for it
+  const gallery = isPastEvent(event.date, new Date())
+    ? await loadEventGallerySection(event.id)
+    : null;
+
   return {
     event: toEventDetailModel(event),
     formFields: parseStoredFormSchemaOrLog(version),
     formVersionId: version.id,
+    gallery,
   };
 }
 
@@ -227,7 +236,7 @@ export default function DinnerPage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const { event, formFields, formVersionId } = loaderData;
+  const { event, formFields, formVersionId, gallery } = loaderData;
 
   const eventIsPast = isPastEvent(new Date(event.date), new Date());
   const signupFields = eventIsPast ? null : formFields;
@@ -268,6 +277,8 @@ export default function DinnerPage({
           </Card>
         ) : null}
       </div>
+
+      {gallery ? <EventGallerySection {...gallery} /> : null}
     </PageContainer>
   );
 }

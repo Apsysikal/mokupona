@@ -1,0 +1,236 @@
+import type { EventGalleryImage, Prisma } from "#prisma/generated/client";
+
+import { prisma } from "~/db.server";
+import {
+  IMAGE_METADATA_SELECT,
+  releaseImagesIfUnreferenced,
+  type ImageCreateData,
+  type ImageMetadata,
+} from "~/models/image.server";
+
+export type { EventGalleryImage };
+
+/** The dinner an entry hangs in, as much as the gallery reads of it. */
+export interface GalleryEntryEvent {
+  id: string;
+  title: string;
+  date: Date;
+}
+
+/** A dinner reference thin enough for the reuse labels. */
+export interface GalleryEventLabel {
+  id: string;
+  title: string;
+}
+
+export interface GalleryEntry {
+  /** the membership id — what the admin UI removes, never the image id */
+  id: string;
+  caption: string | null;
+  position: number;
+  /** lives on the image row; callers fall back to the dinner title */
+  altText: string | null;
+  image: ImageMetadata;
+  event: GalleryEntryEvent;
+}
+
+export interface GalleryEntryWithReuse extends GalleryEntry {
+  /** the other dinners whose gallery shows the very same image */
+  sharedWith: GalleryEventLabel[];
+}
+
+/** Image scalars plus the metadata the entry itself does not carry. */
+export type GalleryImageCreateData = ImageCreateData & {
+  altText?: string | null;
+  caption?: string | null;
+};
+
+export interface RemovedGalleryEntry {
+  imageId: string;
+  /** set iff the unlink released the image — destroy the provider asset */
+  deletedStorageKey: string | null;
+}
+
+const ENTRY_SELECT = {
+  id: true,
+  caption: true,
+  position: true,
+  image: { select: { ...IMAGE_METADATA_SELECT, altText: true } },
+  event: { select: { id: true, title: true, date: true } },
+} satisfies Prisma.EventGalleryImageSelect;
+
+const ENTRY_WITH_REUSE_SELECT = {
+  ...ENTRY_SELECT,
+  image: {
+    select: {
+      ...IMAGE_METADATA_SELECT,
+      altText: true,
+      galleryLinks: {
+        select: { eventId: true, event: { select: { id: true, title: true } } },
+      },
+    },
+  },
+} satisfies Prisma.EventGalleryImageSelect;
+
+// newest dinner first, then the dinner's own display order
+const ENTRY_ORDER_BY = [
+  { event: { date: "desc" } },
+  { position: "asc" },
+] satisfies Prisma.EventGalleryImageOrderByWithRelationInput[];
+
+type EntryRow = Prisma.EventGalleryImageGetPayload<{
+  select: typeof ENTRY_SELECT;
+}>;
+type EntryWithReuseRow = Prisma.EventGalleryImageGetPayload<{
+  select: typeof ENTRY_WITH_REUSE_SELECT;
+}>;
+
+function toGalleryEntry(row: EntryRow): GalleryEntry {
+  const { altText, ...image } = row.image;
+
+  return {
+    id: row.id,
+    caption: row.caption,
+    position: row.position,
+    altText,
+    image,
+    event: row.event,
+  };
+}
+
+function toGalleryEntryWithReuse(
+  row: EntryWithReuseRow,
+): GalleryEntryWithReuse {
+  const { altText, galleryLinks, ...image } = row.image;
+
+  return {
+    id: row.id,
+    caption: row.caption,
+    position: row.position,
+    altText,
+    image,
+    event: row.event,
+    sharedWith: galleryLinks
+      .filter((entry) => entry.eventId !== row.event.id)
+      .map((entry) => entry.event),
+  };
+}
+
+async function nextPositionInTx(
+  tx: Prisma.TransactionClient,
+  eventId: string,
+): Promise<number> {
+  const { _max } = await tx.eventGalleryImage.aggregate({
+    where: { eventId },
+    _max: { position: true },
+  });
+
+  return (_max.position ?? -1) + 1;
+}
+
+/**
+ * Every membership hanging in a dinner that already happened, newest dinner
+ * first. Upcoming dinners keep their photos to their own page — the same cut
+ * `isPastEvent` makes: strictly before `now`.
+ */
+export async function getGalleryEntries(now: Date): Promise<GalleryEntry[]> {
+  const entries = await prisma.eventGalleryImage.findMany({
+    where: { event: { date: { lt: now } } },
+    select: ENTRY_SELECT,
+    orderBy: ENTRY_ORDER_BY,
+  });
+
+  return entries.map(toGalleryEntry);
+}
+
+/** One dinner's memberships in display order — the public page's read. */
+export async function getGalleryEntriesForEvent(
+  eventId: string,
+): Promise<GalleryEntry[]> {
+  const entries = await prisma.eventGalleryImage.findMany({
+    where: { eventId },
+    select: ENTRY_SELECT,
+    orderBy: { position: "asc" },
+  });
+
+  return entries.map(toGalleryEntry);
+}
+
+/** The admin read: each entry plus the other dinners showing its image. */
+export async function getGalleryEntriesForEventWithReuse(
+  eventId: string,
+): Promise<GalleryEntryWithReuse[]> {
+  const entries = await prisma.eventGalleryImage.findMany({
+    where: { eventId },
+    select: ENTRY_WITH_REUSE_SELECT,
+    orderBy: { position: "asc" },
+  });
+
+  return entries.map(toGalleryEntryWithReuse);
+}
+
+/**
+ * Upload path: persist freshly stored images and grant each one membership in
+ * this dinner, appending after the current last entry. One transaction, so a
+ * failed entry write cannot leave an image row nothing points at.
+ */
+export async function createGalleryImagesForEvent(
+  eventId: string,
+  images: GalleryImageCreateData[],
+): Promise<EventGalleryImage[]> {
+  if (images.length === 0) return [];
+
+  return prisma.$transaction(async (tx) => {
+    let position = await nextPositionInTx(tx, eventId);
+    const entries: EventGalleryImage[] = [];
+
+    for (const { altText, caption, ...image } of images) {
+      const created = await tx.image.create({
+        data: { ...image, altText: altText ?? null },
+      });
+
+      entries.push(
+        await tx.eventGalleryImage.create({
+          data: {
+            eventId,
+            imageId: created.id,
+            caption: caption ?? null,
+            position: position++,
+          },
+        }),
+      );
+    }
+
+    return entries;
+  });
+}
+
+/**
+ * Unlink one image from one dinner, scoped to that dinner — an entry hanging
+ * elsewhere reads as not found. An image still referenced anywhere (another
+ * gallery, a cover or portrait slot) survives the unlink; only the last
+ * unlink deletes the row, and its storageKey comes back for the caller's
+ * post-commit provider destroy.
+ */
+export async function removeGalleryEntry(
+  eventId: string,
+  entryId: string,
+): Promise<RemovedGalleryEntry | null> {
+  return prisma.$transaction(async (tx) => {
+    const entry = await tx.eventGalleryImage.findFirst({
+      where: { id: entryId, eventId },
+      select: { imageId: true },
+    });
+    if (!entry) return null;
+
+    await tx.eventGalleryImage.delete({ where: { id: entryId } });
+    const { storageKeys } = await releaseImagesIfUnreferenced(tx, [
+      entry.imageId,
+    ]);
+
+    return {
+      imageId: entry.imageId,
+      deletedStorageKey: storageKeys[0] ?? null,
+    };
+  });
+}

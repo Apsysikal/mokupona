@@ -15,8 +15,8 @@ export async function loader() {
 
 export async function action({ params, context }: Route.ActionArgs) {
   const { dinnerId } = params;
-  const { imageKey } = await deleteEvent(dinnerId);
-  await destroyImages([imageKey]);
+  const { imageKeys } = await deleteEvent(dinnerId);
+  await destroyImages(imageKeys);
 
   context
     .get(requestLoggerContext)
