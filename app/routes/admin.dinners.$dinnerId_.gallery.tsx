@@ -176,7 +176,7 @@ export default function AdminDinnerGalleryPage({
       <AdminPageHeader
         eyebrow={dinner.title}
         title="Gallery"
-        subtitle="The photos hanging in this dinner's gallery. Captions belong to this dinner, not to the file."
+        subtitle="The photos linked to this dinner's gallery. Captions belong to this dinner, not to the file."
         actions={
           <Button variant="outline" asChild>
             <NavLink to={`/admin/dinners/${dinner.id}`}>Back to dinner</NavLink>

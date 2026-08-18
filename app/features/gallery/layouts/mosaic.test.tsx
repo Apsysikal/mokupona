@@ -160,13 +160,14 @@ describe("mosaic layout", () => {
     expect(frame.width / frame.height).toBeCloseTo(3 / 2, 2);
   });
 
-  it("hangs photos alone below md and only shows the caption from md up", () => {
+  it("reads the caption under the photo below md and as a scrim from md up", () => {
     const { container } = renderMosaic({
       images: [makeImage({ id: "a", caption: "the last course, half eaten" })],
     });
 
     const caption = container.querySelector("figcaption");
-    expect(caption).toHaveClass("hidden", "md:flex");
+    expect(caption).not.toHaveClass("hidden");
+    expect(caption).toHaveClass("md:absolute", "md:opacity-0");
     expect(caption).toHaveTextContent("the last course, half eaten");
     // the overlay is faded out at rest, not hidden from assistive tech
     expect(caption?.closest("[aria-hidden]")).toBeNull();
@@ -180,6 +181,17 @@ describe("mosaic layout", () => {
     const caption = container.querySelector("figcaption");
     expect(caption).toHaveClass("md:absolute", "md:inset-0");
     expect(caption).not.toHaveAttribute("tabindex");
+  });
+
+  it("lets the keyboard reveal the scrim on a tile with no dinner link", () => {
+    const { container } = renderMosaic({
+      images: [makeImage({ id: "orphan", event: null, caption: "a candle" })],
+    });
+
+    expect(container.querySelector("figcaption")).toHaveAttribute(
+      "tabindex",
+      "0",
+    );
   });
 
   it("leaves the tiles' photos to lazy loading", () => {

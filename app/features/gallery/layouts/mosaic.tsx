@@ -100,15 +100,20 @@ function MosaicTile({
         className="w-full rounded-2xl"
       />
       {hasCaption ? (
-        // Below md the wall is photos only — the narrow tiles cannot hold the
-        // caption text. From md up it is a scrim over the whole tile: the
-        // scrim is the hover target, so it covers the photo rather than a
-        // band of it.
+        // Below md the caption sits under the photo, where the narrow tiles
+        // have no room to overlay it. From md up it is a scrim over the whole
+        // tile: the scrim is the hover target, so it covers the photo rather
+        // than a band of it. Without a dinner link the tile holds nothing
+        // focusable, so the caption itself takes focus to reveal that scrim.
         <figcaption
+          tabIndex={dinner ? undefined : 0}
           className={cn(
-            "text-foreground/80 hidden flex-col gap-1",
-            "md:from-background md:absolute md:inset-0 md:flex md:justify-end md:rounded-2xl md:bg-linear-to-t md:to-transparent md:to-60% md:px-4 md:pt-12 md:pb-4 md:text-sm",
+            "text-foreground/80 flex flex-col gap-1 pt-2 text-xs",
+            "md:from-background md:absolute md:inset-0 md:justify-end md:rounded-2xl md:bg-linear-to-t md:to-transparent md:to-60% md:px-4 md:pt-12 md:pb-4 md:text-sm",
             "md:opacity-0 md:transition-opacity md:duration-200 md:group-focus-within:opacity-100 md:group-hover:opacity-100",
+            dinner
+              ? null
+              : "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-hidden",
           )}
         >
           {image.caption ? (
