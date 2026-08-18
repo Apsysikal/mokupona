@@ -4,7 +4,6 @@ import { prisma } from "~/db.server";
 import {
   IMAGE_METADATA_SELECT,
   releaseImagesIfUnreferenced,
-  UNOWNED_IMAGE_WHERE,
   type ImageCreateData,
   type ImageMetadata,
 } from "~/models/image.server";
@@ -38,13 +37,6 @@ export interface GalleryEntry {
 export interface GalleryEntryWithReuse extends GalleryEntry {
   /** the other dinners whose gallery shows the very same image */
   sharedWith: GalleryEventLabel[];
-}
-
-export interface LinkableImage {
-  image: ImageMetadata;
-  altText: string | null;
-  /** empty for an image no dinner has claimed yet — a valid resting state */
-  usedIn: GalleryEventLabel[];
 }
 
 /** Image scalars plus the metadata the entry itself does not carry. */
@@ -136,9 +128,14 @@ async function nextPositionInTx(
   return (_max.position ?? -1) + 1;
 }
 
-/** Every membership in the app, newest dinner first. */
-export async function getGalleryEntries(): Promise<GalleryEntry[]> {
+/**
+ * Every membership hanging in a dinner that already happened, newest dinner
+ * first. Upcoming dinners keep their photos to their own page — the same cut
+ * `isPastEvent` makes: strictly before `now`.
+ */
+export async function getGalleryEntries(now: Date): Promise<GalleryEntry[]> {
   const entries = await prisma.eventGalleryImage.findMany({
+    where: { event: { date: { lt: now } } },
     select: ENTRY_SELECT,
     orderBy: ENTRY_ORDER_BY,
   });
@@ -209,51 +206,6 @@ export async function createGalleryImagesForEvent(
 }
 
 /**
- * Reuse path: grant existing images membership in this dinner. Unknown ids,
- * slot-owned images (covers, portraits) and images already in the gallery
- * are skipped — SQLite has no `skipDuplicates`, and the (eventId, imageId)
- * unique would otherwise turn a double-submitted picker into a 500.
- */
-export async function linkExistingImagesToEvent(
-  eventId: string,
-  imageIds: string[],
-): Promise<EventGalleryImage[]> {
-  const ids = [...new Set(imageIds)];
-  if (ids.length === 0) return [];
-
-  return prisma.$transaction(async (tx) => {
-    const [linked, known] = await Promise.all([
-      tx.eventGalleryImage.findMany({
-        where: { eventId, imageId: { in: ids } },
-        select: { imageId: true },
-      }),
-      tx.image.findMany({
-        where: { id: { in: ids }, ...UNOWNED_IMAGE_WHERE },
-        select: { id: true },
-      }),
-    ]);
-
-    const alreadyLinked = new Set(linked.map((entry) => entry.imageId));
-    const exists = new Set(known.map((image) => image.id));
-    const toLink = ids.filter((id) => exists.has(id) && !alreadyLinked.has(id));
-    if (toLink.length === 0) return [];
-
-    let position = await nextPositionInTx(tx, eventId);
-
-    const entries: EventGalleryImage[] = [];
-    for (const imageId of toLink) {
-      entries.push(
-        await tx.eventGalleryImage.create({
-          data: { eventId, imageId, position: position++ },
-        }),
-      );
-    }
-
-    return entries;
-  });
-}
-
-/**
  * Unlink one image from one dinner, scoped to that dinner — an entry hanging
  * elsewhere reads as not found. An image still referenced anywhere (another
  * gallery, a cover or portrait slot) survives the unlink; only the last
@@ -281,27 +233,4 @@ export async function removeGalleryEntry(
       deletedStorageKey: storageKeys[0] ?? null,
     };
   });
-}
-
-/** The reuse pool: gallery-eligible images this dinner does not show yet. */
-export async function getLinkableImages(
-  eventId: string,
-): Promise<LinkableImage[]> {
-  const images = await prisma.image.findMany({
-    where: { galleryLinks: { none: { eventId } }, ...UNOWNED_IMAGE_WHERE },
-    select: {
-      ...IMAGE_METADATA_SELECT,
-      altText: true,
-      galleryLinks: {
-        select: { event: { select: { id: true, title: true } } },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  return images.map(({ altText, galleryLinks, ...image }) => ({
-    image,
-    altText,
-    usedIn: galleryLinks.map((entry) => entry.event),
-  }));
 }

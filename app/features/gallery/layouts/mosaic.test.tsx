@@ -172,14 +172,24 @@ describe("mosaic layout", () => {
     expect(caption?.closest("[aria-hidden]")).toBeNull();
   });
 
-  it("makes the caption scrim cover the whole tile and take focus", () => {
+  it("makes the caption scrim cover the whole tile without taking focus", () => {
     const { container } = renderMosaic({
       images: [makeImage({ id: "a", caption: "the last course, half eaten" })],
     });
 
     const caption = container.querySelector("figcaption");
     expect(caption).toHaveClass("md:absolute", "md:inset-0");
-    expect(caption).toHaveAttribute("tabindex", "0");
+    expect(caption).not.toHaveAttribute("tabindex");
+  });
+
+  it("leaves the tiles' photos to lazy loading", () => {
+    const { container } = renderMosaic({
+      images: [makeImage({ id: "a" }), makeImage({ id: "b" })],
+    });
+
+    for (const img of within(wallsOf(container)[0]).getAllByRole("img")) {
+      expect(img).toHaveAttribute("loading", "lazy");
+    }
   });
 
   it("labels the dinner an image came from with a link to it", () => {

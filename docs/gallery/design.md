@@ -37,13 +37,13 @@ direction, deleting an image row leaves the dinner and the member standing
 
 ## Guardrails
 
-- `getImageUsage` (`app/models/image.server.ts`) reports where an image is
-  used, driven by the `IMAGE_REFERENCE_SITES` registry — the one list of
-  relations that count as usage.
+- The `IMAGE_REFERENCE_SITES` registry (`app/models/image.server.ts`) is the
+  one list of relations that count as an image being in use;
+  `releaseImagesIfUnreferenced` derives its precondition from it.
 - A completeness test (`app/models/image.server.test.ts`) checks the registry
   against the generated client's data model: a new relation targeting `Image`
   (say, a future `RecipeImage`) fails CI until the registry — and with it the
-  usage/cleanup logic — learns about it.
+  cleanup logic — learns about it.
 
 ## Open seams
 

@@ -10,6 +10,8 @@ import { createFsFolderStorage } from "~/shared/fs-file-storage.server";
 
 const DEFAULT_UPLOAD_FOLDER = join(tmpdir(), "mokupona-image-uploads");
 
+const MEASURE_HEADER_BYTES = 512 * 1024;
+
 function resolveStorage(env: NodeJS.ProcessEnv) {
   return createFsFolderStorage(
     env.IMAGE_UPLOAD_FOLDER ?? DEFAULT_UPLOAD_FOLDER,
@@ -40,9 +42,10 @@ export function createLocalProvider(
     async store(file, { folder }) {
       const storageKey = `${folder}/${randomUUID()}`;
       await storage.put(storageKey, file);
+      const header = await file.slice(0, MEASURE_HEADER_BYTES).arrayBuffer();
       return {
         storageKey,
-        ...measure(new Uint8Array(await file.arrayBuffer())),
+        ...measure(new Uint8Array(header)),
       };
     },
     async destroy(storageKey) {

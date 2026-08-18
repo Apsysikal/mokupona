@@ -17,9 +17,15 @@ function toGalleryImageModel(entry: GalleryEntry): GalleryImageModel {
   };
 }
 
-/** Every gallery image in the app — newest dinner first, then display order. */
-export async function listGalleryImages(): Promise<GalleryImageModel[]> {
-  return (await getGalleryEntries()).map(toGalleryImageModel);
+/**
+ * Every gallery image from a dinner that already happened — newest dinner
+ * first, then display order. An upcoming dinner's photos stay unlisted here
+ * for the same reason its own page hides them.
+ */
+export async function listGalleryImages(
+  now: Date = new Date(),
+): Promise<GalleryImageModel[]> {
+  return (await getGalleryEntries(now)).map(toGalleryImageModel);
 }
 
 /** One dinner's gallery, in display order. */

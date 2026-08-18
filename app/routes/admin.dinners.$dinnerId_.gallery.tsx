@@ -31,6 +31,7 @@ import {
   createGalleryImagesForEvent,
   getGalleryEntriesForEventWithReuse,
   removeGalleryEntry,
+  type GalleryEventLabel,
 } from "~/models/gallery.server";
 import { requireFound, unknownIntent } from "~/shared/http.server";
 import {
@@ -145,6 +146,21 @@ export const meta: Route.MetaFunction = ({ loaderData }) => [
       : "Admin - Gallery",
   },
 ];
+
+const galleryList = new Intl.ListFormat("en", {
+  style: "long",
+  type: "conjunction",
+});
+
+function deletePhotoDescription(sharedWith: GalleryEventLabel[]): string {
+  if (sharedWith.length === 0) {
+    return "This photo isn't linked to any other dinner, so deleting it also deletes the file. This can't be undone.";
+  }
+
+  const others = galleryList.format(sharedWith.map((event) => event.title));
+
+  return `This photo is also linked to ${others}, so deleting it here only removes it from this dinner's gallery. The file stays.`;
+}
 
 export default function AdminDinnerGalleryPage({
   loaderData,
@@ -286,9 +302,7 @@ export default function AdminDinnerGalleryPage({
                                 Delete this photo?
                               </DialogTitle>
                               <DialogDescription>
-                                This is the only gallery it hangs in, so
-                                removing it deletes the file for good. There is
-                                no undo.
+                                {deletePhotoDescription(entry.sharedWith)}
                               </DialogDescription>
                             </div>
                           </div>

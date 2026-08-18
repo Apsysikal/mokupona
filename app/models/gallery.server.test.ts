@@ -15,8 +15,6 @@ import {
   getGalleryEntries,
   getGalleryEntriesForEvent,
   getGalleryEntriesForEventWithReuse,
-  getLinkableImages,
-  linkExistingImagesToEvent,
   removeGalleryEntry,
   type GalleryImageCreateData,
 } from "./gallery.server";
@@ -52,6 +50,14 @@ async function uploadOne(eventId: string, caption?: string) {
   const data = buildGalleryImage(caption ? { caption } : {});
   const [entry] = await createGalleryImagesForEvent(eventId, [data]);
   return { entry, data };
+}
+
+/** Hangs an existing image in a second dinner, appending to that gallery. */
+async function hangAlsoIn(eventId: string, imageId: string) {
+  const position = await prisma.eventGalleryImage.count({ where: { eventId } });
+  return prisma.eventGalleryImage.create({
+    data: { eventId, imageId, position },
+  });
 }
 
 afterEach(async () => {
@@ -124,58 +130,24 @@ describe("createGalleryImagesForEvent", () => {
   });
 });
 
-describe("linkExistingImagesToEvent", () => {
-  it("hangs one image in a second dinner without moving it", async () => {
+describe("getGalleryEntriesForEventWithReuse", () => {
+  it("names the other dinners showing the same image", async () => {
     const [first, second] = await Promise.all([createDinner(), createDinner()]);
     const { entry } = await uploadOne(first.id, "As served");
+    await hangAlsoIn(second.id, entry.imageId);
 
-    const [linked] = await linkExistingImagesToEvent(second.id, [
-      entry.imageId,
-    ]);
-
-    expect(linked.imageId).toBe(entry.imageId);
     const [firstEntry] = await getGalleryEntriesForEventWithReuse(first.id);
     const [secondEntry] = await getGalleryEntriesForEventWithReuse(second.id);
+
     expect(firstEntry.caption).toBe("As served");
     // the caption lives on the membership, so the same photo reads differently
     expect(secondEntry.caption).toBeNull();
     expect(firstEntry.sharedWith).toEqual([
       { id: second.id, title: second.title },
     ]);
-  });
-
-  it("is idempotent — re-adding the same image skips instead of throwing", async () => {
-    const dinner = await createDinner();
-    const { entry } = await uploadOne(dinner.id);
-
-    await expect(
-      linkExistingImagesToEvent(dinner.id, [entry.imageId, entry.imageId]),
-    ).resolves.toEqual([]);
-
-    await expect(
-      prisma.eventGalleryImage.count({
-        where: { eventId: dinner.id, imageId: entry.imageId },
-      }),
-    ).resolves.toBe(1);
-  });
-
-  it("skips ids that are not images", async () => {
-    const dinner = await createDinner();
-
-    await expect(
-      linkExistingImagesToEvent(dinner.id, ["does-not-exist"]),
-    ).resolves.toEqual([]);
-  });
-
-  it("skips images a slot owns", async () => {
-    const [first, second] = await Promise.all([createDinner(), createDinner()]);
-
-    await expect(
-      linkExistingImagesToEvent(second.id, [first.imageId ?? ""]),
-    ).resolves.toEqual([]);
-    await expect(
-      prisma.eventGalleryImage.count({ where: { eventId: second.id } }),
-    ).resolves.toBe(0);
+    expect(secondEntry.sharedWith).toEqual([
+      { id: first.id, title: first.title },
+    ]);
   });
 });
 
@@ -183,7 +155,7 @@ describe("removeGalleryEntry", () => {
   it("unlinks one dinner, leaving the image and the other dinner intact", async () => {
     const [first, second] = await Promise.all([createDinner(), createDinner()]);
     const { entry } = await uploadOne(first.id);
-    await linkExistingImagesToEvent(second.id, [entry.imageId]);
+    await hangAlsoIn(second.id, entry.imageId);
 
     const removed = await removeGalleryEntry(first.id, entry.id);
 
@@ -226,7 +198,7 @@ describe("removeGalleryEntry", () => {
       },
     });
     boardMemberIds.push(member.id);
-    // built directly: the model refuses to hang slot-owned images in a gallery
+    // built directly: no model write hangs an already-stored image in a gallery
     const entry = await prisma.eventGalleryImage.create({
       data: { eventId: dinner.id, imageId: portrait.id, position: 0 },
     });
@@ -260,7 +232,7 @@ describe("deleting a dinner", () => {
   it("cascades its entries but keeps the shared image and the other dinner", async () => {
     const [first, second] = await Promise.all([createDinner(), createDinner()]);
     const { entry, data } = await uploadOne(first.id);
-    await linkExistingImagesToEvent(second.id, [entry.imageId]);
+    await hangAlsoIn(second.id, entry.imageId);
 
     const { imageKeys } = await deleteEvent(first.id);
     eventIds.splice(eventIds.indexOf(first.id), 1);
@@ -295,7 +267,7 @@ describe("slot images hanging in galleries", () => {
     const [dinner, other] = await Promise.all([createDinner(), createDinner()]);
     const coverId = dinner.imageId;
     if (!coverId) throw new Error(`Expected a cover for dinner ${dinner.id}`);
-    // built directly: the model refuses to hang slot-owned images in a gallery
+    // built directly: no model write hangs an already-stored image in a gallery
     await prisma.eventGalleryImage.create({
       data: { eventId: other.id, imageId: coverId, position: 0 },
     });
@@ -373,6 +345,8 @@ describe("slot images hanging in galleries", () => {
 });
 
 describe("read projections", () => {
+  const NOW = new Date("2200-06-01T00:00:00.000Z");
+
   it("orders every entry newest dinner first, then display order", async () => {
     const older = await createDinner(new Date("2200-01-01T18:00:00.000Z"));
     const newer = await createDinner(new Date("2200-02-01T18:00:00.000Z"));
@@ -382,7 +356,7 @@ describe("read projections", () => {
     ]);
     await createGalleryImagesForEvent(newer.id, [buildGalleryImage()]);
 
-    const mine = (await getGalleryEntries()).filter((entry) =>
+    const mine = (await getGalleryEntries(NOW)).filter((entry) =>
       [older.id, newer.id].includes(entry.event.id),
     );
 
@@ -393,35 +367,29 @@ describe("read projections", () => {
     ]);
   });
 
-  it("offers the reuse pool without this dinner's own images", async () => {
-    const [first, second] = await Promise.all([createDinner(), createDinner()]);
-    const { entry } = await uploadOne(first.id);
+  it("leaves an upcoming dinner's photos out of the app-wide listing", async () => {
+    const upcoming = await createDinner(new Date("2200-07-01T18:00:00.000Z"));
+    const { entry } = await uploadOne(upcoming.id);
 
-    const forSecond = await getLinkableImages(second.id);
-    expect(forSecond).toContainEqual(
-      expect.objectContaining({
-        image: expect.objectContaining({ id: entry.imageId }),
-        usedIn: [{ id: first.id, title: first.title }],
-      }),
+    const listed = await getGalleryEntries(NOW);
+
+    expect(listed.some((listedEntry) => listedEntry.id === entry.id)).toBe(
+      false,
     );
-
-    const forFirst = await getLinkableImages(first.id);
-    expect(
-      forFirst.some((linkable) => linkable.image.id === entry.imageId),
-    ).toBe(false);
+    // the dinner's own page still shows them once the evening has happened
+    await expect(getGalleryEntriesForEvent(upcoming.id)).resolves.toHaveLength(
+      1,
+    );
   });
 
-  it("keeps an image nobody claims in the pool", async () => {
-    const dinner = await createDinner();
-    const image = await prisma.image.create({ data: buildGalleryImage() });
+  it("lists a dinner that has only just happened", async () => {
+    const dinner = await createDinner(new Date(NOW.getTime() - 1));
+    const { entry } = await uploadOne(dinner.id);
 
-    const pool = await getLinkableImages(dinner.id);
+    const listed = await getGalleryEntries(NOW);
 
-    expect(pool).toContainEqual(
-      expect.objectContaining({
-        image: expect.objectContaining({ id: image.id }),
-        usedIn: [],
-      }),
+    expect(listed.some((listedEntry) => listedEntry.id === entry.id)).toBe(
+      true,
     );
   });
 });
