@@ -11,12 +11,8 @@ import type z from "zod";
 import type { EventEditSchema } from "../event-schema";
 import type { AddressOptionModel } from "../view-models";
 
-import {
-  Field,
-  fileFieldClassName,
-  SelectField,
-  TextareaField,
-} from "~/components/forms";
+import { Field, SelectField, TextareaField } from "~/components/forms";
+import { ImageUploadField } from "~/components/image-upload-field";
 import { BackLink, pageTitleClassName } from "~/components/section";
 import { SectionNav } from "~/components/section-nav";
 import { SignupFormBuilder } from "~/components/signup-form-builder";
@@ -222,13 +218,12 @@ export function AdminEventForm({
             title="Cover & location"
             description="Cover image and the venue address."
           >
-            <Field
+            <ImageUploadField
               labelProps={{ children: "Cover" }}
               inputProps={{
                 ...getInputProps(fields.cover, { type: "file" }),
                 tabIndex: 0,
                 accept: VALID_IMAGE_TYPES.join(","),
-                className: fileFieldClassName,
               }}
               errors={fields.cover.errors}
             />

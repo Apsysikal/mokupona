@@ -20,7 +20,7 @@ export type FieldProps = {
   className?: string;
 };
 
-function useFieldIds(
+export function useFieldIds(
   id: string | undefined,
   errors?: ListOfErrors,
   description?: string,

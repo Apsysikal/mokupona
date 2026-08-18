@@ -83,6 +83,47 @@ describe("admin board member uploads", () => {
     });
   });
 
+  it("previews the selected photo and lets it be removed before saving", () => {
+    const values = boardMemberFormValues("preview-remove");
+
+    fillNewBoardMemberForm(values);
+    selectPhoto(VALID_UPLOAD_FIXTURE_PATH);
+
+    cy.findByRole("list", { name: /selected images/i })
+      .findByText("upload-image.jpg")
+      .should("be.visible");
+
+    cy.findByRole("button", { name: /remove upload-image\.jpg/i }).click();
+    cy.findByRole("list", { name: /selected images/i }).should("not.exist");
+
+    cy.findByRole("button", { name: /add new board member/i }).click();
+    cy.location("pathname").should("eq", "/admin/board-members/new");
+
+    runUploadDbCommand<BoardMemberRecord | null>("get-board-member-by-name", {
+      name: values.name,
+    }).then((boardMember) => {
+      if (!boardMember) {
+        throw new Error("Board member was not created");
+      }
+
+      boardMemberIdsToCleanup.push(boardMember.id);
+      expect(boardMember.imageId).to.equal(null);
+    });
+  });
+
+  it("flags the previewed photo that failed validation", () => {
+    const values = boardMemberFormValues("preview-error");
+
+    fillNewBoardMemberForm(values);
+    selectPhoto(oversizedZodUpload());
+    cy.findByRole("button", { name: /add new board member/i }).click();
+
+    cy.findByText(FILE_TOO_LARGE_ERROR).should("be.visible");
+    cy.findByRole("list", { name: /selected images/i })
+      .find("li")
+      .should("have.attr", "data-invalid");
+  });
+
   it("shows a validation error when the uploaded photo is larger than the Zod limit", () => {
     const values = boardMemberFormValues("new-zod-error");
 

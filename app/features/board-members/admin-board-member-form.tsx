@@ -11,7 +11,8 @@ import type { z } from "zod";
 
 import { MemberSchema } from "./schema";
 
-import { Field, fileFieldClassName } from "~/components/forms";
+import { Field } from "~/components/forms";
+import { ImageUploadField } from "~/components/image-upload-field";
 import { Button } from "~/components/ui/button";
 import { VALID_IMAGE_TYPES } from "~/shared/image";
 
@@ -68,13 +69,12 @@ export function AdminBoardMemberForm({
           errors={fields.position.errors}
         />
 
-        <Field
+        <ImageUploadField
           labelProps={{ children: "Photo" }}
           inputProps={{
             ...getInputProps(fields.image, { type: "file" }),
             tabIndex: 0,
             accept: VALID_IMAGE_TYPES.join(","),
-            className: fileFieldClassName,
           }}
           errors={fields.image.errors}
         />
