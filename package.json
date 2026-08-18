@@ -49,6 +49,7 @@
     "cloudinary": "^2.10.0",
     "clsx": "^2.1.1",
     "dotenv": "^17.4.2",
+    "embla-carousel-react": "^8.6.0",
     "image-size": "^2.0.2",
     "isbot": "^5.2.1",
     "pino": "^10.3.1",
