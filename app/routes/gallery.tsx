@@ -21,7 +21,9 @@ export default function GalleryPage({ loaderData }: Route.ComponentProps) {
   return (
     <PageContainer className="grow pt-7 pb-20">
       <div className="mb-9 flex flex-col gap-3">
-        <Eyebrow>from the table</Eyebrow>
+        <Eyebrow variant="tracked" tone="primary">
+          from the table
+        </Eyebrow>
         <h1 className={pageTitleClassName}>gallery</h1>
         <p className="text-foreground/80 max-w-2xl text-base font-light md:text-lg">
           plates, hands, half-finished glasses — everything we managed to

@@ -24,13 +24,13 @@ A question asked of both the signer and each friend is stored as two rows that s
 
 ### Decisions taken
 
-| Question | Decision |
-|---|---|
+| Question                              | Decision                                                                   |
+| ------------------------------------- | -------------------------------------------------------------------------- |
 | One authoritative side, or two peers? | **Signer is authoritative.** The friend copy is display-only while linked. |
-| Different copy per scope? | **No**, for now. §11 records what it would cost to add later. |
-| Unlink at any time? | **Yes**, including after signups — at the cost of a split CSV column (§8). |
-| Explainer component | **Native `popover` attribute**, not Radix (§6). |
-| Unlink mechanism | **Conform `update` intent**, not an `onClick` (§7). |
+| Different copy per scope?             | **No**, for now. §11 records what it would cost to add later.              |
+| Unlink at any time?                   | **Yes**, including after signups — at the cost of a split CSV column (§8). |
+| Explainer component                   | **Native `popover` attribute**, not Radix (§6).                            |
+| Unlink mechanism                      | **Conform `update` intent**, not an `onClick` (§7).                        |
 
 ---
 
@@ -87,7 +87,12 @@ The client mirror is decoration. The invariant is enforced in **one pure functio
 
 // What a shared field key ties together. The key itself is the identity, not
 // a synced property; nothing scope-local may join this list.
-export const LINKED_ROW_PROPS = ["type", "label", "required", "options"] as const;
+export const LINKED_ROW_PROPS = [
+  "type",
+  "label",
+  "required",
+  "options",
+] as const;
 
 /**
  * Rows sharing a field key are one question asked in two scopes — the sharing
@@ -107,8 +112,10 @@ export function syncLinkedRows(rows: BuilderRow[]): BuilderRow[] {
     const first = canonical.get(row.name);
     if (first === undefined) {
       canonical.set(row.name, {
-        type: row.type, label: row.label,
-        required: row.required, options: row.options,
+        type: row.type,
+        label: row.label,
+        required: row.required,
+        options: row.options,
       });
       return row;
     }
@@ -206,7 +213,7 @@ The unlink control lives in the popover and is an **intent button**, not an `onC
   size="sm"
   {...form.update.getButtonProps({
     name: friendRow.getFieldset().name.name,
-    value: nextFreeKey,          // `${key}_2`, skipping taken names
+    value: nextFreeKey, // `${key}_2`, skipping taken names
   })}
 >
   <LinkBreak2Icon /> Unlink
@@ -261,11 +268,15 @@ Works scriptless:
 **One blocker must be fixed for that claim to be true.** `RowCard` (`signup-form-builder.tsx:344-380`) is a Radix `Collapsible` whose open state comes from React state: `isRowOpen` (:126-130) returns `!isStoredRow(rowKey)`, and `toggledRows` is `useState`. Scriptless, every **stored** row renders `data-[state=closed]:hidden` — `display:none`, with no way to open it. The builder is currently unusable without JS. Fix, in the honeypot's idiom (`honeypot-field.tsx` hides itself with an inline `<style>` precisely so it works pre-hydration), inverted:
 
 ```tsx
-{/* Row bodies collapse through React state; scriptless, every stored row
+{
+  /* Row bodies collapse through React state; scriptless, every stored row
     would render permanently hidden with no way to open it. Same inline-<style>
     escape hatch honeypot-field.tsx uses, inverted: no JS ⇒ everything open,
-    which is also the right no-JS affordance. */}
-<noscript><style>{`[data-row-body]{display:block !important}`}</style></noscript>
+    which is also the right no-JS affordance. */
+}
+<noscript>
+  <style>{`[data-row-body]{display:block !important}`}</style>
+</noscript>;
 ```
 
 Remaining JS-only conveniences, none in this feature: the label→key auto-slug (:570-586), the `window.confirm` guards (:482-490, :202-214), and "Reset to default".

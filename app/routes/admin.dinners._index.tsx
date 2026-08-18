@@ -148,7 +148,7 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
     <Card
       interactive
       className={cn(
-        "flex flex-wrap items-center gap-3 p-4",
+        "relative flex flex-wrap items-center gap-3 p-4",
         dinner.past && "opacity-60",
       )}
     >
@@ -172,7 +172,15 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
             </time>
           </p>
           <h2 className="mt-1 truncate text-base font-semibold">
-            {dinner.title}
+            {/* stretched link: the pseudo-element makes the whole card the
+                hit area while the accessible name stays the dinner title;
+                the action row sits above it via `relative` */}
+            <Link
+              to={dinner.id}
+              className="focus-visible:after:ring-ring after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-hidden focus-visible:after:ring-2"
+            >
+              {dinner.title}
+            </Link>
           </h2>
           <p className="text-foreground/65 mt-1 text-sm">{dinner.location}</p>
         </div>
@@ -191,7 +199,7 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="relative flex flex-wrap gap-2">
         <Button size="sm" variant="ghost" asChild>
           <Link to={`${dinner.id}/signups`}>Signups</Link>
         </Button>

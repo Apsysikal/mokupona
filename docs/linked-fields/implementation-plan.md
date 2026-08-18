@@ -69,7 +69,9 @@ The bulk. **`app/components/signup-form-builder.tsx`** (+~180 / −25).
      {/* chip row is a sibling of the trigger: it holds a popover button, and
          nesting interactive content inside the trigger button is invalid */}
      <div className="flex flex-wrap items-center gap-1">{chip}</div>
-     <CollapsibleTrigger className="w-full min-w-0 cursor-pointer text-left">…</CollapsibleTrigger>
+     <CollapsibleTrigger className="w-full min-w-0 cursor-pointer text-left">
+       …
+     </CollapsibleTrigger>
    </div>
    ```
 

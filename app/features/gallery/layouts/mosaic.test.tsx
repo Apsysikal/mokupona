@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 
@@ -49,9 +49,28 @@ function renderMosaic(props: GalleryLayoutProps) {
   return render(<Stub initialEntries={["/"]} />);
 }
 
+/**
+ * The page variant hangs a wall per column count — two columns below md, three
+ * from md up — so every query has to name the wall it means.
+ */
+function wallsOf(container: HTMLElement) {
+  return Array.from(container.querySelectorAll<HTMLElement>(".items-start"));
+}
+
+function firstWallOf(container: HTMLElement) {
+  return within(wallsOf(container)[0]);
+}
+
+/** Which photos hang in one column, top to bottom. */
+function altsIn(column: Element) {
+  return within(column as HTMLElement)
+    .getAllByRole("img")
+    .map((img) => img.getAttribute("alt"));
+}
+
 /** The frame OptimizedImage reserves — the tile's real aspect ratio. */
-function frameOf(alt: string) {
-  const img = screen.getByAltText(alt);
+function frameOf(wall: ReturnType<typeof within>, alt: string) {
+  const img = wall.getByAltText(alt);
   return {
     width: Number(img.getAttribute("width")),
     height: Number(img.getAttribute("height")),
@@ -60,7 +79,7 @@ function frameOf(alt: string) {
 
 describe("mosaic layout", () => {
   it("renders every image in the feed", () => {
-    renderMosaic({
+    const { container } = renderMosaic({
       images: [
         makeImage({ id: "a" }),
         makeImage({ id: "b" }),
@@ -68,14 +87,17 @@ describe("mosaic layout", () => {
       ],
     });
 
-    expect(screen.getAllByRole("img")).toHaveLength(3);
-    for (const id of ["a", "b", "c"]) {
-      expect(screen.getByAltText(`photo ${id}`)).toBeInTheDocument();
+    for (const wall of wallsOf(container)) {
+      const hung = within(wall);
+      expect(hung.getAllByRole("img")).toHaveLength(3);
+      for (const id of ["a", "b", "c"]) {
+        expect(hung.getByAltText(`photo ${id}`)).toBeInTheDocument();
+      }
     }
   });
 
   it("keeps each photo's intrinsic aspect ratio", () => {
-    renderMosaic({
+    const { container } = renderMosaic({
       images: [
         makeImage({
           id: "wide",
@@ -104,19 +126,20 @@ describe("mosaic layout", () => {
       ],
     });
 
-    const wide = frameOf("panorama");
-    const tall = frameOf("portrait");
+    const hung = firstWallOf(container);
+    const wide = frameOf(hung, "panorama");
+    const tall = frameOf(hung, "portrait");
 
     expect(wide.width / wide.height).toBeCloseTo(2, 2);
     expect(tall.width / tall.height).toBeCloseTo(800 / 1200, 2);
     // the reserved box must be there for the first paint, not measured later
-    expect(screen.getByAltText("portrait").parentElement).toHaveStyle({
+    expect(hung.getByAltText("portrait").parentElement).toHaveStyle({
       aspectRatio: `${tall.width} / ${tall.height}`,
     });
   });
 
   it("falls back to a 3:2 frame when the row has no intrinsic dimensions", () => {
-    renderMosaic({
+    const { container } = renderMosaic({
       images: [
         makeImage({
           id: "unknown",
@@ -133,41 +156,52 @@ describe("mosaic layout", () => {
       ],
     });
 
-    const frame = frameOf("no dimensions");
+    const frame = frameOf(firstWallOf(container), "no dimensions");
     expect(frame.width / frame.height).toBeCloseTo(3 / 2, 2);
   });
 
-  it("keeps captions in the accessibility tree without hover", () => {
+  it("hangs photos alone below md and only shows the caption from md up", () => {
     const { container } = renderMosaic({
       images: [makeImage({ id: "a", caption: "the last course, half eaten" })],
     });
 
-    const caption = screen.getByText("the last course, half eaten");
-    expect(caption).toBeVisible();
-    // a hover-only overlay would be aria-hidden or removed; this one is neither
-    expect(caption.closest("[aria-hidden]")).toBeNull();
-    expect(container.querySelector("figcaption")).toHaveTextContent(
-      "the last course, half eaten",
-    );
+    const caption = container.querySelector("figcaption");
+    expect(caption).toHaveClass("hidden", "md:flex");
+    expect(caption).toHaveTextContent("the last course, half eaten");
+    // the overlay is faded out at rest, not hidden from assistive tech
+    expect(caption?.closest("[aria-hidden]")).toBeNull();
+  });
+
+  it("makes the caption scrim cover the whole tile and take focus", () => {
+    const { container } = renderMosaic({
+      images: [makeImage({ id: "a", caption: "the last course, half eaten" })],
+    });
+
+    const caption = container.querySelector("figcaption");
+    expect(caption).toHaveClass("md:absolute", "md:inset-0");
+    expect(caption).toHaveAttribute("tabindex", "0");
   });
 
   it("labels the dinner an image came from with a link to it", () => {
-    renderMosaic({
+    const { container } = renderMosaic({
       images: [makeImage({ id: "a", caption: "steam off the pot" })],
     });
 
-    const link = screen.getByRole("link", { name: /nine courses/ });
+    const link = firstWallOf(container).getByRole("link", {
+      name: /nine courses/,
+    });
     expect(link).toHaveAttribute("href", "/dinners/dinner-1");
     expect(link).toHaveTextContent("apr 2026");
   });
 
   it("renders an image no dinner claims without a label", () => {
-    renderMosaic({
+    const { container } = renderMosaic({
       images: [makeImage({ id: "orphan", event: null, caption: "a candle" })],
     });
 
-    expect(screen.getByAltText("photo orphan")).toBeInTheDocument();
-    expect(screen.getByText("a candle")).toBeInTheDocument();
+    const hung = firstWallOf(container);
+    expect(hung.getByAltText("photo orphan")).toBeInTheDocument();
+    expect(hung.getByText("a candle")).toBeInTheDocument();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 
@@ -183,18 +217,88 @@ describe("mosaic layout", () => {
     expect(screen.getByText("steam off the pot")).toBeInTheDocument();
   });
 
-  it("lays the wall out with CSS columns so it is correct on the first paint", () => {
-    const { container } = renderMosaic({ images: [makeImage({ id: "a" })] });
+  it("hangs a two-column wall below md and a three-column one from md up", () => {
+    const { container } = renderMosaic({
+      images: [
+        makeImage({ id: "a" }),
+        makeImage({ id: "b" }),
+        makeImage({ id: "c" }),
+      ],
+    });
 
-    const wall = container.querySelector("div[class*='columns-']");
-    expect(wall).toBeInTheDocument();
-    expect(container.querySelector("figure")).toHaveClass("break-inside-avoid");
+    const [narrow, wide] = wallsOf(container);
+    expect(narrow).toHaveClass("flex", "gap-3", "md:hidden");
+    expect(wide).toHaveClass("hidden", "gap-5", "md:flex");
+    expect(narrow.children).toHaveLength(2);
+    expect(wide.children).toHaveLength(3);
+
+    // the tiles carry no spacing of their own: a figure sits straight in its
+    // column and the column's own gap does the stacking
+    for (const [wall, gap] of [
+      [narrow, "gap-3"],
+      [wide, "gap-5"],
+    ] as const) {
+      for (const column of Array.from(wall.children)) {
+        expect(column).toHaveClass("flex", "flex-col", gap);
+        for (const tile of Array.from(column.children)) {
+          expect(tile.tagName).toBe("FIGURE");
+        }
+      }
+    }
+  });
+
+  it("deals each tile into the shortest column, ties to the left", () => {
+    // heights are 1/aspect, so 2:1 → 0.5, 1:2 → 2, 1:1 → 1: wide lands left
+    // (0.5 | 0), tall right (0.5 | 2), square left again (1.5 | 2)
+    const { container } = renderMosaic({
+      variant: "section",
+      images: [
+        makeImage({
+          id: "wide",
+          image: {
+            id: "img-wide",
+            storageKey: "wide",
+            version: null,
+            width: 2000,
+            height: 1000,
+            blurDataUrl: null,
+          },
+        }),
+        makeImage({
+          id: "tall",
+          image: {
+            id: "img-tall",
+            storageKey: "tall",
+            version: null,
+            width: 1000,
+            height: 2000,
+            blurDataUrl: null,
+          },
+        }),
+        makeImage({
+          id: "square",
+          image: {
+            id: "img-square",
+            storageKey: "square",
+            version: null,
+            width: 1000,
+            height: 1000,
+            blurDataUrl: null,
+          },
+        }),
+      ],
+    });
+
+    const [left, right] = Array.from(wallsOf(container)[0].children);
+    expect(altsIn(left)).toEqual(["photo wide", "photo square"]);
+    expect(altsIn(right)).toEqual(["photo tall"]);
   });
 
   it("shows a quiet empty state on the page variant", () => {
     renderMosaic({ images: [] });
 
-    expect(screen.getByText(/no photos on the wall yet/)).toBeInTheDocument();
+    expect(screen.getByText("no photos yet")).toBeInTheDocument();
+    expect(screen.getByText(/nothing on the wall yet/)).toBeInTheDocument();
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
   });
 

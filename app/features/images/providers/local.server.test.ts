@@ -23,7 +23,8 @@ describe("local image provider", () => {
     const stored = await provider.store(file, { folder: "dinners" });
 
     // key = provider-generated (store() runs before any Image row exists),
-    // scoped by folder; no cloudinary-only metadata
+    // scoped by folder; no cloudinary-only metadata. The bytes are not a
+    // real image, so measuring yields nothing — and never fails the store.
     expect(stored.storageKey).toMatch(/^dinners\/[0-9a-f-]{36}$/);
     expect(stored.version).toBeUndefined();
     expect(stored.width).toBeUndefined();
@@ -34,6 +35,23 @@ describe("local image provider", () => {
     await expect(new Response(roundTripped!.stream()).text()).resolves.toBe(
       "cover-bytes",
     );
+  });
+
+  it("measures intrinsic dimensions from real image bytes", async () => {
+    const env = testEnv();
+    const provider = createLocalProvider(env);
+    // a bare PNG signature + IHDR header declaring 40×30 — image-size reads
+    // dimensions from the header alone, no full decode
+    const png = Buffer.from(
+      "89504e470d0a1a0a0000000d49484452000000280000001e",
+      "hex",
+    );
+    const file = new File([png], "frame.png", { type: "image/png" });
+
+    const stored = await provider.store(file, { folder: "dinner-gallery" });
+
+    expect(stored.width).toBe(40);
+    expect(stored.height).toBe(30);
   });
 
   it("generates a fresh key per store, never overwriting", async () => {

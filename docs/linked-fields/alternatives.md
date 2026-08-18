@@ -82,24 +82,24 @@ Also rejected from D: Radix Popover (JS-only, and portalling puts a submit butto
 
 ### Client sync
 
-| | Verdict |
-|---|---|
-| `useInputControl` | Rejected. Simulates real DOM events by design — the echo hazard imported voluntarily — and can only control the _local_ input; the twin lives in another component instance. Also costs controlled-value state on every row, since hooks cannot be conditional and `EditableRowView` is shared by both scopes. |
-| `form.update()` on blur | Viable, and correct for any two-editable-rows design. Keeps inputs uncontrolled; loop prevention is structural because the remount fires no `change`/`blur`. Rejected here only because a display-only mirror needs no write at all. |
-| **Render the peer's value** | **Chosen.** No write, no remount, no caret to disturb, no loop. Instant sync falls out for free. |
+|                             | Verdict                                                                                                                                                                                                                                                                                                        |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useInputControl`           | Rejected. Simulates real DOM events by design — the echo hazard imported voluntarily — and can only control the _local_ input; the twin lives in another component instance. Also costs controlled-value state on every row, since hooks cannot be conditional and `EditableRowView` is shared by both scopes. |
+| `form.update()` on blur     | Viable, and correct for any two-editable-rows design. Keeps inputs uncontrolled; loop prevention is structural because the remount fires no `change`/`blur`. Rejected here only because a display-only mirror needs no write at all.                                                                           |
+| **Render the peer's value** | **Chosen.** No write, no remount, no caret to disturb, no loop. Instant sync falls out for free.                                                                                                                                                                                                               |
 
 ### Unlink
 
-| | Verdict |
-|---|---|
-| `onClick` + `form.update` | Rejected. JS-only, for no benefit over the intent. |
+|                                 | Verdict                                                                                                                                                                      |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `onClick` + `form.update`       | Rejected. JS-only, for no benefit over the intent.                                                                                                                           |
 | **`form.update` intent button** | **Chosen.** Real submit button, so it round-trips scriptless; intercepted locally when JS is present, so it costs nothing then. Consistent with every other builder control. |
-| Scope checkbox (C's approach) | Rejected with C. Would have avoided the key rename entirely. |
+| Scope checkbox (C's approach)   | Rejected with C. Would have avoided the key rename entirely.                                                                                                                 |
 
 ### Explainer
 
-| | Verdict |
-|---|---|
-| Radix `Popover` | Rejected. JS-only; portals content out of the form tree; uses the Dialog pattern, heavier than a toggletip warrants. |
+|                         | Verdict                                                                                                                                                                                                                          |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Radix `Popover`         | Rejected. JS-only; portals content out of the form tree; uses the Dialog pattern, heavier than a toggletip warrants.                                                                                                             |
 | `<details>`/`<summary>` | Rejected. Hiding the marker to match the discounts popover breaks state announcement in VoiceOver/JAWS/NVDA, and the `aria-expanded` fix needs a scripted `onToggle` — making a no-JS-first design's accessibility depend on JS. |
-| **Native `popover`** | **Chosen.** UA supplies open/Esc/light-dismiss and implicit `aria-expanded`/`aria-details`. Stays in the form tree. |
+| **Native `popover`**    | **Chosen.** UA supplies open/Esc/light-dismiss and implicit `aria-expanded`/`aria-details`. Stays in the form tree.                                                                                                              |

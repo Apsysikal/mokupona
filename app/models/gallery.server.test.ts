@@ -3,10 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { buildEventData } from "../../test/factories";
 
-import {
-  deleteBoardMember,
-  updateBoardMember,
-} from "./board-member.server";
+import { deleteBoardMember, updateBoardMember } from "./board-member.server";
 import {
   createEvent,
   deleteEvent,
