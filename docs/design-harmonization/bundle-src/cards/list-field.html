@@ -1,0 +1,82 @@
+<!--meta {"group":"Forms","title":"List field (friends)","file":"list-field.html","sources":["app/features/forms/fields/list/view.tsx"],"note":"The one repeater in the public form: a guest adds friends up to a configured maximum, each answering the same set of sub-fields. It opens with a full-width hairline instead of a label row, because it is a section break in the form rather than another field. Add and remove are Conform intent buttons, so the whole thing works without JavaScript."} -->
+<section>
+  <h2>Populated</h2>
+  <div class="stage" style="max-width: 460px">
+    <div class="flex col gap-4">
+      <div class="hairline" style="margin: 4px 0"></div>
+
+      <div class="flex col gap-1">
+        <div class="flex items-center justify-between">
+          <span class="fg-65 t-sm">friends</span>
+          <span class="fg-50 t-xs">up to 3</span>
+        </div>
+        <p class="field-desc">bringing someone? add them here so we set a place.</p>
+      </div>
+
+      <ul style="list-style: none" class="flex col gap-3">
+        <li class="surface-bg bordered rounded-lg p-4 flex col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="fg-50 t-xs fw-semibold tracking-widest">friends 1</span>
+            <button class="accent t-xs" style="background: none; border: 0; cursor: pointer">remove</button>
+          </div>
+          <fieldset class="flex col gap-3 w-full" style="border: 0">
+            <div class="flex col gap-2"><label class="label">name</label><input class="field" value="Noa" readonly /></div>
+            <div class="flex col gap-2"><label class="label">anything we should know?</label><input class="field" readonly /></div>
+          </fieldset>
+        </li>
+        <li class="surface-bg bordered rounded-lg p-4 flex col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="fg-50 t-xs fw-semibold tracking-widest">friends 2</span>
+            <button class="accent t-xs" style="background: none; border: 0; cursor: pointer">remove</button>
+          </div>
+          <fieldset class="flex col gap-3 w-full" style="border: 0">
+            <div class="flex col gap-2"><label class="label">name</label><input class="field" readonly /></div>
+            <div class="flex col gap-2"><label class="label">anything we should know?</label><input class="field" readonly /></div>
+          </fieldset>
+        </li>
+      </ul>
+
+      <button class="accent flex items-center gap-2 t-sm fw-semibold w-fit" style="background: none; border: 0; cursor: pointer">
+        <span class="t-base leading-none">+</span> add a friend
+      </button>
+    </div>
+  </div>
+  <p class="cap">
+    Item <code>bg-background rounded-lg border p-4 gap-3</code> — dropped to the page
+    surface so it recedes inside the card that holds the form. Item heading reuses the
+    tracked eyebrow metrics (<code>text-xs font-semibold tracking-widest</code>) at the
+    label tone. Remove and add are both bare <code>text-primary hover:underline</code>
+    text buttons, never Buttons.
+  </p>
+</section>
+
+<section>
+  <h2>Empty, and disabled</h2>
+  <div class="stage flex gap-8 wrap items-start">
+    <div style="width: 320px">
+      <p class="t-xs fg-50 mb-2">no items yet — the list disappears, the add stays</p>
+      <div class="flex col gap-4">
+        <div class="hairline" style="margin: 4px 0"></div>
+        <div class="flex col gap-1">
+          <div class="flex items-center justify-between">
+            <span class="fg-65 t-sm">friends</span>
+            <span class="fg-50 t-xs">up to 3</span>
+          </div>
+        </div>
+        <button class="accent flex items-center gap-2 t-sm fw-semibold w-fit" style="background: none; border: 0; cursor: pointer">
+          <span class="t-base leading-none">+</span> add a friend
+        </button>
+      </div>
+    </div>
+    <div style="width: 320px">
+      <p class="t-xs fg-50 mb-2"><code>maxCount === 0</code></p>
+      <div class="bordered border-dashed rounded-lg p-4 fg-50 t-sm text-center">
+        renders <code>null</code> — the whole section is absent
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    At <code>items.length === maxCount</code> the add button is dropped rather than
+    disabled; the "up to N" counter is what explains the ceiling.
+  </p>
+</section>

@@ -1,0 +1,57 @@
+<!--meta {"group":"Admin","title":"Empty states","file":"admin-empty-states.html","sources":["app/components/admin-ui.tsx","app/routes/admin.dinners._index.tsx","app/routes/admin.locations._index.tsx","app/routes/admin.board-members.tsx","app/routes/admin.users._index.tsx"],"note":"<code>AdminEmptyState</code> is one component used by every admin list. A dashed Card, a tinted circular medallion holding a <code>size-6</code> icon, a semibold line, a constrained explanation, and an optional action. The same component covers both \"nothing exists yet\" and \"nothing matched your filter\" — only the copy changes, and the filtered case drops the button."} -->
+<section>
+  <h2>Nothing yet — with an action</h2>
+  <div class="stage flex gap-4 wrap">
+    <div class="ui-card border-dashed flex col items-center gap-3 text-center" style="padding: 56px 24px; flex: 1 1 300px">
+      <div class="tint-primary accent flex items-center justify-center rounded-full mb-1" style="width: 56px; height: 56px">
+        <svg class="icon icon-xl" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round"><path d="M6 3v7a2 2 0 0 0 4 0V3" /><path d="M8 10v11" /><path d="M18 3c-1.6 0-3 2-3 5.5S16.4 13 18 13v8" /></svg>
+      </div>
+      <p class="t-lg fw-semibold">No dinners match</p>
+      <p class="fg-50 t-sm" style="max-width: 320px">Try a different search or filter — or create the next dinner for the season.</p>
+      <div class="mt-1"><button class="btn btn-default">New dinner</button></div>
+    </div>
+
+    <div class="ui-card border-dashed flex col items-center gap-3 text-center" style="padding: 56px 24px; flex: 1 1 300px">
+      <div class="tint-primary accent flex items-center justify-center rounded-full mb-1" style="width: 56px; height: 56px">
+        <svg class="icon icon-xl" viewBox="0 0 15 15"><path d="M7.5 1.5c2.2 0 4 1.8 4 4 0 3-4 8-4 8s-4-5-4-8c0-2.2 1.8-4 4-4z" /><circle cx="7.5" cy="5.5" r="1.4" /></svg>
+      </div>
+      <p class="t-lg fw-semibold">No locations yet</p>
+      <p class="fg-50 t-sm" style="max-width: 320px">Add the first venue address so dinners have somewhere to happen.</p>
+      <div class="mt-1"><button class="btn btn-default">New location</button></div>
+    </div>
+  </div>
+  <p class="cap">
+    <code>Card border-dashed px-6 py-14 flex-col items-center gap-3 text-center</code>;
+    medallion <code>size-14 rounded-full bg-primary/10 text-primary mb-1</code>; title
+    <code>text-lg font-semibold</code>; description
+    <code>max-w-xs text-sm text-foreground/50</code>. Dashed, because an empty list is a
+    placeholder for something that should exist.
+  </p>
+</section>
+
+<section>
+  <h2>Filtered to nothing — no action</h2>
+  <div class="stage">
+    <div class="ui-card border-dashed flex col items-center gap-3 text-center" style="padding: 56px 24px">
+      <div class="tint-primary accent flex items-center justify-center rounded-full mb-1" style="width: 56px; height: 56px">
+        <svg class="icon icon-xl" viewBox="0 0 15 15"><circle cx="7.5" cy="5" r="2.6" /><path d="M2.5 13c0-2.5 2.2-4 5-4s5 1.5 5 4" /></svg>
+      </div>
+      <p class="t-lg fw-semibold">No users match</p>
+      <p class="fg-50 t-sm" style="max-width: 320px">Try a different search or role filter.</p>
+    </div>
+  </div>
+  <p class="cap">
+    <code>action</code> is optional and its wrapper only renders when passed — so a
+    filtered-empty list does not offer to create a record the operator did not ask for.
+  </p>
+</section>
+
+<section>
+  <h2>Icons per list</h2>
+  <div class="stage flex gap-6 wrap t-sm fg-65">
+    <span class="flex items-center gap-2"><svg class="icon accent" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round"><path d="M6 3v7a2 2 0 0 0 4 0V3" /><path d="M8 10v11" /><path d="M18 3c-1.6 0-3 2-3 5.5S16.4 13 18 13v8" /></svg> dinners — UtensilsIcon</span>
+    <span class="flex items-center gap-2"><svg class="icon accent" viewBox="0 0 15 15"><path d="M7.5 1.5c2.2 0 4 1.8 4 4 0 3-4 8-4 8s-4-5-4-8c0-2.2 1.8-4 4-4z" /><circle cx="7.5" cy="5.5" r="1.4" /></svg> locations — SewingPinIcon</span>
+    <span class="flex items-center gap-2"><svg class="icon accent" viewBox="0 0 15 15"><circle cx="7.5" cy="5" r="2.6" /><path d="M2.5 13c0-2.5 2.2-4 5-4s5 1.5 5 4" /></svg> board &amp; users — PersonIcon</span>
+  </div>
+  <p class="cap">The icon is passed in already sized at <code>size-6</code>; the medallion never sizes it.</p>
+</section>

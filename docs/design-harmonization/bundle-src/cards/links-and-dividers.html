@@ -1,0 +1,67 @@
+<!--meta {"group":"Navigation","title":"Links & dividers","file":"links-and-dividers.html","sources":["app/components/section.tsx","app/components/auto-link.tsx"],"note":"The small connective tissue: <code>BackLink</code> above a page title, <code>SecondaryCTA</code> beside a primary button, <code>SectionDivider</code> between bands of content, and <code>AutoLink</code>, which turns bare URLs inside user-written copy into anchors. None of these is a Button — they are all deliberately lighter than one."} -->
+<style-extra>
+.back { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: rgb(var(--foreground) / 0.5); }
+.cta2 { width: fit-content; border-bottom: 1px solid rgb(var(--foreground) / 0.4); padding-bottom: 4px; font-size: 16px; }
+</style-extra>
+
+<section>
+  <h2>BackLink</h2>
+  <div class="stage flex col gap-3 items-start">
+    <span class="back"><svg class="icon" viewBox="0 0 15 15"><path d="M9 3.5L5.5 7.5 9 11.5" /></svg> all dinners</span>
+    <span class="back" style="color: rgb(var(--foreground))"><svg class="icon" viewBox="0 0 15 15"><path d="M9 3.5L5.5 7.5 9 11.5" /></svg> all dinners</span>
+  </div>
+  <p class="cap">
+    <code>inline-flex items-center gap-2 mb-3 text-sm text-foreground/50
+    hover:text-foreground</code> with a <code>size-4</code> chevron. Second row is the hover
+    state. Sits directly above a page title on detail and edit screens.
+  </p>
+</section>
+
+<section>
+  <h2>SecondaryCTA — the alternative to a second Button</h2>
+  <div class="stage flex items-center gap-5 wrap">
+    <button class="btn btn-default">reserve a seat</button>
+    <span class="cta2">read more →</span>
+    <span class="cta2" style="border-bottom-color: rgb(var(--foreground))">see all dinners →</span>
+  </div>
+  <p class="cap">
+    <code>w-fit border-b border-foreground/40 pb-1 text-base hover:border-foreground</code>
+    — an underlined phrase, not a bordered box, so the primary action never has to compete.
+    The arrow is part of the copy, not an icon.
+  </p>
+</section>
+
+<section>
+  <h2>SectionDivider</h2>
+  <div class="stage flex col gap-6">
+    <div class="flex items-center gap-3">
+      <span class="eyebrow eyebrow-label">the next dinner</span>
+      <span class="hairline grow"></span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="eyebrow eyebrow-label">past dinners</span>
+      <span class="hairline grow"></span>
+    </div>
+  </div>
+  <p class="cap">
+    A tracked label-tone Eyebrow followed by an <code>aria-hidden</code>
+    <code>bg-border h-px flex-1</code>. Used to band the dinners index; the rule always runs
+    to the container edge.
+  </p>
+</section>
+
+<section>
+  <h2>AutoLink</h2>
+  <div class="stage" style="max-width: 560px">
+    <p class="t-base fw-light fg-80 pre-line">the menu leans on what's in season — see
+      <a class="underline" href="#">mokupona.ch/dinners</a> for the full list, or read the
+      write-up at <a class="underline" href="#">https://example.com/post_(2026)</a>.</p>
+  </div>
+  <p class="cap">
+    Plain <code>underline</code> anchors with <code>target="_blank" rel="noopener
+    noreferrer"</code>, bare-domain matches getting an <code>https://</code> prefix.
+    The parser strips trailing punctuation and unbalanced closing parens back out into
+    the surrounding text, so a URL at the end of a sentence still links cleanly. Applied to
+    every free-text field an admin writes: description, menu, donation.
+  </p>
+</section>

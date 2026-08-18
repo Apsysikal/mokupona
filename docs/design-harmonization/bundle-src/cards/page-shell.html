@@ -1,0 +1,108 @@
+<!--meta {"group":"Foundations","title":"Page shell & prose","file":"page-shell.html","sources":["app/root.tsx","app/components/section.tsx","app/routes/privacy.tsx","app/routes/dinners._index.tsx"],"note":"Every page is the same three-part column: nav, a growing body, footer, inside a <code>flex min-h-full flex-col</code> document. <code>PageContainer</code> supplies the one page width — <code>max-w-5xl</code> with <code>px-5 md:px-10</code> gutters — and takes an <code>as</code> so it can be the <code>&lt;main&gt;</code> or just a wrapper. The long-form prose scale is the last piece of type not covered by the ramp card."} -->
+<style-extra>
+.frame { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.frame-bar { border-bottom: 1px solid var(--border); padding: 12px 20px; font-size: 13px; color: rgb(var(--foreground) / 0.5); }
+.frame-foot { border-top: 1px solid var(--border); padding: 12px 20px; font-size: 13px; color: rgb(var(--foreground) / 0.5); }
+.gutter { background: repeating-linear-gradient(45deg, rgb(237 130 94 / 0.08) 0 6px, transparent 6px 12px); }
+.container-demo { display: flex; }
+</style-extra>
+
+<section>
+  <h2>Document shell</h2>
+  <div class="stage flush">
+    <div class="frame" style="border-radius: 0; border: 0">
+      <div class="frame-bar">&lt;SiteNav /&gt; — h-16 / h-14, border-b</div>
+      <div class="container-demo" style="min-height: 150px">
+        <div class="gutter" style="width: 40px"></div>
+        <div class="flex-1 flex col justify-center gap-2" style="padding: 20px 0">
+          <span class="eyebrow eyebrow-label">grow</span>
+          <p class="t-sm fg-65">&lt;PageContainer className="grow pt-7 pb-20"&gt; — max-w-5xl, centred</p>
+        </div>
+        <div class="gutter" style="width: 40px"></div>
+      </div>
+      <div class="frame-foot">&lt;Footer /&gt; — border-t</div>
+    </div>
+  </div>
+  <p class="cap">
+    Root renders <code>&lt;body class="dark h-full"&gt;</code> around
+    <code>flex min-h-full flex-col</code>, with the routed area as
+    <code>flex grow flex-col</code> — so a short page still pins the footer to the bottom
+    and a long one scrolls normally. The <code>dark</code> class is set unconditionally:
+    the palette is dark by design, and the variant plumbing is kept only so a light theme
+    stays possible. Hatched areas are the <code>px-5 md:px-10</code> gutters.
+  </p>
+</section>
+
+<section>
+  <h2>PageContainer widths</h2>
+  <div class="stage flex col gap-3">
+    <div class="flex items-center gap-3">
+      <span class="bordered rounded-lg tint-primary" style="height: 24px; width: 100%"></span>
+      <span class="t-xs fg-50 nowrap" style="width: 190px"><code>max-w-5xl</code> · 1024 — every page</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="bordered rounded-lg surface-subtle" style="height: 24px; width: 66%"></span>
+      <span class="t-xs fg-50 nowrap" style="width: 190px"><code>max-w-2xl</code> · 672 — intro copy, forms</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="bordered rounded-lg surface-subtle" style="height: 24px; width: 44%"></span>
+      <span class="t-xs fg-50 nowrap" style="width: 190px"><code>max-w-md</code> · 448 — auth column, dialogs</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="bordered rounded-lg surface-subtle" style="height: 24px; width: 30%"></span>
+      <span class="t-xs fg-50 nowrap" style="width: 190px"><code>max-w-xs</code> · 320 — empty-state copy</span>
+    </div>
+  </div>
+  <p class="cap">
+    <code>mx-auto w-full max-w-5xl px-5 md:px-10</code>. The hero block is the single
+    documented exception at <code>max-w-7xl</code>, because it is edge-to-edge artwork
+    rather than reading width. Page vertical rhythm is <code>pt-7 pb-20</code> on public
+    routes, <code>pt-7 pb-20</code> on the admin layout.
+  </p>
+</section>
+
+<section>
+  <h2>Page opening — eyebrow, title, lede</h2>
+  <div class="stage">
+    <div class="flex col gap-3" style="margin-bottom: 8px">
+      <span class="eyebrow">gatherings</span>
+      <h1 class="t-3xl fw-light leading-tight tracking-tight">dinners</h1>
+      <p class="fg-80 t-base fw-light" style="max-width: 672px">
+        a handful of seats open before each supper. reserve early, tables are small and
+        fill quickly.
+      </p>
+    </div>
+  </div>
+  <p class="cap">
+    <code>flex flex-col gap-3 mb-9 md:mb-12</code>. Title is
+    <code>pageTitleClassName</code>; the lede is <code>max-w-2xl text-base md:text-lg
+    font-light text-foreground/80</code>. Public pages lead with a primary-tone eyebrow;
+    admin pages use the label tone and put a count there instead.
+  </p>
+</section>
+
+<section>
+  <h2>Long-form prose — the privacy page</h2>
+  <div class="stage" style="max-width: 640px">
+    <div class="flex col gap-6">
+      <h2 class="t-2xl fw-light leading-tight tracking-tight">what we collect</h2>
+      <div class="flex col gap-3">
+        <h3 class="t-xl fw-light tracking-tight">when you sign up for a dinner</h3>
+        <p class="fg-80 t-base fw-light">the name and email you give us, plus anything you write in the form's own questions.</p>
+        <ol class="fg-80 t-base fw-light" style="padding-left: 20px">
+          <li>we keep it until the dinner has happened.</li>
+          <li>we never pass it to anyone outside the association.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    Section <code>flex flex-col gap-6</code>, heading
+    <code>text-2xl md:text-3xl font-light tracking-tight</code>; subsection
+    <code>gap-3</code>, heading <code>text-xl font-light tracking-tight</code>; body
+    <code>text-base font-light text-foreground/80</code>; lists
+    <code>list-decimal space-y-1 pl-5</code>. Sections are separated by
+    <code>gap-10 md:gap-12</code> — the same font-light voice as the marketing pages, just
+    denser.
+  </p>
+</section>

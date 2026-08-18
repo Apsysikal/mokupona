@@ -1,0 +1,83 @@
+<!--meta {"group":"Navigation","title":"Site nav","file":"site-nav.html","sources":["app/components/site-nav.tsx"],"note":"Two entirely separate bars rather than one responsive bar: a 64px desktop row with inline links, and a 56px mobile row whose only control opens a full-screen menu. The item list is built once from auth state (<code>buildNavItems</code>) and shared, so admin and account links appear in both without duplication."} -->
+<style-extra>
+.bar { border-bottom: 1px solid var(--border); }
+.bar-desktop { display: flex; height: 64px; align-items: center; justify-content: space-between; padding: 0 40px; }
+.bar-mobile { display: flex; height: 56px; align-items: center; justify-content: space-between; padding: 0 20px; }
+.nav-links { display: flex; align-items: center; gap: 28px; font-size: 14px; color: rgb(var(--foreground) / 0.8); }
+.nav-link { padding-bottom: 4px; }
+.nav-link-active { color: rgb(var(--foreground)); border-bottom: 1px solid var(--primary); }
+.burger { display: flex; flex-direction: column; gap: 4px; padding: 8px 0; background: none; border: 0; cursor: pointer; }
+.burger span { display: block; height: 2px; width: 20px; background: rgb(var(--foreground) / 0.8); }
+.sheet { position: relative; height: 420px; overflow: hidden; background: var(--background); border: 1px solid var(--border); border-radius: 16px; }
+.sheet-link { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 16px 0; font-size: 20px; letter-spacing: -0.025em; }
+.mark { display: flex; align-items: center; gap: 12px; font-weight: 600; }
+</style-extra>
+
+<section>
+  <h2>Desktop — md and up</h2>
+  <div class="stage flush">
+    <div class="bar bar-desktop">
+      <span class="mark">
+        <svg style="width: 20px; height: 20px" viewBox="0 0 82 71" fill="currentColor"><path d="M77.5 39.4a13 13 0 01-26 0V16.3a1.8 1.8 0 10-3.5 0v23.1a16.5 16.5 0 1033 0V16.3a1.8 1.8 0 10-3.5 0v23.1z" /><path d="M8.3 15.1a16.5 16.5 0 0014.3 16v9a16.6 16.6 0 00-14.3 16v7.9L4 59.5a1.8 1.8 0 00-2.5 2.5l7.3 7.3a1.8 1.8 0 003-1.3V56a13 13 0 1125.1 0v12.1a1.8 1.8 0 103.5 0V56a16.6 16.6 0 00-14.3-16v-9a16.5 16.5 0 0014.3-16V2.8A1.8 1.8 0 0038.7 1H10a1.8 1.8 0 00-1.7 1.8v12.3zm28.6-10.6H11.8v10.6a13 13 0 1025.1 0V4.5z" /></svg>
+        moku pona
+      </span>
+      <div class="nav-links">
+        <span class="nav-link nav-link-active">dinners</span>
+        <span class="nav-link"><svg class="icon icon-lg" viewBox="0 0 15 15"><rect x="2" y="2" width="11" height="11" rx="3" /><circle cx="7.5" cy="7.5" r="2.6" /><circle cx="10.8" cy="4.2" r="0.7" fill="currentColor" /></svg></span>
+        <span class="nav-link">admin area</span>
+        <span class="nav-link">account</span>
+        <span class="nav-link">logout</span>
+        <button class="btn btn-default btn-sm">join a dinner</button>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    <code>h-16 px-10 border-b</code>. Links are <code>text-sm text-foreground/80</code>;
+    the active one gets <code>text-foreground border-b border-primary</code> — a 1px
+    underline, not a pill. Logout is a real <code>&lt;Form method="POST"&gt;</code> styled
+    to match. The CTA is the only Button in the bar, at <code>size="sm"</code>.
+  </p>
+</section>
+
+<section>
+  <h2>Mobile bar and menu</h2>
+  <div class="stage flex gap-6 wrap items-start">
+    <div style="width: 300px">
+      <div class="bar bar-mobile" style="border: 1px solid var(--border); border-radius: 8px">
+        <span class="mark" style="font-size: 15px">
+          <svg style="width: 20px; height: 20px" viewBox="0 0 82 71" fill="currentColor"><path d="M77.5 39.4a13 13 0 01-26 0V16.3a1.8 1.8 0 10-3.5 0v23.1a16.5 16.5 0 1033 0V16.3a1.8 1.8 0 10-3.5 0v23.1z" /><path d="M8.3 15.1a16.5 16.5 0 0014.3 16v9a16.6 16.6 0 00-14.3 16v7.9L4 59.5a1.8 1.8 0 00-2.5 2.5l7.3 7.3a1.8 1.8 0 003-1.3V56a13 13 0 1125.1 0v12.1a1.8 1.8 0 103.5 0V56a16.6 16.6 0 00-14.3-16v-9a16.5 16.5 0 0014.3-16V2.8A1.8 1.8 0 0038.7 1H10a1.8 1.8 0 00-1.7 1.8v12.3zm28.6-10.6H11.8v10.6a13 13 0 1025.1 0V4.5z" /></svg>
+          moku pona
+        </span>
+        <button class="burger" aria-label="Open menu"><span></span><span></span></button>
+      </div>
+      <p class="cap"><code>h-14 px-5</code>. The burger is two 2px bars, not an icon.</p>
+    </div>
+
+    <div class="sheet" style="width: 300px">
+      <div class="glow glow-strong absolute" style="width: 288px; height: 288px; top: -40px; right: -40px"></div>
+      <div class="relative bar bar-mobile">
+        <span class="mark" style="font-size: 15px">
+          <svg style="width: 20px; height: 20px" viewBox="0 0 82 71" fill="currentColor"><path d="M77.5 39.4a13 13 0 01-26 0V16.3a1.8 1.8 0 10-3.5 0v23.1a16.5 16.5 0 1033 0V16.3a1.8 1.8 0 10-3.5 0v23.1z" /><path d="M8.3 15.1a16.5 16.5 0 0014.3 16v9a16.6 16.6 0 00-14.3 16v7.9L4 59.5a1.8 1.8 0 00-2.5 2.5l7.3 7.3a1.8 1.8 0 003-1.3V56a13 13 0 1125.1 0v12.1a1.8 1.8 0 103.5 0V56a16.6 16.6 0 00-14.3-16v-9a16.5 16.5 0 0014.3-16V2.8A1.8 1.8 0 0038.7 1H10a1.8 1.8 0 00-1.7 1.8v12.3zm28.6-10.6H11.8v10.6a13 13 0 1025.1 0V4.5z" /></svg>
+          moku pona
+        </span>
+        <button class="burger" aria-label="Close menu" style="padding: 8px">
+          <svg class="icon icon-lg" viewBox="0 0 15 15"><path d="M3.5 3.5l8 8M11.5 3.5l-8 8" /></svg>
+        </button>
+      </div>
+      <div class="relative flex col px-5" style="padding-top: 24px">
+        <span class="sheet-link">dinners <svg class="icon icon-lg accent" viewBox="0 0 15 15"><path d="M6 3.5L9.5 7.5 6 11.5" /></svg></span>
+        <span class="sheet-link">account <svg class="icon icon-lg accent" viewBox="0 0 15 15"><path d="M6 3.5L9.5 7.5 6 11.5" /></svg></span>
+        <span class="sheet-link">logout <svg class="icon icon-lg accent" viewBox="0 0 15 15"><path d="M6 3.5L9.5 7.5 6 11.5" /></svg></span>
+        <button class="btn btn-default btn-lg" style="margin-top: 32px">join a dinner</button>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    <b>MobileMenu</b> — <code>fixed inset-0 z-50 bg-background</code> with a strong glow at
+    <code>-top-10 -right-10 size-72</code>. Items are
+    <code>border-b py-4 text-xl tracking-tight</code> with a primary
+    <code>size-5</code> chevron; the CTA drops to the bottom at <code>size="lg"</code>, and
+    the instagram link moves out of the list into a footer row. The menu closes on every
+    pathname change.
+  </p>
+</section>

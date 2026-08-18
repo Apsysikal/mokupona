@@ -1,0 +1,124 @@
+<!--meta {"group":"Foundations","title":"Motion & effects","file":"motion-effects.html","sources":["app/tailwind.css","app/components/section.tsx"],"note":"Four custom utilities carry every non-trivial effect in the app: <code>glow-primary</code> / <code>glow-primary-strong</code>, <code>animate-page-in</code>, <code>scrollbar-hidden</code>, and the two accordion keyframes. Everything else is a plain <code>transition-colors</code> at the default 150ms; only two places lengthen it — the chevron rotate and the seat bar fill."} -->
+<style-extra>
+.glow-stage { height: 190px; overflow: hidden; }
+.glow-demo { width: 220px; height: 220px; top: -70px; }
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-in { animation: page-in 300ms ease-out infinite alternate; }
+.scroller { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.scroller::-webkit-scrollbar { display: none; }
+.chev { transition: transform 300ms; }
+.rotated { transform: rotate(180deg); }
+.dur { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+</style-extra>
+
+<section>
+  <h2>Glow — the only decorative gradient</h2>
+  <div class="stage glow-stage relative">
+    <div class="glow glow-demo absolute" style="left: 40px"></div>
+    <div class="glow glow-strong glow-demo absolute" style="left: 300px"></div>
+    <div class="relative flex col gap-2" style="padding-top: 96px">
+      <span class="t-sm fg-65" style="width: 220px; margin-left: 40px">
+        <code>glow-primary</code> — 0.15 alpha
+      </span>
+    </div>
+    <span class="absolute t-sm fg-65" style="left: 300px; top: 130px">
+      <code>glow-primary-strong</code> — 0.20 alpha
+    </span>
+  </div>
+  <p class="cap">
+    Rendered by <code>&lt;Glow strong? /&gt;</code>: a <code>pointer-events-none absolute
+    rounded-full</code> div, positioned by the caller. Used behind the auth split, the
+    mobile menu, and the dinners empty state. <b>Elevation is borders, never shadows</b> —
+    the only <code>shadow-lg</code> left is on the Radix dialog and popover portals.
+  </p>
+</section>
+
+<section>
+  <h2>animate-page-in — every admin route body</h2>
+  <div class="stage flex items-center gap-6">
+    <div class="ui-card p-4 page-in" style="width: 240px">
+      <p class="t-base fw-semibold">Overview</p>
+      <p class="t-sm fg-50">fades up 0.5rem over 300ms</p>
+    </div>
+    <p class="t-sm fg-65">
+      <code>opacity 0 → 1</code> and <code>translateY(0.5rem) → 0</code>, 300ms ease-out.
+      Applied once per route, on the outermost admin div.
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>Durations in use</h2>
+  <div class="stage flex col gap-3">
+    <div class="flex items-center gap-4">
+      <span class="dur fg-50" style="width: 90px">default</span>
+      <span class="t-sm">
+        <code>transition-colors</code> — buttons, chips, tabs, table rows, card hover,
+        every focusable control
+      </span>
+    </div>
+    <div class="hairline"></div>
+    <div class="flex items-center gap-4">
+      <span class="dur fg-50" style="width: 90px">200ms</span>
+      <span class="t-sm">
+        <code>animate-accordion-down / -up</code> — height to
+        <code>--radix-accordion-content-height</code>
+      </span>
+    </div>
+    <div class="hairline"></div>
+    <div class="flex items-center gap-4">
+      <span class="dur fg-50" style="width: 90px">300ms</span>
+      <span class="t-sm flex items-center gap-2">
+        <code>duration-300</code> — chevron rotate
+        <svg class="icon chev accent" viewBox="0 0 15 15" style="stroke-width: 1.2">
+          <path d="M4 6l3.5 3.5L11 6" />
+        </svg>
+        →
+        <svg class="icon chev rotated accent" viewBox="0 0 15 15" style="stroke-width: 1.2">
+          <path d="M4 6l3.5 3.5L11 6" />
+        </svg>
+        · image fade-in on load
+      </span>
+    </div>
+    <div class="hairline"></div>
+    <div class="flex items-center gap-4">
+      <span class="dur fg-50" style="width: 90px">500ms</span>
+      <span class="t-sm"><code>transition-[width]</code> — SeatProgress fill only</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>scrollbar-hidden — horizontal rails on small screens</h2>
+  <div class="stage">
+    <div class="scroller">
+      <span class="chip chip-active">all</span>
+      <span class="chip">upcoming</span>
+      <span class="chip">past</span>
+      <span class="chip">basics</span>
+      <span class="chip">menu &amp; donation</span>
+      <span class="chip">schedule &amp; pricing</span>
+    </div>
+    <p class="cap">
+      <code>scrollbar-width: none</code> + <code>::-webkit-scrollbar { display: none }</code>.
+      Used by AdminTabs and SectionNav, which collapse to a scroll rail below <code>md</code>.
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>Focus — one recipe</h2>
+  <div class="stage flex items-center gap-5 wrap">
+    <button class="btn btn-default" style="box-shadow: 0 0 0 2px var(--ring)">ring-2 ring-ring</button>
+    <input class="field field-focused" style="width: 220px" value="inset-ring-2" readonly />
+    <span class="checkbox checkbox-checked" style="box-shadow: 0 0 0 2px var(--ring)"></span>
+  </div>
+  <p class="cap">
+    Buttons and the checkbox take an outer <code>focus-visible:ring-2 ring-ring</code>;
+    field shells take <code>focus-visible:inset-ring-2</code> with the border dropped, so the
+    control never grows on focus. <b>No component defines a third treatment.</b>
+  </p>
+</section>

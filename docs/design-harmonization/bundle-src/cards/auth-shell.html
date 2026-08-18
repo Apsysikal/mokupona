@@ -1,0 +1,86 @@
+<!--meta {"group":"Account & auth","title":"Auth shell","file":"auth-shell.html","sources":["app/components/auth-layout.tsx","app/routes/login.tsx","app/routes/join.tsx","app/routes/invite.$token.tsx"],"note":"A 50/50 split: brand copy on a raised <code>bg-card</code> panel, the form on the page surface. Below <code>md</code> the panel becomes a short banner above the form rather than disappearing, so the page still opens with a voice. The <code>mode</code> prop adds the login/join segmented toggle; screens that are not a choice (reset, invite) omit it."} -->
+<style-extra>
+.split { display: flex; min-height: 320px; }
+.brand { position: relative; overflow: hidden; width: 50%; display: flex; flex-direction: column; justify-content: center; background: var(--card); border-right: 1px solid var(--border); padding: 48px; }
+.pane { width: 50%; display: flex; flex-direction: column; justify-content: center; padding: 40px; }
+</style-extra>
+
+<section>
+  <h2>md and up</h2>
+  <div class="stage flush">
+    <div class="split">
+      <div class="brand">
+        <div class="glow absolute" style="width: 320px; height: 320px; top: -120px; right: -96px"></div>
+        <div class="relative flex col gap-4">
+          <span class="eyebrow eyebrow-kicker eyebrow-light">members</span>
+          <h2 class="t-4xl fw-light leading-tight tracking-tight">welcome back to the table</h2>
+          <p class="fg-80 max-w-md fw-light">sign in to manage your reservations, or create an account to start joining our dinners.</p>
+        </div>
+      </div>
+      <div class="pane">
+        <div class="flex col gap-5" style="margin: 0 auto; width: 100%; max-width: 380px">
+          <div class="seg-group"><span class="seg seg-active">log in</span><span class="seg">sign up</span></div>
+          <h1 class="t-3xl fw-light leading-tight tracking-tight mt-1">log in</h1>
+          <div class="flex col gap-4">
+            <div class="flex col gap-2"><label class="label">email address</label><input class="field" readonly /></div>
+            <div class="flex col gap-2">
+              <div class="flex items-baseline justify-between"><label class="label">password</label><span class="accent t-sm fw-semibold">forgot password?</span></div>
+              <input class="field" type="password" value="secret" readonly />
+            </div>
+            <div class="flex items-center gap-2"><span class="checkbox"></span><span class="t-sm fg-80">remember me</span></div>
+            <button class="btn btn-default btn-lg w-full">log in</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    Brand panel <code>md:w-1/2 border-r bg-card p-12</code> with a glow at
+    <code>-top-30 -right-24 size-80</code>; heading
+    <code>text-4xl font-light tracking-tight</code>, body
+    <code>font-light text-foreground/80 max-w-md</code>. Form column
+    <code>md:w-1/2 md:px-20 md:py-16</code>, contents capped at
+    <code>max-w-md</code> and centred. The form's own <code>&lt;h1&gt;</code> is
+    <code>text-3xl</code> — one step under the brand heading, because the brand panel is
+    the page's voice and the form is its task.
+  </p>
+</section>
+
+<section>
+  <h2>Below md — banner instead of panel</h2>
+  <div class="stage flush" style="max-width: 340px">
+    <div class="flex col">
+      <div class="relative overflow-hidden surface-card border-b" style="padding: 24px 24px 28px">
+        <div class="glow absolute" style="width: 224px; height: 224px; top: -96px; right: -64px"></div>
+        <div class="relative flex col gap-2">
+          <span class="eyebrow eyebrow-kicker eyebrow-light t-xs">members</span>
+          <h1 class="t-2xl fw-light leading-tight tracking-tight">welcome back to the table</h1>
+        </div>
+      </div>
+      <div class="flex col gap-4" style="padding: 24px">
+        <div class="seg-group"><span class="seg seg-active">log in</span><span class="seg">sign up</span></div>
+        <div class="flex col gap-2"><label class="label">email address</label><input class="field" readonly /></div>
+        <button class="btn btn-default btn-lg w-full">log in</button>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    The mobile banner drops the body copy, shrinks its eyebrow to
+    <code>text-xs</code>, and promotes its heading to the <code>&lt;h1&gt;</code> —
+    so the small screen keeps exactly one page heading. Both halves render in the DOM and
+    are swapped by <code>hidden md:flex</code> / <code>md:hidden</code>.
+  </p>
+</section>
+
+<section>
+  <h2>Brand copy is a prop</h2>
+  <div class="stage flex col gap-3 t-sm fg-65">
+    <span><b>default</b> — "members" / "welcome back to the table" / the two-line body</span>
+    <span><b>invite</b> — the panel is overridden to name the inviting role: "join moku pona as a <span class="accent">moderator</span>"</span>
+  </div>
+  <p class="cap">
+    <code>brand</code> takes <code>{ eyebrow, heading, body? }</code> with
+    <code>heading</code> typed as <code>ReactNode</code> — which is what lets the invite
+    screen colour one word without a second component.
+  </p>
+</section>

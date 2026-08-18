@@ -1,0 +1,814 @@
+<!-- @dsCard group="Overview" title="Index" -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mokupona — design system index</title>
+    <style>
+/* mokupona design system — shared card stylesheet.
+   Inlined into every generated preview card by build.mjs. A hand-rolled subset
+   of the Tailwind utilities the app actually ships, so a card body reads close
+   to the JSX it was extracted from. */
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  border: 0 solid var(--border);
+}
+
+:root {
+  --background: #15110e;
+  --card: #1b1511;
+  --foreground: 245 241 236;
+  --primary: #ed825e;
+  --primary-foreground: #15110e;
+  --accent-light: #f1b48c;
+  --destructive: #a71d31;
+  --destructive-light: #f0a8ab;
+  --sky-300: #7dd3fc;
+  --border: rgb(245 241 236 / 0.15);
+  --ring: #ed825e;
+}
+
+body {
+  background: var(--background);
+  color: rgb(var(--foreground));
+  font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 32px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── card chrome ─────────────────────────────────────────────── */
+.doc-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgb(var(--foreground) / 0.5);
+}
+.doc-title {
+  font-size: 24px;
+  font-weight: 300;
+  letter-spacing: -0.025em;
+  margin: 6px 0 4px;
+}
+.doc-note {
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgb(var(--foreground) / 0.65);
+  max-width: 720px;
+}
+.doc-source {
+  font-size: 12px;
+  color: rgb(var(--foreground) / 0.4);
+  margin-top: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+section {
+  margin-top: 28px;
+}
+section > h2 {
+  /* Not uppercased: many of these headings are component names, and
+     AdminDeleteButton is unreadable in caps. */
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgb(var(--foreground) / 0.5);
+  margin-bottom: 12px;
+}
+.stage {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+  padding: 24px;
+}
+.stage.plain {
+  background: var(--background);
+}
+.stage.flush {
+  padding: 0;
+  overflow: hidden;
+}
+.cap {
+  font-size: 12px;
+  color: rgb(var(--foreground) / 0.4);
+  margin-top: 8px;
+  line-height: 1.6;
+}
+.cap b {
+  color: rgb(var(--foreground) / 0.65);
+  font-weight: 600;
+}
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.86em;
+  color: rgb(var(--foreground) / 0.8);
+}
+
+/* ── layout utilities ────────────────────────────────────────── */
+.flex { display: flex; }
+.col { flex-direction: column; }
+.wrap { flex-wrap: wrap; }
+.grid { display: grid; }
+.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.items-start { align-items: flex-start; }
+.items-center { align-items: center; }
+.items-end { align-items: flex-end; }
+.items-baseline { align-items: baseline; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.justify-end { justify-content: flex-end; }
+.gap-1 { gap: 4px; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+.gap-5 { gap: 20px; }
+.gap-6 { gap: 24px; }
+.gap-7 { gap: 28px; }
+.gap-8 { gap: 32px; }
+.gap-10 { gap: 40px; }
+.grow { flex-grow: 1; }
+.shrink-0 { flex-shrink: 0; }
+.flex-1 { flex: 1 1 0%; min-width: 0; }
+.min-w-0 { min-width: 0; }
+.relative { position: relative; }
+.absolute { position: absolute; }
+.overflow-hidden { overflow: hidden; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nowrap { white-space: nowrap; }
+.pre-line { white-space: pre-line; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.w-full { width: 100%; }
+.w-fit { width: fit-content; }
+.max-w-md { max-width: 448px; }
+.max-w-2xl { max-width: 672px; }
+.mt-1 { margin-top: 4px; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }
+.mt-6 { margin-top: 24px; }
+.mb-1 { margin-bottom: 4px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+.mb-5 { margin-bottom: 20px; }
+.mb-6 { margin-bottom: 24px; }
+
+/* ── type utilities ──────────────────────────────────────────── */
+.t-xs { font-size: 12px; }
+.t-sm { font-size: 14px; }
+.t-base { font-size: 16px; }
+.t-lg { font-size: 18px; }
+.t-xl { font-size: 20px; }
+.t-2xl { font-size: 24px; }
+.t-3xl { font-size: 30px; }
+.t-4xl { font-size: 36px; }
+.t-5xl { font-size: 48px; }
+.fw-light { font-weight: 300; }
+.fw-normal { font-weight: 400; }
+.fw-semibold { font-weight: 600; }
+.leading-tight { line-height: 1.25; }
+.leading-snug { line-height: 1.375; }
+.leading-none { line-height: 1; }
+.tracking-tight { letter-spacing: -0.025em; }
+.tracking-wide { letter-spacing: 0.025em; }
+.tracking-widest { letter-spacing: 0.1em; }
+.uppercase { text-transform: uppercase; }
+.italic { font-style: italic; }
+.underline { text-decoration: underline; text-underline-offset: 4px; }
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── colour utilities ────────────────────────────────────────── */
+.fg { color: rgb(var(--foreground)); }
+.fg-80 { color: rgb(var(--foreground) / 0.8); }
+.fg-65 { color: rgb(var(--foreground) / 0.65); }
+.fg-50 { color: rgb(var(--foreground) / 0.5); }
+.fg-40 { color: rgb(var(--foreground) / 0.4); }
+.accent { color: var(--primary); }
+.accent-light { color: var(--accent-light); }
+.danger { color: var(--destructive-light); }
+.info { color: var(--sky-300); }
+.on-primary { color: var(--primary-foreground); }
+
+/* ── surface utilities ───────────────────────────────────────── */
+.surface-card { background: var(--card); }
+.surface-bg { background: var(--background); }
+.surface-subtle { background: rgb(var(--foreground) / 0.05); }
+.surface-primary { background: var(--primary); }
+.tint-primary { background: rgb(237 130 94 / 0.1); }
+.tint-danger { background: rgb(167 29 49 / 0.1); }
+.tint-info { background: rgb(125 211 252 / 0.1); }
+.tint-fg { background: rgb(var(--foreground) / 0.1); }
+.bordered { border: 1px solid var(--border); }
+.border-b { border-bottom: 1px solid var(--border); }
+.border-t { border-top: 1px solid var(--border); }
+.border-y { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.border-r { border-right: 1px solid var(--border); }
+.border-dashed { border-style: dashed; }
+.border-primary { border-color: rgb(237 130 94 / 0.35); }
+.border-danger { border-color: rgb(167 29 49 / 0.35); }
+.border-info { border-color: rgb(125 211 252 / 0.35); }
+.rounded-sm { border-radius: 4px; }
+.rounded-lg { border-radius: 8px; }
+.rounded-2xl { border-radius: 16px; }
+.rounded-full { border-radius: 9999px; }
+.p-2 { padding: 8px; }
+.p-3 { padding: 12px; }
+.p-4 { padding: 16px; }
+.p-5 { padding: 20px; }
+.p-6 { padding: 24px; }
+.p-7 { padding: 28px; }
+.p-8 { padding: 32px; }
+.px-3 { padding-left: 12px; padding-right: 12px; }
+.px-4 { padding-left: 16px; padding-right: 16px; }
+.px-5 { padding-left: 20px; padding-right: 20px; }
+.py-2 { padding-top: 8px; padding-bottom: 8px; }
+.py-3 { padding-top: 12px; padding-bottom: 12px; }
+.py-4 { padding-top: 16px; padding-bottom: 16px; }
+.pb-4 { padding-bottom: 16px; }
+.pt-4 { padding-top: 16px; }
+.hairline { background: var(--border); height: 1px; }
+
+/* ── the shipped components ──────────────────────────────────── */
+/* Button — app/components/ui/button.tsx */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 24px;
+  cursor: pointer;
+  transition: background-color 150ms, border-color 150ms, color 150ms;
+  background: none;
+  color: inherit;
+}
+.btn-default { background: var(--primary); color: var(--primary-foreground); }
+.btn-destructive { background: var(--destructive); color: rgb(var(--foreground)); }
+.btn-destructive-outline {
+  border: 1px solid rgb(167 29 49 / 0.35);
+  color: var(--destructive-light);
+}
+.btn-outline { border: 1px solid rgb(var(--foreground) / 0.2); }
+.btn-secondary { background: var(--card); color: rgb(var(--foreground)); }
+.btn-ghost { color: rgb(var(--foreground) / 0.8); }
+.btn-link {
+  color: var(--primary);
+  padding: 0;
+  height: auto;
+  text-underline-offset: 4px;
+}
+.btn-sm { height: 36px; padding: 0 16px; font-size: 14px; }
+.btn-lg { height: 48px; }
+.btn-icon { width: 36px; height: 36px; padding: 0; }
+.btn-icon-sm { width: 28px; height: 28px; padding: 0; }
+.btn[disabled] { pointer-events: none; opacity: 0.5; }
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--ring); }
+
+/* Badge — app/components/ui/badge.tsx */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--border);
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+.badge-default { background: var(--primary); color: var(--primary-foreground); border-color: transparent; }
+.badge-secondary { background: var(--card); color: rgb(var(--foreground)); }
+.badge-info { border-color: rgb(125 211 252 / 0.35); background: rgb(125 211 252 / 0.1); color: var(--sky-300); }
+.badge-pill { border-radius: 9999px; }
+
+/* Chip — chipVariants in app/components/section.tsx */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: rgb(var(--foreground) / 0.65);
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 150ms, border-color 150ms, background-color 150ms;
+}
+.chip-active {
+  border-color: rgb(237 130 94 / 0.35);
+  background: rgb(237 130 94 / 0.1);
+  color: var(--accent-light);
+}
+.chip-nav {
+  display: block;
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+/* Pill — pillVariants in app/components/section.tsx */
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgb(var(--foreground) / 0.65);
+}
+.pill-accent {
+  border-color: rgb(237 130 94 / 0.35);
+  background: rgb(237 130 94 / 0.1);
+  color: var(--accent-light);
+}
+
+/* Eyebrow — app/components/section.tsx */
+.eyebrow { display: block; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--primary); }
+.eyebrow-kicker { font-size: 14px; text-transform: none; letter-spacing: normal; }
+.eyebrow-light { color: var(--accent-light); }
+.eyebrow-label { color: rgb(var(--foreground) / 0.5); }
+.eyebrow-on-primary { color: rgb(21 17 14 / 0.7); }
+
+/* Field shell — fieldShellClassName in app/components/ui/input.tsx */
+.field {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgb(var(--foreground) / 0.05);
+  padding: 4px 12px;
+  color: rgb(var(--foreground));
+  font-family: inherit;
+  font-size: 16px;
+  transition: border-color 150ms;
+}
+.field::placeholder { color: rgb(var(--foreground) / 0.5); }
+.field:focus-visible { outline: none; border-color: transparent; box-shadow: inset 0 0 0 2px var(--ring); }
+.field-textarea { height: auto; min-height: 80px; padding: 12px; resize: vertical; }
+.field-focused { border-color: transparent; box-shadow: inset 0 0 0 2px var(--ring); }
+.field-file {
+  height: auto;
+  padding: 24px;
+  border-style: dashed;
+  border-color: rgb(var(--foreground) / 0.2);
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+}
+.label { font-weight: 600; color: rgb(var(--foreground) / 0.65); }
+.field-error { color: var(--destructive-light); font-size: 14px; }
+.field-desc { color: rgb(var(--foreground) / 0.65); font-size: 14px; }
+
+/* Checkbox — app/components/ui/checkbox.tsx */
+.checkbox {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: rgb(var(--foreground) / 0.05);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.checkbox-checked { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); }
+
+/* Segmented control — segmentGroupClassName / segmentVariants */
+.seg-group {
+  display: flex;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgb(var(--foreground) / 0.05);
+  padding: 4px;
+}
+.seg {
+  display: flex;
+  height: 36px;
+  flex: 1 1 0%;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgb(var(--foreground) / 0.65);
+  transition: background-color 150ms, color 150ms;
+}
+.seg-active { background: var(--primary); color: var(--primary-foreground); }
+
+/* Card — app/components/ui/card.tsx */
+.ui-card {
+  background: var(--card);
+  color: rgb(var(--foreground));
+  border-radius: 16px;
+  border: 1px solid var(--border);
+}
+.ui-card-interactive:hover { border-color: rgb(237 130 94 / 0.35); }
+
+/* InitialsAvatar / SeatProgress — app/components/admin-ui.tsx */
+.avatar {
+  display: flex;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.avatar-a { color: var(--accent-light); background: rgb(237 130 94 / 0.1); }
+.avatar-b { color: rgb(var(--foreground) / 0.8); background: rgb(var(--foreground) / 0.1); }
+.progress { display: block; height: 8px; flex: 1 1 0%; overflow: hidden; border-radius: 9999px; background: rgb(var(--foreground) / 0.1); }
+.progress > span { display: block; height: 100%; border-radius: 9999px; background: var(--primary); }
+.progress > span.muted { background: rgb(var(--foreground) / 0.4); }
+
+/* glow-primary — app/tailwind.css */
+.glow {
+  pointer-events: none;
+  border-radius: 9999px;
+  background-image: radial-gradient(circle, rgb(237 130 94 / 0.15), transparent 70%);
+}
+.glow-strong { background-image: radial-gradient(circle, rgb(237 130 94 / 0.2), transparent 70%); }
+
+/* CoverImage placeholder — app/components/cover-image.tsx */
+.cover {
+  display: flex;
+  aspect-ratio: 3 / 2;
+  align-items: center;
+  justify-content: center;
+  background: rgb(237 130 94 / 0.1);
+}
+.cover > span {
+  display: flex;
+  aspect-ratio: 1;
+  width: 25%;
+  min-width: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 2px solid rgb(237 130 94 / 0.35);
+}
+.cover > span > span {
+  display: block;
+  aspect-ratio: 1;
+  width: 66%;
+  border-radius: 9999px;
+  border: 1px solid rgb(237 130 94 / 0.2);
+}
+
+/* Table — app/components/ui/table.tsx */
+table { width: 100%; border-collapse: collapse; font-size: 14px; caption-side: bottom; }
+thead tr { border-bottom: 1px solid var(--border); }
+th {
+  padding: 12px 16px;
+  text-align: left;
+  vertical-align: middle;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgb(var(--foreground) / 0.5);
+}
+td { padding: 16px; vertical-align: middle; }
+tbody tr { border-bottom: 1px solid var(--border); }
+tbody tr:last-child { border-bottom: 0; }
+
+svg.icon { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.6; fill: none; flex-shrink: 0; }
+svg.icon-lg { width: 20px; height: 20px; }
+svg.icon-xl { width: 28px; height: 28px; }
+a { color: inherit; }
+
+/* index.html */
+.entry {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  text-decoration: none;
+  transition: border-color 150ms;
+}
+.entry-src {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: rgb(var(--foreground) / 0.4);
+  margin-top: 4px;
+}
+@media (max-width: 720px) {
+  .grid.cols-2 { grid-template-columns: minmax(0, 1fr); }
+}
+    </style>
+  </head>
+  <body>
+    <p class="doc-eyebrow">moku pona</p>
+    <h1 class="doc-title">Design system</h1>
+    <p class="doc-note">
+      Every component that ships in the mokupona app, extracted from the code and
+      grouped the way the codebase is. 43 cards. Each card names the source
+      files it was pulled from, so a card and its implementation stay findable
+      from one another.
+    </p>
+
+    <section>
+      <h2>Groups</h2>
+      <div class="flex wrap gap-2">
+        <a class="chip" href="#foundations">Foundations</a>
+        <a class="chip" href="#primitives">Primitives</a>
+        <a class="chip" href="#forms">Forms</a>
+        <a class="chip" href="#navigation">Navigation</a>
+        <a class="chip" href="#content-blocks">Content blocks</a>
+        <a class="chip" href="#events">Events</a>
+        <a class="chip" href="#admin">Admin</a>
+        <a class="chip" href="#account-auth">Account &amp; auth</a>
+      </div>
+    </section>
+
+      <section id="foundations">
+        <h2>Foundations</h2>
+        <p class="doc-note mb-3">Tokens, ramps and effects everything else is assembled from.</p>
+        <div class="grid cols-2 gap-3">
+          <a class="ui-card ui-card-interactive entry" href="tokens-colors.html">
+            <span class="t-base fw-semibold">Color tokens</span>
+            <span class="t-sm fg-65">Surfaces, the one hairline, text tiers as foreground opacities, accent and semantics.</span>
+            <span class="entry-src">app/tailwind.css</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="headings.html">
+            <span class="t-base fw-semibold">Headings — one voice, two densities</span>
+            <span class="t-sm fg-65">One heading voice at two densities, shared by the public site and the admin.</span>
+            <span class="entry-src">app/components/section.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="iconography.html">
+            <span class="t-base fw-semibold">Iconography &amp; marks</span>
+            <span class="t-sm fg-65">Icons come from <code>@radix-ui/react-icons</code> at 15×15, sized by Tailwind rather than by prop. Two hand-drawn 24×24 stroke icons live in <code>icons.tsx</code> for concepts Radix has no glyph for. Three marks are brand assets: the moku pona logo, the lockup, and the Google G.</span>
+            <span class="entry-src">app/components/icons.tsx<br />app/components/logo.tsx<br />app/components/brand-lockup.tsx<br />app/features/auth/components/google-button.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="motion-effects.html">
+            <span class="t-base fw-semibold">Motion &amp; effects</span>
+            <span class="t-sm fg-65">Four custom utilities carry every non-trivial effect in the app: <code>glow-primary</code> / <code>glow-primary-strong</code>, <code>animate-page-in</code>, <code>scrollbar-hidden</code>, and the two accordion keyframes. Everything else is a plain <code>transition-colors</code> at the default 150ms; only two places lengthen it — the chevron rotate and the seat bar fill.</span>
+            <span class="entry-src">app/tailwind.css<br />app/components/section.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="page-shell.html">
+            <span class="t-base fw-semibold">Page shell &amp; prose</span>
+            <span class="t-sm fg-65">Every page is the same three-part column: nav, a growing body, footer, inside a <code>flex min-h-full flex-col</code> document. <code>PageContainer</code> supplies the one page width — <code>max-w-5xl</code> with <code>px-5 md:px-10</code> gutters — and takes an <code>as</code> so it can be the <code>&lt;main&gt;</code> or just a wrapper. The long-form prose scale is the last piece of type not covered by the ramp card.</span>
+            <span class="entry-src">app/root.tsx<br />app/components/section.tsx<br />app/routes/privacy.tsx<br />app/routes/dinners._index.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="spacing-radius.html">
+            <span class="t-base fw-semibold">Spacing, radius &amp; layout</span>
+            <span class="t-sm fg-65">The three radius tiers, the no-fractions rule, density presets and prose widths.</span>
+            <span class="entry-src">app/tailwind.css</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="type-ramp.html">
+            <span class="t-base fw-semibold">Type ramp</span>
+            <span class="t-sm fg-65">Native body ramp plus the display ladder, and the one font-light display weight.</span>
+            <span class="entry-src">app/tailwind.css</span>
+          </a>
+        </div>
+      </section>
+      <section id="primitives">
+        <h2>Primitives</h2>
+        <p class="doc-note mb-3">app/components/ui — the unstyled-to-styled base layer.</p>
+        <div class="grid cols-2 gap-3">
+          <a class="ui-card ui-card-interactive entry" href="accordion.html">
+            <span class="t-base fw-semibold">Accordion</span>
+            <span class="t-sm fg-65">A thin wrapper over Radix Accordion. Items are separated by a bottom hairline only — no card, no background. The trigger is <code>text-base font-semibold</code> with a <code>size-4</code> primary chevron that rotates 180° on open; content animates on the two <code>--animate-accordion-*</code> keyframes. Its one shipped use gives the trigger <code>text-primary</code>.</span>
+            <span class="entry-src">app/components/ui/accordion.tsx<br />app/features/events/components/event-view.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="avatar-progress.html">
+            <span class="t-base fw-semibold">Avatar &amp; seat progress</span>
+            <span class="t-sm fg-65">Two small display primitives the admin lists lean on. <code>InitialsAvatar</code> derives initials from a name or email and alternates between exactly two tints by <code>seed % 2</code> — a deterministic, list-index-driven variation with no colour-per-person mapping to maintain. <code>SeatProgress</code> is the only bar-style meter in the app.</span>
+            <span class="entry-src">app/components/admin-ui.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="badges-pills.html">
+            <span class="t-base fw-semibold">Badge, Pill &amp; Chip</span>
+            <span class="t-sm fg-65">Badge variants, the pill boolean, and the unified chip.</span>
+            <span class="entry-src">app/components/ui/badge.tsx<br />app/components/section.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="buttons.html">
+            <span class="t-base fw-semibold">Button</span>
+            <span class="t-sm fg-65">Six variants, five whole-step sizes, one focus recipe.</span>
+            <span class="entry-src">app/components/ui/button.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="cards.html">
+            <span class="t-base fw-semibold">Card tiers</span>
+            <span class="t-sm fg-65">The 16px card at two densities, interactive and empty.</span>
+            <span class="entry-src">app/components/ui/card.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="chips-segments.html">
+            <span class="t-base fw-semibold">Chips &amp; segmented control</span>
+            <span class="t-sm fg-65"><code>chipVariants</code> is one CVA covering two shapes — a rounded filter chip and a nav item that squares off into a sidebar link at <code>md</code>. <code>pillVariants</code> is its read-only sibling. The segmented control is a separate pair (<code>segmentGroupClassName</code> + <code>segmentVariants</code>) used for mutually exclusive choices.</span>
+            <span class="entry-src">app/components/section.tsx<br />app/components/admin-ui.tsx<br />app/components/section-nav.tsx<br />app/components/auth-layout.tsx<br />app/routes/admin.users._index.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="dialog.html">
+            <span class="t-base fw-semibold">Dialog</span>
+            <span class="t-sm fg-65">Two dialog implementations ship, on purpose. The Radix <code>Dialog</code> is the default for interactive admin flows. The form builder instead uses a native <code>&lt;dialog&gt;</code> driven by the invoker commands API, so its link/unlink confirmations still work with JavaScript off — same visual shell, different plumbing.</span>
+            <span class="entry-src">app/components/ui/dialog.tsx<br />app/components/signup-form-builder.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="eyebrows.html">
+            <span class="t-base fw-semibold">Eyebrow / kicker</span>
+            <span class="t-sm fg-65">Tracked and kicker variants across four tones.</span>
+            <span class="entry-src">app/components/section.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="form-fields.html">
+            <span class="t-base fw-semibold">Form fields</span>
+            <span class="t-sm fg-65">The input/textarea/select/checkbox family and the file-upload zone.</span>
+            <span class="entry-src">app/components/ui/input.tsx<br />app/components/forms.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="popover.html">
+            <span class="t-base fw-semibold">Popover</span>
+            <span class="t-sm fg-65">Radix Popover in a <code>bg-popover</code> panel — same raised surface and 16px radius as a card, plus the one <code>shadow-md</code> the system allows for portalled layers. One shipped use: the discounts note on the dinner fact list, whose trigger is a dotted-underline accent link rather than a button.</span>
+            <span class="entry-src">app/components/ui/popover.tsx<br />app/features/events/components/event-view.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="table.html">
+            <span class="t-base fw-semibold">Table</span>
+            <span class="t-sm fg-65">One table, one shipped use: the signups export view. Headers borrow the tracked-eyebrow voice (<code>text-xs uppercase tracking-widest text-foreground/50</code>), rows hover to <code>bg-foreground/5</code>, and the whole thing sits inside an <code>overflow-hidden</code> Card so the 16px radius clips it.</span>
+            <span class="entry-src">app/components/ui/table.tsx<br />app/routes/admin.dinners.$dinnerId_.signups.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="toast.html">
+            <span class="t-base fw-semibold">Toast</span>
+            <span class="t-sm fg-65">Sonner, restyled onto our surfaces through <code>toastOptions.classNames</code>. Toasts are raised on the <code>bg-background</code> surface — deliberately <em>not</em> the card colour, so they read as floating over the page rather than as part of it. One <code>&lt;Toaster /&gt;</code> lives in the root layout; everything else pushes into it.</span>
+            <span class="entry-src">app/components/ui/sonner.tsx<br />app/hooks/useToast.tsx<br />app/utils/toast.server.ts<br />app/root.tsx</span>
+          </a>
+        </div>
+      </section>
+      <section id="forms">
+        <h2>Forms</h2>
+        <p class="doc-note mb-3">Field wrappers, the public signup form, and the admin form builder.</p>
+        <div class="grid cols-2 gap-3">
+          <a class="ui-card ui-card-interactive entry" href="field-anatomy.html">
+            <span class="t-base fw-semibold">Field anatomy</span>
+            <span class="t-sm fg-65">Four wrappers — <code>Field</code>, <code>TextareaField</code>, <code>SelectField</code>, <code>CheckboxField</code> — share one <code>useFieldIds</code> hook that generates the id, wires <code>aria-describedby</code> to both the description and the error list, and merges rather than overwrites whatever Conform already put there. Every field is a <code>flex flex-col gap-2</code> stack in the same order: label, description, control, errors.</span>
+            <span class="entry-src">app/components/forms.tsx<br />app/components/ui/input.tsx<br />app/components/ui/label.tsx<br />app/components/ui/textarea.tsx<br />app/components/ui/checkbox.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="list-field.html">
+            <span class="t-base fw-semibold">List field (friends)</span>
+            <span class="t-sm fg-65">The one repeater in the public form: a guest adds friends up to a configured maximum, each answering the same set of sub-fields. It opens with a full-width hairline instead of a label row, because it is a section break in the form rather than another field. Add and remove are Conform intent buttons, so the whole thing works without JavaScript.</span>
+            <span class="entry-src">app/features/forms/fields/list/view.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="signup-form.html">
+            <span class="t-base fw-semibold">Signup form</span>
+            <span class="t-sm fg-65">The public dinner signup, rendered from a stored field schema: each descriptor picks its own view (<code>text</code>, <code>email</code>, <code>tel</code>, <code>textarea</code>, <code>select</code>, <code>checkbox</code>, <code>list</code>), all of which delegate to the shared field wrappers. Three things are always appended by the route rather than the schema — the privacy checkbox, the form-level error list, and a full-width <code>size="lg"</code> submit.</span>
+            <span class="entry-src">app/routes/dinners_.$dinnerId.tsx<br />app/features/forms/fields/*/view.tsx<br />app/features/forms/honeypot-field.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="form-builder.html">
+            <span class="t-base fw-semibold">Signup form builder</span>
+            <span class="t-sm fg-65">The largest composite in the app: the admin editor for a dinner's signup questions. Every question is a collapsible <code>RowCard</code>; three tints classify a row at a glance — plain for an ordinary question, primary for a pinned identity field that cannot be removed, sky for the friends group. It degrades without JavaScript: a <code>&lt;noscript&gt;</code> rule forces every row body open, and reorder/insert/remove are Conform intent buttons.</span>
+            <span class="entry-src">app/components/signup-form-builder.tsx</span>
+          </a>
+        </div>
+      </section>
+      <section id="navigation">
+        <h2>Navigation</h2>
+        <p class="doc-note mb-3">Site chrome: nav bars, tabs, in-page nav, footer, links.</p>
+        <div class="grid cols-2 gap-3">
+          <a class="ui-card ui-card-interactive entry" href="admin-tabs.html">
+            <span class="t-base fw-semibold">Admin tabs</span>
+            <span class="t-sm fg-65">The admin section's only navigation. Underline tabs on a bottom hairline, with a live count pill on the four tabs that have one — the counts are loaded once in the <code>admin</code> layout route, so every child screen shows the same numbers without refetching. Two tabs are admin-only and simply do not render for moderators.</span>
+            <span class="entry-src">app/components/admin-tabs.tsx<br />app/routes/admin.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="footer.html">
+            <span class="t-base fw-semibold">Footer</span>
+            <span class="t-sm fg-65">Like the nav, two separate layouts rather than one that reflows: a desktop row with the lockup opposite two labelled link columns, and a mobile stack where the columns collapse into a single row of links. The column headings are tracked eyebrows at label tone — the same component that heads sections elsewhere.</span>
+            <span class="entry-src">app/components/footer.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="links-and-dividers.html">
+            <span class="t-base fw-semibold">Links &amp; dividers</span>
+            <span class="t-sm fg-65">The small connective tissue: <code>BackLink</code> above a page title, <code>SecondaryCTA</code> beside a primary button, <code>SectionDivider</code> between bands of content, and <code>AutoLink</code>, which turns bare URLs inside user-written copy into anchors. None of these is a Button — they are all deliberately lighter than one.</span>
+            <span class="entry-src">app/components/section.tsx<br />app/components/auto-link.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="section-nav.html">
+            <span class="t-base fw-semibold">Section nav</span>
+            <span class="t-sm fg-65">In-page navigation for the long admin dinner form. An IntersectionObserver with a <code>-15% 0px -75% 0px</code> root margin — a thin band near the top of the viewport — decides which section is current, so the highlight tracks reading position rather than scroll position. Two shapes: a sticky blurred rail on mobile, a sticky sidebar from <code>md</code>.</span>
+            <span class="entry-src">app/components/section-nav.tsx<br />app/features/events/components/admin-event-form.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="site-nav.html">
+            <span class="t-base fw-semibold">Site nav</span>
+            <span class="t-sm fg-65">Two entirely separate bars rather than one responsive bar: a 64px desktop row with inline links, and a 56px mobile row whose only control opens a full-screen menu. The item list is built once from auth state (<code>buildNavItems</code>) and shared, so admin and account links appear in both without duplication.</span>
+            <span class="entry-src">app/components/site-nav.tsx</span>
+          </a>
+        </div>
+      </section>
+      <section id="content-blocks">
+        <h2>Content blocks</h2>
+        <p class="doc-note mb-3">The CMS block views the marketing pages are composed of.</p>
+        <div class="grid cols-2 gap-3">
+          <a class="ui-card ui-card-interactive entry" href="hero-block.html">
+            <span class="t-base fw-semibold">Hero block</span>
+            <span class="t-sm fg-65">The landing page's opening block, and the only asymmetric grid in the system: a <code>46fr / 54fr</code> split giving the image the larger half. Everything in it is optional except the headline — eyebrow, description, actions and meta all render conditionally, so the same block serves a page with a scheduled dinner and one without.</span>
+            <span class="entry-src">app/features/cms/blocks/hero/view.tsx<br />app/routes/_index.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="media.html">
+            <span class="t-base fw-semibold">Images &amp; media</span>
+            <span class="t-sm fg-65"><code>OptimizedImage</code> is the only way a remote image enters the app: it reserves the box by <code>aspect-ratio</code>, paints a blurred LQIP (or a primary tint when there is none) behind it, and fades the real file in over 300ms — plus a <code>&lt;noscript&gt;</code> copy so the picture still appears without JavaScript. <code>CoverImage</code> wraps it at a fixed 3:2 and supplies a drawn placeholder when an event has no image at all.</span>
+            <span class="entry-src">app/components/optimized-image.tsx<br />app/components/cover-image.tsx<br />app/features/cms/blocks/image/view.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="text-section-block.html">
+            <span class="t-base fw-semibold">Text section block</span>
+            <span class="t-sm fg-65">Two variants of one block. <code>plain</code> is a two-column band — eyebrow and headline left, body right — on an uneven <code>1fr / 1.2fr</code> grid. <code>slanted</code> is the same content on a <code>-skew-y-3</code> primary slab, the single inverted surface in the app and the only place <code>text-primary-foreground</code> appears outside a button.</span>
+            <span class="entry-src">app/features/cms/blocks/text-section/view.tsx</span>
+          </a>
+        </div>
+      </section>
+      <section id="events">
+        <h2>Events</h2>
+        <p class="doc-note mb-3">Dinner cards, fact rows and the dinner detail layout.</p>
+        <div class="grid cols-2 gap-3">
+          <a class="ui-card ui-card-interactive entry" href="event-detail.html">
+            <span class="t-base fw-semibold">Dinner detail layout</span>
+            <span class="t-sm fg-65"><code>EventStory</code> — cover, date, title, description, then an accordion of menu and donation — is the page's left column. Beside it sits the sticky signup aside. When a dinner is past, the aside is dropped and the grid collapses to a single column, so the same route serves the archive without a second layout.</span>
+            <span class="entry-src">app/features/events/components/event-view.tsx<br />app/routes/dinners_.$dinnerId.tsx<br />app/routes/dinners._index.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="event-cards.html">
+            <span class="t-base fw-semibold">Event cards</span>
+            <span class="t-sm fg-65">Two cards for two jobs. <code>FeaturedEventCard</code> is the upcoming dinner: a full Card that turns into an image/copy row at <code>lg</code>, carrying a "next dinner" pill and both CTAs. <code>PastEventCard</code> is a bare link in a grid — no card, no border, just a rounded image at 70% opacity that lifts to full on hover.</span>
+            <span class="entry-src">app/features/events/components/event-card.tsx<br />app/routes/dinners._index.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="event-facts.html">
+            <span class="t-base fw-semibold">Event facts</span>
+            <span class="t-sm fg-65">Four one-line fact components shared by every surface that shows a dinner. They compose two ways without changing: a wrapping row inside the featured card, and a vertical stack inside the detail aside. <code>EventDateHeading</code> is the odd one out — it is accent-coloured and semibold, because on a card the date <em>is</em> the heading.</span>
+            <span class="entry-src">app/features/events/components/event-facts.tsx<br />app/features/events/components/event-view.tsx<br />app/features/events/date-format.ts</span>
+          </a>
+        </div>
+      </section>
+      <section id="admin">
+        <h2>Admin</h2>
+        <p class="doc-note mb-3">Page headers, list rows, empty states and the admin form shell.</p>
+        <div class="grid cols-2 gap-3">
+          <a class="ui-card ui-card-interactive entry" href="admin-empty-states.html">
+            <span class="t-base fw-semibold">Empty states</span>
+            <span class="t-sm fg-65"><code>AdminEmptyState</code> is one component used by every admin list. A dashed Card, a tinted circular medallion holding a <code>size-6</code> icon, a semibold line, a constrained explanation, and an optional action. The same component covers both "nothing exists yet" and "nothing matched your filter" — only the copy changes, and the filtered case drops the button.</span>
+            <span class="entry-src">app/components/admin-ui.tsx<br />app/routes/admin.dinners._index.tsx<br />app/routes/admin.locations._index.tsx<br />app/routes/admin.board-members.tsx<br />app/routes/admin.users._index.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="admin-form-shell.html">
+            <span class="t-base fw-semibold">Form shell</span>
+            <span class="t-sm fg-65">Three form scales, one grammar. The dinner form is the full shell — section nav beside a stack of <code>SectionCard</code>s under a sticky <code>SaveBar</code>. The location form is a single Card with a right-aligned action pair. The board-member form has no card at all. Card structure earns its place by form length; the button pair never changes.</span>
+            <span class="entry-src">app/features/events/components/admin-event-form.tsx<br />app/components/admin-location-form.tsx<br />app/features/board-members/admin-board-member-form.tsx<br />app/routes/admin.settings.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="admin-list-rows.html">
+            <span class="t-base fw-semibold">List rows</span>
+            <span class="t-sm fg-65">Five list rows, one anatomy: an <code>interactive</code> Card at <code>p-4</code>, a leading visual, a truncating identity block, and a right-aligned action cluster of <code>size="sm"</code> buttons ending in <code>AdminDeleteButton</code>. Dinners and users list one per row; locations and board members sit in a two-column grid.</span>
+            <span class="entry-src">app/routes/admin.dinners._index.tsx<br />app/routes/admin.users._index.tsx<br />app/routes/admin.board-members.tsx<br />app/routes/admin.locations._index.tsx<br />app/components/admin-delete-button.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="admin-overview.html">
+            <span class="t-base fw-semibold">Overview cards</span>
+            <span class="t-sm fg-65">The admin landing screen: one <code>NextDinnerCard</code> that answers "what's next and how full is it", and a recent-signups card that lists the last six in a two-column grid. Neither is a stat tile — the admin has no dashboard numbers, only the two things someone actually opens the admin to check.</span>
+            <span class="entry-src">app/routes/admin._index.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="admin-page-header.html">
+            <span class="t-base fw-semibold">Page header &amp; filters</span>
+            <span class="t-sm fg-65">Every admin screen opens the same way: <code>AdminPageHeader</code> — a tracked eyebrow carrying the count or the date, the page title, an optional subtitle, and right-aligned actions that wrap under the title on narrow screens. Below it, list screens add a filter row of <code>AdminSearchField</code> plus chips. Search is client-side state; nothing round-trips.</span>
+            <span class="entry-src">app/components/admin-ui.tsx<br />app/routes/admin.dinners._index.tsx<br />app/routes/admin.users._index.tsx</span>
+          </a>
+        </div>
+      </section>
+      <section id="account-auth">
+        <h2>Account &amp; auth</h2>
+        <p class="doc-note mb-3">The auth shell, its messaging states and the account page.</p>
+        <div class="grid cols-2 gap-3">
+          <a class="ui-card ui-card-interactive entry" href="account-cards.html">
+            <span class="t-base fw-semibold">Account cards</span>
+            <span class="t-sm fg-65">The account page is a stack of one local <code>SectionCard</code> — an optional title and subtitle over a <code>gap-5</code> body. Each card owns one fetcher form and toasts its own result, so saving a name never disturbs the password card below it. Read-only values reuse the field shell, which is why an unchangeable email still lines up with the inputs above it.</span>
+            <span class="entry-src">app/routes/me.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="auth-shell.html">
+            <span class="t-base fw-semibold">Auth shell</span>
+            <span class="t-sm fg-65">A 50/50 split: brand copy on a raised <code>bg-card</code> panel, the form on the page surface. Below <code>md</code> the panel becomes a short banner above the form rather than disappearing, so the page still opens with a voice. The <code>mode</code> prop adds the login/join segmented toggle; screens that are not a choice (reset, invite) omit it.</span>
+            <span class="entry-src">app/components/auth-layout.tsx<br />app/routes/login.tsx<br />app/routes/join.tsx<br />app/routes/invite.$token.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="google-button.html">
+            <span class="t-base fw-semibold">Google sign-in</span>
+            <span class="t-sm fg-65">The one component that deliberately does not use our tokens. Google's brand guidelines fix the surface (<code>#131314</code>), border (<code>#8e918f</code>), text (<code>#e3e3e3</code>) and letter-spacing, so the button hard-codes them — it only borrows our radius, height and focus ring so it still sits in a form. The divider above it is part of the same component.</span>
+            <span class="entry-src">app/features/auth/components/google-button.tsx<br />app/routes/me.tsx</span>
+          </a>
+          <a class="ui-card ui-card-interactive entry" href="auth-messaging.html">
+            <span class="t-base fw-semibold">Notices &amp; status screens</span>
+            <span class="t-sm fg-65">Three levels of message. <code>AuthNotice</code> is inline in a form — a tinted, bordered block with a leading <code>size-5</code> icon, in two tones. <code>AuthStatus</code> is the whole screen when there is nothing to do but read — a medallion, a light heading and a body, optionally standalone. <code>RouteErrorContent</code> is the unstyled fallback when a route throws.</span>
+            <span class="entry-src">app/components/auth-notice.tsx<br />app/components/auth-status.tsx<br />app/components/route-error-content.tsx</span>
+          </a>
+        </div>
+      </section>
+  </body>
+</html>

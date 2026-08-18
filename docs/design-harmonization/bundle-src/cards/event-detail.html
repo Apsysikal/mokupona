@@ -1,0 +1,107 @@
+<!--meta {"group":"Events","title":"Dinner detail layout","file":"event-detail.html","sources":["app/features/events/components/event-view.tsx","app/routes/dinners_.$dinnerId.tsx","app/routes/dinners._index.tsx"],"note":"<code>EventStory</code> — cover, date, title, description, then an accordion of menu and donation — is the page's left column. Beside it sits the sticky signup aside. When a dinner is past, the aside is dropped and the grid collapses to a single column, so the same route serves the archive without a second layout."} -->
+<style-extra>
+.detail { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+.shot { aspect-ratio: 3 / 2; border-radius: 16px; position: relative; overflow: hidden; background: rgb(237 130 94 / 0.1); }
+.shot::after { content: ""; position: absolute; inset: 0; background: linear-gradient(140deg, rgb(237 130 94 / 0.25), rgb(27 21 17 / 0.85)); }
+.acc-trigger { display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 20px 0; font-size: 16px; font-weight: 600; }
+@media (max-width: 860px) { .detail { grid-template-columns: minmax(0, 1fr); } }
+</style-extra>
+
+<section>
+  <h2>Upcoming — two columns</h2>
+  <div class="stage">
+    <span class="flex items-center gap-2 t-sm fg-50 mb-6"><svg class="icon" viewBox="0 0 15 15"><path d="M9 3.5L5.5 7.5 9 11.5" /></svg> all dinners</span>
+    <div class="detail">
+      <div class="flex col gap-5 min-w-0">
+        <div class="shot"></div>
+        <div class="flex col gap-3">
+          <span class="accent flex items-center gap-2 t-sm fw-semibold">
+            <svg class="icon" viewBox="0 0 15 15"><rect x="2" y="3" width="11" height="10" rx="1" /><path d="M2 6h11M5 2v2M10 2v2" /></svg>
+            saturday, 14 september · 19:00
+          </span>
+          <h1 class="t-3xl fw-light leading-tight tracking-tight">an evening of small plates</h1>
+        </div>
+        <p class="fg-80 t-base fw-light pre-line">
+          five courses built around what the market had that morning. bread and butter to
+          start, a long middle, something sweet and small at the end.
+        </p>
+        <div class="border-t mt-2">
+          <div class="border-b">
+            <div class="acc-trigger accent">menu <svg class="icon accent" viewBox="0 0 15 15" stroke-width="1.2" style="transform: rotate(180deg)"><path d="M4 6l3.5 3.5L11 6" /></svg></div>
+            <p class="fg-80 t-base fw-light pre-line" style="padding-bottom: 24px">bread &amp; cultured butter · chicory, pear, walnut · celeriac in salt crust · quince tart</p>
+          </div>
+          <div class="border-b">
+            <div class="acc-trigger accent">donation <svg class="icon accent" viewBox="0 0 15 15" stroke-width="1.2"><path d="M4 6l3.5 3.5L11 6" /></svg></div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="ui-card p-5 flex col gap-4">
+        <div class="fg-80 flex col gap-3 t-sm">
+          <span class="flex items-center gap-2"><svg class="icon fg-50" viewBox="0 0 15 15"><rect x="2" y="3" width="11" height="10" rx="1" /><path d="M2 6h11M5 2v2M10 2v2" /></svg> sat 14 sep · 19:00</span>
+          <span class="flex items-center gap-2"><svg class="icon fg-50" viewBox="0 0 15 15"><path d="M7.5 1.5c2.2 0 4 1.8 4 4 0 3-4 8-4 8s-4-5-4-8c0-2.2 1.8-4 4-4z" /><circle cx="7.5" cy="5.5" r="1.4" /></svg> langstrasse 42</span>
+          <span class="flex items-center gap-2"><svg class="icon fg-50" viewBox="0 0 15 15"><circle cx="7.5" cy="5" r="2.6" /><path d="M2.5 13c0-2.5 2.2-4 5-4s5 1.5 5 4" /></svg> 20 seats</span>
+        </div>
+        <div class="hairline"></div>
+        <p class="t-xl fw-light">reserve your seat</p>
+        <div class="flex col gap-3">
+          <div class="flex col gap-2"><label class="label">name</label><input class="field" readonly /></div>
+          <div class="flex col gap-2"><label class="label">email</label><input class="field" readonly /></div>
+          <button class="btn btn-default btn-lg w-full">join this dinner</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+  <p class="cap">
+    <code>grid items-start gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]</code> — the
+    <code>minmax(0,…)</code> pair is what lets long words in the story column wrap instead
+    of forcing the grid wider. Story stack <code>gap-5 md:gap-6</code>; body copy
+    <code>text-base md:text-lg font-light whitespace-pre-line</code>, run through
+    <code>AutoLink</code>. The accordion opens under a <code>border-t mt-2</code> and only
+    renders if the dinner has menu or donation copy.
+  </p>
+</section>
+
+<section>
+  <h2>Past — one column</h2>
+  <div class="stage" style="max-width: 420px">
+    <div class="flex col gap-4">
+      <div class="shot" style="opacity: 0.85"></div>
+      <div class="flex col gap-3">
+        <span class="accent flex items-center gap-2 t-sm fw-semibold">
+          <svg class="icon" viewBox="0 0 15 15"><rect x="2" y="3" width="11" height="10" rx="1" /><path d="M2 6h11M5 2v2M10 2v2" /></svg>
+          saturday, 8 february · 19:00
+        </span>
+        <h1 class="t-2xl fw-light leading-tight tracking-tight">winter roots</h1>
+      </div>
+      <p class="fg-80 t-sm fw-light">the story stays; the form does not.</p>
+    </div>
+  </div>
+  <p class="cap">
+    <code>isPastEvent</code> nulls the field list before render, so the aside never mounts —
+    and the action route answers a POST to a past dinner with a 403, rather than relying on
+    the missing form.
+  </p>
+</section>
+
+<section>
+  <h2>Dinners index — the empty state</h2>
+  <div class="stage">
+    <div class="ui-card relative overflow-hidden flex col items-center gap-5 text-center" style="padding: 36px 56px">
+      <div class="glow absolute" style="width: 320px; height: 320px; top: -144px; left: 50%; transform: translateX(-50%)"></div>
+      <span class="accent relative t-sm fw-semibold">nothing on the calendar right now</span>
+      <h2 class="relative t-3xl fw-light leading-tight tracking-tight max-w-md">the table is being set</h2>
+      <p class="fg-80 relative max-w-md t-sm fw-light">
+        we're planning the next gathering. check back soon to see what's next, or follow
+        along on instagram for the announcement.
+      </p>
+      <button class="btn btn-outline btn-lg relative mt-1">follow on instagram</button>
+    </div>
+  </div>
+  <p class="cap">
+    The one public empty state, and the only card with a glow inside it:
+    <code>-top-36 left-1/2 h-80 w-md -translate-x-1/2</code>, with every child marked
+    <code>relative</code> so it layers above. Copy uses the page-title ramp rather than a
+    card title — an empty calendar is treated as a statement, not a notice.
+  </p>
+</section>

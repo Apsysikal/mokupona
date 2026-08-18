@@ -1,0 +1,98 @@
+<!--meta {"group":"Forms","title":"Signup form","file":"signup-form.html","sources":["app/routes/dinners_.$dinnerId.tsx","app/features/forms/fields/*/view.tsx","app/features/forms/honeypot-field.tsx"],"note":"The public dinner signup, rendered from a stored field schema: each descriptor picks its own view (<code>text</code>, <code>email</code>, <code>tel</code>, <code>textarea</code>, <code>select</code>, <code>checkbox</code>, <code>list</code>), all of which delegate to the shared field wrappers. Three things are always appended by the route rather than the schema — the privacy checkbox, the form-level error list, and a full-width <code>size=\"lg\"</code> submit."} -->
+<style-extra>
+.aside { max-width: 380px; }
+</style-extra>
+
+<section>
+  <h2>In its card — the sticky aside on the dinner page</h2>
+  <div class="stage">
+    <div class="ui-card p-5 aside flex col gap-4">
+      <div class="flex col gap-3 t-sm fg-80">
+        <span class="flex items-center gap-2">
+          <svg class="icon fg-50" viewBox="0 0 15 15"><rect x="2" y="3" width="11" height="10" rx="1" /><path d="M2 6h11M5 2v2M10 2v2" /></svg>
+          sat 14 sep · 19:00
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="icon fg-50" viewBox="0 0 15 15"><path d="M7.5 1.5c2.2 0 4 1.8 4 4 0 3-4 8-4 8s-4-5-4-8c0-2.2 1.8-4 4-4z" /><circle cx="7.5" cy="5.5" r="1.4" /></svg>
+          langstrasse 42
+        </span>
+      </div>
+
+      <div class="hairline"></div>
+
+      <p class="t-xl fw-light">reserve your seat</p>
+
+      <div class="flex col gap-3">
+        <div class="flex col gap-2">
+          <label class="label">name</label>
+          <input class="field" readonly />
+        </div>
+        <div class="flex col gap-2">
+          <label class="label">email</label>
+          <input class="field" readonly />
+        </div>
+        <div class="flex col gap-2">
+          <label class="label">anything we should know?</label>
+          <p class="field-desc">allergies, intolerances, or a note for the kitchen.</p>
+          <textarea class="field field-textarea" rows="2" readonly></textarea>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="checkbox"></span>
+          <label class="t-sm leading-snug fg-80">i agree to the <span class="accent">privacy policy</span></label>
+        </div>
+
+        <button class="btn btn-default btn-lg w-full">join this dinner</button>
+        <p class="fg-50 text-center t-xs">we'll email you to confirm if a seat is yours.</p>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    Card <code>as="aside" id="sign-up"</code>, <code>p-5 lg:p-7 lg:sticky lg:top-6</code>,
+    form body <code>flex flex-col gap-3</code>. The fact list is repeated inside the aside
+    so the details stay in view while scrolling the story column. Past dinners drop the
+    aside entirely and the layout falls back to one column.
+  </p>
+</section>
+
+<section>
+  <h2>Field views the schema can request</h2>
+  <div class="stage grid cols-2 gap-5">
+    <div class="flex col gap-2"><label class="label">text</label><input class="field" readonly /></div>
+    <div class="flex col gap-2"><label class="label">email</label><input class="field" type="email" readonly /></div>
+    <div class="flex col gap-2"><label class="label">phone</label><input class="field" type="tel" readonly /></div>
+    <div class="flex col gap-2"><label class="label">select</label>
+      <div style="position: relative">
+        <select class="field" style="appearance: none; padding-right: 36px"><option>Select…</option></select>
+        <svg class="icon fg-50" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%)" viewBox="0 0 15 15"><path d="M4 6l3.5 3.5L11 6" /></svg>
+      </div>
+    </div>
+    <div class="flex col gap-2" style="grid-column: span 2"><label class="label">textarea</label><textarea class="field field-textarea" rows="2" readonly></textarea></div>
+    <div class="flex items-center gap-2" style="grid-column: span 2"><span class="checkbox"></span><label class="t-sm fg-80">checkbox</label></div>
+  </div>
+  <p class="cap">
+    <code>text</code>, <code>email</code> and <code>phone</code> are the same view built by
+    <code>makeInputFieldView(inputType)</code> — three modules, one implementation.
+    <code>select</code> always prepends a "Select…" empty option. <code>list</code> has its
+    own card.
+  </p>
+</section>
+
+<section>
+  <h2>Honeypot — a field that must never be seen</h2>
+  <div class="stage">
+    <div class="flex col gap-2">
+      <p class="t-sm fg-65">
+        <code>HoneypotField</code> renders two labelled inputs plus a
+        <code>&lt;style&gt;.__honeypot_inputs { display: none }&lt;/style&gt;</code> inline
+        with the markup, so the trap can never flash visible before CSS loads.
+      </p>
+      <p class="t-sm fg-65">
+        <b>It deliberately avoids <code>sr-only</code></b> — an announced field is one a real
+        user would fill in. The visible labels are the escape hatch for anyone who sees it
+        anyway. A trapped submission gets the <em>success</em> toast and redirect, so a bot
+        never learns it was caught.
+      </p>
+    </div>
+  </div>
+</section>

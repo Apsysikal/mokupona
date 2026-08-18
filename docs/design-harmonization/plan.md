@@ -1,6 +1,6 @@
 # Design Harmonization → Claude Design — Plan
 
-Status: **✅ Phases 1–3 COMPLETE** (2026-07-06). Synced to claude.ai/design as project "mokupona design system" (`projectId: 3208dbb3-75a3-424b-80b0-a1f2a78606aa`). Remaining: the separate code-convergence effort (see "Later" below).
+Status: **✅ Phases 1–4 COMPLETE** (Phase 4: 2026-08-18). Synced to claude.ai/design as project "mokupona design system" (`projectId: 3208dbb3-75a3-424b-80b0-a1f2a78606aa`) — Phase 4's 34 new cards are **built but not yet pushed**: the session that produced them had no design-system authorization (see Phase 4). Remaining: push those cards, then the separate code-convergence effort (see "Later" below).
 
 - **Complete:** Phase 1 ([drift-inventory.md](./drift-inventory.md)), Phase 2 ([design-system-spec.md](./design-system-spec.md)), **all 6 §11 calls resolved 2026-07-06** (spec §11), and a **round-2 native-token harmonization** ruled by the user on first bundle review (spec §12: native tokens only, no fractional steps, one font-light display weight, one foreground/15 hairline, text tiers as foreground opacities, red-300/sky-300 semantics, file-upload field added — net: zero new @theme tokens, five deleted).
 - **Approved flow for Phase 3:** build the bundle locally in `ds-bundle/` → **user reviews** → then sync to claude.ai/design. Do not sync before the review checkpoint.
@@ -60,6 +60,33 @@ Output: [design-system-spec.md](./design-system-spec.md) (opinionated spec + pro
 - [x] projectId for future incremental re-syncs: `3208dbb3-75a3-424b-80b0-a1f2a78606aa`
 
 Re-sync flow for future updates: edit bundle files → `finalize_plan` (same projectId, `localDir: ds-bundle/`) → `write_files` with just the changed paths. Refresh `spec.md` from the parent spec first if it changed.
+
+## Phase 4 — Extract every component from the codebase ✅ built 2026-08-18
+
+The bundle stopped at tokens and five primitives; the project needed the actual component
+library. Read `app/components/**`, `app/features/**` and `app/routes/**` and wrote a card
+for every component that ships, **extracted from the code** rather than derived from the
+spec — which the code had by then converged onto, so the two agree.
+
+- [x] Full inventory: [component-inventory.md](./component-inventory.md) — every exported
+      component, every route-local one, each mapped to the card that documents it
+- [x] 34 new cards in `ds-bundle/`, grouped the way the codebase is: Foundations,
+      Primitives, Forms, Navigation, Content blocks, Events, Admin, Account & auth
+- [x] `ds-bundle/index.html` — a browsable gallery of all 43 cards, each entry naming its
+      source files; also the "Overview" card in the Claude Design pane
+- [x] Regrouped the five original `group="Components"` cards to `group="Primitives"`, so
+      25 primitives and composites are not all in one bucket
+- [x] Generator in [bundle-src/](./bundle-src/): `build.mjs` + `base.css` + one body
+      fragment per card. Rebuild with `node docs/design-harmonization/bundle-src/build.mjs`
+- [x] Render-checked all 44 files in headless Chromium — no JS errors, no horizontal
+      overflow, no unrendered markup, every index link resolves
+- [ ] **Sync to claude.ai/design** — blocked: `DesignSync` reported no design-system
+      authorization in the remote session, and `/design-login` needs an interactive
+      terminal. Run the sync from a local Claude Code session:
+      `finalize_plan` (same `projectId`, `localDir: ds-bundle/`) → `write_files`.
+
+The nine original cards are still hand-written; the 34 new ones are generated. Both live in
+`ds-bundle/` and both carry `@dsCard` markers, so the sync treats them identically.
 
 ## Later (code convergence, separate effort)
 

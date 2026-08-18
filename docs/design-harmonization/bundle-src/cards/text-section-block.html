@@ -1,0 +1,57 @@
+<!--meta {"group":"Content blocks","title":"Text section block","file":"text-section-block.html","sources":["app/features/cms/blocks/text-section/view.tsx"],"note":"Two variants of one block. <code>plain</code> is a two-column band — eyebrow and headline left, body right — on an uneven <code>1fr / 1.2fr</code> grid. <code>slanted</code> is the same content on a <code>-skew-y-3</code> primary slab, the single inverted surface in the app and the only place <code>text-primary-foreground</code> appears outside a button."} -->
+<style-extra>
+.plain { display: grid; grid-template-columns: 1fr 1.2fr; gap: 48px; align-items: start; padding: 36px 0; }
+.slant-wrap { position: relative; padding: 8px 20px; }
+.slab { position: absolute; left: 0; right: 0; top: -8px; bottom: -8px; background: var(--primary); transform: skewY(-3deg); border-radius: 2px; }
+.slab-copy { position: relative; display: flex; flex-direction: column; gap: 16px; padding: 40px 20px; }
+@media (max-width: 720px) { .plain { grid-template-columns: minmax(0, 1fr); gap: 12px; } }
+</style-extra>
+
+<section>
+  <h2>variant: plain</h2>
+  <div class="stage">
+    <section class="plain">
+      <div class="flex col gap-4">
+        <span class="eyebrow">our vision</span>
+        <h2 class="t-2xl fw-light leading-tight tracking-tight">food as a way to connect</h2>
+      </div>
+      <p class="fg-80 t-base fw-light">
+        moku pona began as a passion project by a group of friends who love cooking and
+        wanted a creative way to explore our culinary interests. for us, food is a way to
+        express creativity, share experiences, and connect with others.
+      </p>
+    </section>
+  </div>
+  <p class="cap">
+    Wrapped in a <code>PageContainer as="div"</code>. Grid
+    <code>md:grid-cols-[1fr_1.2fr] gap-3 md:gap-12 py-9 md:py-14</code>; headline
+    <code>text-2xl md:text-3xl font-light tracking-tight</code>; body
+    <code>text-base md:text-lg font-light text-foreground/80</code>. Below
+    <code>md</code> it collapses to one column and the columns simply stack.
+  </p>
+</section>
+
+<section>
+  <h2>variant: slanted</h2>
+  <div class="stage plain" style="display: block">
+    <div class="slant-wrap">
+      <div class="slab" aria-hidden="true"></div>
+      <div class="slab-copy on-primary">
+        <span class="eyebrow eyebrow-on-primary">who we are</span>
+        <h2 class="t-2xl fw-light leading-tight tracking-tight">a community of around fifteen</h2>
+        <p class="t-base fw-light">
+          what started as a shared love of cooking has grown into a community who come
+          together to create, host, and share meals.
+        </p>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    The slab is an <code>aria-hidden</code> absolute div at
+    <code>inset-x-0 -inset-y-2 -skew-y-3 rounded-xs bg-primary</code>, with the copy layered
+    over it unskewed — so the text stays level while the block tilts. Its eyebrow uses the
+    <code>onPrimary</code> tone (<code>text-primary-foreground/70</code>), the only tone
+    that exists for this one context. Vertical rhythm is <code>my-9 md:mt-20 md:mb-24</code>
+    — wider than any other block, because the slab needs air for the tilt to read.
+  </p>
+</section>

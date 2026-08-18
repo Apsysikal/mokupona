@@ -1,0 +1,92 @@
+<!--meta {"group":"Primitives","title":"Accordion","file":"accordion.html","sources":["app/components/ui/accordion.tsx","app/features/events/components/event-view.tsx"],"note":"A thin wrapper over Radix Accordion. Items are separated by a bottom hairline only — no card, no background. The trigger is <code>text-base font-semibold</code> with a <code>size-4</code> primary chevron that rotates 180° on open; content animates on the two <code>--animate-accordion-*</code> keyframes. Its one shipped use gives the trigger <code>text-primary</code>."} -->
+<style-extra>
+.acc-item { border-bottom: 1px solid var(--border); }
+.acc-trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0;
+  text-align: left;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: inherit;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.acc-trigger svg { transition: transform 300ms; }
+.acc-trigger[data-state="open"] svg { transform: rotate(180deg); }
+.acc-content { padding-bottom: 24px; }
+</style-extra>
+
+<section>
+  <h2>Anatomy</h2>
+  <div class="stage">
+    <div style="border-top: 1px solid var(--border)">
+      <div class="acc-item">
+        <button class="acc-trigger accent" data-state="open">
+          menu
+          <svg class="icon accent" viewBox="0 0 15 15" stroke-width="1.2"><path d="M4 6l3.5 3.5L11 6" /></svg>
+        </button>
+        <div class="acc-content">
+          <p class="t-base fw-light fg-80 pre-line">
+            five courses built around what the market had that morning. bread and butter
+            to start, a long middle, something sweet and small at the end.
+          </p>
+        </div>
+      </div>
+      <div class="acc-item">
+        <button class="acc-trigger accent" data-state="closed">
+          donation
+          <svg class="icon accent" viewBox="0 0 15 15" stroke-width="1.2"><path d="M4 6l3.5 3.5L11 6" /></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    <b>AccordionItem</b> <code>border-b</code> · <b>AccordionTrigger</b>
+    <code>flex-1 justify-between py-5 text-base font-semibold</code> ·
+    <b>AccordionContent</b> <code>pb-4</code>, overridden to <code>pb-6</code> on the
+    dinner page. The whole group sits under a <code>border-t</code> the caller adds.
+  </p>
+</section>
+
+<section>
+  <h2>Open / closed</h2>
+  <div class="stage flex gap-8 wrap">
+    <div style="width: 280px">
+      <p class="t-xs fg-50 mb-2">data-state="closed"</p>
+      <div class="acc-item">
+        <button class="acc-trigger" data-state="closed">
+          menu
+          <svg class="icon accent" viewBox="0 0 15 15" stroke-width="1.2"><path d="M4 6l3.5 3.5L11 6" /></svg>
+        </button>
+      </div>
+    </div>
+    <div style="width: 280px">
+      <p class="t-xs fg-50 mb-2">data-state="open" — chevron rotated</p>
+      <div class="acc-item">
+        <button class="acc-trigger" data-state="open">
+          menu
+          <svg class="icon accent" viewBox="0 0 15 15" stroke-width="1.2"><path d="M4 6l3.5 3.5L11 6" /></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    Rotation is expressed as <code>[&amp;[data-state=open]&gt;svg]:rotate-180</code> on the
+    trigger, with <code>transition-transform duration-300</code> on the chevron.
+  </p>
+</section>
+
+<section>
+  <h2>Shipped configuration</h2>
+  <div class="stage">
+    <p class="t-sm fg-65">
+      <code>&lt;Accordion type="single" collapsible defaultValue="menu"&gt;</code> on the
+      dinner detail page — one panel at a time, the menu open by default, and both items
+      conditional on the event actually carrying that copy.
+    </p>
+  </div>
+</section>

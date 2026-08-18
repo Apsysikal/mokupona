@@ -1,0 +1,57 @@
+<!--meta {"group":"Navigation","title":"Section nav","file":"section-nav.html","sources":["app/components/section-nav.tsx","app/features/events/components/admin-event-form.tsx"],"note":"In-page navigation for the long admin dinner form. An IntersectionObserver with a <code>-15% 0px -75% 0px</code> root margin — a thin band near the top of the viewport — decides which section is current, so the highlight tracks reading position rather than scroll position. Two shapes: a sticky blurred rail on mobile, a sticky sidebar from <code>md</code>."} -->
+<style-extra>
+.rail { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; background: rgb(21 17 14 / 0.85); backdrop-filter: blur(8px); padding: 8px; border-radius: 8px; }
+.rail::-webkit-scrollbar { display: none; }
+.side { display: flex; flex-direction: column; gap: 4px; width: 192px; }
+.item-active { border-color: rgb(237 130 94 / 0.35); background: rgb(237 130 94 / 0.1); color: var(--accent-light); font-weight: 600; }
+</style-extra>
+
+<section>
+  <h2>Sidebar — md and up</h2>
+  <div class="stage flex gap-7 items-start">
+    <nav class="side" aria-label="Form sections">
+      <span class="chip chip-nav item-active">Basics</span>
+      <span class="chip chip-nav">Menu &amp; donation</span>
+      <span class="chip chip-nav">Schedule &amp; pricing</span>
+      <span class="chip chip-nav">Cover &amp; location</span>
+      <span class="chip chip-nav">Signup form</span>
+    </nav>
+    <div class="flex col gap-3 flex-1">
+      <div class="ui-card p-5"><p class="t-base fw-semibold">Basics</p><p class="t-sm fg-50">Title and description guests see on the dinner page.</p></div>
+      <div class="ui-card p-5" style="opacity: 0.5"><p class="t-base fw-semibold">Menu &amp; donation</p></div>
+    </div>
+  </div>
+  <p class="cap">
+    <code>md:w-48 md:shrink-0 md:self-start md:top-8</code> — sticky, but only
+    <code>self-start</code> so it does not stretch to the form's height. Items are
+    <code>chipVariants({ size: "nav" })</code>; target sections carry
+    <code>scroll-mt-16 md:scroll-mt-8</code> so a jump does not tuck the heading under the
+    rail.
+  </p>
+</section>
+
+<section>
+  <h2>Rail — below md</h2>
+  <div class="stage" style="max-width: 380px">
+    <nav class="rail" aria-label="Form sections">
+      <span class="chip chip-nav item-active" style="border-radius: 9999px">Basics</span>
+      <span class="chip chip-nav" style="border-radius: 9999px">Menu</span>
+      <span class="chip chip-nav" style="border-radius: 9999px">Schedule</span>
+      <span class="chip chip-nav" style="border-radius: 9999px">Cover</span>
+    </nav>
+  </div>
+  <p class="cap">
+    <code>sticky top-0 z-10 -mx-2 px-2 py-2 bg-background/85 backdrop-blur</code> — the
+    negative margin lets the blurred strip bleed to the page edges while its contents stay
+    aligned. All of that is reset at <code>md</code>
+    (<code>md:bg-transparent md:backdrop-blur-none md:mx-0</code>).
+  </p>
+</section>
+
+<section>
+  <h2>Behaviour</h2>
+  <div class="stage flex col gap-2">
+    <p class="t-sm fg-65">Clicking an item preventDefaults, calls <code>scrollIntoView({ behavior: "smooth", block: "start" })</code>, then <code>history.replaceState</code>s the hash — so the back button is not filled with section jumps.</p>
+    <p class="t-sm fg-65">The active item takes <code>aria-current="true"</code>. The observer is torn down and rebuilt whenever the <code>sections</code> array identity changes.</p>
+  </div>
+</section>

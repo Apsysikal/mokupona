@@ -1,0 +1,634 @@
+<!-- @dsCard group="Foundations" title="Iconography & marks" -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mokupona — Iconography &amp; marks</title>
+    <style>
+/* mokupona design system — shared card stylesheet.
+   Inlined into every generated preview card by build.mjs. A hand-rolled subset
+   of the Tailwind utilities the app actually ships, so a card body reads close
+   to the JSX it was extracted from. */
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  border: 0 solid var(--border);
+}
+
+:root {
+  --background: #15110e;
+  --card: #1b1511;
+  --foreground: 245 241 236;
+  --primary: #ed825e;
+  --primary-foreground: #15110e;
+  --accent-light: #f1b48c;
+  --destructive: #a71d31;
+  --destructive-light: #f0a8ab;
+  --sky-300: #7dd3fc;
+  --border: rgb(245 241 236 / 0.15);
+  --ring: #ed825e;
+}
+
+body {
+  background: var(--background);
+  color: rgb(var(--foreground));
+  font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 32px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── card chrome ─────────────────────────────────────────────── */
+.doc-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgb(var(--foreground) / 0.5);
+}
+.doc-title {
+  font-size: 24px;
+  font-weight: 300;
+  letter-spacing: -0.025em;
+  margin: 6px 0 4px;
+}
+.doc-note {
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgb(var(--foreground) / 0.65);
+  max-width: 720px;
+}
+.doc-source {
+  font-size: 12px;
+  color: rgb(var(--foreground) / 0.4);
+  margin-top: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+section {
+  margin-top: 28px;
+}
+section > h2 {
+  /* Not uppercased: many of these headings are component names, and
+     AdminDeleteButton is unreadable in caps. */
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgb(var(--foreground) / 0.5);
+  margin-bottom: 12px;
+}
+.stage {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+  padding: 24px;
+}
+.stage.plain {
+  background: var(--background);
+}
+.stage.flush {
+  padding: 0;
+  overflow: hidden;
+}
+.cap {
+  font-size: 12px;
+  color: rgb(var(--foreground) / 0.4);
+  margin-top: 8px;
+  line-height: 1.6;
+}
+.cap b {
+  color: rgb(var(--foreground) / 0.65);
+  font-weight: 600;
+}
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.86em;
+  color: rgb(var(--foreground) / 0.8);
+}
+
+/* ── layout utilities ────────────────────────────────────────── */
+.flex { display: flex; }
+.col { flex-direction: column; }
+.wrap { flex-wrap: wrap; }
+.grid { display: grid; }
+.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.items-start { align-items: flex-start; }
+.items-center { align-items: center; }
+.items-end { align-items: flex-end; }
+.items-baseline { align-items: baseline; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.justify-end { justify-content: flex-end; }
+.gap-1 { gap: 4px; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+.gap-5 { gap: 20px; }
+.gap-6 { gap: 24px; }
+.gap-7 { gap: 28px; }
+.gap-8 { gap: 32px; }
+.gap-10 { gap: 40px; }
+.grow { flex-grow: 1; }
+.shrink-0 { flex-shrink: 0; }
+.flex-1 { flex: 1 1 0%; min-width: 0; }
+.min-w-0 { min-width: 0; }
+.relative { position: relative; }
+.absolute { position: absolute; }
+.overflow-hidden { overflow: hidden; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nowrap { white-space: nowrap; }
+.pre-line { white-space: pre-line; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.w-full { width: 100%; }
+.w-fit { width: fit-content; }
+.max-w-md { max-width: 448px; }
+.max-w-2xl { max-width: 672px; }
+.mt-1 { margin-top: 4px; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }
+.mt-6 { margin-top: 24px; }
+.mb-1 { margin-bottom: 4px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+.mb-5 { margin-bottom: 20px; }
+.mb-6 { margin-bottom: 24px; }
+
+/* ── type utilities ──────────────────────────────────────────── */
+.t-xs { font-size: 12px; }
+.t-sm { font-size: 14px; }
+.t-base { font-size: 16px; }
+.t-lg { font-size: 18px; }
+.t-xl { font-size: 20px; }
+.t-2xl { font-size: 24px; }
+.t-3xl { font-size: 30px; }
+.t-4xl { font-size: 36px; }
+.t-5xl { font-size: 48px; }
+.fw-light { font-weight: 300; }
+.fw-normal { font-weight: 400; }
+.fw-semibold { font-weight: 600; }
+.leading-tight { line-height: 1.25; }
+.leading-snug { line-height: 1.375; }
+.leading-none { line-height: 1; }
+.tracking-tight { letter-spacing: -0.025em; }
+.tracking-wide { letter-spacing: 0.025em; }
+.tracking-widest { letter-spacing: 0.1em; }
+.uppercase { text-transform: uppercase; }
+.italic { font-style: italic; }
+.underline { text-decoration: underline; text-underline-offset: 4px; }
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── colour utilities ────────────────────────────────────────── */
+.fg { color: rgb(var(--foreground)); }
+.fg-80 { color: rgb(var(--foreground) / 0.8); }
+.fg-65 { color: rgb(var(--foreground) / 0.65); }
+.fg-50 { color: rgb(var(--foreground) / 0.5); }
+.fg-40 { color: rgb(var(--foreground) / 0.4); }
+.accent { color: var(--primary); }
+.accent-light { color: var(--accent-light); }
+.danger { color: var(--destructive-light); }
+.info { color: var(--sky-300); }
+.on-primary { color: var(--primary-foreground); }
+
+/* ── surface utilities ───────────────────────────────────────── */
+.surface-card { background: var(--card); }
+.surface-bg { background: var(--background); }
+.surface-subtle { background: rgb(var(--foreground) / 0.05); }
+.surface-primary { background: var(--primary); }
+.tint-primary { background: rgb(237 130 94 / 0.1); }
+.tint-danger { background: rgb(167 29 49 / 0.1); }
+.tint-info { background: rgb(125 211 252 / 0.1); }
+.tint-fg { background: rgb(var(--foreground) / 0.1); }
+.bordered { border: 1px solid var(--border); }
+.border-b { border-bottom: 1px solid var(--border); }
+.border-t { border-top: 1px solid var(--border); }
+.border-y { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.border-r { border-right: 1px solid var(--border); }
+.border-dashed { border-style: dashed; }
+.border-primary { border-color: rgb(237 130 94 / 0.35); }
+.border-danger { border-color: rgb(167 29 49 / 0.35); }
+.border-info { border-color: rgb(125 211 252 / 0.35); }
+.rounded-sm { border-radius: 4px; }
+.rounded-lg { border-radius: 8px; }
+.rounded-2xl { border-radius: 16px; }
+.rounded-full { border-radius: 9999px; }
+.p-2 { padding: 8px; }
+.p-3 { padding: 12px; }
+.p-4 { padding: 16px; }
+.p-5 { padding: 20px; }
+.p-6 { padding: 24px; }
+.p-7 { padding: 28px; }
+.p-8 { padding: 32px; }
+.px-3 { padding-left: 12px; padding-right: 12px; }
+.px-4 { padding-left: 16px; padding-right: 16px; }
+.px-5 { padding-left: 20px; padding-right: 20px; }
+.py-2 { padding-top: 8px; padding-bottom: 8px; }
+.py-3 { padding-top: 12px; padding-bottom: 12px; }
+.py-4 { padding-top: 16px; padding-bottom: 16px; }
+.pb-4 { padding-bottom: 16px; }
+.pt-4 { padding-top: 16px; }
+.hairline { background: var(--border); height: 1px; }
+
+/* ── the shipped components ──────────────────────────────────── */
+/* Button — app/components/ui/button.tsx */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 24px;
+  cursor: pointer;
+  transition: background-color 150ms, border-color 150ms, color 150ms;
+  background: none;
+  color: inherit;
+}
+.btn-default { background: var(--primary); color: var(--primary-foreground); }
+.btn-destructive { background: var(--destructive); color: rgb(var(--foreground)); }
+.btn-destructive-outline {
+  border: 1px solid rgb(167 29 49 / 0.35);
+  color: var(--destructive-light);
+}
+.btn-outline { border: 1px solid rgb(var(--foreground) / 0.2); }
+.btn-secondary { background: var(--card); color: rgb(var(--foreground)); }
+.btn-ghost { color: rgb(var(--foreground) / 0.8); }
+.btn-link {
+  color: var(--primary);
+  padding: 0;
+  height: auto;
+  text-underline-offset: 4px;
+}
+.btn-sm { height: 36px; padding: 0 16px; font-size: 14px; }
+.btn-lg { height: 48px; }
+.btn-icon { width: 36px; height: 36px; padding: 0; }
+.btn-icon-sm { width: 28px; height: 28px; padding: 0; }
+.btn[disabled] { pointer-events: none; opacity: 0.5; }
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--ring); }
+
+/* Badge — app/components/ui/badge.tsx */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--border);
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+.badge-default { background: var(--primary); color: var(--primary-foreground); border-color: transparent; }
+.badge-secondary { background: var(--card); color: rgb(var(--foreground)); }
+.badge-info { border-color: rgb(125 211 252 / 0.35); background: rgb(125 211 252 / 0.1); color: var(--sky-300); }
+.badge-pill { border-radius: 9999px; }
+
+/* Chip — chipVariants in app/components/section.tsx */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: rgb(var(--foreground) / 0.65);
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 150ms, border-color 150ms, background-color 150ms;
+}
+.chip-active {
+  border-color: rgb(237 130 94 / 0.35);
+  background: rgb(237 130 94 / 0.1);
+  color: var(--accent-light);
+}
+.chip-nav {
+  display: block;
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+/* Pill — pillVariants in app/components/section.tsx */
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgb(var(--foreground) / 0.65);
+}
+.pill-accent {
+  border-color: rgb(237 130 94 / 0.35);
+  background: rgb(237 130 94 / 0.1);
+  color: var(--accent-light);
+}
+
+/* Eyebrow — app/components/section.tsx */
+.eyebrow { display: block; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--primary); }
+.eyebrow-kicker { font-size: 14px; text-transform: none; letter-spacing: normal; }
+.eyebrow-light { color: var(--accent-light); }
+.eyebrow-label { color: rgb(var(--foreground) / 0.5); }
+.eyebrow-on-primary { color: rgb(21 17 14 / 0.7); }
+
+/* Field shell — fieldShellClassName in app/components/ui/input.tsx */
+.field {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgb(var(--foreground) / 0.05);
+  padding: 4px 12px;
+  color: rgb(var(--foreground));
+  font-family: inherit;
+  font-size: 16px;
+  transition: border-color 150ms;
+}
+.field::placeholder { color: rgb(var(--foreground) / 0.5); }
+.field:focus-visible { outline: none; border-color: transparent; box-shadow: inset 0 0 0 2px var(--ring); }
+.field-textarea { height: auto; min-height: 80px; padding: 12px; resize: vertical; }
+.field-focused { border-color: transparent; box-shadow: inset 0 0 0 2px var(--ring); }
+.field-file {
+  height: auto;
+  padding: 24px;
+  border-style: dashed;
+  border-color: rgb(var(--foreground) / 0.2);
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+}
+.label { font-weight: 600; color: rgb(var(--foreground) / 0.65); }
+.field-error { color: var(--destructive-light); font-size: 14px; }
+.field-desc { color: rgb(var(--foreground) / 0.65); font-size: 14px; }
+
+/* Checkbox — app/components/ui/checkbox.tsx */
+.checkbox {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: rgb(var(--foreground) / 0.05);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.checkbox-checked { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); }
+
+/* Segmented control — segmentGroupClassName / segmentVariants */
+.seg-group {
+  display: flex;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgb(var(--foreground) / 0.05);
+  padding: 4px;
+}
+.seg {
+  display: flex;
+  height: 36px;
+  flex: 1 1 0%;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgb(var(--foreground) / 0.65);
+  transition: background-color 150ms, color 150ms;
+}
+.seg-active { background: var(--primary); color: var(--primary-foreground); }
+
+/* Card — app/components/ui/card.tsx */
+.ui-card {
+  background: var(--card);
+  color: rgb(var(--foreground));
+  border-radius: 16px;
+  border: 1px solid var(--border);
+}
+.ui-card-interactive:hover { border-color: rgb(237 130 94 / 0.35); }
+
+/* InitialsAvatar / SeatProgress — app/components/admin-ui.tsx */
+.avatar {
+  display: flex;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.avatar-a { color: var(--accent-light); background: rgb(237 130 94 / 0.1); }
+.avatar-b { color: rgb(var(--foreground) / 0.8); background: rgb(var(--foreground) / 0.1); }
+.progress { display: block; height: 8px; flex: 1 1 0%; overflow: hidden; border-radius: 9999px; background: rgb(var(--foreground) / 0.1); }
+.progress > span { display: block; height: 100%; border-radius: 9999px; background: var(--primary); }
+.progress > span.muted { background: rgb(var(--foreground) / 0.4); }
+
+/* glow-primary — app/tailwind.css */
+.glow {
+  pointer-events: none;
+  border-radius: 9999px;
+  background-image: radial-gradient(circle, rgb(237 130 94 / 0.15), transparent 70%);
+}
+.glow-strong { background-image: radial-gradient(circle, rgb(237 130 94 / 0.2), transparent 70%); }
+
+/* CoverImage placeholder — app/components/cover-image.tsx */
+.cover {
+  display: flex;
+  aspect-ratio: 3 / 2;
+  align-items: center;
+  justify-content: center;
+  background: rgb(237 130 94 / 0.1);
+}
+.cover > span {
+  display: flex;
+  aspect-ratio: 1;
+  width: 25%;
+  min-width: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 2px solid rgb(237 130 94 / 0.35);
+}
+.cover > span > span {
+  display: block;
+  aspect-ratio: 1;
+  width: 66%;
+  border-radius: 9999px;
+  border: 1px solid rgb(237 130 94 / 0.2);
+}
+
+/* Table — app/components/ui/table.tsx */
+table { width: 100%; border-collapse: collapse; font-size: 14px; caption-side: bottom; }
+thead tr { border-bottom: 1px solid var(--border); }
+th {
+  padding: 12px 16px;
+  text-align: left;
+  vertical-align: middle;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgb(var(--foreground) / 0.5);
+}
+td { padding: 16px; vertical-align: middle; }
+tbody tr { border-bottom: 1px solid var(--border); }
+tbody tr:last-child { border-bottom: 0; }
+
+svg.icon { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.6; fill: none; flex-shrink: 0; }
+svg.icon-lg { width: 20px; height: 20px; }
+svg.icon-xl { width: 28px; height: 28px; }
+a { color: inherit; }
+
+/* iconography.html */
+.icon-cell { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 8px; }
+.icon-cell span { font-size: 11px; color: rgb(var(--foreground) / 0.4); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-align: center; }
+.size-row { display: flex; align-items: flex-end; gap: 28px; }
+.size-row > div { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.logo { width: 40px; height: 35px; color: rgb(var(--foreground)); }
+    </style>
+  </head>
+  <body>
+    <p class="doc-eyebrow">Foundations</p>
+    <h1 class="doc-title">Iconography &amp; marks</h1>
+    <p class="doc-note">Icons come from <code>@radix-ui/react-icons</code> at 15×15, sized by Tailwind rather than by prop. Two hand-drawn 24×24 stroke icons live in <code>icons.tsx</code> for concepts Radix has no glyph for. Three marks are brand assets: the moku pona logo, the lockup, and the Google G.</p>
+    <p class="doc-source"><code>app/components/icons.tsx</code> · <code>app/components/logo.tsx</code> · <code>app/components/brand-lockup.tsx</code> · <code>app/features/auth/components/google-button.tsx</code></p>
+
+<section>
+  <h2>Sizes — three, and only three</h2>
+  <div class="stage size-row">
+    <div>
+      <svg viewBox="0 0 15 15" class="icon accent" style="width: 12px; height: 12px">
+        <path d="M3 7.5l3 3 6-6" stroke-width="1.4" />
+      </svg>
+      <span class="t-xs fg-50"><code>size-3</code></span>
+      <span class="t-xs fg-40">inside badges</span>
+    </div>
+    <div>
+      <svg viewBox="0 0 15 15" class="icon accent"><path d="M3 7.5l3 3 6-6" stroke-width="1.4" /></svg>
+      <span class="t-xs fg-50"><code>size-4</code></span>
+      <span class="t-xs fg-40">the default — buttons, facts, fields</span>
+    </div>
+    <div>
+      <svg viewBox="0 0 15 15" class="icon icon-lg accent"><path d="M3 7.5l3 3 6-6" stroke-width="1.4" /></svg>
+      <span class="t-xs fg-50"><code>size-5</code></span>
+      <span class="t-xs fg-40">nav, notices, mobile menu</span>
+    </div>
+    <div>
+      <svg viewBox="0 0 15 15" class="icon icon-xl accent"><path d="M3 7.5l3 3 6-6" stroke-width="1.4" /></svg>
+      <span class="t-xs fg-50"><code>size-6 / size-7</code></span>
+      <span class="t-xs fg-40">empty-state and auth-status medallions</span>
+    </div>
+  </div>
+  <p class="cap">
+    Icons inherit <code>currentColor</code>. When an icon is decorative beside text it is
+    dimmed to <code>text-foreground/50</code>; when it carries the meaning (event date,
+    accordion chevron, mobile menu chevron) it takes <code>text-primary</code>.
+  </p>
+</section>
+
+<section>
+  <h2>Radix set in use</h2>
+  <div class="stage grid cols-3 gap-2">
+    <div class="icon-cell"><svg class="icon icon-lg" viewBox="0 0 15 15"><rect x="2" y="3" width="11" height="10" rx="1" /><path d="M2 6h11M5 2v2M10 2v2" /></svg><span>CalendarIcon</span></div>
+    <div class="icon-cell"><svg class="icon icon-lg" viewBox="0 0 15 15"><path d="M7.5 1.5c2.2 0 4 1.8 4 4 0 3-4 8-4 8s-4-5-4-8c0-2.2 1.8-4 4-4z" /><circle cx="7.5" cy="5.5" r="1.4" /></svg><span>SewingPinIcon</span></div>
+    <div class="icon-cell"><svg class="icon icon-lg" viewBox="0 0 15 15"><circle cx="7.5" cy="5" r="2.6" /><path d="M2.5 13c0-2.5 2.2-4 5-4s5 1.5 5 4" /></svg><span>PersonIcon</span></div>
+    <div class="icon-cell"><svg class="icon icon-lg" viewBox="0 0 15 15"><rect x="1.5" y="3.5" width="12" height="8" rx="1" /><path d="M1.5 6.5h12" /></svg><span>EnvelopeClosedIcon</span></div>
+    <div class="icon-cell"><svg class="icon icon-lg" viewBox="0 0 15 15"><path d="M4 6l3.5 3.5L11 6" /></svg><span>ChevronDownIcon</span></div>
+    <div class="icon-cell"><svg class="icon icon-lg" viewBox="0 0 15 15"><path d="M9 3.5L5.5 7.5 9 11.5" /></svg><span>ChevronLeftIcon</span></div>
+    <div class="icon-cell"><svg class="icon icon-lg" viewBox="0 0 15 15"><path d="M6 3.5L9.5 7.5 6 11.5" /></svg><span>ChevronRightIcon</span></div>
+    <div class="icon-cell"><svg class="icon icon-lg" viewBox="0 0 15 15"><path d="M3.5 3.5l8 8M11.5 3.5l-8 8" /></svg><span>Cross1Icon / Cross2Icon</span></div>
+    <div class="icon-cell"><svg class="icon icon-lg" viewBox="0 0 15 15"><path d="M7.5 3v9M3 7.5h9" /></svg><span>PlusIcon</span></div>
+    <div class="icon-cell"><svg class="icon icon-lg" viewBox="0 0 15 15"><circle cx="6.5" cy="6.5" r="4" /><path d="M9.6 9.6l3 3" /></svg><span>MagnifyingGlassIcon</span></div>
+    <div class="icon-cell"><svg class="icon icon-lg" viewBox="0 0 15 15"><circle cx="7.5" cy="7.5" r="6" /><path d="M7.5 6.6v4M7.5 4.6v.6" /></svg><span>InfoCircledIcon</span></div>
+    <div class="icon-cell"><svg class="icon icon-lg" viewBox="0 0 15 15"><path d="M7.5 1.8L14 13H1z" /><path d="M7.5 6v3.2M7.5 10.6v.6" /></svg><span>ExclamationTriangleIcon</span></div>
+    <div class="icon-cell"><svg class="icon icon-lg" viewBox="0 0 15 15"><path d="M7.5 12V3M4 6.5L7.5 3 11 6.5" /></svg><span>ArrowUpIcon / ArrowDownIcon</span></div>
+    <div class="icon-cell"><svg class="icon icon-lg" viewBox="0 0 15 15"><path d="M7.5 2v8M4 7l3.5 3.5L11 7M2.5 13h10" /></svg><span>DownloadIcon</span></div>
+    <div class="icon-cell"><svg class="icon icon-lg" viewBox="0 0 15 15"><path d="M6 9L4.2 10.8a2.5 2.5 0 01-3.5-3.5L2.5 5.5M9 6l1.8-1.8a2.5 2.5 0 013.5 3.5L12.5 9.5M7.5 1.5v1.5M11 2.6l-.8 1.3" /></svg><span>LinkBreak2Icon</span></div>
+    <div class="icon-cell"><svg class="icon icon-lg" viewBox="0 0 15 15"><rect x="3" y="6.5" width="9" height="6.5" rx="1" /><path d="M5 6.5V4.5a2.5 2.5 0 015 0v2" /></svg><span>LockClosedIcon</span></div>
+    <div class="icon-cell"><svg class="icon icon-lg" viewBox="0 0 15 15"><rect x="2" y="2" width="11" height="11" rx="3" /><circle cx="7.5" cy="7.5" r="2.6" /><circle cx="10.8" cy="4.2" r="0.7" fill="currentColor" /></svg><span>InstagramLogoIcon</span></div>
+    <div class="icon-cell"><svg class="icon icon-lg" viewBox="0 0 15 15"><path d="M3 7.5l3 3 6-6" /></svg><span>CheckIcon</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Hand-drawn — app/components/icons.tsx</h2>
+  <div class="stage flex items-center gap-8">
+    <div class="icon-cell">
+      <svg class="icon icon-xl accent" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round">
+        <path d="M6 3v7a2 2 0 0 0 4 0V3" /><path d="M8 10v11" />
+        <path d="M18 3c-1.6 0-3 2-3 5.5S16.4 13 18 13v8" />
+      </svg>
+      <span>UtensilsIcon — dinners empty state</span>
+    </div>
+    <div class="icon-cell">
+      <svg class="icon icon-xl accent" viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
+      </svg>
+      <span>CreditCardIcon — the price fact</span>
+    </div>
+  </div>
+  <p class="cap">Stroke weight 1.5–1.6 on a 24×24 box, to sit alongside Radix's 15×15 outlines without reading heavier.</p>
+</section>
+
+<section>
+  <h2>Marks</h2>
+  <div class="stage flex items-center gap-10 wrap">
+    <div class="icon-cell">
+      <svg class="logo" viewBox="0 0 82 71" fill="currentColor" aria-label="moku pona logo">
+        <path d="M77.5 39.4a13 13 0 01-26 0V16.3a1.8 1.8 0 10-3.5 0v23.1a16.5 16.5 0 1033 0V16.3a1.8 1.8 0 10-3.5 0v23.1z" />
+        <path d="M8.3 15.1a16.5 16.5 0 0014.3 16v9a16.6 16.6 0 00-14.3 16v7.9L4 59.5a1.8 1.8 0 00-2.5 2.5l7.3 7.3a1.8 1.8 0 003-1.3V56a13 13 0 1125.1 0v12.1a1.8 1.8 0 103.5 0V56a16.6 16.6 0 00-14.3-16v-9a16.5 16.5 0 0014.3-16V2.8A1.8 1.8 0 0038.7 1H10a1.8 1.8 0 00-1.7 1.8v12.3zm28.6-10.6H11.8v10.6a13 13 0 1025.1 0V4.5z" />
+      </svg>
+      <span>Logo — 82×71 viewBox, currentColor</span>
+    </div>
+    <div class="icon-cell">
+      <span class="flex items-center gap-3">
+        <svg style="width: 20px; height: 20px" viewBox="0 0 82 71" fill="currentColor">
+          <path d="M77.5 39.4a13 13 0 01-26 0V16.3a1.8 1.8 0 10-3.5 0v23.1a16.5 16.5 0 1033 0V16.3a1.8 1.8 0 10-3.5 0v23.1z" />
+          <path d="M8.3 15.1a16.5 16.5 0 0014.3 16v9a16.6 16.6 0 00-14.3 16v7.9L4 59.5a1.8 1.8 0 00-2.5 2.5l7.3 7.3a1.8 1.8 0 003-1.3V56a13 13 0 1125.1 0v12.1a1.8 1.8 0 103.5 0V56a16.6 16.6 0 00-14.3-16v-9a16.5 16.5 0 0014.3-16V2.8A1.8 1.8 0 0038.7 1H10a1.8 1.8 0 00-1.7 1.8v12.3zm28.6-10.6H11.8v10.6a13 13 0 1025.1 0V4.5z" />
+        </svg>
+        <span class="fw-semibold">moku pona</span>
+      </span>
+      <span>BrandLockup — <code>size-5</code> + wordmark, <code>gap-3</code></span>
+    </div>
+    <div class="icon-cell">
+      <svg style="width: 24px; height: 24px" viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+      </svg>
+      <span>GoogleMark — the one place brand colour is not ours</span>
+    </div>
+  </div>
+  <p class="cap">
+    <code>BrandLockup</code> takes an optional <code>to</code> and renders a
+    <code>Link</code> or a <code>span</code>; the logo drops to <code>size-4</code> and the
+    wordmark to <code>text-base</code> in the mobile footer.
+  </p>
+</section>
+  </body>
+</html>

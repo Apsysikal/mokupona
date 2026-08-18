@@ -1,0 +1,96 @@
+<!--meta {"group":"Events","title":"Event facts","file":"event-facts.html","sources":["app/features/events/components/event-facts.tsx","app/features/events/components/event-view.tsx","app/features/events/date-format.ts"],"note":"Four one-line fact components shared by every surface that shows a dinner. They compose two ways without changing: a wrapping row inside the featured card, and a vertical stack inside the detail aside. <code>EventDateHeading</code> is the odd one out — it is accent-coloured and semibold, because on a card the date <em>is</em> the heading."} -->
+<section>
+  <h2>The four facts</h2>
+  <div class="stage flex col gap-4">
+    <div class="flex items-center gap-4">
+      <span class="fg-40 t-xs" style="width: 150px; font-family: ui-monospace, monospace">EventDateHeading</span>
+      <span class="accent flex items-center gap-2 t-sm fw-semibold">
+        <svg class="icon" viewBox="0 0 15 15"><rect x="2" y="3" width="11" height="10" rx="1" /><path d="M2 6h11M5 2v2M10 2v2" /></svg>
+        saturday, 14 september · 19:00
+      </span>
+    </div>
+    <div class="hairline"></div>
+    <div class="flex items-center gap-4">
+      <span class="fg-40 t-xs" style="width: 150px; font-family: ui-monospace, monospace">EventLocationFact</span>
+      <span class="flex items-center gap-2 t-sm fg-80">
+        <svg class="icon fg-50" viewBox="0 0 15 15"><path d="M7.5 1.5c2.2 0 4 1.8 4 4 0 3-4 8-4 8s-4-5-4-8c0-2.2 1.8-4 4-4z" /><circle cx="7.5" cy="5.5" r="1.4" /></svg>
+        langstrasse 42
+      </span>
+    </div>
+    <div class="hairline"></div>
+    <div class="flex items-center gap-4">
+      <span class="fg-40 t-xs" style="width: 150px; font-family: ui-monospace, monospace">EventPriceFact</span>
+      <span class="flex items-center gap-2 t-sm fg-80">
+        <svg class="icon fg-50" viewBox="0 0 24 24" stroke-width="1.5"><rect x="2.25" y="4.5" width="19.5" height="15" rx="2.25" /><path d="M2.25 9h19.5" /></svg>
+        45 chf
+      </span>
+    </div>
+    <div class="hairline"></div>
+    <div class="flex items-center gap-4">
+      <span class="fg-40 t-xs" style="width: 150px; font-family: ui-monospace, monospace">EventSeatsFact</span>
+      <span class="flex items-center gap-2 t-sm fg-80">
+        <svg class="icon fg-50" viewBox="0 0 15 15"><circle cx="7.5" cy="5" r="2.6" /><path d="M2.5 13c0-2.5 2.2-4 5-4s5 1.5 5 4" /></svg>
+        20 seats
+      </span>
+    </div>
+  </div>
+  <p class="cap">
+    Every fact is <code>flex items-center gap-2</code> with a <code>size-4</code> icon at
+    <code>text-foreground/50</code>. Location and price carry an <code>sr-only</code> label
+    ("location", "price") because their icon is the only thing naming them; seats does not,
+    since "20 seats" reads on its own. Colour comes from the container
+    (<code>text-foreground/80</code>), not the fact.
+  </p>
+</section>
+
+<section>
+  <h2>Two compositions</h2>
+  <div class="stage flex gap-6 wrap items-start">
+    <div style="flex: 1 1 300px">
+      <p class="t-xs fg-50 mb-2">card — a wrapping row fenced by <code>border-y</code></p>
+      <div class="ui-card p-5">
+        <div class="fg-80 flex wrap gap-4 border-y py-3 t-sm">
+          <span class="flex items-center gap-2"><svg class="icon fg-50" viewBox="0 0 15 15"><path d="M7.5 1.5c2.2 0 4 1.8 4 4 0 3-4 8-4 8s-4-5-4-8c0-2.2 1.8-4 4-4z" /><circle cx="7.5" cy="5.5" r="1.4" /></svg> langstrasse 42</span>
+          <span class="flex items-center gap-2"><svg class="icon fg-50" viewBox="0 0 24 24" stroke-width="1.5"><rect x="2.25" y="4.5" width="19.5" height="15" rx="2.25" /><path d="M2.25 9h19.5" /></svg> 45 chf</span>
+          <span class="flex items-center gap-2"><svg class="icon fg-50" viewBox="0 0 15 15"><circle cx="7.5" cy="5" r="2.6" /><path d="M2.5 13c0-2.5 2.2-4 5-4s5 1.5 5 4" /></svg> 20 seats</span>
+        </div>
+      </div>
+    </div>
+    <div style="flex: 1 1 260px">
+      <p class="t-xs fg-50 mb-2">detail aside — <b>EventFactList</b>, a stack</p>
+      <div class="ui-card p-5">
+        <div class="fg-80 flex col gap-3 t-sm">
+          <span class="flex items-center gap-2"><svg class="icon fg-50" viewBox="0 0 15 15"><rect x="2" y="3" width="11" height="10" rx="1" /><path d="M2 6h11M5 2v2M10 2v2" /></svg> sat 14 sep · 19:00</span>
+          <span class="flex items-center gap-2"><svg class="icon fg-50" viewBox="0 0 15 15"><path d="M7.5 1.5c2.2 0 4 1.8 4 4 0 3-4 8-4 8s-4-5-4-8c0-2.2 1.8-4 4-4z" /><circle cx="7.5" cy="5.5" r="1.4" /></svg> langstrasse 42</span>
+          <div class="flex items-center justify-between">
+            <span class="flex items-center gap-2"><svg class="icon fg-50" viewBox="0 0 24 24" stroke-width="1.5"><rect x="2.25" y="4.5" width="19.5" height="15" rx="2.25" /><path d="M2.25 9h19.5" /></svg> 45 chf</span>
+            <span class="accent flex items-center gap-1 t-xs" style="border-bottom: 1px dotted rgb(237 130 94 / 0.6)">discounts <svg class="icon" viewBox="0 0 15 15"><circle cx="7.5" cy="7.5" r="6" /><path d="M7.5 6.6v4M7.5 4.6v.6" /></svg></span>
+          </div>
+          <span class="flex items-center gap-2"><svg class="icon fg-50" viewBox="0 0 15 15"><circle cx="7.5" cy="5" r="2.6" /><path d="M2.5 13c0-2.5 2.2-4 5-4s5 1.5 5 4" /></svg> 20 seats</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    In the stack the date drops its accent styling and becomes a plain fact with a dimmed
+    calendar icon — the page title has taken over the heading job. The price row grows a
+    discounts popover trigger, pushed right by <code>justify-between</code>.
+  </p>
+</section>
+
+<section>
+  <h2>Date formats</h2>
+  <div class="stage flex col gap-3">
+    <div class="flex items-center gap-4"><span class="fg-40 t-xs" style="width: 190px; font-family: ui-monospace, monospace">formatEventDateLine "long"</span><span class="t-sm">saturday, 14 september · 19:00</span></div>
+    <div class="flex items-center gap-4"><span class="fg-40 t-xs" style="width: 190px; font-family: ui-monospace, monospace">formatEventDateLine "short"</span><span class="t-sm">sat 14 sep · 19:00</span></div>
+    <div class="flex items-center gap-4"><span class="fg-40 t-xs" style="width: 190px; font-family: ui-monospace, monospace">formatEventMonthYear</span><span class="t-sm">june 2026</span></div>
+    <div class="flex items-center gap-4"><span class="fg-40 t-xs" style="width: 190px; font-family: ui-monospace, monospace">formatAdminDateLine</span><span class="t-sm">Sat 14 Sep · 19:00</span></div>
+    <div class="flex items-center gap-4"><span class="fg-40 t-xs" style="width: 190px; font-family: ui-monospace, monospace">formatAdminTimestamp</span><span class="t-sm">12 Aug, 18:04</span></div>
+  </div>
+  <p class="cap">
+    Public formats are lowercase, admin formats keep sentence case — the two voices of the
+    app, expressed in the formatter rather than in CSS. Every rendered date is a
+    <code>&lt;time dateTime={iso}&gt;</code> with <code>suppressHydrationWarning</code>,
+    because the server and the visitor's browser may be in different zones.
+  </p>
+</section>

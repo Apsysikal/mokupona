@@ -1,0 +1,95 @@
+<!--meta {"group":"Content blocks","title":"Hero block","file":"hero-block.html","sources":["app/features/cms/blocks/hero/view.tsx","app/routes/_index.tsx"],"note":"The landing page's opening block, and the only asymmetric grid in the system: a <code>46fr / 54fr</code> split giving the image the larger half. Everything in it is optional except the headline — eyebrow, description, actions and meta all render conditionally, so the same block serves a page with a scheduled dinner and one without."} -->
+<style-extra>
+.hero { display: grid; grid-template-columns: 46fr 54fr; min-height: 300px; }
+.hero-copy { display: flex; flex-direction: column; justify-content: center; gap: 24px; padding: 40px; }
+.hero-media { position: relative; background: rgb(237 130 94 / 0.1); }
+.hero-media::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgb(237 130 94 / 0.18), rgb(27 21 17 / 0.9));
+}
+@media (max-width: 720px) { .hero { grid-template-columns: minmax(0, 1fr); } }
+</style-extra>
+
+<section>
+  <h2>Full block</h2>
+  <div class="stage flush">
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow eyebrow-kicker">next gathering · 14 sep</span>
+        <h1 class="t-4xl fw-light leading-tight tracking-tight" style="text-wrap: balance">
+          an evening around <span class="accent italic">one long table</span>
+        </h1>
+        <p class="fg-80 max-w-md t-base fw-light">
+          moku pona is a dinner society in zürich, shared meals, new stories, and the quiet
+          joy of discovery.
+        </p>
+        <div class="flex items-center gap-6 mt-1">
+          <button class="btn btn-default">reserve a seat</button>
+          <span style="width: fit-content; border-bottom: 1px solid rgb(245 241 236 / 0.4); padding-bottom: 4px">see all dinners →</span>
+        </div>
+      </div>
+      <div class="hero-media"></div>
+    </section>
+  </div>
+  <p class="cap">
+    <code>mx-auto max-w-7xl md:grid md:min-h-128 md:grid-cols-[46fr_54fr]</code> — the one
+    place the page width opens past <code>max-w-5xl</code>. Copy column
+    <code>px-5 py-8 md:px-10 md:py-16 gap-5 md:gap-6</code>. Headline
+    <code>text-4xl md:text-5xl font-light tracking-tight text-balance</code> — the largest
+    type in the system, and the only <code>text-balance</code>.
+  </p>
+</section>
+
+<section>
+  <h2>The accent phrase</h2>
+  <div class="stage">
+    <h1 class="t-3xl fw-light leading-tight tracking-tight">
+      an evening around <span class="accent italic">one long table</span>
+    </h1>
+  </div>
+  <p class="cap">
+    <code>headlineAccent</code> is rendered as a separate
+    <code>&lt;span class="text-primary italic"&gt;</code> after a literal space — italic
+    appears nowhere else in the system, which is what keeps it doing work here.
+  </p>
+</section>
+
+<section>
+  <h2>Actions and meta</h2>
+  <div class="stage flex col gap-5">
+    <p class="t-sm fg-65">
+      Each action declares <code>variant: "secondary"</code> or nothing. Secondary renders a
+      <code>SecondaryCTA</code>; anything else renders a default Button wrapping a Link.
+      Below <code>md</code> the pair stacks and the secondary centres itself
+      (<code>max-md:self-center</code>).
+    </p>
+    <div class="hairline"></div>
+    <div class="flex col gap-2">
+      <span class="eyebrow eyebrow-label">seats are limited to twelve</span>
+      <p class="t-sm fg-65">
+        <code>meta</code> renders as a tracked label-tone Eyebrow under the actions —
+        a footnote line, unused on the current landing page.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Below md — the image leads</h2>
+  <div class="stage flush" style="max-width: 340px">
+    <section class="flex col">
+      <div class="hero-media" style="height: 140px"></div>
+      <div class="hero-copy" style="padding: 24px 20px; gap: 20px">
+        <span class="eyebrow eyebrow-kicker">next gathering · 14 sep</span>
+        <h2 class="t-2xl fw-light leading-tight tracking-tight">an evening around <span class="accent italic">one long table</span></h2>
+        <button class="btn btn-default">reserve a seat</button>
+      </div>
+    </section>
+  </div>
+  <p class="cap">
+    The media column takes <code>max-md:order-first h-72</code>, so the picture opens the
+    page on a phone and flanks it on a desktop. The image is
+    <code>fetchPriority="high"</code> — the only one in the app.
+  </p>
+</section>

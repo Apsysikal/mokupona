@@ -1,46 +1,66 @@
 # mokupona design system — Claude Design bundle
 
-Phase 3 output of the [design-harmonization plan](../plan.md). Self-contained HTML preview
-cards for the claude.ai/design project; distilled from [design-system-spec.md](../design-system-spec.md)
-(local copy: [spec.md](./spec.md)) with the six §11 calls **and** the round-2 native-token
-harmonization (spec §12) applied, 2026-07-06.
+Self-contained HTML preview cards for the claude.ai/design project **"mokupona design
+system"** (`projectId: 3208dbb3-75a3-424b-80b0-a1f2a78606aa`).
 
-## Governing principle
+Two rounds built this directory:
 
-**Tailwind-native tokens only, nearest to each shipped value; no fractional steps; no custom token
-where a native utility exists.** Custom values are the brand palette alone: `background` #15110E,
-`card` #1B1511, `foreground` #F5F1EC, `primary` #ED825E, `accent-light` #F1B48C, `destructive`
-#A71D31. The system adds zero `@theme` tokens and deletes five.
+1. **Phase 3 of the [design-harmonization plan](../plan.md)** (2026-07-06) — nine
+   foundation and primitive cards distilled from
+   [design-system-spec.md](../design-system-spec.md) (local copy: [spec.md](./spec.md)),
+   with the six §11 calls and the round-2 native-token harmonization (§12) applied.
+2. **Component extraction** (2026-08-18) — 34 further cards covering every component that
+   ships in `app/`, read straight out of the code rather than derived from the spec. The
+   full mapping lives in [../component-inventory.md](../component-inventory.md).
 
-## Cards
+## Browsing
 
-Each card is a complete standalone HTML document whose first line is a
-`<!-- @dsCard group="…" title="…" -->` marker. No external requests — CSS inline, icons as
-inline SVG/data URIs. Fonts fall back from Open Sans to system sans.
+`index.html` is the gallery: every card, grouped, each entry naming the source files it
+was extracted from. Open it directly, or let the Claude Design pane build the same
+grouping from each card's first-line `<!-- @dsCard group="…" title="…" -->` marker.
 
-| File                | Group       | Shows                                                                                                                            |
-| ------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| tokens-colors.html  | Foundations | surfaces, the one foreground/15 hairline, text tiers as foreground/80·65·50·40, accent, red-300/sky-300 semantics, .glow-primary |
-| type-ramp.html      | Foundations | native body ramp (text-xs→lg) + display ladder (2xl→5xl, one step up at md), tracking-tight, one font-light display weight       |
-| spacing-radius.html | Foundations | rounded-lg/2xl/full tiers (+xs/sm decorative), no-fractions mapping table, density presets, max-w-5xl/2xl/md/xs                  |
-| headings.html       | Foundations | one voice, two densities — the extrabold admin fork harmonized away                                                              |
-| buttons.html        | Components  | text-base base, 6 variants, whole-step sizes h-12/11/9 + size-9/size-7, text-red-300 destructive-outline                         |
-| badges-pills.html   | Components  | badge variants + pill variant + unified Chip, sky-300 info chip                                                                  |
-| eyebrows.html       | Components  | tracked (text-xs uppercase tracking-widest) / kicker (text-sm), tones on foreground opacities                                    |
-| cards.html          | Components  | rounded-2xl, comfortable vs compact+interactive, empty state, no shadow                                                          |
-| form-fields.html    | Components  | input/textarea/select/checkbox family, **file-upload zone + file row**, one focus recipe, one hairline                           |
+| Group          | Cards | Covers                                                                    |
+| -------------- | ----- | ------------------------------------------------------------------------- |
+| Overview       | 1     | the index                                                                 |
+| Foundations    | 7     | colour, type, spacing/radius, headings, motion & effects, icons, page shell |
+| Primitives     | 12    | `app/components/ui` — button through table, plus avatar, chips, segments   |
+| Forms          | 4     | field anatomy, the public signup form, the list field, the form builder    |
+| Navigation     | 5     | site nav, admin tabs, section nav, footer, links & dividers                |
+| Content blocks | 3     | hero, text section, images & media                                         |
+| Events         | 3     | event cards, event facts, dinner detail layout                             |
+| Admin          | 5     | page header, list rows, overview, empty states, form shell                 |
+| Account & auth | 4     | auth shell, notices & status, Google sign-in, account cards                |
 
-## Baked-in decisions (2026-07-06)
+## Editing
 
-**Round 1 (§11):** rounded-2xl cards · max-w-5xl pages · tracking-widest eyebrows · no --color-tan ·
-no lowercase device · dark plumbing kept+documented.
-**Round 2 (§12):** native-only tokens, whole steps only, text-base buttons, one font-light display
-weight (no admin extrabold), one foreground/15 hairline (input border merged), text tiers as
-foreground opacities, red-300/sky-300 semantics, native max-w prose widths, file-upload field.
+Nine cards are **hand-written** — `tokens-colors`, `type-ramp`, `spacing-radius`,
+`headings`, `buttons`, `badges-pills`, `eyebrows`, `cards`, `form-fields`. Edit those files
+directly.
 
-## Sync (after user review — do not sync before)
+The other 34 plus `index.html` are **generated**. Do not edit them in place; edit the body
+fragment in [`../bundle-src/cards/`](../bundle-src/cards/) — or the shared stylesheet in
+`../bundle-src/base.css` — and rebuild:
 
-`DesignSync`: `list_projects` → `create_project` ("mokupona design system") if absent →
-`finalize_plan` with this directory as `localDir` → `write_files`. Record the projectId in
-[../plan.md](../plan.md) afterwards. Before syncing, refresh `spec.md` if the parent spec changed:
-`cp ../design-system-spec.md spec.md`.
+```
+node docs/design-harmonization/bundle-src/build.mjs
+```
+
+Each fragment starts with a one-line JSON meta comment (`group`, `title`, `file`,
+`sources`, `note`); the build inlines the stylesheet, writes the `@dsCard` marker, and
+regenerates the index. Adding a card means adding a fragment — nothing else. Hand-written
+cards are listed in `MANUAL_CARDS` in `build.mjs` so the index can still link them.
+
+## Constraints every card honours
+
+- One standalone HTML document, no external requests — CSS inline, icons as inline SVG.
+- Fonts fall back from Open Sans to the system sans; no webfont is fetched.
+- Dark surfaces only, on the shipped palette: `background` #15110E, `card` #1B1511,
+  `foreground` #F5F1EC, `primary` #ED825E, `accent-light` #F1B48C, `destructive` #A71D31.
+- Every card names its source files, so a card and its implementation stay findable from
+  one another.
+
+## Sync
+
+`DesignSync`: `finalize_plan` with this directory as `localDir` and the existing
+`projectId` → `write_files` with the changed paths. Refresh `spec.md` from the parent spec
+first if it has changed (`cp ../design-system-spec.md spec.md`).

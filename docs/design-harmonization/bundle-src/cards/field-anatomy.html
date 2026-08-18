@@ -1,0 +1,87 @@
+<!--meta {"group":"Forms","title":"Field anatomy","file":"field-anatomy.html","sources":["app/components/forms.tsx","app/components/ui/input.tsx","app/components/ui/label.tsx","app/components/ui/textarea.tsx","app/components/ui/checkbox.tsx"],"note":"Four wrappers — <code>Field</code>, <code>TextareaField</code>, <code>SelectField</code>, <code>CheckboxField</code> — share one <code>useFieldIds</code> hook that generates the id, wires <code>aria-describedby</code> to both the description and the error list, and merges rather than overwrites whatever Conform already put there. Every field is a <code>flex flex-col gap-2</code> stack in the same order: label, description, control, errors."} -->
+<style-extra>
+.anatomy { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 16px 24px; align-items: start; }
+.anatomy dt { font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: rgb(var(--foreground) / 0.5); padding-top: 6px; }
+.select-wrap { position: relative; }
+.select-wrap svg { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+</style-extra>
+
+<section>
+  <h2>The stack, top to bottom</h2>
+  <div class="stage">
+    <div class="anatomy">
+      <dt>Label</dt>
+      <dd><label class="label">Dietary needs</label><p class="cap" style="margin-top: 4px"><code>font-semibold text-foreground/65</code>, <code>peer-disabled:opacity-70</code></p></dd>
+      <dt>FieldDescription</dt>
+      <dd><p class="field-desc">Allergies, intolerances, anything we should cook around.</p><p class="cap" style="margin-top: 4px"><code>text-sm text-foreground/65 whitespace-pre-line</code> — renders nothing when empty</p></dd>
+      <dt>Control</dt>
+      <dd><input class="field" placeholder="no nuts, please" readonly /></dd>
+      <dt>ErrorList</dt>
+      <dd><ul style="list-style: none"><li class="field-error">Please keep this under 200 characters.</li></ul><p class="cap" style="margin-top: 4px"><code>text-destructive-light text-sm</code>, one <code>&lt;li&gt;</code> per message</p></dd>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Controls</h2>
+  <div class="stage grid cols-2 gap-6">
+    <div class="flex col gap-2">
+      <label class="label">Title</label>
+      <input class="field" value="an evening of small plates" readonly />
+      <p class="cap"><b>Input</b> — <code>fieldShellClassName</code> + <code>w-full py-1</code></p>
+    </div>
+    <div class="flex col gap-2">
+      <label class="label">Address</label>
+      <div class="select-wrap">
+        <select class="field" style="appearance: none; padding-right: 36px">
+          <option>Langstrasse 42, 8004 Zürich</option>
+        </select>
+        <svg class="icon fg-50" viewBox="0 0 15 15"><path d="M4 6l3.5 3.5L11 6" /></svg>
+      </div>
+      <p class="cap"><b>SelectField</b> — same shell, <code>appearance-none pr-9</code> and its own chevron</p>
+    </div>
+    <div class="flex col gap-2" style="grid-column: span 2">
+      <label class="label">Description</label>
+      <textarea class="field field-textarea" rows="3" readonly>five courses built around what the market had that morning.</textarea>
+      <p class="cap"><b>Textarea</b> — <code>min-h-20 px-3 py-3</code>, no fixed height</p>
+    </div>
+    <div class="flex col gap-2">
+      <div class="flex items-center gap-2">
+        <span class="checkbox checkbox-checked">
+          <svg viewBox="0 0 15 15" style="width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.6"><path d="M3.5 7.5l3 3 5-6" /></svg>
+        </span>
+        <label class="t-sm leading-snug fg-80">i agree to the <span class="accent">privacy policy</span></label>
+      </div>
+      <p class="cap"><b>CheckboxField</b> — control and label on one row; the label drops to <code>text-sm font-normal text-foreground/80</code>, and the description indents to <code>pl-6</code></p>
+    </div>
+    <div class="flex col gap-2">
+      <label class="label">Cover</label>
+      <div class="field field-file"><span class="fg-65 t-sm">Choose a file — jpeg, png, webp</span></div>
+      <p class="cap"><b>fileFieldClassName</b> — <code>h-auto border-dashed border-foreground/20 py-6 text-center hover:border-primary/35</code></p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>States</h2>
+  <div class="stage grid cols-3 gap-5">
+    <div class="flex col gap-2">
+      <label class="label">Rest</label>
+      <input class="field" placeholder="placeholder" readonly />
+    </div>
+    <div class="flex col gap-2">
+      <label class="label">Focus</label>
+      <input class="field field-focused" value="focused" readonly />
+    </div>
+    <div class="flex col gap-2">
+      <label class="label">Disabled</label>
+      <input class="field" value="you can't change this" style="opacity: 0.5; cursor: not-allowed" readonly />
+    </div>
+  </div>
+  <p class="cap">
+    Focus drops the border and paints an <code>inset-ring-2 ring-ring</code>, so nothing
+    reflows. Disabled is <code>cursor-not-allowed opacity-50</code> on every control type.
+    Invalid fields carry <code>aria-invalid</code> but no colour of their own — the error
+    list below them is the signal.
+  </p>
+</section>

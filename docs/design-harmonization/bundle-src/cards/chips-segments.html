@@ -1,0 +1,99 @@
+<!--meta {"group":"Primitives","title":"Chips & segmented control","file":"chips-segments.html","sources":["app/components/section.tsx","app/components/admin-ui.tsx","app/components/section-nav.tsx","app/components/auth-layout.tsx","app/routes/admin.users._index.tsx"],"note":"<code>chipVariants</code> is one CVA covering two shapes — a rounded filter chip and a nav item that squares off into a sidebar link at <code>md</code>. <code>pillVariants</code> is its read-only sibling. The segmented control is a separate pair (<code>segmentGroupClassName</code> + <code>segmentVariants</code>) used for mutually exclusive choices."} -->
+<style-extra>
+.nav-sidebar { display: flex; flex-direction: column; gap: 4px; width: 192px; }
+.chip-nav-active { border-color: rgb(237 130 94 / 0.35); background: rgb(237 130 94 / 0.1); color: var(--accent-light); font-weight: 600; }
+.seg-label { cursor: pointer; text-transform: capitalize; }
+</style-extra>
+
+<section>
+  <h2>chipVariants — size "default"</h2>
+  <div class="stage flex gap-2 wrap">
+    <button class="chip chip-active">all</button>
+    <button class="chip">upcoming</button>
+    <button class="chip">past</button>
+  </div>
+  <p class="cap">
+    <code>inline-flex rounded-full border px-4 py-2 text-xs font-semibold</code>. Active:
+    <code>border-primary/35 bg-primary/10 text-accent-light</code>. Inactive is
+    transparent-bordered and picks up <code>hover:border-foreground/20</code> through a
+    compound variant. Rendered by <b>FilterChip</b>, which adds
+    <code>aria-pressed</code>.
+  </p>
+</section>
+
+<section>
+  <h2>chipVariants — size "nav"</h2>
+  <div class="stage flex gap-8 wrap items-start">
+    <div>
+      <p class="t-xs fg-50 mb-2">below md — a scroll rail</p>
+      <div class="flex gap-2">
+        <span class="chip chip-nav chip-nav-active" style="border-radius: 9999px">Basics</span>
+        <span class="chip chip-nav" style="border-radius: 9999px">Menu</span>
+        <span class="chip chip-nav" style="border-radius: 9999px">Schedule</span>
+      </div>
+    </div>
+    <div>
+      <p class="t-xs fg-50 mb-2">md and up — a sidebar</p>
+      <div class="nav-sidebar">
+        <span class="chip chip-nav chip-nav-active">Basics</span>
+        <span class="chip chip-nav">Menu &amp; donation</span>
+        <span class="chip chip-nav">Schedule &amp; pricing</span>
+        <span class="chip chip-nav">Cover &amp; location</span>
+        <span class="chip chip-nav">Signup form</span>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    <code>block px-3 py-2 text-sm md:rounded-lg</code> — the pill flattens to an 8px radius
+    at <code>md</code>. Inactive nav chips swap their hover to
+    <code>md:hover:bg-foreground/5 md:border-transparent</code>, so the rail highlights by
+    text colour and the sidebar by surface. Used by <b>SectionNav</b>, which drives
+    <code>aria-current</code> from an IntersectionObserver.
+  </p>
+</section>
+
+<section>
+  <h2>pillVariants — a chip that isn't a control</h2>
+  <div class="stage flex gap-4 items-center wrap">
+    <span class="pill pill-accent">admin</span>
+    <span class="pill">moderator</span>
+    <span class="pill pill-accent">
+      <svg class="icon" viewBox="0 0 15 15"><path d="M3 7.5l3 3 6-6" stroke-width="1.6" /></svg>
+      invited
+    </span>
+  </div>
+  <p class="cap">
+    <code>rounded-full border px-4 py-2 text-sm font-semibold</code>, one boolean
+    <code>accent</code>. Larger text than a chip because it labels rather than filters —
+    the role badge on the account page and the invite steps.
+  </p>
+</section>
+
+<section>
+  <h2>Segmented control</h2>
+  <div class="stage flex col gap-5">
+    <div style="max-width: 320px">
+      <p class="t-xs fg-50 mb-2">AuthShell ModeToggle — two links</p>
+      <div class="seg-group">
+        <span class="seg seg-active">log in</span>
+        <span class="seg">sign up</span>
+      </div>
+    </div>
+    <div style="max-width: 380px">
+      <p class="t-xs fg-50 mb-2">RolePicker — a radiogroup of sr-only inputs</p>
+      <div class="seg-group">
+        <span class="seg seg-label seg-active">user</span>
+        <span class="seg seg-label">moderator</span>
+        <span class="seg seg-label">admin</span>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    Group <code>bg-foreground/5 flex rounded-lg border p-1</code>; item
+    <code>h-9 flex-1 rounded-md text-sm font-semibold</code>, active
+    <code>bg-primary text-primary-foreground</code>. The RolePicker keeps the real radios
+    <code>sr-only</code> and colours the label with
+    <code>has-checked:bg-primary has-checked:text-primary-foreground</code>, so selection
+    survives without JavaScript.
+  </p>
+</section>

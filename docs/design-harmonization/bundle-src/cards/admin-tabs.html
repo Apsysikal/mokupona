@@ -1,0 +1,67 @@
+<!--meta {"group":"Navigation","title":"Admin tabs","file":"admin-tabs.html","sources":["app/components/admin-tabs.tsx","app/routes/admin.tsx"],"note":"The admin section's only navigation. Underline tabs on a bottom hairline, with a live count pill on the four tabs that have one — the counts are loaded once in the <code>admin</code> layout route, so every child screen shows the same numbers without refetching. Two tabs are admin-only and simply do not render for moderators."} -->
+<style-extra>
+.tabs { display: flex; gap: 28px; overflow-x: auto; border-bottom: 1px solid var(--border); padding: 0 40px; white-space: nowrap; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  display: inline-flex; align-items: center; gap: 8px;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  padding: 16px 0; font-size: 16px; font-weight: 600;
+  color: rgb(var(--foreground) / 0.65);
+}
+.tab-active { border-bottom-color: var(--primary); color: rgb(var(--foreground)); }
+.count { border-radius: 9999px; background: rgb(var(--foreground) / 0.05); color: rgb(var(--foreground) / 0.5); padding: 1px 8px; font-size: 12px; font-weight: 600; }
+</style-extra>
+
+<section>
+  <h2>Full set — admin</h2>
+  <div class="stage flush">
+    <nav class="tabs" aria-label="Admin sections">
+      <span class="tab">overview</span>
+      <span class="tab tab-active">dinners <span class="count">12</span></span>
+      <span class="tab">locations <span class="count">4</span></span>
+      <span class="tab">board <span class="count">9</span></span>
+      <span class="tab">users <span class="count">37</span></span>
+      <span class="tab">settings</span>
+    </nav>
+  </div>
+  <p class="cap">
+    <code>flex gap-5 md:gap-7 px-5 md:px-10 border-b overflow-x-auto scrollbar-hidden</code>.
+    Each tab is <code>border-b-2 -mb-px py-4 text-base font-semibold</code> so the active
+    underline sits <em>on</em> the container's hairline rather than above it. Labels are
+    lowercase — the one place the admin keeps the public site's voice.
+  </p>
+</section>
+
+<section>
+  <h2>Moderator — admin-only tabs absent</h2>
+  <div class="stage flush">
+    <nav class="tabs" aria-label="Admin sections">
+      <span class="tab tab-active">overview</span>
+      <span class="tab">dinners <span class="count">12</span></span>
+      <span class="tab">locations <span class="count">4</span></span>
+      <span class="tab">board <span class="count">9</span></span>
+    </nav>
+  </div>
+  <p class="cap">
+    Users and settings are gated on <code>isAdmin</code>; the users count is loaded as
+    <code>null</code> for moderators, and a <code>null</code> count renders no pill at all —
+    distinct from a count of <code>0</code>, which does.
+  </p>
+</section>
+
+<section>
+  <h2>Below md — a scroll rail</h2>
+  <div class="stage flush" style="max-width: 340px">
+    <nav class="tabs" style="gap: 20px; padding: 0 20px">
+      <span class="tab">overview</span>
+      <span class="tab tab-active">dinners <span class="count">12</span></span>
+      <span class="tab">locations <span class="count">4</span></span>
+      <span class="tab">board <span class="count">9</span></span>
+    </nav>
+  </div>
+  <p class="cap">
+    Gap and padding tighten to <code>gap-5 px-5</code>; overflow scrolls with the scrollbar
+    hidden. Tabs are <code>NavLink prefetch="intent"</code>, with <code>end</code> set on
+    overview so <code>/admin</code> does not stay active on child routes.
+  </p>
+</section>

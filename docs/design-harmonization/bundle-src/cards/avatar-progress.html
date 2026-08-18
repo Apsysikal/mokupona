@@ -1,0 +1,53 @@
+<!--meta {"group":"Primitives","title":"Avatar & seat progress","file":"avatar-progress.html","sources":["app/components/admin-ui.tsx"],"note":"Two small display primitives the admin lists lean on. <code>InitialsAvatar</code> derives initials from a name or email and alternates between exactly two tints by <code>seed % 2</code> — a deterministic, list-index-driven variation with no colour-per-person mapping to maintain. <code>SeatProgress</code> is the only bar-style meter in the app."} -->
+<section>
+  <h2>InitialsAvatar</h2>
+  <div class="stage flex items-center gap-6 wrap">
+    <div class="flex items-center gap-3">
+      <span class="avatar avatar-a">AK</span>
+      <span class="t-sm fg-65">seed 0 · <code>text-accent-light bg-primary/10</code></span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="avatar avatar-b">NB</span>
+      <span class="t-sm fg-65">seed 1 · <code>text-foreground/80 bg-foreground/10</code></span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="avatar avatar-a" style="width: 32px; height: 32px; font-size: 12px">TS</span>
+      <span class="t-sm fg-65"><code>size-8 text-xs</code> — table cells</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="avatar avatar-b" style="width: 48px; height: 48px; font-size: 16px">MR</span>
+      <span class="t-sm fg-65"><code>size-12 text-base</code> — account page</span>
+    </div>
+  </div>
+  <p class="cap">
+    Base <code>size-10 rounded-full text-sm font-semibold</code>, <code>aria-hidden</code>
+    because the name is always rendered beside it. Initials are first-of-first-word +
+    first-of-second-word, falling back to the first two letters of a single word — so
+    <code>ada@example.com</code> yields <b>AD</b>.
+  </p>
+</section>
+
+<section>
+  <h2>SeatProgress</h2>
+  <div class="stage flex col gap-4">
+    <div class="flex items-center gap-3" style="max-width: 448px">
+      <span class="progress"><span style="width: 70%"></span></span>
+      <span class="fg-50 t-sm nowrap">14 / 20 seats</span>
+    </div>
+    <div class="flex items-center gap-3" style="max-width: 448px">
+      <span class="progress"><span class="muted" style="width: 100%"></span></span>
+      <span class="fg-50 t-sm nowrap">20 / 20 seats · past</span>
+    </div>
+    <div class="flex items-center gap-3" style="max-width: 448px">
+      <span class="progress"><span style="width: 0%"></span></span>
+      <span class="fg-50 t-sm nowrap">0 / 16 seats</span>
+    </div>
+  </div>
+  <p class="cap">
+    Track <code>h-2 rounded-full bg-foreground/10</code>; fill <code>bg-primary</code>, or
+    <code>bg-foreground/40</code> when <code>muted</code> marks a past dinner. Width is an
+    inline percentage clamped to 100 and rounded, animated with
+    <code>transition-[width] duration-500</code> — the one place a duration is spelled out.
+    Zero total renders 0% rather than dividing by zero.
+  </p>
+</section>

@@ -1,0 +1,70 @@
+<!--meta {"group":"Account & auth","title":"Account cards","file":"account-cards.html","sources":["app/routes/me.tsx"],"note":"The account page is a stack of one local <code>SectionCard</code> — an optional title and subtitle over a <code>gap-5</code> body. Each card owns one fetcher form and toasts its own result, so saving a name never disturbs the password card below it. Read-only values reuse the field shell, which is why an unchangeable email still lines up with the inputs above it."} -->
+<section>
+  <h2>Profile</h2>
+  <div class="stage" style="max-width: 460px">
+    <div class="ui-card flex col gap-5" style="padding: 24px">
+      <div class="flex items-center gap-4">
+        <span class="avatar avatar-a" style="width: 48px; height: 48px; font-size: 16px">AK</span>
+        <div class="flex-1 min-w-0"><p class="truncate t-lg fw-semibold">Ada Kessler</p></div>
+        <span class="pill pill-accent">admin</span>
+      </div>
+
+      <div class="flex col gap-2">
+        <label class="label">name</label>
+        <div class="flex gap-2">
+          <input class="field flex-1" value="Ada Kessler" readonly />
+          <button class="btn btn-outline">save</button>
+        </div>
+      </div>
+
+      <div class="flex col gap-2">
+        <span class="t-sm fw-semibold">email</span>
+        <div class="field fg-65 t-sm justify-between">
+          <span class="truncate">ada@example.com</span>
+          <span class="badge badge-info badge-pill shrink-0" style="margin-left: 8px">
+            <svg class="icon" style="width: 12px; height: 12px" viewBox="0 0 15 15"><path d="M3 7.5l3 3 6-6" stroke-width="1.8" /></svg>
+            verified
+          </span>
+        </div>
+        <p class="fg-50 t-sm">your email is your login and can't be changed here.</p>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    <b>SectionCard</b> — <code>Card as="section" flex flex-col gap-5 p-6 md:p-7</code>.
+    Avatar steps up to <code>size-12 text-base</code>; role is a
+    <code>pillVariants({ accent: true })</code> pill, not a Badge, because it labels the
+    person rather than the record. Inline save is an <code>outline</code> Button beside a
+    <code>flex-1</code> Input. The read-only email row is a
+    <code>fieldShellClassName</code> div — the shell without an input in it.
+  </p>
+</section>
+
+<section>
+  <h2>Sessions and other cards</h2>
+  <div class="stage flex gap-4 wrap">
+    <div class="ui-card flex col gap-5" style="padding: 24px; flex: 1 1 300px">
+      <div class="flex col gap-1">
+        <h2 class="t-lg fw-semibold">sessions</h2>
+      </div>
+      <p class="fg-65 t-sm">you're signed in on <strong class="fg fw-semibold">3 devices</strong>, including this one.</p>
+      <button class="btn btn-outline" style="align-self: flex-start">sign out other sessions</button>
+    </div>
+
+    <div class="ui-card flex col gap-5" style="padding: 24px; flex: 1 1 300px">
+      <div class="flex col gap-1">
+        <h2 class="t-lg fw-semibold">password</h2>
+        <p class="fg-50 t-sm">at least twelve characters.</p>
+      </div>
+      <div class="flex col gap-2"><label class="label">new password</label><input class="field" type="password" value="secret" readonly /></div>
+      <button class="btn btn-outline" style="align-self: flex-start">change password</button>
+    </div>
+  </div>
+  <p class="cap">
+    Card heading <code>text-lg font-semibold</code> over a
+    <code>text-sm text-foreground/50</code> subtitle; both are optional, and a card with
+    neither renders straight into its body. Actions are <code>self-start</code> outline
+    Buttons — nothing on this page is the page's primary action, so nothing is filled.
+    Every submit disables while its fetcher is in flight.
+  </p>
+</section>

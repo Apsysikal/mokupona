@@ -1,0 +1,77 @@
+<!--meta {"group":"Primitives","title":"Toast","file":"toast.html","sources":["app/components/ui/sonner.tsx","app/hooks/useToast.tsx","app/utils/toast.server.ts","app/root.tsx"],"note":"Sonner, restyled onto our surfaces through <code>toastOptions.classNames</code>. Toasts are raised on the <code>bg-background</code> surface — deliberately <em>not</em> the card colour, so they read as floating over the page rather than as part of it. One <code>&lt;Toaster /&gt;</code> lives in the root layout; everything else pushes into it."} -->
+<style-extra>
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 356px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  padding: 16px;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.4);
+}
+.toast-action {
+  margin-left: auto;
+  border-radius: 6px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+}
+</style-extra>
+
+<section>
+  <h2>Types</h2>
+  <div class="stage flex col gap-3 items-start">
+    <div class="toast">
+      <svg class="icon accent" style="margin-top: 3px" viewBox="0 0 15 15"><path d="M3 7.5l3 3 6-6" stroke-width="1.6" /></svg>
+      <div class="flex col gap-1">
+        <span class="t-sm fw-semibold">Signup complete</span>
+        <span class="t-sm fg-65">We'll contact you if you were able to get a spot on the event.</span>
+      </div>
+    </div>
+    <div class="toast">
+      <svg class="icon accent" style="margin-top: 3px" viewBox="0 0 15 15"><path d="M3 7.5l3 3 6-6" stroke-width="1.6" /></svg>
+      <div class="flex col gap-1"><span class="t-sm fw-semibold">Invite sent to ada@example.com</span></div>
+    </div>
+    <div class="toast">
+      <svg class="icon danger" style="margin-top: 3px" viewBox="0 0 15 15"><path d="M7.5 1.8L14 13H1z" /><path d="M7.5 6v3.2M7.5 10.6v.6" /></svg>
+      <div class="flex col gap-1">
+        <span class="t-sm fw-semibold">Couldn't save the dinner</span>
+        <span class="t-sm fg-65">Something went wrong. Try again in a moment.</span>
+      </div>
+      <span class="toast-action">Retry</span>
+    </div>
+  </div>
+  <p class="cap">
+    Mapped classes — <b>toast</b> <code>bg-background text-foreground border-border
+    shadow-lg</code> · <b>description</b> <code>text-foreground/65</code> ·
+    <b>actionButton</b> <code>bg-primary text-primary-foreground</code> ·
+    <b>cancelButton</b> <code>bg-card text-foreground/65</code>. Sonner supplies the
+    radius, width and icons; only colour is ours.
+  </p>
+</section>
+
+<section>
+  <h2>Two ways in</h2>
+  <div class="stage flex col gap-4">
+    <div class="flex col gap-1">
+      <span class="t-sm fw-semibold">Redirect toast — server</span>
+      <span class="t-sm fg-65">
+        <code>redirectWithToast(path, { title, description?, type })</code> flashes the toast
+        into the session; <code>useToast</code> in the root layout replays it after
+        hydration. Used for signup success, settings changes, deletes.
+      </span>
+    </div>
+    <div class="hairline"></div>
+    <div class="flex col gap-1">
+      <span class="t-sm fw-semibold">Direct toast — client</span>
+      <span class="t-sm fg-65">
+        <code>toast.success(…)</code> straight from a fetcher effect, for actions that never
+        navigate — sending an invite, renaming yourself, revoking other sessions.
+      </span>
+    </div>
+  </div>
+</section>

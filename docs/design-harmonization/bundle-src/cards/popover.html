@@ -1,0 +1,74 @@
+<!--meta {"group":"Primitives","title":"Popover","file":"popover.html","sources":["app/components/ui/popover.tsx","app/features/events/components/event-view.tsx"],"note":"Radix Popover in a <code>bg-popover</code> panel — same raised surface and 16px radius as a card, plus the one <code>shadow-md</code> the system allows for portalled layers. One shipped use: the discounts note on the dinner fact list, whose trigger is a dotted-underline accent link rather than a button."} -->
+<style-extra>
+.pop {
+  width: 288px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 16px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+}
+.pop-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--primary);
+  border-bottom: 1px dotted rgb(237 130 94 / 0.6);
+  padding-bottom: 1px;
+}
+.pop-stage { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+</style-extra>
+
+<section>
+  <h2>Trigger and panel</h2>
+  <div class="stage pop-stage">
+    <span class="pop-trigger">
+      discounts
+      <svg class="icon" viewBox="0 0 15 15"><circle cx="7.5" cy="7.5" r="6" /><path d="M7.5 6.6v4M7.5 4.6v.6" /></svg>
+    </span>
+    <div class="pop">
+      <p class="t-sm pre-line">students and apprentices pay 25 chf. speak to us at the door — no proof needed.</p>
+    </div>
+  </div>
+  <p class="cap">
+    <b>PopoverContent</b> <code>w-72 rounded-2xl border p-4 shadow-md bg-popover</code>,
+    <code>align="center" sideOffset={4}</code>, with the Radix
+    <code>fade-*</code>/<code>zoom-95</code>/<code>slide-in-from-*</code> set keyed off
+    <code>data-side</code>.
+  </p>
+</section>
+
+<section>
+  <h2>In place — the price row it belongs to</h2>
+  <div class="stage">
+    <div class="ui-card p-5" style="max-width: 340px">
+      <div class="flex col gap-3 t-sm fg-80">
+        <span class="flex items-center gap-2">
+          <svg class="icon fg-50" viewBox="0 0 15 15"><rect x="2" y="3" width="11" height="10" rx="1" /><path d="M2 6h11M5 2v2M10 2v2" /></svg>
+          sat 14 sep · 19:00
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="icon fg-50" viewBox="0 0 15 15"><path d="M7.5 1.5c2.2 0 4 1.8 4 4 0 3-4 8-4 8s-4-5-4-8c0-2.2 1.8-4 4-4z" /><circle cx="7.5" cy="5.5" r="1.4" /></svg>
+          langstrasse 42
+        </span>
+        <div class="flex items-center justify-between">
+          <span class="flex items-center gap-2">
+            <svg class="icon fg-50" viewBox="0 0 24 24" stroke-width="1.5"><rect x="2.25" y="4.5" width="19.5" height="15" rx="2.25" /><path d="M2.25 9h19.5" /></svg>
+            45 chf
+          </span>
+          <span class="pop-trigger">
+            discounts
+            <svg class="icon" viewBox="0 0 15 15"><circle cx="7.5" cy="7.5" r="6" /><path d="M7.5 6.6v4M7.5 4.6v.6" /></svg>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    The trigger is deliberately not a Button — it reads as an inline annotation:
+    <code>text-primary text-xs border-b border-dotted border-primary/60</code>. Panel copy
+    is <code>text-sm whitespace-pre-line</code> and falls back to
+    "no discounts currently available".
+  </p>
+</section>

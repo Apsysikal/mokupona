@@ -1,0 +1,607 @@
+<!-- @dsCard group="Admin" title="Overview cards" -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mokupona — Overview cards</title>
+    <style>
+/* mokupona design system — shared card stylesheet.
+   Inlined into every generated preview card by build.mjs. A hand-rolled subset
+   of the Tailwind utilities the app actually ships, so a card body reads close
+   to the JSX it was extracted from. */
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  border: 0 solid var(--border);
+}
+
+:root {
+  --background: #15110e;
+  --card: #1b1511;
+  --foreground: 245 241 236;
+  --primary: #ed825e;
+  --primary-foreground: #15110e;
+  --accent-light: #f1b48c;
+  --destructive: #a71d31;
+  --destructive-light: #f0a8ab;
+  --sky-300: #7dd3fc;
+  --border: rgb(245 241 236 / 0.15);
+  --ring: #ed825e;
+}
+
+body {
+  background: var(--background);
+  color: rgb(var(--foreground));
+  font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 32px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── card chrome ─────────────────────────────────────────────── */
+.doc-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgb(var(--foreground) / 0.5);
+}
+.doc-title {
+  font-size: 24px;
+  font-weight: 300;
+  letter-spacing: -0.025em;
+  margin: 6px 0 4px;
+}
+.doc-note {
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgb(var(--foreground) / 0.65);
+  max-width: 720px;
+}
+.doc-source {
+  font-size: 12px;
+  color: rgb(var(--foreground) / 0.4);
+  margin-top: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+section {
+  margin-top: 28px;
+}
+section > h2 {
+  /* Not uppercased: many of these headings are component names, and
+     AdminDeleteButton is unreadable in caps. */
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgb(var(--foreground) / 0.5);
+  margin-bottom: 12px;
+}
+.stage {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+  padding: 24px;
+}
+.stage.plain {
+  background: var(--background);
+}
+.stage.flush {
+  padding: 0;
+  overflow: hidden;
+}
+.cap {
+  font-size: 12px;
+  color: rgb(var(--foreground) / 0.4);
+  margin-top: 8px;
+  line-height: 1.6;
+}
+.cap b {
+  color: rgb(var(--foreground) / 0.65);
+  font-weight: 600;
+}
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.86em;
+  color: rgb(var(--foreground) / 0.8);
+}
+
+/* ── layout utilities ────────────────────────────────────────── */
+.flex { display: flex; }
+.col { flex-direction: column; }
+.wrap { flex-wrap: wrap; }
+.grid { display: grid; }
+.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.items-start { align-items: flex-start; }
+.items-center { align-items: center; }
+.items-end { align-items: flex-end; }
+.items-baseline { align-items: baseline; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.justify-end { justify-content: flex-end; }
+.gap-1 { gap: 4px; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+.gap-5 { gap: 20px; }
+.gap-6 { gap: 24px; }
+.gap-7 { gap: 28px; }
+.gap-8 { gap: 32px; }
+.gap-10 { gap: 40px; }
+.grow { flex-grow: 1; }
+.shrink-0 { flex-shrink: 0; }
+.flex-1 { flex: 1 1 0%; min-width: 0; }
+.min-w-0 { min-width: 0; }
+.relative { position: relative; }
+.absolute { position: absolute; }
+.overflow-hidden { overflow: hidden; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nowrap { white-space: nowrap; }
+.pre-line { white-space: pre-line; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.w-full { width: 100%; }
+.w-fit { width: fit-content; }
+.max-w-md { max-width: 448px; }
+.max-w-2xl { max-width: 672px; }
+.mt-1 { margin-top: 4px; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }
+.mt-6 { margin-top: 24px; }
+.mb-1 { margin-bottom: 4px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+.mb-5 { margin-bottom: 20px; }
+.mb-6 { margin-bottom: 24px; }
+
+/* ── type utilities ──────────────────────────────────────────── */
+.t-xs { font-size: 12px; }
+.t-sm { font-size: 14px; }
+.t-base { font-size: 16px; }
+.t-lg { font-size: 18px; }
+.t-xl { font-size: 20px; }
+.t-2xl { font-size: 24px; }
+.t-3xl { font-size: 30px; }
+.t-4xl { font-size: 36px; }
+.t-5xl { font-size: 48px; }
+.fw-light { font-weight: 300; }
+.fw-normal { font-weight: 400; }
+.fw-semibold { font-weight: 600; }
+.leading-tight { line-height: 1.25; }
+.leading-snug { line-height: 1.375; }
+.leading-none { line-height: 1; }
+.tracking-tight { letter-spacing: -0.025em; }
+.tracking-wide { letter-spacing: 0.025em; }
+.tracking-widest { letter-spacing: 0.1em; }
+.uppercase { text-transform: uppercase; }
+.italic { font-style: italic; }
+.underline { text-decoration: underline; text-underline-offset: 4px; }
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── colour utilities ────────────────────────────────────────── */
+.fg { color: rgb(var(--foreground)); }
+.fg-80 { color: rgb(var(--foreground) / 0.8); }
+.fg-65 { color: rgb(var(--foreground) / 0.65); }
+.fg-50 { color: rgb(var(--foreground) / 0.5); }
+.fg-40 { color: rgb(var(--foreground) / 0.4); }
+.accent { color: var(--primary); }
+.accent-light { color: var(--accent-light); }
+.danger { color: var(--destructive-light); }
+.info { color: var(--sky-300); }
+.on-primary { color: var(--primary-foreground); }
+
+/* ── surface utilities ───────────────────────────────────────── */
+.surface-card { background: var(--card); }
+.surface-bg { background: var(--background); }
+.surface-subtle { background: rgb(var(--foreground) / 0.05); }
+.surface-primary { background: var(--primary); }
+.tint-primary { background: rgb(237 130 94 / 0.1); }
+.tint-danger { background: rgb(167 29 49 / 0.1); }
+.tint-info { background: rgb(125 211 252 / 0.1); }
+.tint-fg { background: rgb(var(--foreground) / 0.1); }
+.bordered { border: 1px solid var(--border); }
+.border-b { border-bottom: 1px solid var(--border); }
+.border-t { border-top: 1px solid var(--border); }
+.border-y { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.border-r { border-right: 1px solid var(--border); }
+.border-dashed { border-style: dashed; }
+.border-primary { border-color: rgb(237 130 94 / 0.35); }
+.border-danger { border-color: rgb(167 29 49 / 0.35); }
+.border-info { border-color: rgb(125 211 252 / 0.35); }
+.rounded-sm { border-radius: 4px; }
+.rounded-lg { border-radius: 8px; }
+.rounded-2xl { border-radius: 16px; }
+.rounded-full { border-radius: 9999px; }
+.p-2 { padding: 8px; }
+.p-3 { padding: 12px; }
+.p-4 { padding: 16px; }
+.p-5 { padding: 20px; }
+.p-6 { padding: 24px; }
+.p-7 { padding: 28px; }
+.p-8 { padding: 32px; }
+.px-3 { padding-left: 12px; padding-right: 12px; }
+.px-4 { padding-left: 16px; padding-right: 16px; }
+.px-5 { padding-left: 20px; padding-right: 20px; }
+.py-2 { padding-top: 8px; padding-bottom: 8px; }
+.py-3 { padding-top: 12px; padding-bottom: 12px; }
+.py-4 { padding-top: 16px; padding-bottom: 16px; }
+.pb-4 { padding-bottom: 16px; }
+.pt-4 { padding-top: 16px; }
+.hairline { background: var(--border); height: 1px; }
+
+/* ── the shipped components ──────────────────────────────────── */
+/* Button — app/components/ui/button.tsx */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 24px;
+  cursor: pointer;
+  transition: background-color 150ms, border-color 150ms, color 150ms;
+  background: none;
+  color: inherit;
+}
+.btn-default { background: var(--primary); color: var(--primary-foreground); }
+.btn-destructive { background: var(--destructive); color: rgb(var(--foreground)); }
+.btn-destructive-outline {
+  border: 1px solid rgb(167 29 49 / 0.35);
+  color: var(--destructive-light);
+}
+.btn-outline { border: 1px solid rgb(var(--foreground) / 0.2); }
+.btn-secondary { background: var(--card); color: rgb(var(--foreground)); }
+.btn-ghost { color: rgb(var(--foreground) / 0.8); }
+.btn-link {
+  color: var(--primary);
+  padding: 0;
+  height: auto;
+  text-underline-offset: 4px;
+}
+.btn-sm { height: 36px; padding: 0 16px; font-size: 14px; }
+.btn-lg { height: 48px; }
+.btn-icon { width: 36px; height: 36px; padding: 0; }
+.btn-icon-sm { width: 28px; height: 28px; padding: 0; }
+.btn[disabled] { pointer-events: none; opacity: 0.5; }
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--ring); }
+
+/* Badge — app/components/ui/badge.tsx */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--border);
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+.badge-default { background: var(--primary); color: var(--primary-foreground); border-color: transparent; }
+.badge-secondary { background: var(--card); color: rgb(var(--foreground)); }
+.badge-info { border-color: rgb(125 211 252 / 0.35); background: rgb(125 211 252 / 0.1); color: var(--sky-300); }
+.badge-pill { border-radius: 9999px; }
+
+/* Chip — chipVariants in app/components/section.tsx */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: rgb(var(--foreground) / 0.65);
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 150ms, border-color 150ms, background-color 150ms;
+}
+.chip-active {
+  border-color: rgb(237 130 94 / 0.35);
+  background: rgb(237 130 94 / 0.1);
+  color: var(--accent-light);
+}
+.chip-nav {
+  display: block;
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+/* Pill — pillVariants in app/components/section.tsx */
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgb(var(--foreground) / 0.65);
+}
+.pill-accent {
+  border-color: rgb(237 130 94 / 0.35);
+  background: rgb(237 130 94 / 0.1);
+  color: var(--accent-light);
+}
+
+/* Eyebrow — app/components/section.tsx */
+.eyebrow { display: block; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--primary); }
+.eyebrow-kicker { font-size: 14px; text-transform: none; letter-spacing: normal; }
+.eyebrow-light { color: var(--accent-light); }
+.eyebrow-label { color: rgb(var(--foreground) / 0.5); }
+.eyebrow-on-primary { color: rgb(21 17 14 / 0.7); }
+
+/* Field shell — fieldShellClassName in app/components/ui/input.tsx */
+.field {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgb(var(--foreground) / 0.05);
+  padding: 4px 12px;
+  color: rgb(var(--foreground));
+  font-family: inherit;
+  font-size: 16px;
+  transition: border-color 150ms;
+}
+.field::placeholder { color: rgb(var(--foreground) / 0.5); }
+.field:focus-visible { outline: none; border-color: transparent; box-shadow: inset 0 0 0 2px var(--ring); }
+.field-textarea { height: auto; min-height: 80px; padding: 12px; resize: vertical; }
+.field-focused { border-color: transparent; box-shadow: inset 0 0 0 2px var(--ring); }
+.field-file {
+  height: auto;
+  padding: 24px;
+  border-style: dashed;
+  border-color: rgb(var(--foreground) / 0.2);
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+}
+.label { font-weight: 600; color: rgb(var(--foreground) / 0.65); }
+.field-error { color: var(--destructive-light); font-size: 14px; }
+.field-desc { color: rgb(var(--foreground) / 0.65); font-size: 14px; }
+
+/* Checkbox — app/components/ui/checkbox.tsx */
+.checkbox {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: rgb(var(--foreground) / 0.05);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.checkbox-checked { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); }
+
+/* Segmented control — segmentGroupClassName / segmentVariants */
+.seg-group {
+  display: flex;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgb(var(--foreground) / 0.05);
+  padding: 4px;
+}
+.seg {
+  display: flex;
+  height: 36px;
+  flex: 1 1 0%;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgb(var(--foreground) / 0.65);
+  transition: background-color 150ms, color 150ms;
+}
+.seg-active { background: var(--primary); color: var(--primary-foreground); }
+
+/* Card — app/components/ui/card.tsx */
+.ui-card {
+  background: var(--card);
+  color: rgb(var(--foreground));
+  border-radius: 16px;
+  border: 1px solid var(--border);
+}
+.ui-card-interactive:hover { border-color: rgb(237 130 94 / 0.35); }
+
+/* InitialsAvatar / SeatProgress — app/components/admin-ui.tsx */
+.avatar {
+  display: flex;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.avatar-a { color: var(--accent-light); background: rgb(237 130 94 / 0.1); }
+.avatar-b { color: rgb(var(--foreground) / 0.8); background: rgb(var(--foreground) / 0.1); }
+.progress { display: block; height: 8px; flex: 1 1 0%; overflow: hidden; border-radius: 9999px; background: rgb(var(--foreground) / 0.1); }
+.progress > span { display: block; height: 100%; border-radius: 9999px; background: var(--primary); }
+.progress > span.muted { background: rgb(var(--foreground) / 0.4); }
+
+/* glow-primary — app/tailwind.css */
+.glow {
+  pointer-events: none;
+  border-radius: 9999px;
+  background-image: radial-gradient(circle, rgb(237 130 94 / 0.15), transparent 70%);
+}
+.glow-strong { background-image: radial-gradient(circle, rgb(237 130 94 / 0.2), transparent 70%); }
+
+/* CoverImage placeholder — app/components/cover-image.tsx */
+.cover {
+  display: flex;
+  aspect-ratio: 3 / 2;
+  align-items: center;
+  justify-content: center;
+  background: rgb(237 130 94 / 0.1);
+}
+.cover > span {
+  display: flex;
+  aspect-ratio: 1;
+  width: 25%;
+  min-width: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 2px solid rgb(237 130 94 / 0.35);
+}
+.cover > span > span {
+  display: block;
+  aspect-ratio: 1;
+  width: 66%;
+  border-radius: 9999px;
+  border: 1px solid rgb(237 130 94 / 0.2);
+}
+
+/* Table — app/components/ui/table.tsx */
+table { width: 100%; border-collapse: collapse; font-size: 14px; caption-side: bottom; }
+thead tr { border-bottom: 1px solid var(--border); }
+th {
+  padding: 12px 16px;
+  text-align: left;
+  vertical-align: middle;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgb(var(--foreground) / 0.5);
+}
+td { padding: 16px; vertical-align: middle; }
+tbody tr { border-bottom: 1px solid var(--border); }
+tbody tr:last-child { border-bottom: 0; }
+
+svg.icon { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.6; fill: none; flex-shrink: 0; }
+svg.icon-lg { width: 20px; height: 20px; }
+svg.icon-xl { width: 28px; height: 28px; }
+a { color: inherit; }
+
+/* admin-overview.html */
+.shot { aspect-ratio: 3 / 2; border-radius: 8px; position: relative; overflow: hidden; background: rgb(237 130 94 / 0.1); border: 1px solid var(--border); }
+.shot::after { content: ""; position: absolute; inset: 0; background: linear-gradient(140deg, rgb(237 130 94 / 0.25), rgb(27 21 17 / 0.85)); }
+    </style>
+  </head>
+  <body>
+    <p class="doc-eyebrow">Admin</p>
+    <h1 class="doc-title">Overview cards</h1>
+    <p class="doc-note">The admin landing screen: one <code>NextDinnerCard</code> that answers "what's next and how full is it", and a recent-signups card that lists the last six in a two-column grid. Neither is a stat tile — the admin has no dashboard numbers, only the two things someone actually opens the admin to check.</p>
+    <p class="doc-source"><code>app/routes/admin._index.tsx</code></p>
+
+<section>
+  <h2>NextDinnerCard</h2>
+  <div class="stage">
+    <div class="ui-card flex wrap items-center gap-3 p-4">
+      <div class="shot shrink-0" style="width: 160px"></div>
+      <div class="flex col gap-3 flex-1 min-w-0">
+        <div>
+          <span class="eyebrow eyebrow-label">Next dinner</span>
+          <h2 class="mt-1 truncate t-lg fw-semibold">an evening of small plates</h2>
+          <p class="fg-65 mt-1 t-sm">Sat 14 Sep · 19:00 · Langstrasse 42</p>
+        </div>
+        <div class="flex items-center gap-3" style="max-width: 448px">
+          <span class="progress"><span style="width: 70%"></span></span>
+          <span class="fg-50 t-sm nowrap">14 / 20 seats</span>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn btn-default btn-sm">View signups</button>
+        <button class="btn btn-outline btn-sm">Edit</button>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    Same skeleton as a dinner list row, but the title steps up to
+    <code>text-lg</code>, the eyebrow names the card instead of dating it, and the actions
+    lead with a filled Button — this is the screen's primary destination. Below
+    <code>md</code> both actions take <code>max-md:flex-1</code> and split the width.
+  </p>
+</section>
+
+<section>
+  <h2>Recent signups</h2>
+  <div class="stage">
+    <div class="ui-card p-5">
+      <div class="mb-3 flex items-center justify-between">
+        <h2 class="t-base fw-semibold">Recent signups</h2>
+        <span class="fg-50 t-sm">View all</span>
+      </div>
+      <div class="grid cols-2" style="column-gap: 28px">
+        <div class="flex items-center gap-3 border-b py-3">
+          <span class="avatar avatar-a">AK</span>
+          <div class="flex-1 min-w-0"><p class="truncate t-sm fw-semibold">Ada Kessler</p><p class="fg-65 truncate t-sm">ada@example.com</p></div>
+          <span class="fg-50 t-xs nowrap">12 Aug, 18:04</span>
+        </div>
+        <div class="flex items-center gap-3 border-b py-3">
+          <span class="avatar avatar-b">NB</span>
+          <div class="flex-1 min-w-0"><p class="truncate t-sm fw-semibold">Noa Brunner</p><p class="fg-65 truncate t-sm">noa@example.com</p></div>
+          <span class="fg-50 t-xs nowrap">11 Aug, 21:37</span>
+        </div>
+        <div class="flex items-center gap-3 border-b py-3">
+          <span class="avatar avatar-a">TS</span>
+          <div class="flex-1 min-w-0"><p class="truncate t-sm fw-semibold">Tomas Sanz</p><p class="fg-65 truncate t-sm">tomas@example.com</p></div>
+          <span class="fg-50 t-xs nowrap">10 Aug, 09:12</span>
+        </div>
+        <div class="flex items-center gap-3 border-b py-3">
+          <span class="avatar avatar-b">LM</span>
+          <div class="flex-1 min-w-0"><p class="truncate t-sm fw-semibold">Lia Moser</p><p class="fg-65 truncate t-sm">lia@example.com</p></div>
+          <span class="fg-50 t-xs nowrap">9 Aug, 14:50</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    Rows are hairline-separated rather than carded — inside a card, a second card would be
+    one border too many. Avatar tint alternates by list index, so the two grid columns read
+    as one sequence. "View all" is a bare
+    <code>text-sm text-foreground/50 hover:text-foreground</code> link, and disappears
+    entirely when there is no upcoming dinner to link to.
+  </p>
+</section>
+
+<section>
+  <h2>Nothing scheduled</h2>
+  <div class="stage flex gap-4 wrap items-start">
+    <div class="ui-card p-6 text-center" style="width: 300px">
+      <p class="t-lg fw-semibold">No upcoming dinner</p>
+      <p class="fg-50 mt-1 t-sm">Create the next dinner to see it here.</p>
+    </div>
+    <div class="ui-card p-5" style="width: 300px">
+      <div class="mb-3 flex items-center justify-between"><h2 class="t-base fw-semibold">Recent signups</h2></div>
+      <p class="fg-50 py-2 t-sm">No signups yet.</p>
+    </div>
+  </div>
+  <p class="cap">
+    Both are plain-Card notices rather than the full <code>AdminEmptyState</code> — an
+    overview panel with nothing in it is a status, not a call to action, so it gets no
+    medallion and no button.
+  </p>
+</section>
+  </body>
+</html>

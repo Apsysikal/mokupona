@@ -1,0 +1,71 @@
+<!--meta {"group":"Admin","title":"Page header & filters","file":"admin-page-header.html","sources":["app/components/admin-ui.tsx","app/routes/admin.dinners._index.tsx","app/routes/admin.users._index.tsx"],"note":"Every admin screen opens the same way: <code>AdminPageHeader</code> — a tracked eyebrow carrying the count or the date, the page title, an optional subtitle, and right-aligned actions that wrap under the title on narrow screens. Below it, list screens add a filter row of <code>AdminSearchField</code> plus chips. Search is client-side state; nothing round-trips."} -->
+<section>
+  <h2>AdminPageHeader</h2>
+  <div class="stage flex col gap-8">
+    <div class="flex wrap items-end justify-between gap-4">
+      <div>
+        <span class="eyebrow eyebrow-label mb-2" style="margin-bottom: 8px">12 total</span>
+        <h1 class="t-3xl fw-light leading-tight tracking-tight">Dinners</h1>
+      </div>
+      <div class="flex wrap items-center gap-2">
+        <button class="btn btn-default"><svg class="icon" viewBox="0 0 15 15"><path d="M7.5 3v9M3 7.5h9" /></svg> New dinner</button>
+      </div>
+    </div>
+
+    <div class="hairline"></div>
+
+    <div class="flex wrap items-end justify-between gap-4">
+      <div>
+        <span class="eyebrow eyebrow-label" style="margin-bottom: 8px">monday, 18 august</span>
+        <h1 class="t-3xl fw-light leading-tight tracking-tight">Overview</h1>
+        <p class="fg-65 mt-2 t-base">Here's what's coming up for moku pona.</p>
+      </div>
+      <div class="flex wrap items-center gap-2">
+        <button class="btn btn-outline">New location</button>
+        <button class="btn btn-default"><svg class="icon" viewBox="0 0 15 15"><path d="M7.5 3v9M3 7.5h9" /></svg> New dinner</button>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    <code>mb-6 flex flex-wrap items-end justify-between gap-4</code>. Eyebrow is
+    <code>variant="tracked" tone="label" mb-2</code>; title is
+    <code>pageTitleClassName</code> — the same <code>text-3xl md:text-4xl font-light</code>
+    the public pages use, so the admin never grows its own heading voice. Subtitle
+    <code>mt-2 text-base text-foreground/65</code>. Actions are default + outline, never two
+    defaults.
+  </p>
+</section>
+
+<section>
+  <h2>Filter row</h2>
+  <div class="stage flex wrap items-center gap-3">
+    <div class="field" style="width: 288px; gap: 8px">
+      <svg class="icon fg-50" viewBox="0 0 15 15"><circle cx="6.5" cy="6.5" r="4" /><path d="M9.6 9.6l3 3" /></svg>
+      <input style="flex: 1; min-width: 0; background: none; border: 0; outline: none; color: inherit; font: inherit; font-size: 14px" placeholder="Search dinners" />
+    </div>
+    <div class="flex gap-2">
+      <button class="chip chip-active">all</button>
+      <button class="chip">upcoming</button>
+      <button class="chip">past</button>
+    </div>
+  </div>
+  <p class="cap">
+    <b>AdminSearchField</b> reuses <code>fieldShellClassName</code> and adds
+    <code>flex items-center gap-2 max-md:w-full md:w-72</code> — the shell is shared with
+    Input, so it lines up with any field beside it. The inner
+    <code>&lt;input type="search"&gt;</code> is <code>bg-transparent text-sm outline-none</code>:
+    the shell owns the focus treatment. Chips are <b>FilterChip</b> with
+    <code>aria-pressed</code>.
+  </p>
+</section>
+
+<section>
+  <h2>Header variants across the section</h2>
+  <div class="stage flex col gap-3 t-sm fg-65">
+    <span><code>eyebrow="12 total"</code> — dinners, locations</span>
+    <span><code>eyebrow="9 members"</code> — board members</span>
+    <span><code>eyebrow="8 signups · 14 / 20 seats"</code> — a dinner's signups, where the eyebrow carries two facts</span>
+    <span><code>eyebrow={todayLabel}</code> — the overview, where there is nothing to count</span>
+  </div>
+  <p class="cap">The eyebrow is the screen's one summary statistic; it is never a repeat of the title.</p>
+</section>

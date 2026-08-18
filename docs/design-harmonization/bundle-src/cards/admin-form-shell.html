@@ -1,0 +1,136 @@
+<!--meta {"group":"Admin","title":"Form shell","file":"admin-form-shell.html","sources":["app/features/events/components/admin-event-form.tsx","app/components/admin-location-form.tsx","app/features/board-members/admin-board-member-form.tsx","app/routes/admin.settings.tsx"],"note":"Three form scales, one grammar. The dinner form is the full shell — section nav beside a stack of <code>SectionCard</code>s under a sticky <code>SaveBar</code>. The location form is a single Card with a right-aligned action pair. The board-member form has no card at all. Card structure earns its place by form length; the button pair never changes."} -->
+<style-extra>
+.savebar { position: sticky; bottom: 0; background: rgb(21 17 14 / 0.9); backdrop-filter: blur(8px); border: 1px solid var(--border); border-radius: 16px; padding: 12px 16px; }
+</style-extra>
+
+<section>
+  <h2>SectionCard — the unit of a long form</h2>
+  <div class="stage flex gap-7 items-start">
+    <nav class="flex col gap-1 shrink-0" style="width: 192px">
+      <span class="chip chip-nav" style="border-color: rgb(237 130 94 / 0.35); background: rgb(237 130 94 / 0.1); color: var(--accent-light)">Basics</span>
+      <span class="chip chip-nav">Menu &amp; donation</span>
+      <span class="chip chip-nav">Schedule &amp; pricing</span>
+    </nav>
+    <div class="flex col gap-5 flex-1 min-w-0">
+      <div class="ui-card">
+        <div class="flex col gap-2" style="padding: 20px 20px 16px">
+          <div class="t-base fw-semibold leading-none tracking-tight">Basics</div>
+          <div class="fg-50 t-sm">Title and description guests see on the dinner page.</div>
+        </div>
+        <div class="flex col gap-6" style="padding: 0 20px 20px">
+          <div class="flex col gap-2"><label class="label">Title</label><input class="field" readonly /></div>
+          <div class="flex col gap-2"><label class="label">Description</label><textarea class="field field-textarea" rows="3" readonly></textarea></div>
+        </div>
+      </div>
+      <div class="savebar">
+        <div class="flex items-center justify-between gap-2">
+          <p class="fg-50 t-sm">Unsaved changes</p>
+          <div class="flex items-center gap-2">
+            <button class="btn btn-outline">Cancel</button>
+            <button class="btn btn-default">Save dinner</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    <b>SectionCard</b> is <code>Card</code> + <code>CardHeader</code>/<code>CardTitle</code>/<code>CardDescription</code>
+    with <code>CardContent</code> at <code>flex flex-col gap-6</code>, plus
+    <code>scroll-mt-16 md:scroll-mt-8</code> for the section-nav jump. Note the field gap
+    inside a section is <code>gap-6</code> — wider than the <code>gap-4</code> of a short
+    form, because sections are already visually separated.
+  </p>
+</section>
+
+<section>
+  <h2>SaveBar</h2>
+  <div class="stage flex col gap-4">
+    <div class="savebar">
+      <div class="flex items-center justify-between gap-2">
+        <p class="fg-50 t-sm" style="visibility: hidden">Unsaved changes</p>
+        <div class="flex items-center gap-2"><button class="btn btn-outline">Cancel</button><button class="btn btn-default">Save dinner</button></div>
+      </div>
+    </div>
+    <div class="savebar">
+      <div class="flex items-center justify-between gap-2">
+        <p class="fg-50 t-sm">Unsaved changes</p>
+        <div class="flex items-center gap-2"><button class="btn btn-outline">Cancel</button><button class="btn btn-default">Save dinner</button></div>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    <code>sticky bottom-0 z-10 -mx-2 border-t px-4 py-3 bg-background/90 backdrop-blur
+    md:bottom-2 md:mx-0 md:rounded-2xl md:border</code> — edge-to-edge and top-bordered on a
+    phone, a floating rounded bar from <code>md</code>. The dirty flag reads
+    <code>form.dirty</code> from Conform and toggles <code>invisible</code>, not
+    <code>hidden</code>, so the bar never changes height. Below <code>sm</code> the message
+    moves under the buttons via <code>order-last sm:order-first</code>.
+  </p>
+</section>
+
+<section>
+  <h2>Shorter forms</h2>
+  <div class="stage flex gap-5 wrap items-start">
+    <div class="ui-card flex col gap-5 p-5" style="flex: 1 1 320px">
+      <p class="t-xs fg-50">AdminLocationForm — one Card, <code>max-w-2xl</code></p>
+      <div class="flex gap-5">
+        <div class="flex col gap-2 grow"><label class="label">Street name</label><input class="field" readonly /></div>
+        <div class="flex col gap-2" style="width: 128px"><label class="label">House number</label><input class="field" readonly /></div>
+      </div>
+      <div class="flex gap-5">
+        <div class="flex col gap-2" style="width: 160px"><label class="label">Zip code</label><input class="field" readonly /></div>
+        <div class="flex col gap-2 grow"><label class="label">City</label><input class="field" readonly /></div>
+      </div>
+      <div class="flex justify-end gap-2"><button class="btn btn-outline">Cancel</button><button class="btn btn-default">Save</button></div>
+    </div>
+
+    <div class="flex col gap-6" style="flex: 1 1 280px">
+      <p class="t-xs fg-50">AdminBoardMemberForm — no card at all</p>
+      <div class="flex col gap-3">
+        <h2 class="t-3xl fw-light leading-tight tracking-tight">Add a member</h2>
+        <p class="t-sm fg-65">They appear on the public site.</p>
+      </div>
+      <div class="flex col gap-2"><label class="label">Name</label><input class="field" readonly /></div>
+      <div class="flex col gap-2"><label class="label">Photo</label><div class="field field-file"><span class="fg-65 t-sm">Choose a file</span></div></div>
+      <button class="btn btn-default" style="align-self: flex-start">Add member</button>
+    </div>
+  </div>
+  <p class="cap">
+    Fields pair on one row with explicit widths rather than a grid —
+    <code>grow</code> for the open-ended one, a fixed <code>sm:w-32</code> /
+    <code>sm:w-40</code> for the bounded one, stacking below <code>sm</code>. Actions are
+    <code>flex-col-reverse sm:flex-row</code>, so Save sits on top when stacked.
+  </p>
+</section>
+
+<section>
+  <h2>Settings toggle row</h2>
+  <div class="stage">
+    <div class="ui-card p-5">
+      <h2 class="t-base fw-semibold">Self-service</h2>
+      <p class="fg-50 mt-1 t-sm">These switches reset to enabled whenever the server restarts.</p>
+      <div class="mt-3 flex col">
+        <div class="flex wrap items-center gap-3 border-b py-3">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2"><p class="t-sm fw-semibold">Sign-ups</p><span class="badge badge-info badge-pill">open</span></div>
+            <p class="fg-65 mt-1 t-sm">Anyone can create an account from the join page.</p>
+          </div>
+          <button class="btn btn-destructive-outline btn-sm">disable</button>
+        </div>
+        <div class="flex wrap items-center gap-3 py-3">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2"><p class="t-sm fw-semibold">Google sign-in</p><span class="badge badge-secondary badge-pill">closed</span></div>
+            <p class="fg-65 mt-1 t-sm">Sign in with a Google account instead of a password.</p>
+          </div>
+          <button class="btn btn-outline btn-sm">enable</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    No switch component — state is a Badge (<code>info</code> open / <code>secondary</code>
+    closed) and the action is a Button whose variant flips to
+    <code>destructive-outline</code> when the destructive direction is "turn it off". Rows
+    are <code>border-b py-3 last:border-b-0</code>, and each posts its own tiny Form.
+  </p>
+</section>

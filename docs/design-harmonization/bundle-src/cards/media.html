@@ -1,0 +1,75 @@
+<!--meta {"group":"Content blocks","title":"Images & media","file":"media.html","sources":["app/components/optimized-image.tsx","app/components/cover-image.tsx","app/features/cms/blocks/image/view.tsx"],"note":"<code>OptimizedImage</code> is the only way a remote image enters the app: it reserves the box by <code>aspect-ratio</code>, paints a blurred LQIP (or a primary tint when there is none) behind it, and fades the real file in over 300ms — plus a <code>&lt;noscript&gt;</code> copy so the picture still appears without JavaScript. <code>CoverImage</code> wraps it at a fixed 3:2 and supplies a drawn placeholder when an event has no image at all."} -->
+<style-extra>
+.shot { aspect-ratio: 3 / 2; border-radius: 16px; overflow: hidden; position: relative; background: rgb(237 130 94 / 0.1); }
+.shot::after { content: ""; position: absolute; inset: 0; background: linear-gradient(140deg, rgb(237 130 94 / 0.25), rgb(27 21 17 / 0.85)); }
+.blurred { filter: blur(16px); }
+.stack { display: flex; flex-direction: column; gap: 8px; width: 200px; }
+.stack > span { font-size: 12px; color: rgb(var(--foreground) / 0.5); }
+</style-extra>
+
+<section>
+  <h2>OptimizedImage — the load sequence</h2>
+  <div class="stage flex gap-5 wrap">
+    <div class="stack">
+      <div class="shot blurred"></div>
+      <span>1 — <code>blurDataUrl</code> under a <code>backdrop-blur-2xl</code> layer</span>
+    </div>
+    <div class="stack">
+      <div class="shot" style="opacity: 0.4"></div>
+      <span>2 — the real file arrives at <code>opacity-0</code></span>
+    </div>
+    <div class="stack">
+      <div class="shot"></div>
+      <span>3 — <code>opacity-100</code> after <code>transition-opacity duration-300</code></span>
+    </div>
+    <div class="stack">
+      <div class="shot" style="background: rgb(237 130 94 / 0.1)"><span style="display: none"></span></div>
+      <span>no <code>blurDataUrl</code> — a flat <code>bg-primary/10</code> stands in</span>
+    </div>
+  </div>
+  <p class="cap">
+    Box is <code>relative overflow-hidden</code> with an inline
+    <code>aspectRatio: "{width} / {height}"</code>, so layout never shifts. A
+    <code>srcSet</code> is built across <code>RESPONSIVE_IMAGE_WIDTHS</code> at the caller's
+    aspect ratio; <code>fit</code> defaults to <code>cover</code>. If the browser had the
+    file cached, a mount effect reads <code>img.complete</code> and skips the fade.
+  </p>
+</section>
+
+<section>
+  <h2>CoverImage — with and without a picture</h2>
+  <div class="stage flex gap-6 wrap items-start">
+    <div class="stack" style="width: 240px">
+      <div class="shot"></div>
+      <span>image present — 1080×720, <code>aspect-3/2</code></span>
+    </div>
+    <div class="stack" style="width: 240px">
+      <div class="cover rounded-2xl"><span><span></span></span></div>
+      <span>no image — the drawn placeholder</span>
+    </div>
+  </div>
+  <p class="cap">
+    The placeholder is two concentric circles on <code>bg-primary/10</code>: an outer
+    <code>w-1/4 min-w-10 rounded-full border-2 border-primary/35</code> ring around an inner
+    <code>w-2/3 border border-primary/20</code> — a plate, drawn in CSS, that scales with the
+    box. It takes <code>role="img"</code> and the alt as <code>aria-label</code>, unless the
+    alt is empty, in which case it goes <code>aria-hidden</code>.
+  </p>
+</section>
+
+<section>
+  <h2>Image block — the CMS variant</h2>
+  <div class="stage flex col gap-5">
+    <div>
+      <p class="t-xs fg-50 mb-2"><code>variant: "full-width"</code></p>
+      <div class="shot" style="aspect-ratio: auto; height: 120px; border-radius: 16px"></div>
+      <p class="cap"><code>h-64 md:h-96 w-full rounded-2xl</code> — a cropped band</p>
+    </div>
+    <div>
+      <p class="t-xs fg-50 mb-2"><code>variant</code> anything else</p>
+      <div class="shot" style="aspect-ratio: 16 / 5; border-radius: 0"></div>
+      <p class="cap"><code>h-auto w-full</code> — the image's own ratio, no radius</p>
+    </div>
+  </div>
+  <p class="cap">Both sit inside a <code>PageContainer as="div"</code>, so they share the page's <code>max-w-5xl</code> and gutters.</p>
+</section>

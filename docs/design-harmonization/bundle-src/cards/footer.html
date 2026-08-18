@@ -1,0 +1,60 @@
+<!--meta {"group":"Navigation","title":"Footer","file":"footer.html","sources":["app/components/footer.tsx"],"note":"Like the nav, two separate layouts rather than one that reflows: a desktop row with the lockup opposite two labelled link columns, and a mobile stack where the columns collapse into a single row of links. The column headings are tracked eyebrows at label tone — the same component that heads sections elsewhere."} -->
+<style-extra>
+.foot { border-top: 1px solid var(--border); }
+.foot-link { font-size: 14px; color: rgb(var(--foreground) / 0.8); }
+</style-extra>
+
+<section>
+  <h2>Desktop</h2>
+  <div class="stage flush">
+    <footer class="foot flex items-start justify-between gap-8" style="padding: 44px 40px">
+      <div class="flex col gap-3">
+        <span class="flex items-center gap-3 fw-semibold">
+          <svg style="width: 20px; height: 20px" viewBox="0 0 82 71" fill="currentColor"><path d="M77.5 39.4a13 13 0 01-26 0V16.3a1.8 1.8 0 10-3.5 0v23.1a16.5 16.5 0 1033 0V16.3a1.8 1.8 0 10-3.5 0v23.1z" /><path d="M8.3 15.1a16.5 16.5 0 0014.3 16v9a16.6 16.6 0 00-14.3 16v7.9L4 59.5a1.8 1.8 0 00-2.5 2.5l7.3 7.3a1.8 1.8 0 003-1.3V56a13 13 0 1125.1 0v12.1a1.8 1.8 0 103.5 0V56a16.6 16.6 0 00-14.3-16v-9a16.5 16.5 0 0014.3-16V2.8A1.8 1.8 0 0038.7 1H10a1.8 1.8 0 00-1.7 1.8v12.3zm28.6-10.6H11.8v10.6a13 13 0 1025.1 0V4.5z" /></svg>
+          moku pona
+        </span>
+        <span class="fg-50 t-xs">made with love in zürich</span>
+      </div>
+      <div class="flex" style="gap: 56px">
+        <div class="flex col gap-2">
+          <span class="eyebrow eyebrow-label">explore</span>
+          <span class="foot-link">dinners</span>
+          <span class="foot-link">privacy policy</span>
+        </div>
+        <div class="flex col gap-2">
+          <span class="eyebrow eyebrow-label">follow</span>
+          <span class="foot-link">instagram</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+  <p class="cap">
+    <code>border-t px-10 py-11</code>, columns <code>gap-14</code>. Links are
+    <code>text-sm text-foreground/80 hover:text-foreground</code> — one shared
+    <code>linkClasses</code> constant, so the external instagram anchor and the internal
+    Links are indistinguishable.
+  </p>
+</section>
+
+<section>
+  <h2>Mobile</h2>
+  <div class="stage flush" style="max-width: 360px">
+    <footer class="foot flex col gap-4" style="padding: 28px 20px 40px">
+      <span class="flex items-center gap-3 fw-semibold t-base">
+        <svg style="width: 16px; height: 16px" viewBox="0 0 82 71" fill="currentColor"><path d="M77.5 39.4a13 13 0 01-26 0V16.3a1.8 1.8 0 10-3.5 0v23.1a16.5 16.5 0 1033 0V16.3a1.8 1.8 0 10-3.5 0v23.1z" /><path d="M8.3 15.1a16.5 16.5 0 0014.3 16v9a16.6 16.6 0 00-14.3 16v7.9L4 59.5a1.8 1.8 0 00-2.5 2.5l7.3 7.3a1.8 1.8 0 003-1.3V56a13 13 0 1125.1 0v12.1a1.8 1.8 0 103.5 0V56a16.6 16.6 0 00-14.3-16v-9a16.5 16.5 0 0014.3-16V2.8A1.8 1.8 0 0038.7 1H10a1.8 1.8 0 00-1.7 1.8v12.3zm28.6-10.6H11.8v10.6a13 13 0 1025.1 0V4.5z" /></svg>
+        moku pona
+      </span>
+      <div class="flex gap-5">
+        <span class="foot-link">dinners</span>
+        <span class="foot-link">privacy policy</span>
+        <span class="foot-link">instagram</span>
+      </div>
+      <span class="fg-50 t-xs">made with love in zürich</span>
+    </footer>
+  </div>
+  <p class="cap">
+    <code>px-5 pt-7 pb-10</code>; the lockup shrinks to <code>size-4</code> with a
+    <code>text-base</code> wordmark, the eyebrow headings drop, and the credit line moves
+    below the links.
+  </p>
+</section>

@@ -1,0 +1,108 @@
+<!--meta {"group":"Primitives","title":"Dialog","file":"dialog.html","sources":["app/components/ui/dialog.tsx","app/components/signup-form-builder.tsx"],"note":"Two dialog implementations ship, on purpose. The Radix <code>Dialog</code> is the default for interactive admin flows. The form builder instead uses a native <code>&lt;dialog&gt;</code> driven by the invoker commands API, so its link/unlink confirmations still work with JavaScript off — same visual shell, different plumbing."} -->
+<style-extra>
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgb(10 8 6 / 0.7);
+  border-radius: 16px;
+}
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 448px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 28px;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.4);
+}
+.modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  color: rgb(var(--foreground) / 0.5);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.dialog-stage { position: relative; display: flex; justify-content: center; padding: 40px 24px; }
+</style-extra>
+
+<section>
+  <h2>Radix Dialog — DialogContent</h2>
+  <div class="stage flush dialog-stage">
+    <div class="overlay"></div>
+    <div class="modal">
+      <button class="modal-close" aria-label="Close">
+        <svg class="icon" viewBox="0 0 15 15"><path d="M3.5 3.5l8 8M11.5 3.5l-8 8" /></svg>
+      </button>
+      <div class="flex col gap-2">
+        <p class="t-2xl fw-light tracking-tight">Invite someone</p>
+        <p class="t-sm fg-65">We'll email a single-use link that expires in 7 days.</p>
+      </div>
+      <div class="flex col gap-2">
+        <label class="label t-base">Email address</label>
+        <input class="field" placeholder="name@example.com" readonly />
+      </div>
+      <div class="flex col gap-2">
+        <span class="label t-base">Role</span>
+        <div class="seg-group">
+          <span class="seg seg-active">user</span>
+          <span class="seg">moderator</span>
+          <span class="seg">admin</span>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-1">
+        <button class="btn btn-outline flex-1">Cancel</button>
+        <button class="btn btn-default flex-1">Send invite</button>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    Overlay <code>bg-[rgb(10_8_6/0.7)]</code> · content
+    <code>rounded-2xl border p-7 gap-5 max-w-md w-[calc(100%-2rem)]</code>, centred by
+    <code>top-1/2 left-1/2 -translate-*</code> · <b>DialogTitle</b>
+    <code>text-2xl font-light tracking-tight</code> · <b>DialogDescription</b>
+    <code>text-sm text-foreground/65</code> · close affordance is a <code>size-4</code>
+    cross at <code>top-5 right-5</code>. Enter/exit run the Radix
+    <code>fade-*</code> + <code>zoom-95</code> pair.
+  </p>
+</section>
+
+<section>
+  <h2>Native &lt;dialog&gt; — the builder's confirmations</h2>
+  <div class="stage flush dialog-stage" style="background: var(--background)">
+    <div class="overlay" style="background: rgb(21 17 14 / 0.7)"></div>
+    <div class="modal" style="gap: 16px; padding: 20px">
+      <p class="t-xl fw-light tracking-tight">Unlink from the signer's question?</p>
+      <p class="t-sm fg-65">
+        The friend's copy becomes its own question, keeping the wording it has now. The
+        signer's "dietary needs" is unchanged.
+      </p>
+      <div class="flex col gap-2">
+        <label class="t-sm fw-semibold">New field key for the friend's question</label>
+        <input class="field" value="dietary_needs_2" readonly />
+        <p class="t-sm fg-50">Lowercase letters, numbers and underscores.</p>
+      </div>
+      <p class="bordered border-info tint-info info rounded-lg p-3 t-sm leading-snug">
+        3 answers were collected under the shared key. They stay in
+        <strong>dietary_needs</strong>; answers from now on are recorded under the new key.
+      </p>
+      <div class="flex justify-end gap-2">
+        <button class="btn btn-ghost btn-sm fg-80">Cancel</button>
+        <button class="btn btn-outline btn-sm">Unlink</button>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    <code>m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border p-5 gap-4 open:flex</code>
+    with <code>backdrop:bg-background/70</code>. Opened and closed by
+    <code>commandfor</code> / <code>command="close"</code>, with a
+    <code>getDialog(id)?.close()</code> fallback. <b>DialogCallout</b> is the sky-300
+    consequence note; the action pair is <code>ghost</code> + <code>outline</code> at
+    <code>size="sm"</code>.
+  </p>
+</section>

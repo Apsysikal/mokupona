@@ -1,0 +1,86 @@
+<!--meta {"group":"Account & auth","title":"Notices & status screens","file":"auth-messaging.html","sources":["app/components/auth-notice.tsx","app/components/auth-status.tsx","app/components/route-error-content.tsx"],"note":"Three levels of message. <code>AuthNotice</code> is inline in a form — a tinted, bordered block with a leading <code>size-5</code> icon, in two tones. <code>AuthStatus</code> is the whole screen when there is nothing to do but read — a medallion, a light heading and a body, optionally standalone. <code>RouteErrorContent</code> is the unstyled fallback when a route throws."} -->
+<section>
+  <h2>AuthNotice</h2>
+  <div class="stage flex col gap-4" style="max-width: 480px">
+    <div class="bordered border-danger tint-danger danger flex items-start gap-3 rounded-lg p-4 t-sm leading-snug" role="alert">
+      <svg class="icon icon-lg" style="margin-top: 4px" viewBox="0 0 15 15"><path d="M7.5 1.8L14 13H1z" /><path d="M7.5 6v3.2M7.5 10.6v.6" /></svg>
+      <div class="flex col gap-1">
+        <p class="fw-semibold">google sign-in is turned off</p>
+        <div>ask an organiser to sign you in another way.</div>
+      </div>
+    </div>
+
+    <div class="bordered border-primary tint-primary flex items-start gap-3 rounded-lg p-4 t-sm leading-snug" role="status">
+      <svg class="icon icon-lg accent-light" style="margin-top: 4px" viewBox="0 0 15 15"><rect x="1.5" y="3.5" width="12" height="8" rx="1" /><path d="M1.5 6.5h12" /></svg>
+      <div class="flex col gap-1">
+        <p class="accent-light fw-semibold">your email isn't verified yet</p>
+        <div class="fg-80">
+          <p>we just sent a fresh verification link to <strong class="fg fw-semibold">ada@example.com</strong>. open it, then come back and log in.</p>
+          <p class="fg-50 mt-1 t-xs">didn't get it? give it a minute, then check your spam folder.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bordered border-danger tint-danger danger flex items-start gap-3 rounded-lg p-4 t-sm leading-snug" role="alert">
+      <svg class="icon icon-lg" style="margin-top: 4px" viewBox="0 0 15 15"><path d="M7.5 1.8L14 13H1z" /><path d="M7.5 6v3.2M7.5 10.6v.6" /></svg>
+      <div class="flex col gap-1"><div>we couldn't sign you in. check your email and password, then try again.</div></div>
+    </div>
+  </div>
+  <p class="cap">
+    Shared base <code>flex items-start gap-3 rounded-lg border p-4 text-sm
+    leading-snug</code>. <b>destructive</b> — <code>border-destructive/35
+    bg-destructive/10 text-destructive-light</code>, <code>role="alert"</code>, warning
+    triangle. <b>accent</b> — <code>border-primary/35 bg-primary/10</code>,
+    <code>role="status"</code>, envelope in <code>text-accent-light</code>, body at
+    <code>text-foreground/80</code>. The <code>title</code> is optional; without it the
+    notice is a single line.
+  </p>
+</section>
+
+<section>
+  <h2>AuthStatus</h2>
+  <div class="stage flex gap-6 wrap justify-center">
+    <div class="flex col items-center gap-5 text-center" style="width: 320px">
+      <div class="tint-primary accent flex items-center justify-center rounded-full" style="width: 64px; height: 64px">
+        <svg class="icon icon-xl" viewBox="0 0 15 15"><rect x="1.5" y="3.5" width="12" height="8" rx="1" /><path d="M1.5 6.5h12" /></svg>
+      </div>
+      <h1 class="t-3xl fw-light leading-tight tracking-tight">check your inbox</h1>
+      <p class="fg-80 fw-light">we sent a link to ada@example.com. it's good for one hour.</p>
+      <button class="btn btn-default btn-lg w-full">back to log in</button>
+    </div>
+
+    <div class="flex col items-center gap-5 text-center" style="width: 320px">
+      <div class="surface-subtle fg-65 flex items-center justify-center rounded-full" style="width: 64px; height: 64px">
+        <svg class="icon icon-xl" viewBox="0 0 15 15"><path d="M6 9L4.2 10.8a2.5 2.5 0 01-3.5-3.5L2.5 5.5M9 6l1.8-1.8a2.5 2.5 0 013.5 3.5L12.5 9.5M7.5 1.5v1.5M11 2.6l-.8 1.3" /></svg>
+      </div>
+      <h1 class="t-3xl fw-light leading-tight tracking-tight">this invite has expired</h1>
+      <p class="fg-80 fw-light">ask whoever invited you to send a fresh link.</p>
+      <span class="accent t-sm fw-semibold">back to the dinners</span>
+    </div>
+  </div>
+  <p class="cap">
+    <code>mx-auto max-w-md flex-col items-center gap-5 text-center</code>. Medallion
+    <code>size-16 rounded-full</code>, tone <code>positive</code>
+    (<code>bg-primary/10 text-primary</code>) or <code>neutral</code>
+    (<code>bg-foreground/5 text-foreground/65</code>) — positive for "this worked, now go
+    check something", neutral for "this is over". <code>standalone</code> wraps it in a
+    full-height centred <code>&lt;main&gt;</code> for routes that render nothing else;
+    otherwise it drops into the auth shell's form column. Children are the actions.
+  </p>
+</section>
+
+<section>
+  <h2>RouteErrorContent</h2>
+  <div class="stage flex col items-center gap-2 text-center" style="padding-top: 24px">
+    <h1 class="fw-semibold">404 Not Found</h1>
+    <p>We couldn't find that dinner.</p>
+  </div>
+  <p class="cap">
+    <code>mx-auto mt-16 flex flex-col items-center gap-2 pt-4</code> and nothing else —
+    intentionally unstyled. It renders in every route's ErrorBoundary, including ones whose
+    loader failed, so it must not depend on any data or context. A
+    <code>isRouteErrorResponse</code> gives "{status} {statusText}" plus
+    <code>error.data</code>; a plain <code>Error</code> gives "Error" plus its message;
+    anything else gives "Unknown Error" alone.
+  </p>
+</section>

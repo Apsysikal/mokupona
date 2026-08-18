@@ -6,3 +6,5 @@ node_modules
 .react-router/
 
 /app/styles/tailwind.css
+# generated design-system bundle — rebuild with docs/design-harmonization/bundle-src/build.mjs
+/docs/design-harmonization/ds-bundle

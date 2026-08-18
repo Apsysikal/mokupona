@@ -1,0 +1,95 @@
+<!--meta {"group":"Admin","title":"Overview cards","file":"admin-overview.html","sources":["app/routes/admin._index.tsx"],"note":"The admin landing screen: one <code>NextDinnerCard</code> that answers \"what's next and how full is it\", and a recent-signups card that lists the last six in a two-column grid. Neither is a stat tile — the admin has no dashboard numbers, only the two things someone actually opens the admin to check."} -->
+<style-extra>
+.shot { aspect-ratio: 3 / 2; border-radius: 8px; position: relative; overflow: hidden; background: rgb(237 130 94 / 0.1); border: 1px solid var(--border); }
+.shot::after { content: ""; position: absolute; inset: 0; background: linear-gradient(140deg, rgb(237 130 94 / 0.25), rgb(27 21 17 / 0.85)); }
+</style-extra>
+
+<section>
+  <h2>NextDinnerCard</h2>
+  <div class="stage">
+    <div class="ui-card flex wrap items-center gap-3 p-4">
+      <div class="shot shrink-0" style="width: 160px"></div>
+      <div class="flex col gap-3 flex-1 min-w-0">
+        <div>
+          <span class="eyebrow eyebrow-label">Next dinner</span>
+          <h2 class="mt-1 truncate t-lg fw-semibold">an evening of small plates</h2>
+          <p class="fg-65 mt-1 t-sm">Sat 14 Sep · 19:00 · Langstrasse 42</p>
+        </div>
+        <div class="flex items-center gap-3" style="max-width: 448px">
+          <span class="progress"><span style="width: 70%"></span></span>
+          <span class="fg-50 t-sm nowrap">14 / 20 seats</span>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn btn-default btn-sm">View signups</button>
+        <button class="btn btn-outline btn-sm">Edit</button>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    Same skeleton as a dinner list row, but the title steps up to
+    <code>text-lg</code>, the eyebrow names the card instead of dating it, and the actions
+    lead with a filled Button — this is the screen's primary destination. Below
+    <code>md</code> both actions take <code>max-md:flex-1</code> and split the width.
+  </p>
+</section>
+
+<section>
+  <h2>Recent signups</h2>
+  <div class="stage">
+    <div class="ui-card p-5">
+      <div class="mb-3 flex items-center justify-between">
+        <h2 class="t-base fw-semibold">Recent signups</h2>
+        <span class="fg-50 t-sm">View all</span>
+      </div>
+      <div class="grid cols-2" style="column-gap: 28px">
+        <div class="flex items-center gap-3 border-b py-3">
+          <span class="avatar avatar-a">AK</span>
+          <div class="flex-1 min-w-0"><p class="truncate t-sm fw-semibold">Ada Kessler</p><p class="fg-65 truncate t-sm">ada@example.com</p></div>
+          <span class="fg-50 t-xs nowrap">12 Aug, 18:04</span>
+        </div>
+        <div class="flex items-center gap-3 border-b py-3">
+          <span class="avatar avatar-b">NB</span>
+          <div class="flex-1 min-w-0"><p class="truncate t-sm fw-semibold">Noa Brunner</p><p class="fg-65 truncate t-sm">noa@example.com</p></div>
+          <span class="fg-50 t-xs nowrap">11 Aug, 21:37</span>
+        </div>
+        <div class="flex items-center gap-3 border-b py-3">
+          <span class="avatar avatar-a">TS</span>
+          <div class="flex-1 min-w-0"><p class="truncate t-sm fw-semibold">Tomas Sanz</p><p class="fg-65 truncate t-sm">tomas@example.com</p></div>
+          <span class="fg-50 t-xs nowrap">10 Aug, 09:12</span>
+        </div>
+        <div class="flex items-center gap-3 border-b py-3">
+          <span class="avatar avatar-b">LM</span>
+          <div class="flex-1 min-w-0"><p class="truncate t-sm fw-semibold">Lia Moser</p><p class="fg-65 truncate t-sm">lia@example.com</p></div>
+          <span class="fg-50 t-xs nowrap">9 Aug, 14:50</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="cap">
+    Rows are hairline-separated rather than carded — inside a card, a second card would be
+    one border too many. Avatar tint alternates by list index, so the two grid columns read
+    as one sequence. "View all" is a bare
+    <code>text-sm text-foreground/50 hover:text-foreground</code> link, and disappears
+    entirely when there is no upcoming dinner to link to.
+  </p>
+</section>
+
+<section>
+  <h2>Nothing scheduled</h2>
+  <div class="stage flex gap-4 wrap items-start">
+    <div class="ui-card p-6 text-center" style="width: 300px">
+      <p class="t-lg fw-semibold">No upcoming dinner</p>
+      <p class="fg-50 mt-1 t-sm">Create the next dinner to see it here.</p>
+    </div>
+    <div class="ui-card p-5" style="width: 300px">
+      <div class="mb-3 flex items-center justify-between"><h2 class="t-base fw-semibold">Recent signups</h2></div>
+      <p class="fg-50 py-2 t-sm">No signups yet.</p>
+    </div>
+  </div>
+  <p class="cap">
+    Both are plain-Card notices rather than the full <code>AdminEmptyState</code> — an
+    overview panel with nothing in it is a status, not a call to action, so it gets no
+    medallion and no button.
+  </p>
+</section>

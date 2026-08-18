@@ -1,0 +1,87 @@
+<!--meta {"group":"Primitives","title":"Table","file":"table.html","sources":["app/components/ui/table.tsx","app/routes/admin.dinners.$dinnerId_.signups.tsx"],"note":"One table, one shipped use: the signups export view. Headers borrow the tracked-eyebrow voice (<code>text-xs uppercase tracking-widest text-foreground/50</code>), rows hover to <code>bg-foreground/5</code>, and the whole thing sits inside an <code>overflow-hidden</code> Card so the 16px radius clips it."} -->
+<section>
+  <h2>Signups table</h2>
+  <div class="stage flush">
+    <div class="ui-card overflow-hidden" style="border: 0; border-radius: 0">
+      <table>
+        <thead>
+          <tr>
+            <th>Guest</th>
+            <th>Email</th>
+            <th style="text-align: center">Party</th>
+            <th style="text-align: right">Signed up</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="flex items-center gap-3">
+                <span class="avatar avatar-a" style="width: 32px; height: 32px; font-size: 12px">AK</span>
+                <span class="fw-semibold">Ada Kessler</span>
+              </div>
+            </td>
+            <td class="fg-65">ada@example.com</td>
+            <td class="text-center">2</td>
+            <td class="text-right"><span class="fg-50 t-sm nowrap">12 Aug, 18:04</span></td>
+          </tr>
+          <tr style="background: rgb(245 241 236 / 0.05)">
+            <td>
+              <div class="flex items-center gap-3">
+                <span class="avatar avatar-b" style="width: 32px; height: 32px; font-size: 12px">NB</span>
+                <span class="fw-semibold">Noa Brunner</span>
+              </div>
+            </td>
+            <td class="fg-65">noa@example.com</td>
+            <td class="text-center">1</td>
+            <td class="text-right"><span class="fg-50 t-sm nowrap">11 Aug, 21:37</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="flex items-center gap-3">
+                <span class="avatar avatar-a" style="width: 32px; height: 32px; font-size: 12px">TS</span>
+                <span class="fw-semibold">Tomas Sanz</span>
+              </div>
+            </td>
+            <td class="fg-65">tomas@example.com</td>
+            <td class="text-center">3</td>
+            <td class="text-right"><span class="fg-50 t-sm nowrap">10 Aug, 09:12</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <p class="cap">
+    Row two shows the hover state. <b>Table</b> is wrapped in
+    <code>relative w-full overflow-auto</code> so wide tables scroll rather than push the
+    page · <b>TableHead</b> <code>px-4 py-3</code> · <b>TableCell</b>
+    <code>px-4 py-4</code> · <b>TableRow</b> <code>border-b hover:bg-foreground/5</code>,
+    last row's border removed by <code>[&amp;_tr:last-child]:border-0</code>.
+  </p>
+</section>
+
+<section>
+  <h2>Non-interactive rows and the empty case</h2>
+  <div class="stage flush">
+    <div style="border-radius: 0">
+      <table>
+        <thead>
+          <tr>
+            <th>Guest</th>
+            <th>Email</th>
+            <th style="text-align: center">Party</th>
+            <th style="text-align: right">Signed up</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="4" class="fg-50 text-center t-sm" style="padding: 32px 16px">No signups yet.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <p class="cap">
+    The header row and the empty row both opt out of hover with
+    <code>className="hover:bg-transparent"</code> — hover means "this row is a record".
+  </p>
+</section>
