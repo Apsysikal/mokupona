@@ -1,5 +1,7 @@
+import { useMemo, useState } from "react";
 import { Link } from "react-router";
 
+import { GalleryLightbox } from "../components/gallery-lightbox";
 import type { GalleryImageModel } from "../view-models";
 
 import type { GalleryLayoutProps } from "./types";
@@ -65,7 +67,7 @@ function DinnerLabel({
   return (
     <Link
       to={`/dinners/${event.id}`}
-      className="text-foreground/50 hover:text-foreground focus-visible:ring-ring w-fit transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+      className="text-foreground/50 hover:text-foreground focus-visible:ring-ring pointer-events-auto w-fit transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
     >
       {event.title} ·{" "}
       <time dateTime={date.toISOString()} suppressHydrationWarning>
@@ -79,10 +81,12 @@ function MosaicTile({
   image,
   showDinner,
   sizes,
+  onOpen,
 }: {
   image: GalleryImageModel;
   showDinner: boolean;
   sizes: string;
+  onOpen: (id: string) => void;
 }) {
   const { width, height } = tileSize(image.image);
   const dinner = showDinner ? image.event : null;
@@ -90,15 +94,21 @@ function MosaicTile({
 
   return (
     <figure className="group relative">
-      <OptimizedImage
-        image={image.image}
-        alt={image.alt}
-        width={width}
-        height={height}
-        sizes={sizes}
-        loading="lazy"
-        className="w-full rounded-2xl"
-      />
+      <button
+        type="button"
+        onClick={() => onOpen(image.id)}
+        className="focus-visible:ring-ring block w-full rounded-2xl focus-visible:ring-2 focus-visible:outline-hidden"
+      >
+        <OptimizedImage
+          image={image.image}
+          alt={image.alt}
+          width={width}
+          height={height}
+          sizes={sizes}
+          loading="lazy"
+          className="w-full rounded-2xl"
+        />
+      </button>
       {hasCaption ? (
         // Below md the caption sits under the photo, where the narrow tiles
         // have no room to overlay it. From md up it is a scrim over the whole
@@ -109,7 +119,7 @@ function MosaicTile({
           tabIndex={dinner ? undefined : 0}
           className={cn(
             "text-foreground/80 flex flex-col gap-1 pt-2 text-xs",
-            "md:from-background md:absolute md:inset-0 md:justify-end md:rounded-2xl md:bg-linear-to-t md:to-transparent md:to-60% md:px-4 md:pt-12 md:pb-4 md:text-sm",
+            "md:from-background md:pointer-events-none md:absolute md:inset-0 md:justify-end md:rounded-2xl md:bg-linear-to-t md:to-transparent md:to-60% md:px-4 md:pt-12 md:pb-4 md:text-sm",
             "md:opacity-0 md:transition-opacity md:duration-200 md:group-focus-within:opacity-100 md:group-hover:opacity-100",
             dinner
               ? null
@@ -133,6 +143,7 @@ function MosaicWall({
   display,
   showDinner,
   sizes,
+  onOpen,
 }: {
   images: GalleryImageModel[];
   columnCount: number;
@@ -140,6 +151,7 @@ function MosaicWall({
   display: string;
   showDinner: boolean;
   sizes: string;
+  onOpen: (id: string) => void;
 }) {
   return (
     <div className={cn("items-start", gap, display)}>
@@ -154,6 +166,7 @@ function MosaicWall({
               image={image}
               showDinner={showDinner}
               sizes={sizes}
+              onOpen={onOpen}
             />
           ))}
         </div>
@@ -167,6 +180,27 @@ export function MosaicGallery({
   variant = "page",
 }: GalleryLayoutProps) {
   const isSection = variant === "section";
+  const [openedAt, setOpenedAt] = useState(0);
+  const [open, setOpen] = useState(false);
+
+  const indexById = useMemo(
+    () => new Map(images.map((image, index) => [image.id, index])),
+    [images],
+  );
+
+  const viewer = (
+    <GalleryLightbox
+      images={images}
+      startIndex={openedAt}
+      open={open}
+      onOpenChange={setOpen}
+    />
+  );
+
+  const onOpen = (id: string) => {
+    setOpenedAt(indexById.get(id) ?? 0);
+    setOpen(true);
+  };
 
   if (images.length === 0) {
     // embedded in a dinner's page there is nothing worth saying — the story
@@ -191,14 +225,18 @@ export function MosaicGallery({
   // column, collapsing the wall.
   if (isSection) {
     return (
-      <MosaicWall
-        images={images}
-        columnCount={2}
-        gap="gap-2 md:gap-3"
-        display="flex"
-        showDinner={false}
-        sizes="(min-width: 768px) 220px, 45vw"
-      />
+      <>
+        <MosaicWall
+          images={images}
+          columnCount={2}
+          gap="gap-2 md:gap-3"
+          display="flex"
+          showDinner={false}
+          sizes="(min-width: 768px) 220px, 45vw"
+          onOpen={onOpen}
+        />
+        {viewer}
+      </>
     );
   }
 
@@ -214,6 +252,7 @@ export function MosaicGallery({
         display="flex md:hidden"
         showDinner
         sizes="(min-width: 768px) 300px, 45vw"
+        onOpen={onOpen}
       />
       <MosaicWall
         images={images}
@@ -222,7 +261,9 @@ export function MosaicGallery({
         display="hidden md:flex"
         showDinner
         sizes="(min-width: 768px) 300px, 45vw"
+        onOpen={onOpen}
       />
+      {viewer}
     </>
   );
 }
