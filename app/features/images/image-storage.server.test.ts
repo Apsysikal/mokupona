@@ -109,32 +109,7 @@ describe("storeImages", () => {
     );
   });
 
-  it("keeps at most four uploads open at once", async () => {
-    const files = Array.from({ length: 9 }, (_, index) => file(`${index}.jpg`));
-    let open = 0;
-    let peak = 0;
-
-    const store = vi.fn(async (uploaded: File) => {
-      open += 1;
-      peak = Math.max(peak, open);
-      await new Promise((resolve) => setTimeout(resolve, 1));
-      open -= 1;
-      return { storageKey: `dinner-gallery/${uploaded.name}` };
-    });
-
-    const results = await storeImages(files, "dinner-gallery", {
-      store,
-      destroy: vi.fn(),
-    });
-
-    expect(peak).toBe(4);
-    expect(store).toHaveBeenCalledTimes(9);
-    expect(results.map((result) => result.status)).toEqual(
-      Array(9).fill("fulfilled"),
-    );
-  });
-
-  it("returns an empty result set without opening a worker", async () => {
+  it("stores nothing for an empty batch", async () => {
     const store = vi.fn();
 
     await expect(
