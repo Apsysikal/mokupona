@@ -50,8 +50,8 @@ function renderMosaic(props: GalleryLayoutProps) {
 }
 
 /**
- * The page variant hangs a wall per column count — two columns below md, three
- * from md up — so every query has to name the wall it means.
+ * The page variant hangs a wall per column count — one below md, two at md,
+ * three from lg up — so every query has to name the wall it means.
  */
 function wallsOf(container: HTMLElement) {
   return Array.from(container.querySelectorAll<HTMLElement>(".items-start"));
@@ -239,7 +239,7 @@ describe("mosaic layout", () => {
     expect(screen.getByText("steam off the pot")).toBeInTheDocument();
   });
 
-  it("hangs a two-column wall below md and a three-column one from md up", () => {
+  it("hangs a one-column wall below md, two at md and three from lg up", () => {
     const { container } = renderMosaic({
       images: [
         makeImage({ id: "a" }),
@@ -248,16 +248,19 @@ describe("mosaic layout", () => {
       ],
     });
 
-    const [narrow, wide] = wallsOf(container);
+    const [narrow, medium, wide] = wallsOf(container);
     expect(narrow).toHaveClass("flex", "gap-3", "md:hidden");
-    expect(wide).toHaveClass("hidden", "gap-5", "md:flex");
-    expect(narrow.children).toHaveLength(2);
+    expect(medium).toHaveClass("hidden", "gap-5", "md:flex", "lg:hidden");
+    expect(wide).toHaveClass("hidden", "gap-5", "lg:flex");
+    expect(narrow.children).toHaveLength(1);
+    expect(medium.children).toHaveLength(2);
     expect(wide.children).toHaveLength(3);
 
     // the tiles carry no spacing of their own: a figure sits straight in its
     // column and the column's own gap does the stacking
     for (const [wall, gap] of [
       [narrow, "gap-3"],
+      [medium, "gap-5"],
       [wide, "gap-5"],
     ] as const) {
       for (const column of Array.from(wall.children)) {

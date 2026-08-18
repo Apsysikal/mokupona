@@ -22,6 +22,14 @@ const TILE_WIDTH = 640;
 /** Rows uploaded before dimensions were stored fall back to a 3:2 frame. */
 const FALLBACK_ASPECT = 3 / 2;
 
+/**
+ * One string for every wall on the page: each wall is the only visible one at
+ * its own breakpoint, and keeping them identical is what stops the browser
+ * fetching a second rung for the walls it is hiding.
+ */
+const PAGE_TILE_SIZES =
+  "(min-width: 1024px) 300px, (min-width: 768px) 45vw, calc(100vw - 2.5rem)";
+
 // The wall's rhythm comes from the photos, so the frame is derived from the
 // stored dimensions rather than from a fixed grid cell.
 function tileSize(image: ImageMetadata) {
@@ -240,27 +248,36 @@ export function MosaicGallery({
     );
   }
 
-  // Two column counts mean two groupings, so the page hangs a wall for each and
-  // shows one at a time. Both ask for the same URLs, so the browser still
-  // fetches every photo once and the hidden wall is out of the a11y tree.
+  // Three column counts mean three groupings, so the page hangs a wall for each
+  // and shows one at a time. All ask for the same URLs, so the browser still
+  // fetches every photo once and the hidden walls are out of the a11y tree.
   return (
     <>
       <MosaicWall
         images={images}
-        columnCount={2}
+        columnCount={1}
         gap="gap-3"
         display="flex md:hidden"
         showDinner
-        sizes="(min-width: 768px) 300px, 45vw"
+        sizes={PAGE_TILE_SIZES}
+        onOpen={onOpen}
+      />
+      <MosaicWall
+        images={images}
+        columnCount={2}
+        gap="gap-5"
+        display="hidden md:flex lg:hidden"
+        showDinner
+        sizes={PAGE_TILE_SIZES}
         onOpen={onOpen}
       />
       <MosaicWall
         images={images}
         columnCount={3}
         gap="gap-5"
-        display="hidden md:flex"
+        display="hidden lg:flex"
         showDinner
-        sizes="(min-width: 768px) 300px, 45vw"
+        sizes={PAGE_TILE_SIZES}
         onOpen={onOpen}
       />
       {viewer}
