@@ -1,6 +1,6 @@
 import type { SubmissionResult } from "@conform-to/react";
 import { ImageIcon, TrashIcon } from "@radix-ui/react-icons";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Form, NavLink, redirect } from "react-router";
 import { z } from "zod";
 
@@ -208,6 +208,14 @@ export default function AdminDinnerGalleryPage({
   const { dinner, entries, maxFiles } = loaderData;
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
+  const uploadFormRef = useRef<HTMLFormElement>(null);
+  const galleryCount = useRef(entries.length);
+
+  useEffect(() => {
+    if (entries.length > galleryCount.current) uploadFormRef.current?.reset();
+    galleryCount.current = entries.length;
+  }, [entries.length]);
+
   const imageErrors = actionData?.error?.images;
 
   return (
@@ -235,6 +243,7 @@ export default function AdminDinnerGalleryPage({
 
           <Card className="p-4">
             <Form
+              ref={uploadFormRef}
               method="POST"
               encType="multipart/form-data"
               replace
