@@ -264,9 +264,6 @@ async function deleteDinner(
   });
 
   if (event) {
-    // deleteEvent (not prisma.event.delete) so the form data and the cover
-    // image row go with it; replaced covers are deleted in-transaction by
-    // updateEvent — no orphan cleanup
     await deleteEvent(event.id);
   }
 
@@ -287,8 +284,6 @@ async function getImage(
 async function deleteImage(
   payload: Extract<CommandInput, { action: "delete-image" }>,
 ) {
-  // Event.imageId is SetNull, so deleting an image never touches an event —
-  // an attached event simply loses its cover.
   await prisma.image.deleteMany({
     where: { id: payload.payload.id },
   });

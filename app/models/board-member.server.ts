@@ -80,10 +80,6 @@ export async function deleteBoardMember(
   });
 }
 
-// Replaces the portrait iff a new image is provided: the new row is created
-// in the same transaction as the update, and the old one released — deleted
-// only when no gallery still shows it. A destroyed portrait's storageKey
-// comes back for the caller's post-commit provider destroy; null otherwise.
 export async function updateBoardMember(
   id: string,
   data: BoardMemberData,

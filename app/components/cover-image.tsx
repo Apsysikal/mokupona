@@ -6,10 +6,6 @@ import type { ImageDisplaySource } from "~/shared/image";
 const COVER_IMAGE_WIDTH = 1080;
 const COVER_IMAGE_HEIGHT = 720;
 
-// Cover slot for entities whose image is optional (Event.imageId is SetNull,
-// so a cover can disappear without taking its owner): renders the image when
-// one exists, otherwise a quiet CSS "plate" artwork filling the same frame —
-// the events' cousin of the board members' InitialsAvatar.
 export function CoverImage({
   image,
   alt,
