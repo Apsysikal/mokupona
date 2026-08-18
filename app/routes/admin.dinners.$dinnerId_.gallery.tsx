@@ -23,7 +23,7 @@ import {
 import { withParsedImageForm } from "~/features/images/image-form-action.server";
 import {
   destroyImages,
-  storeImage,
+  storeImages,
 } from "~/features/images/image-storage.server";
 import { cn } from "~/lib/utils";
 import { getEventById } from "~/models/event.server";
@@ -61,6 +61,23 @@ export async function loader({ params }: Route.LoaderArgs) {
     // the file input's hint; the constant itself is server-only
     maxFiles: MAX_GALLERY_FILES,
   };
+}
+
+const galleryList = new Intl.ListFormat("en", {
+  style: "long",
+  type: "conjunction",
+});
+
+function partialUploadMessage(
+  stored: number,
+  total: number,
+  unstored: string[],
+): string {
+  const names = galleryList.format(unstored);
+
+  return stored === 0
+    ? `None of the ${total} photos could be stored — ${names} failed. Try again.`
+    : `Uploaded ${stored} of ${total} photos — ${names} failed. Try those again.`;
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -103,15 +120,42 @@ export async function action({ request, params }: Route.ActionArgs) {
           return failed;
         }
 
-        const stored = await Promise.all(
-          files.map(async (file) => ({
-            contentType: file.type,
-            caption: value.caption || null,
-            ...(await storeImage(file, "dinner-gallery")),
-          })),
+        const results = await storeImages(files, "dinner-gallery");
+
+        const stored = results.flatMap((result, index) =>
+          result.status === "fulfilled"
+            ? [
+                {
+                  contentType: files[index].type,
+                  caption: value.caption || null,
+                  ...result.value,
+                },
+              ]
+            : [],
         );
 
-        await createGalleryImagesForEvent(dinnerId, stored);
+        try {
+          await createGalleryImagesForEvent(dinnerId, stored);
+        } catch (error) {
+          await destroyImages(stored.map((image) => image.storageKey));
+          throw error;
+        }
+
+        const unstored = files
+          .filter((_, index) => results[index].status === "rejected")
+          .map((file) => file.name);
+
+        if (unstored.length > 0) {
+          const partial: SubmissionResult = {
+            status: "error",
+            error: {
+              images: [
+                partialUploadMessage(stored.length, files.length, unstored),
+              ],
+            },
+          };
+          return partial;
+        }
 
         return redirect(galleryPath);
       },
@@ -146,11 +190,6 @@ export const meta: Route.MetaFunction = ({ loaderData }) => [
       : "Admin - Gallery",
   },
 ];
-
-const galleryList = new Intl.ListFormat("en", {
-  style: "long",
-  type: "conjunction",
-});
 
 function deletePhotoDescription(sharedWith: GalleryEventLabel[]): string {
   if (sharedWith.length === 0) {

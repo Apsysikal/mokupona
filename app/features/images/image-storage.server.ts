@@ -48,6 +48,46 @@ export function storeImage(
   return provider.store(file, { folder });
 }
 
+const STORE_CONCURRENCY = 4;
+
+/**
+ * Store a batch, settled and in input order: one file's failure never discards
+ * the assets its siblings already put on the provider. Runs a few at a time so
+ * a full gallery submission does not open twelve uploads at once.
+ */
+export async function storeImages(
+  files: File[],
+  folder: ImageFolder,
+  providerOverride: ImageStorageProvider = provider,
+): Promise<PromiseSettledResult<StoredImage>[]> {
+  const results = new Array<PromiseSettledResult<StoredImage>>(files.length);
+  let next = 0;
+
+  async function worker() {
+    while (next < files.length) {
+      const index = next++;
+      try {
+        results[index] = {
+          status: "fulfilled",
+          value: await providerOverride.store(files[index], { folder }),
+        };
+      } catch (error) {
+        requestLogger.warn(
+          { folder, fileName: files[index].name, error },
+          "Failed to store image",
+        );
+        results[index] = { status: "rejected", reason: error };
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(STORE_CONCURRENCY, files.length) }, worker),
+  );
+
+  return results;
+}
+
 export async function destroyImages(
   storageKeys: (string | null | undefined)[],
   providerOverride: ImageStorageProvider = provider,

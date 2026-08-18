@@ -5,6 +5,7 @@ import { loggerStub } from "../../../test/logger-stub";
 import {
   createImageStorageProvider,
   destroyImages,
+  storeImages,
 } from "./image-storage.server";
 
 const mocks = vi.hoisted(() => ({
@@ -76,5 +77,69 @@ describe("destroyImages", () => {
       expect.objectContaining({ storageKey: "dinners/a" }),
       "Failed to destroy stored image after DB commit",
     );
+  });
+});
+
+describe("storeImages", () => {
+  function file(name: string) {
+    return new File(["x"], name, { type: "image/jpeg" });
+  }
+
+  it("keeps the siblings of a failed store, settled in input order", async () => {
+    const store = vi
+      .fn()
+      .mockResolvedValueOnce({ storageKey: "dinner-gallery/a" })
+      .mockRejectedValueOnce(new Error("cloudinary 503"))
+      .mockResolvedValueOnce({ storageKey: "dinner-gallery/c" });
+
+    const results = await storeImages(
+      [file("a.jpg"), file("b.jpg"), file("c.jpg")],
+      "dinner-gallery",
+      { store, destroy: vi.fn() },
+    );
+
+    expect(results).toEqual([
+      { status: "fulfilled", value: { storageKey: "dinner-gallery/a" } },
+      { status: "rejected", reason: new Error("cloudinary 503") },
+      { status: "fulfilled", value: { storageKey: "dinner-gallery/c" } },
+    ]);
+    expect(loggerStub.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ fileName: "b.jpg", folder: "dinner-gallery" }),
+      "Failed to store image",
+    );
+  });
+
+  it("keeps at most four uploads open at once", async () => {
+    const files = Array.from({ length: 9 }, (_, index) => file(`${index}.jpg`));
+    let open = 0;
+    let peak = 0;
+
+    const store = vi.fn(async (uploaded: File) => {
+      open += 1;
+      peak = Math.max(peak, open);
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      open -= 1;
+      return { storageKey: `dinner-gallery/${uploaded.name}` };
+    });
+
+    const results = await storeImages(files, "dinner-gallery", {
+      store,
+      destroy: vi.fn(),
+    });
+
+    expect(peak).toBe(4);
+    expect(store).toHaveBeenCalledTimes(9);
+    expect(results.map((result) => result.status)).toEqual(
+      Array(9).fill("fulfilled"),
+    );
+  });
+
+  it("returns an empty result set without opening a worker", async () => {
+    const store = vi.fn();
+
+    await expect(
+      storeImages([], "dinner-gallery", { store, destroy: vi.fn() }),
+    ).resolves.toEqual([]);
+    expect(store).not.toHaveBeenCalled();
   });
 });
