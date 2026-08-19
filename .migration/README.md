@@ -25,11 +25,14 @@ shadcn `migrate-radix-to-base` skill produces, one per component.
   flows, admin area, plus open dialogs, popover, accordion and carousel
   states). Every page kept its exact dimensions; the only differing pixels sit
   inside icon glyphs.
-- 667 buttons and links across 19 pages compared attribute by attribute
-  (`type`, `role`, `name`): byte-identical to the pre-migration render.
+- 906 buttons, inputs, selects, textareas and links across 20 pages compared
+  attribute by attribute (`type`, `name`, `value`, `form`, `formnovalidate`,
+  `disabled`, `role`) against a running `origin/dev` build: zero differences.
 - Cypress could not run in the migration environment (its binary is not
-  downloadable there). One spec assertion was updated -- see
-  [collapsible.md](./collapsible.md).
+  downloadable there), and it caught a regression the local checks missed --
+  Base UI's injected `type="button"` disabled Conform's intent buttons. Fixed,
+  covered by a unit test, and written up in [button.md](./button.md). One spec
+  assertion was also updated -- see [collapsible.md](./collapsible.md).
 
 ## Flagged, not fixed
 

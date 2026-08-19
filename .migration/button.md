@@ -32,9 +32,16 @@ classes stay exactly as they were).
   dev-mode error for every one of them (`nativeButton` left at its `true`
   default). The split keeps links announced as links. This diverges from the
   migration skill's "always use the primitive" rule for that reason.
-- The Base UI Button stamps `type="button"` on a native button that receives no
-  explicit `type`. Verified as a no-op here: 667 buttons and links across 19
-  pages render identical `type`, `role` and `name` attributes before and after.
+- **Base UI stamps `type="button"` on a native button that receives no explicit
+  type, and the wrapper undoes that.** Both the Button primitive and `useRender`
+  do it, and it is the opposite of the HTML default: a bare `<button>` inside a
+  form submits. Conform's intent buttons rely on exactly that — "Add field",
+  "Remove", "Unlink", "Link to friends" and "Reset to default" carry their
+  intent in `name="__intent__"` + `value` and need the submit. Leaving the
+  stamped `type` in place turned all of them into no-ops; Cypress caught it
+  (`admin-form-builder.cy.ts`). The wrapper now threads `type` through last,
+  `undefined` included, which suppresses the injected default.
+  `app/components/ui/button.test.tsx` pins both the attribute and the submit.
 
 ## Verify by hand
 
@@ -42,3 +49,12 @@ classes stay exactly as they were).
   should still be announced as links and open on Enter.
 - Submit one Conform-backed form (a dinner edit) and use the form builder's
   add / remove / reorder buttons -- they carry their own intent props.
+
+## Baseline note
+
+The first version of this report claimed the Button change was DOM-neutral on
+the strength of a 667-element comparison. That comparison was between two
+post-migration builds, so it could not have caught the `type` regression above.
+The check was redone against `origin/dev`: 906 buttons, inputs, selects,
+textareas and links across 20 pages, comparing `type`, `name`, `value`, `form`,
+`formnovalidate`, `disabled` and `role` -- zero differences.

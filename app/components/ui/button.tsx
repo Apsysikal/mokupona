@@ -45,6 +45,11 @@ export interface ButtonProps
 // `type="button"` on a real button and `role="button"` on anything else. The
 // links this button renders (`render={<Link/>}`) must keep link semantics, so
 // those go through useRender, which only merges props onto the element.
+//
+// Both paths also stamp `type="button"` when the caller passes no type, which
+// would silently turn Conform's intent buttons (`form.insert.getButtonProps()`
+// and friends) into no-ops — a bare <button> in a form submits. Passing `type`
+// through last, undefined included, restores the native default.
 function rendersNativeButton(render: ButtonProps["render"]) {
   return (
     render === undefined ||
@@ -58,6 +63,7 @@ const Button = ({
   size,
   render,
   ref,
+  type,
   ...props
 }: ButtonProps) => {
   const classNames = cn(buttonVariants({ variant, size, className }));
@@ -68,6 +74,7 @@ const Button = ({
       render={render}
       ref={ref}
       {...props}
+      type={type}
     />
   ) : (
     <RenderedButton
@@ -75,6 +82,7 @@ const Button = ({
       render={render}
       ref={ref}
       {...props}
+      type={type}
     />
   );
 };
