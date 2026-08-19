@@ -16,7 +16,7 @@ const DialogOverlay = ({
   className,
   ref,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Backdrop>) => (
+}: DialogPrimitive.Backdrop.Props) => (
   <DialogPrimitive.Backdrop
     ref={ref}
     className={cn(
@@ -35,7 +35,7 @@ const DialogContent = ({
   children,
   ref,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Popup> & {
+}: DialogPrimitive.Popup.Props & {
   overlayClassName?: string;
   showClose?: boolean;
 }) => (
@@ -65,7 +65,7 @@ const DialogTitle = ({
   className,
   ref,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Title>) => (
+}: DialogPrimitive.Title.Props) => (
   <DialogPrimitive.Title
     ref={ref}
     className={cn("text-2xl font-light tracking-tight", className)}
@@ -78,7 +78,7 @@ const DialogDescription = ({
   className,
   ref,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Description>) => (
+}: DialogPrimitive.Description.Props) => (
   <DialogPrimitive.Description
     ref={ref}
     className={cn("text-foreground/65 text-sm", className)}

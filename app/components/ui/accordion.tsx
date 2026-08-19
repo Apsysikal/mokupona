@@ -10,7 +10,7 @@ const AccordionItem = ({
   className,
   ref,
   ...props
-}: React.ComponentProps<typeof AccordionPrimitive.Item>) => (
+}: AccordionPrimitive.Item.Props) => (
   <AccordionPrimitive.Item
     ref={ref}
     className={cn("border-b", className)}
@@ -25,7 +25,7 @@ const AccordionTrigger = ({
   children,
   ref,
   ...props
-}: React.ComponentProps<typeof AccordionPrimitive.Trigger>) => (
+}: AccordionPrimitive.Trigger.Props) => (
   <AccordionPrimitive.Header className="flex">
     <AccordionPrimitive.Trigger
       ref={ref}
@@ -48,7 +48,7 @@ const AccordionContent = ({
   children,
   ref,
   ...props
-}: React.ComponentProps<typeof AccordionPrimitive.Panel>) => (
+}: AccordionPrimitive.Panel.Props) => (
   <AccordionPrimitive.Panel
     ref={ref}
     className="h-[var(--accordion-panel-height)] overflow-hidden transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0"

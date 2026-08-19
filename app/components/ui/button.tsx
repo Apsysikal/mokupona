@@ -1,6 +1,8 @@
+import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
+import React from "react";
 
 import { cn } from "~/lib/utils";
 
@@ -39,6 +41,17 @@ export interface ButtonProps
     useRender.ComponentProps<"button">,
     VariantProps<typeof buttonVariants> {}
 
+// Base UI's Button primitive enforces button semantics — it stamps
+// `type="button"` on a real button and `role="button"` on anything else. The
+// links this button renders (`render={<Link/>}`) must keep link semantics, so
+// those go through useRender, which only merges props onto the element.
+function rendersNativeButton(render: ButtonProps["render"]) {
+  return (
+    render === undefined ||
+    (React.isValidElement(render) && render.type === "button")
+  );
+}
+
 const Button = ({
   className,
   variant,
@@ -46,17 +59,41 @@ const Button = ({
   render,
   ref,
   ...props
-}: ButtonProps) =>
+}: ButtonProps) => {
+  const classNames = cn(buttonVariants({ variant, size, className }));
+
+  return rendersNativeButton(render) ? (
+    <ButtonPrimitive
+      className={classNames}
+      render={render}
+      ref={ref}
+      {...props}
+    />
+  ) : (
+    <RenderedButton
+      className={classNames}
+      render={render}
+      ref={ref}
+      {...props}
+    />
+  );
+};
+
+Button.displayName = "Button";
+
+const RenderedButton = ({
+  className,
+  render,
+  ref,
+  ...props
+}: useRender.ComponentProps<"button">) =>
   useRender({
     defaultTagName: "button",
     render,
     ref,
-    props: mergeProps<"button">(
-      { className: cn(buttonVariants({ variant, size, className })) },
-      props,
-    ),
+    props: mergeProps<"button">({ className }, props),
   });
 
-Button.displayName = "Button";
+RenderedButton.displayName = "RenderedButton";
 
 export { Button, buttonVariants };
