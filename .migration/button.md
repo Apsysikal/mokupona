@@ -6,39 +6,37 @@ classes stay exactly as they were).
 
 ## Changed
 
-- `app/components/ui/button.tsx`: the `Slot` / `asChild` idiom is gone. A
-  button that renders a real `<button>` now goes through the Base UI `Button`
-  primitive (`@base-ui/react/button`). A button whose `render` produces
-  something else -- every `render={<Link/>}` and `render={<a/>}` call site --
-  goes through `useRender` + `mergeProps` instead. `buttonVariants` is
-  untouched.
-- 36 call sites across `app/` moved from
-  `<Button asChild><Link to="…">text</Link></Button>` to
-  `<Button render={<Link to="…" />}>text</Button>`.
+- `app/components/ui/button.tsx`: the `Slot` / `asChild` idiom is replaced by
+  Base UI's `Button` primitive (`@base-ui/react/button`). `buttonVariants` is
+  untouched and is now also the public way to style a link.
+- 34 call sites that used `<Button asChild>` around a `Link`, `NavLink` or `a`
+  now render the link directly with the button classes:
+  `<Link to="…" className={buttonVariants({ variant: "outline" })}>`, using
+  `cn()` where the call site added classes of its own. This is what the shadcn
+  Button docs prescribe under "As Link".
+- The remaining `render` usages are Base UI parts rendering our Button
+  (`<DialogTrigger render={<Button/>}>`, `<DialogClose render={<Button/>}>`),
+  which is the right direction: the rendered element really is a button.
 
 ## Left alone
 
-- `buttonVariants` class strings: no Radix-specific selectors in them.
+- `buttonVariants` class strings: no Radix-specific selectors in them, and the
+  link call sites now produce the exact same class list they did before.
 - `app/components/ui/carousel.tsx` consumes `Button` through
   `React.ComponentProps<typeof Button>` and needed no change.
 
 ## Behavior changes
 
-- **Links deliberately bypass the Base UI Button primitive.** Base UI's docs
-  are explicit: "The Button component enforces button semantics
-  (`role="button"`, keyboard interaction, disabled state). It should not be
-  used for links." Routing this app's 36 link-buttons through it would either
-  stamp `role="button"` on navigation links (`nativeButton={false}`) or log a
-  dev-mode error for every one of them (`nativeButton` left at its `true`
-  default). The split keeps links announced as links. This diverges from the
-  migration skill's "always use the primitive" rule for that reason.
-- **Base UI stamps `type="button"` on a native button that receives no explicit
-  type, and the wrapper undoes that.** Both the Button primitive and `useRender`
-  do it, and it is the opposite of the HTML default: a bare `<button>` inside a
-  form submits. Conform's intent buttons rely on exactly that — "Add field",
-  "Remove", "Unlink", "Link to friends" and "Reset to default" carry their
-  intent in `name="__intent__"` + `value` and need the submit. Leaving the
-  stamped `type` in place turned all of them into no-ops; Cypress caught it
+- **Links never pass through the Button component.** Base UI's Button always
+  applies `role="button"`, which overrides the semantic link role on an `<a>`,
+  and its docs say so explicitly. Styling the anchor with `buttonVariants`
+  keeps links announced as links — the same DOM the Radix `Slot` produced.
+- **Base UI stamps `type="button"` on a button that receives no explicit type,
+  and the wrapper undoes that.** It is the opposite of the HTML default, and
+  Conform's intent buttons rely on the default: "Add field", "Remove",
+  "Unlink", "Link to friends" and "Reset to default" carry their intent in
+  `name="__intent__"` + `value` and need the submit. Leaving the stamped `type`
+  in place turned all of them into no-ops; Cypress caught it
   (`admin-form-builder.cy.ts`). The wrapper now threads `type` through last,
   `undefined` included, which suppresses the injected default.
   `app/components/ui/button.test.tsx` pins both the attribute and the submit.
@@ -52,9 +50,10 @@ classes stay exactly as they were).
 
 ## Baseline note
 
-The first version of this report claimed the Button change was DOM-neutral on
+An early version of this report claimed the Button change was DOM-neutral on
 the strength of a 667-element comparison. That comparison was between two
 post-migration builds, so it could not have caught the `type` regression above.
 The check was redone against `origin/dev`: 906 buttons, inputs, selects,
 textareas and links across 20 pages, comparing `type`, `name`, `value`, `form`,
-`formnovalidate`, `disabled` and `role` -- zero differences.
+`formnovalidate`, `disabled` and `role` -- zero differences, and still zero
+after moving the links onto `buttonVariants`.

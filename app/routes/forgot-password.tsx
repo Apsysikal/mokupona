@@ -9,10 +9,11 @@ import type { Route } from "./+types/forgot-password";
 import { AuthShell } from "~/components/auth-layout";
 import { AuthStatus } from "~/components/auth-status";
 import { Field } from "~/components/forms";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { auth } from "~/features/auth/auth.server";
 import { emailSchema, parseRequestForm } from "~/features/auth/form-schemas";
 import { requestLoggerContext } from "~/features/auth/middleware.server";
+import { cn } from "~/lib/utils";
 import { getClientIPAddress } from "~/shared/http.server";
 
 const schema = z.object({
@@ -72,9 +73,12 @@ export default function ForgotPassword({ actionData }: Route.ComponentProps) {
           </>
         }
       >
-        <Button size="lg" className="w-full" render={<Link to="/login" />}>
+        <Link
+          to="/login"
+          className={cn(buttonVariants({ size: "lg" }), "w-full")}
+        >
           back to log in
-        </Button>
+        </Link>
       </AuthStatus>
     );
   }

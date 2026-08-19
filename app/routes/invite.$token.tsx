@@ -10,7 +10,7 @@ import { AuthShell } from "~/components/auth-layout";
 import { AuthStatus } from "~/components/auth-status";
 import { ErrorList, Field } from "~/components/forms";
 import { pillVariants } from "~/components/section";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { isAuthToggleEnabled } from "~/features/auth/auth-settings.server";
@@ -25,6 +25,7 @@ import {
 import { passwordSchema } from "~/features/auth/password-schema";
 import { landingPathForRole } from "~/features/auth/roles";
 import { normalizeInvitableRole } from "~/features/users/invite.shared";
+import { cn } from "~/lib/utils";
 import { requestLogger } from "~/logger/request-context.server";
 import {
   acceptInvite,
@@ -237,9 +238,12 @@ export default function InvitePage({
         heading={copy.heading}
         body={copy.body}
       >
-        <Button size="lg" className="w-full" render={<Link to="/dinners" />}>
+        <Link
+          to="/dinners"
+          className={cn(buttonVariants({ size: "lg" }), "w-full")}
+        >
           browse dinners
-        </Button>
+        </Link>
         <Link
           to="/login"
           className="text-primary text-sm font-semibold hover:underline"

@@ -5,7 +5,7 @@ import type { Route } from "./+types/admin.locations._index";
 
 import { AdminDeleteButton } from "~/components/admin-delete-button";
 import { AdminEmptyState, AdminPageHeader } from "~/components/admin-ui";
-import { Button } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { getAddressesWithEventCount } from "~/models/address.server";
 
@@ -30,10 +30,10 @@ export default function AdminLocationsPage({
         eyebrow={`${addresses.length} total`}
         title="Locations"
         actions={
-          <Button render={<Link to="new" />}>
+          <Link to="new" className={buttonVariants()}>
             <PlusIcon className="size-4" />
             New location
-          </Button>
+          </Link>
         }
       />
 
@@ -48,7 +48,11 @@ export default function AdminLocationsPage({
           icon={<MapPinIcon className="size-6" />}
           title="No locations yet"
           description="Add the first venue address so dinners have somewhere to happen."
-          action={<Button render={<Link to="new" />}>New location</Button>}
+          action={
+            <Link to="new" className={buttonVariants()}>
+              New location
+            </Link>
+          }
         />
       )}
     </div>
@@ -79,9 +83,12 @@ function LocationCard({ address }: { address: AddressWithEventCount }) {
         </div>
       </div>
       <div className="mt-4 flex gap-2 border-t pt-4">
-        <Button size="sm" variant="outline" render={<Link to={`${id}/edit`} />}>
+        <Link
+          to={`${id}/edit`}
+          className={buttonVariants({ variant: "outline", size: "sm" })}
+        >
           Edit
-        </Button>
+        </Link>
         <AdminDeleteButton action={`${id}/delete`} disabled={inUse} />
         {inUse ? (
           <span className="text-foreground/50 self-center text-xs">

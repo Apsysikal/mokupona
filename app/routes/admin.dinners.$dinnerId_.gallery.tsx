@@ -10,7 +10,7 @@ import { AdminEmptyState, AdminPageHeader } from "~/components/admin-ui";
 import { Field, fileFieldClassName } from "~/components/forms";
 import { OptimizedImage } from "~/components/optimized-image";
 import { RouteErrorContent } from "~/components/route-error-content";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import {
   Dialog,
@@ -225,12 +225,12 @@ export default function AdminDinnerGalleryPage({
         title="Gallery"
         subtitle="The photos linked to this dinner's gallery. Captions belong to this dinner, not to the file."
         actions={
-          <Button
-            variant="outline"
-            render={<NavLink to={`/admin/dinners/${dinner.id}`} />}
+          <NavLink
+            to={`/admin/dinners/${dinner.id}`}
+            className={buttonVariants({ variant: "outline" })}
           >
             Back to dinner
-          </Button>
+          </NavLink>
         }
       />
 

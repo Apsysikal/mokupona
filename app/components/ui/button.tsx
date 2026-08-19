@@ -1,8 +1,5 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
-import { mergeProps } from "@base-ui/react/merge-props";
-import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
-import React from "react";
 
 import { cn } from "~/lib/utils";
 
@@ -37,71 +34,25 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends
-    useRender.ComponentProps<"button">,
-    VariantProps<typeof buttonVariants> {}
+  extends ButtonPrimitive.Props, VariantProps<typeof buttonVariants> {}
 
-// Base UI's Button primitive enforces button semantics — it stamps
-// `type="button"` on a real button and `role="button"` on anything else. The
-// links this button renders (`render={<Link/>}`) must keep link semantics, so
-// those go through useRender, which only merges props onto the element.
+// Base UI's Button stamps `type="button"` when the caller passes no type,
+// which is the opposite of the HTML default and silently turns Conform's
+// intent buttons (`form.insert.getButtonProps()` and friends) into no-ops —
+// a bare <button> in a form submits. Passing `type` through last, undefined
+// included, restores the native default.
 //
-// Both paths also stamp `type="button"` when the caller passes no type, which
-// would silently turn Conform's intent buttons (`form.insert.getButtonProps()`
-// and friends) into no-ops — a bare <button> in a form submits. Passing `type`
-// through last, undefined included, restores the native default.
-function rendersNativeButton(render: ButtonProps["render"]) {
-  return (
-    render === undefined ||
-    (React.isValidElement(render) && render.type === "button")
-  );
-}
-
-const Button = ({
-  className,
-  variant,
-  size,
-  render,
-  ref,
-  type,
-  ...props
-}: ButtonProps) => {
-  const classNames = cn(buttonVariants({ variant, size, className }));
-
-  return rendersNativeButton(render) ? (
-    <ButtonPrimitive
-      className={classNames}
-      render={render}
-      ref={ref}
-      {...props}
-      type={type}
-    />
-  ) : (
-    <RenderedButton
-      className={classNames}
-      render={render}
-      ref={ref}
-      {...props}
-      type={type}
-    />
-  );
-};
+// Links do not belong here: Base UI's Button always applies `role="button"`,
+// which overrides the link role. Style the anchor with `buttonVariants`
+// instead — see the shadcn Button docs, "As Link".
+const Button = ({ className, variant, size, type, ...props }: ButtonProps) => (
+  <ButtonPrimitive
+    className={cn(buttonVariants({ variant, size, className }))}
+    {...props}
+    type={type}
+  />
+);
 
 Button.displayName = "Button";
-
-const RenderedButton = ({
-  className,
-  render,
-  ref,
-  ...props
-}: useRender.ComponentProps<"button">) =>
-  useRender({
-    defaultTagName: "button",
-    render,
-    ref,
-    props: mergeProps<"button">({ className }, props),
-  });
-
-RenderedButton.displayName = "RenderedButton";
 
 export { Button, buttonVariants };

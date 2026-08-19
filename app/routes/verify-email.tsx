@@ -5,7 +5,8 @@ import type { Route } from "./+types/verify-email";
 
 import { AuthShell } from "~/components/auth-layout";
 import { AuthStatus } from "~/components/auth-status";
-import { Button } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button";
+import { cn } from "~/lib/utils";
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const url = new URL(request.url);
@@ -29,9 +30,12 @@ export default function VerifyEmail({ loaderData }: Route.ComponentProps) {
         heading="this link has expired"
         body="just log in and we'll send a new link to verify your email."
       >
-        <Button size="lg" className="w-full" render={<Link to="/login" />}>
+        <Link
+          to="/login"
+          className={cn(buttonVariants({ size: "lg" }), "w-full")}
+        >
           back to log in
-        </Button>
+        </Link>
       </AuthStatus>
     );
   }
@@ -59,9 +63,12 @@ export default function VerifyEmail({ loaderData }: Route.ComponentProps) {
           )
         }
       >
-        <Button size="lg" className="w-full" render={<Link to="/login" />}>
+        <Link
+          to="/login"
+          className={cn(buttonVariants({ size: "lg" }), "w-full")}
+        >
           continue to log in
-        </Button>
+        </Link>
         <Link
           to="/dinners"
           className="text-primary text-sm font-semibold hover:underline"

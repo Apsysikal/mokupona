@@ -4,7 +4,7 @@ import type z from "zod";
 
 import { Field } from "./forms";
 import { BackLink, pageTitleClassName } from "./section";
-import { Button } from "./ui/button";
+import { Button, buttonVariants } from "./ui/button";
 import { Card } from "./ui/card";
 
 import type { AddressSchema } from "~/utils/address-validation";
@@ -67,9 +67,12 @@ export function AdminLocationForm({
         </div>
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button variant="outline" render={<Link to="/admin/locations" />}>
+          <Link
+            to="/admin/locations"
+            className={buttonVariants({ variant: "outline" })}
+          >
             Cancel
-          </Button>
+          </Link>
           <Button type="submit">{submitText}</Button>
         </div>
       </Card>

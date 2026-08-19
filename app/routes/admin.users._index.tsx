@@ -28,7 +28,7 @@ import {
   segmentGroupClassName,
   segmentVariants,
 } from "~/components/section";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import {
   Dialog,
@@ -420,9 +420,12 @@ function UserCard({ user, seed }: { user: User; seed: number }) {
         </p>
       </div>
       <div className="flex shrink-0 gap-2">
-        <Button size="sm" variant="outline" render={<Link to={`${id}/edit`} />}>
+        <Link
+          to={`${id}/edit`}
+          className={buttonVariants({ variant: "outline", size: "sm" })}
+        >
           Edit
-        </Button>
+        </Link>
         <AdminDeleteButton action={`${id}/delete`} disabled={isAdmin} />
       </div>
     </Card>

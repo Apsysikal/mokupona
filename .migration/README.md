@@ -48,3 +48,7 @@ shadcn `migrate-radix-to-base` skill produces, one per component.
 - **Icon set changed.** Base UI ships no icons, so removing every Radix package
   meant moving to lucide-react. This is a deliberate visual change, not a
   side effect of the primitive migration -- see [icons.md](./icons.md).
+- **Links are styled with `buttonVariants`, not rendered through `Button`.**
+  Base UI's Button always applies `role="button"`, so the shadcn docs direct
+  link-shaped buttons at the `buttonVariants` helper instead -- see
+  [button.md](./button.md).

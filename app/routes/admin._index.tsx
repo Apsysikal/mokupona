@@ -10,7 +10,7 @@ import {
 } from "~/components/admin-ui";
 import { CoverImage } from "~/components/cover-image";
 import { Eyebrow } from "~/components/section";
-import { Button } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import {
   formatAdminDateLine,
@@ -18,6 +18,7 @@ import {
   formatAdminToday,
 } from "~/features/events/date-format";
 import { getAttendeesForEvent } from "~/features/signup-form/read.server";
+import { cn } from "~/lib/utils";
 import { getNextEvent } from "~/models/event.server";
 
 export async function loader() {
@@ -63,13 +64,16 @@ export default function AdminOverviewPage({
         subtitle="Here's what's coming up for moku pona."
         actions={
           <>
-            <Button variant="outline" render={<Link to="locations/new" />}>
+            <Link
+              to="locations/new"
+              className={buttonVariants({ variant: "outline" })}
+            >
               New location
-            </Button>
-            <Button render={<Link to="dinners/new" />}>
+            </Link>
+            <Link to="dinners/new" className={buttonVariants()}>
               <PlusIcon className="size-4" />
               New dinner
-            </Button>
+            </Link>
           </>
         }
       />
@@ -174,21 +178,21 @@ function NextDinnerCard({ dinner }: { dinner: NextDinner }) {
       </div>
 
       <div className="flex gap-2 max-md:w-full">
-        <Button
-          size="sm"
-          className="max-md:flex-1"
-          render={<Link to={`dinners/${dinner.id}/signups`} />}
+        <Link
+          to={`dinners/${dinner.id}/signups`}
+          className={cn(buttonVariants({ size: "sm" }), "max-md:flex-1")}
         >
           View signups
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="max-md:flex-1"
-          render={<Link to={`dinners/${dinner.id}/edit`} />}
+        </Link>
+        <Link
+          to={`dinners/${dinner.id}/edit`}
+          className={cn(
+            buttonVariants({ variant: "outline", size: "sm" }),
+            "max-md:flex-1",
+          )}
         >
           Edit
-        </Button>
+        </Link>
       </div>
     </Card>
   );

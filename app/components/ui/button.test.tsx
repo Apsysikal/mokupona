@@ -1,13 +1,14 @@
 import { render, screen } from "@testing-library/react";
+import { Link, MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 
-import { Button } from "./button";
+import { Button, buttonVariants } from "./button";
 
-// Base UI's button machinery stamps type="button" on a native button that
-// receives no type of its own. That is the opposite of the HTML default, and
-// it silently disables every Conform intent button in the signup form builder
-// ("Add field", "Remove", "Unlink"), which submit the form to carry their
-// intent. These assertions pin the passthrough that keeps them working.
+// Base UI's Button stamps type="button" on a button that receives no type of
+// its own. That is the opposite of the HTML default, and it silently disables
+// every Conform intent button in the signup form builder ("Add field",
+// "Remove", "Unlink"), which submit the form to carry their intent. These
+// assertions pin the passthrough that keeps them working.
 
 describe("Button type", () => {
   it("leaves the native submit default alone when no type is given", () => {
@@ -35,14 +36,24 @@ describe("Button type", () => {
 
     expect(screen.getByText("Cancel").getAttribute("type")).toBe("button");
   });
+});
 
-  it("renders links as links, not as buttons", () => {
-    render(<Button render={<a href="/dinners" />}>all dinners</Button>);
+// Base UI's Button always applies role="button", which would override the link
+// role, so links that look like buttons take the classes and stay links.
+describe("buttonVariants on a link", () => {
+  it("styles a link without giving it button semantics", () => {
+    render(
+      <MemoryRouter>
+        <Link to="/dinners" className={buttonVariants({ variant: "outline" })}>
+          all dinners
+        </Link>
+      </MemoryRouter>,
+    );
 
-    const link = screen.getByText("all dinners");
+    const link = screen.getByRole("link", { name: "all dinners" });
 
-    expect(link.tagName).toBe("A");
     expect(link.getAttribute("role")).toBeNull();
     expect(link.getAttribute("type")).toBeNull();
+    expect(link.className).toContain("inline-flex");
   });
 });

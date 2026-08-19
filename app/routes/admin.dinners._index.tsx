@@ -14,7 +14,7 @@ import {
 } from "~/components/admin-ui";
 import { CoverImage } from "~/components/cover-image";
 import { UtensilsIcon } from "~/components/icons";
-import { Button } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { formatAdminDateLine } from "~/features/events/date-format";
 import {
@@ -86,10 +86,10 @@ export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
         eyebrow={`${dinners.length} total`}
         title="Dinners"
         actions={
-          <Button render={<Link to="new" />}>
+          <Link to="new" className={buttonVariants()}>
             <PlusIcon className="size-4" />
             New dinner
-          </Button>
+          </Link>
         }
       />
 
@@ -123,7 +123,11 @@ export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
           icon={<UtensilsIcon className="size-6" />}
           title="No dinners match"
           description="Try a different search or filter — or create the next dinner for the season."
-          action={<Button render={<Link to="new" />}>New dinner</Button>}
+          action={
+            <Link to="new" className={buttonVariants()}>
+              New dinner
+            </Link>
+          }
         />
       )}
     </div>
@@ -193,20 +197,18 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
       </div>
 
       <div className="relative flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          variant="ghost"
-          render={<Link to={`${dinner.id}/signups`} />}
+        <Link
+          to={`${dinner.id}/signups`}
+          className={buttonVariants({ variant: "ghost", size: "sm" })}
         >
           Signups
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          render={<Link to={`${dinner.id}/edit`} />}
+        </Link>
+        <Link
+          to={`${dinner.id}/edit`}
+          className={buttonVariants({ variant: "outline", size: "sm" })}
         >
           Edit
-        </Button>
+        </Link>
         <AdminDeleteButton action={`${dinner.id}/delete`} />
       </div>
     </Card>

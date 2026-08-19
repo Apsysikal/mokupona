@@ -13,7 +13,7 @@ import {
 import { CoverImage } from "~/components/cover-image";
 import { SecondaryCTA } from "~/components/section";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 
 export function FeaturedEventCard({
@@ -57,9 +57,12 @@ export function FeaturedEventCard({
         </div>
 
         <div className="mt-1 flex flex-col gap-4 md:flex-row md:items-center md:gap-5">
-          <Button render={<Link to={`/dinners/${event.id}#sign-up`} />}>
+          <Link
+            to={`/dinners/${event.id}#sign-up`}
+            className={buttonVariants()}
+          >
             reserve a seat
-          </Button>
+          </Link>
           <SecondaryCTA to={`/dinners/${event.id}`} className="max-md:hidden">
             read more →
           </SecondaryCTA>

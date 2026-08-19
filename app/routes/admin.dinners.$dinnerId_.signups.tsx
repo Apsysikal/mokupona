@@ -4,7 +4,7 @@ import type { Route } from "./+types/admin.dinners.$dinnerId_.signups";
 
 import { AdminPageHeader, InitialsAvatar } from "~/components/admin-ui";
 import { BackLink } from "~/components/section";
-import { Button } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import {
   Table,
@@ -89,10 +89,13 @@ export default function DinnerSignupsPage({
         eyebrow={`${parties.length} signups · ${seatsTaken} / ${event.slots} seats`}
         title={event.title}
         actions={
-          <Button variant="outline" render={<a href="signups.csv" />}>
+          <a
+            href="signups.csv"
+            className={buttonVariants({ variant: "outline" })}
+          >
             <DownloadIcon className="size-4" />
             Export CSV
-          </Button>
+          </a>
         }
       />
 

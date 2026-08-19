@@ -10,7 +10,7 @@ import {
   InitialsAvatar,
 } from "~/components/admin-ui";
 import { OptimizedImage } from "~/components/optimized-image";
-import { Button } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { listBoardMembers } from "~/models/board-member.server";
 
@@ -37,10 +37,10 @@ export default function AdminBoardMembersPage({
         title="Board members"
         subtitle="These profiles appear publicly on the moku pona website."
         actions={
-          <Button render={<Link to="new" />}>
+          <Link to="new" className={buttonVariants()}>
             <PlusIcon className="size-4" />
             Add member
-          </Button>
+          </Link>
         }
       />
 
@@ -55,7 +55,11 @@ export default function AdminBoardMembersPage({
           icon={<UserIcon className="size-6" />}
           title="No board members yet"
           description="Add the people behind moku pona — they show up on the public site."
-          action={<Button render={<Link to="new" />}>Add member</Button>}
+          action={
+            <Link to="new" className={buttonVariants()}>
+              Add member
+            </Link>
+          }
         />
       )}
 
@@ -99,9 +103,12 @@ function BoardMemberCard({
         <p className="text-foreground/65 mt-1 truncate text-sm">{position}</p>
       </div>
       <div className="flex shrink-0 gap-2">
-        <Button size="sm" variant="outline" render={<Link to={`${id}/edit`} />}>
+        <Link
+          to={`${id}/edit`}
+          className={buttonVariants({ variant: "outline", size: "sm" })}
+        >
           Edit
-        </Button>
+        </Link>
         <AdminDeleteButton action={`${id}/delete`} />
       </div>
     </Card>

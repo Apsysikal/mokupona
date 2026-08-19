@@ -9,11 +9,12 @@ import type { Route } from "./+types/reset-password";
 import { AuthShell } from "~/components/auth-layout";
 import { AuthStatus } from "~/components/auth-status";
 import { Field } from "~/components/forms";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { auth } from "~/features/auth/auth.server";
 import { parseRequestForm } from "~/features/auth/form-schemas";
 import { requestLoggerContext } from "~/features/auth/middleware.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
+import { cn } from "~/lib/utils";
 import { getPasswordResetEmail } from "~/models/password-reset.server";
 import { getClientIPAddress } from "~/shared/http.server";
 
@@ -98,9 +99,12 @@ export default function ResetPassword({
         heading="password updated"
         body="your new password is saved and your email is confirmed. log in to pick up where you left off."
       >
-        <Button size="lg" className="w-full" render={<Link to="/login" />}>
+        <Link
+          to="/login"
+          className={cn(buttonVariants({ size: "lg" }), "w-full")}
+        >
           continue to log in
-        </Button>
+        </Link>
       </AuthStatus>
     );
   }
@@ -114,13 +118,12 @@ export default function ResetPassword({
         heading="this reset link has expired"
         body="request a fresh one and we'll email it right over."
       >
-        <Button
-          size="lg"
-          className="w-full"
-          render={<Link to="/forgot-password" />}
+        <Link
+          to="/forgot-password"
+          className={cn(buttonVariants({ size: "lg" }), "w-full")}
         >
           request a new link
-        </Button>
+        </Link>
       </AuthStatus>
     );
   }

@@ -9,7 +9,7 @@ import { Form, Link, useLocation } from "react-router";
 
 import { BrandLockup } from "./brand-lockup";
 import { Glow } from "./section";
-import { Button } from "./ui/button";
+import { buttonVariants } from "./ui/button";
 
 import { InstagramIcon } from "~/components/icons";
 import { ADMIN_ROLE_NAMES } from "~/features/auth/roles";
@@ -152,9 +152,9 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
               }
             })}
 
-            <Button size="sm" render={<Link to={joinHref} />}>
+            <Link to={joinHref} className={buttonVariants({ size: "sm" })}>
               join a dinner
-            </Button>
+            </Link>
           </div>
         </div>
 
@@ -235,9 +235,12 @@ function MobileMenu({
           })}
         </div>
 
-        <Button size="lg" className="mt-8" render={<Link to={joinHref} />}>
+        <Link
+          to={joinHref}
+          className={cn(buttonVariants({ size: "lg" }), "mt-8")}
+        >
           join a dinner
-        </Button>
+        </Link>
 
         <div className="mt-auto flex flex-col gap-4 pt-9">
           <div className="text-foreground/80 flex gap-6 text-sm">
