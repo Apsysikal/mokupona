@@ -97,8 +97,8 @@ function SaveBar({
           Unsaved changes
         </p>
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
-          <Button variant="outline" asChild>
-            <Link to={cancelHref}>Cancel</Link>
+          <Button variant="outline" render={<Link to={cancelHref} />}>
+            Cancel
           </Button>
           <Button type="submit">{submitText}</Button>
         </div>

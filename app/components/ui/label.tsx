@@ -1,6 +1,6 @@
+import { mergeProps } from "@base-ui/react/merge-props";
+import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Label as LabelPrimitive } from "radix-ui";
-import React from "react";
 
 import { cn } from "~/lib/utils";
 
@@ -8,19 +8,22 @@ const labelVariants = cva(
   "text-foreground/65 font-semibold peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
 );
 
-const Label = ({
-  className,
-  ref,
-  ...props
-}: React.ComponentProps<typeof LabelPrimitive.Root> &
-  VariantProps<typeof labelVariants>) => (
-  <LabelPrimitive.Root
-    ref={ref}
-    className={cn(labelVariants(), className)}
-    {...props}
-  />
-);
+export interface LabelProps
+  extends
+    useRender.ComponentProps<"label">,
+    VariantProps<typeof labelVariants> {}
 
-Label.displayName = LabelPrimitive.Root.displayName;
+const Label = ({ className, render, ref, ...props }: LabelProps) =>
+  useRender({
+    defaultTagName: "label",
+    render,
+    ref,
+    props: mergeProps<"label">(
+      { className: cn(labelVariants(), className) },
+      props,
+    ),
+  });
+
+Label.displayName = "Label";
 
 export { Label };

@@ -1,6 +1,6 @@
 "use client";
 
-import { Popover as PopoverPrimitive } from "radix-ui";
+import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import React from "react";
 
 import { cn } from "~/lib/utils";
@@ -12,24 +12,34 @@ const PopoverTrigger = PopoverPrimitive.Trigger;
 const PopoverContent = ({
   className,
   align = "center",
+  side,
   sideOffset = 4,
   ref,
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Content>) => (
+}: React.ComponentProps<typeof PopoverPrimitive.Popup> &
+  Pick<
+    React.ComponentProps<typeof PopoverPrimitive.Positioner>,
+    "align" | "side" | "sideOffset"
+  >) => (
   <PopoverPrimitive.Portal>
-    <PopoverPrimitive.Content
-      ref={ref}
+    <PopoverPrimitive.Positioner
       align={align}
+      side={side}
       sideOffset={sideOffset}
-      className={cn(
-        "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-72 rounded-2xl border p-4 shadow-md outline-hidden",
-        className,
-      )}
-      {...props}
-    />
+      className="z-50"
+    >
+      <PopoverPrimitive.Popup
+        ref={ref}
+        className={cn(
+          "bg-popover text-popover-foreground w-72 origin-[var(--transform-origin)] rounded-2xl border p-4 shadow-md outline-hidden transition-[opacity,scale] duration-150 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0",
+          className,
+        )}
+        {...props}
+      />
+    </PopoverPrimitive.Positioner>
   </PopoverPrimitive.Portal>
 );
 
-PopoverContent.displayName = PopoverPrimitive.Content.displayName;
+PopoverContent.displayName = "PopoverContent";
 
 export { Popover, PopoverContent, PopoverTrigger };

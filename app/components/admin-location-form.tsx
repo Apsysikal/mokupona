@@ -67,8 +67,8 @@ export function AdminLocationForm({
         </div>
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button variant="outline" asChild>
-            <Link to="/admin/locations">Cancel</Link>
+          <Button variant="outline" render={<Link to="/admin/locations" />}>
+            Cancel
           </Button>
           <Button type="submit">{submitText}</Button>
         </div>

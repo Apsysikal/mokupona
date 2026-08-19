@@ -1,4 +1,4 @@
-import { CheckCircledIcon, LinkBreak2Icon } from "@radix-ui/react-icons";
+import { CircleCheckIcon, Link2OffIcon } from "lucide-react";
 import { Link } from "react-router";
 
 import type { Route } from "./+types/verify-email";
@@ -25,12 +25,12 @@ export default function VerifyEmail({ loaderData }: Route.ComponentProps) {
       <AuthStatus
         standalone
         tone="neutral"
-        icon={<LinkBreak2Icon className="size-7" />}
+        icon={<Link2OffIcon className="size-7" />}
         heading="this link has expired"
         body="just log in and we'll send a new link to verify your email."
       >
-        <Button size="lg" className="w-full" asChild>
-          <Link to="/login">back to log in</Link>
+        <Button size="lg" className="w-full" render={<Link to="/login" />}>
+          back to log in
         </Button>
       </AuthStatus>
     );
@@ -45,7 +45,7 @@ export default function VerifyEmail({ loaderData }: Route.ComponentProps) {
       }}
     >
       <AuthStatus
-        icon={<CheckCircledIcon className="size-7" />}
+        icon={<CircleCheckIcon className="size-7" />}
         heading="your email is verified"
         body={
           email ? (
@@ -59,8 +59,8 @@ export default function VerifyEmail({ loaderData }: Route.ComponentProps) {
           )
         }
       >
-        <Button size="lg" className="w-full" asChild>
-          <Link to="/login">continue to log in</Link>
+        <Button size="lg" className="w-full" render={<Link to="/login" />}>
+          continue to log in
         </Button>
         <Link
           to="/dinners"

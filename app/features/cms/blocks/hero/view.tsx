@@ -64,8 +64,8 @@ export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
                   {action.label}
                 </SecondaryCTA>
               ) : (
-                <Button key={index} asChild>
-                  <Link to={action.href}>{action.label}</Link>
+                <Button key={index} render={<Link to={action.href} />}>
+                  {action.label}
                 </Button>
               ),
             )}

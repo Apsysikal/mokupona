@@ -1,4 +1,4 @@
-import { PlusIcon } from "@radix-ui/react-icons";
+import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 
@@ -86,11 +86,9 @@ export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
         eyebrow={`${dinners.length} total`}
         title="Dinners"
         actions={
-          <Button asChild>
-            <Link to="new">
-              <PlusIcon className="size-4" />
-              New dinner
-            </Link>
+          <Button render={<Link to="new" />}>
+            <PlusIcon className="size-4" />
+            New dinner
           </Button>
         }
       />
@@ -125,11 +123,7 @@ export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
           icon={<UtensilsIcon className="size-6" />}
           title="No dinners match"
           description="Try a different search or filter — or create the next dinner for the season."
-          action={
-            <Button asChild>
-              <Link to="new">New dinner</Link>
-            </Button>
-          }
+          action={<Button render={<Link to="new" />}>New dinner</Button>}
         />
       )}
     </div>
@@ -199,11 +193,19 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
       </div>
 
       <div className="relative flex flex-wrap gap-2">
-        <Button size="sm" variant="ghost" asChild>
-          <Link to={`${dinner.id}/signups`}>Signups</Link>
+        <Button
+          size="sm"
+          variant="ghost"
+          render={<Link to={`${dinner.id}/signups`} />}
+        >
+          Signups
         </Button>
-        <Button size="sm" variant="outline" asChild>
-          <Link to={`${dinner.id}/edit`}>Edit</Link>
+        <Button
+          size="sm"
+          variant="outline"
+          render={<Link to={`${dinner.id}/edit`} />}
+        >
+          Edit
         </Button>
         <AdminDeleteButton action={`${dinner.id}/delete`} />
       </div>

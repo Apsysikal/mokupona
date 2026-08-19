@@ -1,5 +1,5 @@
 import type { SubmissionResult } from "@conform-to/react";
-import { ImageIcon, TrashIcon } from "@radix-ui/react-icons";
+import { ImageIcon, Trash2Icon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Form, NavLink, redirect } from "react-router";
 import { z } from "zod";
@@ -225,8 +225,11 @@ export default function AdminDinnerGalleryPage({
         title="Gallery"
         subtitle="The photos linked to this dinner's gallery. Captions belong to this dinner, not to the file."
         actions={
-          <Button variant="outline" asChild>
-            <NavLink to={`/admin/dinners/${dinner.id}`}>Back to dinner</NavLink>
+          <Button
+            variant="outline"
+            render={<NavLink to={`/admin/dinners/${dinner.id}`} />}
+          >
+            Back to dinner
           </Button>
         }
       />
@@ -320,16 +323,18 @@ export default function AdminDinnerGalleryPage({
                           setPendingDelete(open ? entry.id : null)
                         }
                       >
-                        <DialogTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="destructive-outline"
-                            size="icon-sm"
-                            aria-label="Delete photo"
-                            className="-my-2 -mr-2 size-11 shrink-0 sm:my-0 sm:mr-0 sm:size-7"
-                          >
-                            <TrashIcon className="size-4" />
-                          </Button>
+                        <DialogTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant="destructive-outline"
+                              size="icon-sm"
+                              aria-label="Delete photo"
+                              className="-my-2 -mr-2 size-11 shrink-0 sm:my-0 sm:mr-0 sm:size-7"
+                            />
+                          }
+                        >
+                          <Trash2Icon className="size-4" />
                         </DialogTrigger>
 
                         <DialogContent
@@ -366,10 +371,12 @@ export default function AdminDinnerGalleryPage({
                               name="entryId"
                               value={entry.id}
                             />
-                            <DialogClose asChild>
-                              <Button type="button" variant="outline">
-                                Cancel
-                              </Button>
+                            <DialogClose
+                              render={
+                                <Button type="button" variant="outline" />
+                              }
+                            >
+                              Cancel
                             </DialogClose>
                             <Button type="submit" variant="destructive-outline">
                               Delete photo

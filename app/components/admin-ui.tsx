@@ -1,4 +1,4 @@
-import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
+import { SearchIcon } from "lucide-react";
 
 import { chipVariants, Eyebrow, pageTitleClassName } from "./section";
 import { Card } from "./ui/card";
@@ -51,7 +51,7 @@ export function AdminSearchField({
         "flex items-center gap-2 max-md:w-full md:w-72",
       )}
     >
-      <MagnifyingGlassIcon className="text-foreground/50 size-4 shrink-0" />
+      <SearchIcon className="text-foreground/50 size-4 shrink-0" />
       <input
         type="search"
         value={value}

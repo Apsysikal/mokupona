@@ -1,4 +1,4 @@
-import { CalendarIcon, PersonIcon, SewingPinIcon } from "@radix-ui/react-icons";
+import { CalendarIcon, MapPinIcon, UserIcon } from "lucide-react";
 
 import { formatEventDateLine } from "../date-format";
 import type { SerializableDate } from "../view-models";
@@ -21,7 +21,7 @@ export function EventDateHeading({ date }: { date: SerializableDate }) {
 export function EventLocationFact({ addressLine }: { addressLine: string }) {
   return (
     <span className="flex items-center gap-2">
-      <SewingPinIcon className="text-foreground/50 size-4" />
+      <MapPinIcon className="text-foreground/50 size-4" />
       <span className="sr-only">location</span>
       <span>{addressLine}</span>
     </span>
@@ -41,7 +41,7 @@ export function EventPriceFact({ price }: { price: number }) {
 export function EventSeatsFact({ slots }: { slots: number }) {
   return (
     <span className="flex items-center gap-2">
-      <PersonIcon className="text-foreground/50 size-4" />
+      <UserIcon className="text-foreground/50 size-4" />
       <span>{slots} seats</span>
     </span>
   );

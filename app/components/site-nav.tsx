@@ -1,8 +1,4 @@
-import {
-  ChevronRightIcon,
-  Cross1Icon,
-  InstagramLogoIcon,
-} from "@radix-ui/react-icons";
+import { ChevronRightIcon, XIcon } from "lucide-react";
 import {
   useEffect,
   useState,
@@ -15,6 +11,7 @@ import { BrandLockup } from "./brand-lockup";
 import { Glow } from "./section";
 import { Button } from "./ui/button";
 
+import { InstagramIcon } from "~/components/icons";
 import { ADMIN_ROLE_NAMES } from "~/features/auth/roles";
 import { useOptionalUser } from "~/hooks/useOptionalUser";
 import { cn } from "~/lib/utils";
@@ -140,7 +137,7 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
                       rel="noopener noreferrer"
                       className="hover:text-foreground"
                     >
-                      <InstagramLogoIcon className="size-5" />
+                      <InstagramIcon className="size-5" />
                       <span className="sr-only">instagram</span>
                     </a>
                   );
@@ -155,8 +152,8 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
               }
             })}
 
-            <Button size="sm" asChild>
-              <Link to={joinHref}>join a dinner</Link>
+            <Button size="sm" render={<Link to={joinHref} />}>
+              join a dinner
             </Button>
           </div>
         </div>
@@ -209,7 +206,7 @@ function MobileMenu({
             className="p-2"
             onClick={closeMenu}
           >
-            <Cross1Icon className="size-5" />
+            <XIcon className="size-5" />
           </button>
         </div>
       </div>
@@ -238,8 +235,8 @@ function MobileMenu({
           })}
         </div>
 
-        <Button size="lg" className="mt-8" asChild>
-          <Link to={joinHref}>join a dinner</Link>
+        <Button size="lg" className="mt-8" render={<Link to={joinHref} />}>
+          join a dinner
         </Button>
 
         <div className="mt-auto flex flex-col gap-4 pt-9">

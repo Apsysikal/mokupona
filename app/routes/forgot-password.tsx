@@ -1,6 +1,6 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import { EnvelopeClosedIcon } from "@radix-ui/react-icons";
+import { MailIcon } from "lucide-react";
 import { data, Form, Link } from "react-router";
 import { z } from "zod";
 
@@ -62,7 +62,7 @@ export default function ForgotPassword({ actionData }: Route.ComponentProps) {
     return (
       <AuthStatus
         standalone
-        icon={<EnvelopeClosedIcon className="size-7" />}
+        icon={<MailIcon className="size-7" />}
         heading="check your inbox"
         body={
           <>
@@ -72,8 +72,8 @@ export default function ForgotPassword({ actionData }: Route.ComponentProps) {
           </>
         }
       >
-        <Button size="lg" className="w-full" asChild>
-          <Link to="/login">back to log in</Link>
+        <Button size="lg" className="w-full" render={<Link to="/login" />}>
+          back to log in
         </Button>
       </AuthStatus>
     );

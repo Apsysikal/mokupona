@@ -1,6 +1,6 @@
+import { mergeProps } from "@base-ui/react/merge-props";
+import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Slot as SlotPrimitive } from "radix-ui";
-import React from "react";
 
 import { cn } from "~/lib/utils";
 
@@ -36,29 +36,26 @@ const buttonVariants = cva(
 
 export interface ButtonProps
   extends
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
-  ref?: React.Ref<HTMLButtonElement>;
-}
+    useRender.ComponentProps<"button">,
+    VariantProps<typeof buttonVariants> {}
 
 const Button = ({
   className,
   variant,
   size,
-  asChild = false,
+  render,
   ref,
   ...props
-}: ButtonProps) => {
-  const Comp = asChild ? SlotPrimitive.Slot : "button";
-  return (
-    <Comp
-      className={cn(buttonVariants({ variant, size, className }))}
-      ref={ref}
-      {...props}
-    />
-  );
-};
+}: ButtonProps) =>
+  useRender({
+    defaultTagName: "button",
+    render,
+    ref,
+    props: mergeProps<"button">(
+      { className: cn(buttonVariants({ variant, size, className })) },
+      props,
+    ),
+  });
 
 Button.displayName = "Button";
 

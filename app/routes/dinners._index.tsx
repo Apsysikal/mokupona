@@ -93,14 +93,19 @@ function EmptyState() {
         we&apos;re planning the next gathering. check back soon to see
         what&apos;s next, or follow along on instagram for the announcement.
       </p>
-      <Button variant="outline" size="lg" className="relative mt-1" asChild>
-        <a
-          href="https://instagram.com/mokupona"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          follow on instagram
-        </a>
+      <Button
+        variant="outline"
+        size="lg"
+        className="relative mt-1"
+        render={
+          <a
+            href="https://instagram.com/mokupona"
+            target="_blank"
+            rel="noopener noreferrer"
+          />
+        }
+      >
+        follow on instagram
       </Button>
     </Card>
   );

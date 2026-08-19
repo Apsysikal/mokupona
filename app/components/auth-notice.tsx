@@ -1,7 +1,4 @@
-import {
-  EnvelopeClosedIcon,
-  ExclamationTriangleIcon,
-} from "@radix-ui/react-icons";
+import { MailIcon, TriangleAlertIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { cn } from "~/lib/utils";
@@ -28,7 +25,7 @@ export function AuthNotice({
           "border-destructive/35 bg-destructive/10 text-destructive-light",
         )}
       >
-        <ExclamationTriangleIcon className="mt-1 size-5 shrink-0" />
+        <TriangleAlertIcon className="mt-1 size-5 shrink-0" />
         <div className="flex flex-col gap-1">
           {title ? <p className="font-semibold">{title}</p> : null}
           <div>{children}</div>
@@ -42,7 +39,7 @@ export function AuthNotice({
       role="status"
       className={cn(baseClasses, "border-primary/35 bg-primary/10")}
     >
-      <EnvelopeClosedIcon className="text-accent-light mt-1 size-5 shrink-0" />
+      <MailIcon className="text-accent-light mt-1 size-5 shrink-0" />
       <div className="flex flex-col gap-1">
         {title ? (
           <p className="text-accent-light font-semibold">{title}</p>

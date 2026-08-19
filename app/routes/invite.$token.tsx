@@ -1,11 +1,6 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import {
-  ArrowRightIcon,
-  InfoCircledIcon,
-  LinkBreak2Icon,
-  LockClosedIcon,
-} from "@radix-ui/react-icons";
+import { ArrowRightIcon, InfoIcon, Link2OffIcon, LockIcon } from "lucide-react";
 import { data, Form, Link, redirect } from "react-router";
 import { z } from "zod";
 
@@ -238,12 +233,12 @@ export default function InvitePage({
       <AuthStatus
         standalone
         tone="neutral"
-        icon={<LinkBreak2Icon className="size-7" />}
+        icon={<Link2OffIcon className="size-7" />}
         heading={copy.heading}
         body={copy.body}
       >
-        <Button size="lg" className="w-full" asChild>
-          <Link to="/dinners">browse dinners</Link>
+        <Button size="lg" className="w-full" render={<Link to="/dinners" />}>
+          browse dinners
         </Button>
         <Link
           to="/login"
@@ -261,7 +256,7 @@ export default function InvitePage({
     return (
       <AuthStatus
         standalone
-        icon={<LockClosedIcon className="size-7" />}
+        icon={<LockIcon className="size-7" />}
         heading="accept your invite"
         body={
           <>
@@ -276,7 +271,7 @@ export default function InvitePage({
             <RolePill>{currentRole}</RolePill>
             <ArrowRightIcon className="text-foreground/50 size-4" />
             <RolePill accent>
-              <LockClosedIcon className="size-3" />
+              <LockIcon className="size-3" />
               {roleName}
             </RolePill>
           </div>
@@ -303,7 +298,7 @@ export default function InvitePage({
       <AuthStatus
         standalone
         tone="neutral"
-        icon={<InfoCircledIcon className="size-7" />}
+        icon={<InfoIcon className="size-7" />}
         heading="this invite is for a different account"
         body={
           <>
@@ -415,7 +410,7 @@ function InviteSignup({
               disabled
               className="text-foreground/65 pr-10"
             />
-            <LockClosedIcon
+            <LockIcon
               aria-hidden
               className="text-foreground/50 absolute top-1/2 right-3 size-4 -translate-y-1/2"
             />

@@ -1,4 +1,4 @@
-import { PersonIcon, PlusIcon } from "@radix-ui/react-icons";
+import { PlusIcon, UserIcon } from "lucide-react";
 import { Link, Outlet, useLocation } from "react-router";
 
 import type { Route } from "./+types/admin.board-members";
@@ -37,11 +37,9 @@ export default function AdminBoardMembersPage({
         title="Board members"
         subtitle="These profiles appear publicly on the moku pona website."
         actions={
-          <Button asChild>
-            <Link to="new">
-              <PlusIcon className="size-4" />
-              Add member
-            </Link>
+          <Button render={<Link to="new" />}>
+            <PlusIcon className="size-4" />
+            Add member
           </Button>
         }
       />
@@ -54,14 +52,10 @@ export default function AdminBoardMembersPage({
         </div>
       ) : (
         <AdminEmptyState
-          icon={<PersonIcon className="size-6" />}
+          icon={<UserIcon className="size-6" />}
           title="No board members yet"
           description="Add the people behind moku pona — they show up on the public site."
-          action={
-            <Button asChild>
-              <Link to="new">Add member</Link>
-            </Button>
-          }
+          action={<Button render={<Link to="new" />}>Add member</Button>}
         />
       )}
 
@@ -105,8 +99,8 @@ function BoardMemberCard({
         <p className="text-foreground/65 mt-1 truncate text-sm">{position}</p>
       </div>
       <div className="flex shrink-0 gap-2">
-        <Button size="sm" variant="outline" asChild>
-          <Link to={`${id}/edit`}>Edit</Link>
+        <Button size="sm" variant="outline" render={<Link to={`${id}/edit`} />}>
+          Edit
         </Button>
         <AdminDeleteButton action={`${id}/delete`} />
       </div>

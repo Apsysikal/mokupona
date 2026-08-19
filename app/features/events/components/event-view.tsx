@@ -1,4 +1,4 @@
-import { CalendarIcon, InfoCircledIcon } from "@radix-ui/react-icons";
+import { CalendarIcon, InfoIcon } from "lucide-react";
 
 import { formatEventDateLine } from "../date-format";
 import type { EventDetailModel } from "../view-models";
@@ -49,12 +49,7 @@ export function EventStory({ event }: EventViewProps) {
       </p>
 
       {event.menuDescription || event.donationDescription ? (
-        <Accordion
-          type="single"
-          collapsible
-          defaultValue="menu"
-          className="mt-2 border-t"
-        >
+        <Accordion defaultValue={["menu"]} className="mt-2 border-t">
           {event.menuDescription ? (
             <AccordionItem value="menu">
               <AccordionTrigger className="text-primary">menu</AccordionTrigger>
@@ -105,7 +100,7 @@ export function EventFactList({ event }: EventViewProps) {
           <PopoverTrigger>
             <span className="text-primary border-primary/60 flex items-center gap-1 border-b border-dotted text-xs">
               discounts
-              <InfoCircledIcon className="size-4" />
+              <InfoIcon className="size-4" />
             </span>
           </PopoverTrigger>
           <PopoverContent>

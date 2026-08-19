@@ -1,4 +1,4 @@
-import { PlusIcon } from "@radix-ui/react-icons";
+import { PlusIcon } from "lucide-react";
 import { Link } from "react-router";
 
 import type { Route } from "./+types/admin._index";
@@ -63,14 +63,12 @@ export default function AdminOverviewPage({
         subtitle="Here's what's coming up for moku pona."
         actions={
           <>
-            <Button variant="outline" asChild>
-              <Link to="locations/new">New location</Link>
+            <Button variant="outline" render={<Link to="locations/new" />}>
+              New location
             </Button>
-            <Button asChild>
-              <Link to="dinners/new">
-                <PlusIcon className="size-4" />
-                New dinner
-              </Link>
+            <Button render={<Link to="dinners/new" />}>
+              <PlusIcon className="size-4" />
+              New dinner
             </Button>
           </>
         }
@@ -176,11 +174,20 @@ function NextDinnerCard({ dinner }: { dinner: NextDinner }) {
       </div>
 
       <div className="flex gap-2 max-md:w-full">
-        <Button size="sm" className="max-md:flex-1" asChild>
-          <Link to={`dinners/${dinner.id}/signups`}>View signups</Link>
+        <Button
+          size="sm"
+          className="max-md:flex-1"
+          render={<Link to={`dinners/${dinner.id}/signups`} />}
+        >
+          View signups
         </Button>
-        <Button size="sm" variant="outline" className="max-md:flex-1" asChild>
-          <Link to={`dinners/${dinner.id}/edit`}>Edit</Link>
+        <Button
+          size="sm"
+          variant="outline"
+          className="max-md:flex-1"
+          render={<Link to={`dinners/${dinner.id}/edit`} />}
+        >
+          Edit
         </Button>
       </div>
     </Card>

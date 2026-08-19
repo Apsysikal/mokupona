@@ -1,4 +1,4 @@
-import { PlusIcon, SewingPinIcon } from "@radix-ui/react-icons";
+import { MapPinIcon, PlusIcon } from "lucide-react";
 import { Link } from "react-router";
 
 import type { Route } from "./+types/admin.locations._index";
@@ -30,11 +30,9 @@ export default function AdminLocationsPage({
         eyebrow={`${addresses.length} total`}
         title="Locations"
         actions={
-          <Button asChild>
-            <Link to="new">
-              <PlusIcon className="size-4" />
-              New location
-            </Link>
+          <Button render={<Link to="new" />}>
+            <PlusIcon className="size-4" />
+            New location
           </Button>
         }
       />
@@ -47,14 +45,10 @@ export default function AdminLocationsPage({
         </div>
       ) : (
         <AdminEmptyState
-          icon={<SewingPinIcon className="size-6" />}
+          icon={<MapPinIcon className="size-6" />}
           title="No locations yet"
           description="Add the first venue address so dinners have somewhere to happen."
-          action={
-            <Button asChild>
-              <Link to="new">New location</Link>
-            </Button>
-          }
+          action={<Button render={<Link to="new" />}>New location</Button>}
         />
       )}
     </div>
@@ -73,7 +67,7 @@ function LocationCard({ address }: { address: AddressWithEventCount }) {
     <Card interactive className="p-4">
       <div className="flex items-start gap-3">
         <div className="bg-primary/10 flex size-10 shrink-0 items-center justify-center rounded-lg">
-          <SewingPinIcon className="text-primary size-5" />
+          <MapPinIcon className="text-primary size-5" />
         </div>
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-base font-semibold">
@@ -85,8 +79,8 @@ function LocationCard({ address }: { address: AddressWithEventCount }) {
         </div>
       </div>
       <div className="mt-4 flex gap-2 border-t pt-4">
-        <Button size="sm" variant="outline" asChild>
-          <Link to={`${id}/edit`}>Edit</Link>
+        <Button size="sm" variant="outline" render={<Link to={`${id}/edit`} />}>
+          Edit
         </Button>
         <AdminDeleteButton action={`${id}/delete`} disabled={inUse} />
         {inUse ? (

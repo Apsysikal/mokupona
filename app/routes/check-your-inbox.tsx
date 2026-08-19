@@ -1,4 +1,4 @@
-import { EnvelopeClosedIcon } from "@radix-ui/react-icons";
+import { MailIcon } from "lucide-react";
 import { Link, redirect } from "react-router";
 
 import type { Route } from "./+types/check-your-inbox";
@@ -32,7 +32,7 @@ export default function CheckYourInbox({ loaderData }: Route.ComponentProps) {
       }}
     >
       <AuthStatus
-        icon={<EnvelopeClosedIcon className="size-7" />}
+        icon={<MailIcon className="size-7" />}
         heading="check your inbox"
         body={
           <>
@@ -42,8 +42,12 @@ export default function CheckYourInbox({ loaderData }: Route.ComponentProps) {
           </>
         }
       >
-        <Button size="lg" className="w-full" asChild>
-          <Link to={`/login${loginSearch}`}>back to log in</Link>
+        <Button
+          size="lg"
+          className="w-full"
+          render={<Link to={`/login${loginSearch}`} />}
+        >
+          back to log in
         </Button>
         <p className="text-foreground/50 text-sm">
           no link yet? give it a minute, then check your spam folder.

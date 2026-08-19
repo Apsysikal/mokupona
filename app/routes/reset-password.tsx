@@ -1,6 +1,6 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import { CheckCircledIcon, LinkBreak2Icon } from "@radix-ui/react-icons";
+import { CircleCheckIcon, Link2OffIcon } from "lucide-react";
 import { data, Form, Link, redirect } from "react-router";
 import { z } from "zod";
 
@@ -94,12 +94,12 @@ export default function ResetPassword({
     return (
       <AuthStatus
         standalone
-        icon={<CheckCircledIcon className="size-7" />}
+        icon={<CircleCheckIcon className="size-7" />}
         heading="password updated"
         body="your new password is saved and your email is confirmed. log in to pick up where you left off."
       >
-        <Button size="lg" className="w-full" asChild>
-          <Link to="/login">continue to log in</Link>
+        <Button size="lg" className="w-full" render={<Link to="/login" />}>
+          continue to log in
         </Button>
       </AuthStatus>
     );
@@ -110,12 +110,16 @@ export default function ResetPassword({
       <AuthStatus
         standalone
         tone="neutral"
-        icon={<LinkBreak2Icon className="size-7" />}
+        icon={<Link2OffIcon className="size-7" />}
         heading="this reset link has expired"
         body="request a fresh one and we'll email it right over."
       >
-        <Button size="lg" className="w-full" asChild>
-          <Link to="/forgot-password">request a new link</Link>
+        <Button
+          size="lg"
+          className="w-full"
+          render={<Link to="/forgot-password" />}
+        >
+          request a new link
         </Button>
       </AuthStatus>
     );

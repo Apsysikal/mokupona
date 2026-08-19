@@ -1,4 +1,4 @@
-import { ChevronDownIcon } from "@radix-ui/react-icons";
+import { ChevronDownIcon } from "lucide-react";
 import React, { useId } from "react";
 
 import { Checkbox } from "./ui/checkbox";

@@ -6,11 +6,7 @@ import {
   useForm,
 } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import {
-  EnvelopeClosedIcon,
-  PersonIcon,
-  PlusIcon,
-} from "@radix-ui/react-icons";
+import { MailIcon, PlusIcon, UserIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { data, Link, useFetcher } from "react-router";
 import { toast } from "sonner";
@@ -205,7 +201,7 @@ export default function AdminUsersPage({ loaderData }: Route.ComponentProps) {
         </div>
       ) : (
         <AdminEmptyState
-          icon={<PersonIcon className="size-6" />}
+          icon={<UserIcon className="size-6" />}
           title="No users match"
           description="Try a different search or role filter."
         />
@@ -236,11 +232,9 @@ function InviteDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <PlusIcon className="size-4" />
-          Invite
-        </Button>
+      <DialogTrigger render={<Button />}>
+        <PlusIcon className="size-4" />
+        Invite
       </DialogTrigger>
       <DialogContent>
         <div className="flex flex-col gap-2">
@@ -269,10 +263,12 @@ function InviteDialog() {
           <RolePicker meta={fields.role} />
 
           <div className="mt-1 flex gap-2">
-            <DialogClose asChild>
-              <Button type="button" variant="outline" className="flex-1">
-                Cancel
-              </Button>
+            <DialogClose
+              render={
+                <Button type="button" variant="outline" className="flex-1" />
+              }
+            >
+              Cancel
             </DialogClose>
             <Button
               type="submit"
@@ -293,9 +289,7 @@ function RolePicker({ meta }: { meta: FieldMetadata<InvitableRole> }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <Label asChild>
-        <span id={labelId}>Role</span>
-      </Label>
+      <Label render={<span id={labelId} />}>Role</Label>
       <div
         role="radiogroup"
         aria-labelledby={labelId}
@@ -365,7 +359,7 @@ function PendingInviteRow({ invite }: { invite: InviteRow }) {
         aria-hidden
         className="bg-foreground/10 text-foreground/65 flex size-10 shrink-0 items-center justify-center rounded-full"
       >
-        <EnvelopeClosedIcon className="size-4" />
+        <MailIcon className="size-4" />
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-base font-semibold">{invite.email}</p>
@@ -426,8 +420,8 @@ function UserCard({ user, seed }: { user: User; seed: number }) {
         </p>
       </div>
       <div className="flex shrink-0 gap-2">
-        <Button size="sm" variant="outline" asChild>
-          <Link to={`${id}/edit`}>Edit</Link>
+        <Button size="sm" variant="outline" render={<Link to={`${id}/edit`} />}>
+          Edit
         </Button>
         <AdminDeleteButton action={`${id}/delete`} disabled={isAdmin} />
       </div>

@@ -33,14 +33,14 @@ export default function DinnerPage({ loaderData }: Route.ComponentProps) {
         </p>
 
         <span className="flex flex-wrap gap-2">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="signups">View Signups</Link>
+          <Button variant="ghost" size="sm" render={<Link to="signups" />}>
+            View Signups
           </Button>
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="gallery">Gallery</Link>
+          <Button variant="ghost" size="sm" render={<Link to="gallery" />}>
+            Gallery
           </Button>
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="edit">Edit</Link>
+          <Button variant="ghost" size="sm" render={<Link to="edit" />}>
+            Edit
           </Button>
           <Form method="POST" action="delete">
             <Button type="submit" variant="destructive" size="sm">
