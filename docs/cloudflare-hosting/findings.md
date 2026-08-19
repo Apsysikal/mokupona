@@ -29,27 +29,27 @@ throughout — only requests that actually execute the Worker are billed. One
 page view is counted as ~3 Worker requests: the document plus the `.data`
 fetches a client-side navigation triggers.
 
-| | quiet month | signup rush | absurd (press pickup) |
-| --- | --- | --- | --- |
-| Page views | 3,000 | 15,000 | 300,000 |
-| Worker requests | 9,000 | 45,000 | 900,000 |
-| CPU-ms @ ~15 ms blended | 0.14 M | 0.68 M | 13.5 M |
-| **Included on Workers Paid** | 10 M req / 30 M CPU-ms | ← | ← |
-| Workers overage | $0 | $0 | $0 |
+|                              | quiet month            | signup rush | absurd (press pickup) |
+| ---------------------------- | ---------------------- | ----------- | --------------------- |
+| Page views                   | 3,000                  | 15,000      | 300,000               |
+| Worker requests              | 9,000                  | 45,000      | 900,000               |
+| CPU-ms @ ~15 ms blended      | 0.14 M                 | 0.68 M      | 13.5 M                |
+| **Included on Workers Paid** | 10 M req / 30 M CPU-ms | ←           | ←                     |
+| Workers overage              | $0                     | $0          | $0                    |
 
-| Service | Usage at the "signup rush" column | Included | Cost |
-| --- | --- | --- | --- |
-| Workers Paid | — | — | **$5.00** |
-| Workers — requests | 45 K | 10 M/mo | $0 |
-| Workers — CPU | 0.68 M CPU-ms | 30 M CPU-ms/mo | $0 |
-| Static assets | all of `public/` + build output | unlimited, free | $0 |
-| D1 — rows read | ~4.5 M | 25 B/mo | $0 |
-| D1 — rows written | ~50 K | 50 M/mo | $0 |
-| D1 — storage | a few MB | 5 GB | $0 |
-| R2 (if images move off Cloudinary) | ~1.5 GB, ~50 K Class B ops | 10 GB, 10 M Class B | $0 |
-| Workers Logs | ~135 K events | 20 M events/mo | $0 |
-| DNS / TLS / CDN / basic WAF | — | Cloudflare Free plan | $0 |
-| **Total** | | | **$5.00/mo** |
+| Service                            | Usage at the "signup rush" column | Included             | Cost         |
+| ---------------------------------- | --------------------------------- | -------------------- | ------------ |
+| Workers Paid                       | —                                 | —                    | **$5.00**    |
+| Workers — requests                 | 45 K                              | 10 M/mo              | $0           |
+| Workers — CPU                      | 0.68 M CPU-ms                     | 30 M CPU-ms/mo       | $0           |
+| Static assets                      | all of `public/` + build output   | unlimited, free      | $0           |
+| D1 — rows read                     | ~4.5 M                            | 25 B/mo              | $0           |
+| D1 — rows written                  | ~50 K                             | 50 M/mo              | $0           |
+| D1 — storage                       | a few MB                          | 5 GB                 | $0           |
+| R2 (if images move off Cloudinary) | ~1.5 GB, ~50 K Class B ops        | 10 GB, 10 M Class B  | $0           |
+| Workers Logs                       | ~135 K events                     | 20 M events/mo       | $0           |
+| DNS / TLS / CDN / basic WAF        | —                                 | Cloudflare Free plan | $0           |
+| **Total**                          |                                   |                      | **$5.00/mo** |
 
 Resend stays where it is — Cloudflare has no transactional-send product — so
 that line is unchanged either way.
@@ -119,7 +119,7 @@ This is the real cost. Ranked by effort.
    Worker isolate has a **128 MB** memory limit. Two or three concurrent
    sign-ins in one isolate is now a hard failure rather than a slow page, and
    the derivation is billed CPU on top. This should be fixed (lower params, or a
-   WebCrypto KDF) *before* a move, not during.
+   WebCrypto KDF) _before_ a move, not during.
 6. **`node:fs` importers need splitting out of the graph.** `app/shared/fs-file-storage.server.ts`,
    `app/features/images/providers/local.server.ts`, and
    `app/features/mail/providers/capture.server.ts` are dev/CI-only paths —
@@ -143,7 +143,7 @@ Do not move for the money. $5/month versus $2–4/month is noise, and the
 migration is a multi-day change concentrated in the data layer, where this app's
 correctness lives.
 
-Move if the *operational* story is worth it: no VM to size, no 256 MB ceiling to
+Move if the _operational_ story is worth it: no VM to size, no 256 MB ceiling to
 profile against, no volume to back up off-provider, no logrotate cron, and
 global edge SSR. Those are real, and three of them are things this repo has
 already spent documented effort on.
@@ -165,3 +165,119 @@ CPU (active-usage billing since Nov 2025), $0.00000007/GB-s disk. Workers Logs
 20 M events/mo included, then $0.60/M. Fly `shared-cpu-1x` 256 MB ~$1.94/mo,
 volumes $0.15/GB-mo, snapshots $0.08/GB-mo with 10 GB free (billable from
 January 2026).
+
+## If not Cloudflare, then what
+
+**Added 2026-08-19**, following up on the above.
+
+### The criterion that decides it
+
+Every expensive item in [what it would take](#what-it-would-take) — the 14
+transactions, the logging stack, the backup rewrite, the scrypt hazard — exists
+for exactly one reason: **Workers took away the writable disk.** This app is a
+single Docker container that wants one volume. Keep the volume and the migration
+cost is zero; remove it and you are rewriting the data layer no matter which
+serverless platform you picked.
+
+So the shortlist is "platforms that give a container a disk", and on that
+criterion the incumbent is already near-optimal.
+
+### The options, priced
+
+|                       | Spec                       | Cost/mo    | Migration         | Verdict                 |
+| --------------------- | -------------------------- | ---------- | ----------------- | ----------------------- |
+| **Fly, today**        | 256 MB + 1 GB vol          | **$2.09**  | none              | works, but memory-tight |
+| **Fly, scaled**       | 512 MB + 1 GB vol          | **~$4.04** | one command       | **recommended**         |
+| **Hetzner CX22**      | 2 vCPU / 4 GB / 80 GB NVMe | **€4.49**  | moderate          | best if leaving Fly     |
+| Cloudflare Workers    | serverless                 | $5.00      | multi-day rewrite | not worth it            |
+| Railway Hobby         | 512 MB + 1 GB vol          | ~$5–8      | small             | lateral, costs more     |
+| Render Starter        | 512 MB + 1 GB vol          | ~$7.25     | small             | lateral, costs more     |
+| Infomaniak / Exoscale | varies                     | see below  | moderate          | only for data locality  |
+
+### 1. Stay on Fly and run `fly scale memory 512` — recommended
+
+The memory profile already reached this conclusion and called it "recommended,
+not applied (needs Fly access, ~$2/month)". Nothing about the Cloudflare
+exercise changes it; if anything it strengthens it, since the alternative it was
+weighed against now has a price tag of several days' work.
+
+Zero migration. The CI deploy jobs, `docs/database-backups`, the volume
+snapshots, and the whole `logrotate`/`cron-check` arrangement all keep working
+untouched. It buys back exactly the headroom that the 92–98 % peak was eating.
+
+### 2. Hetzner CX22 — the one option that is a genuine upgrade
+
+**€4.49/month** for 2 shared vCPU, 4 GB RAM, 80 GB NVMe (Nuremberg, Falkenstein,
+or Helsinki — all EU). Against a 256 MB Fly machine that is **16× the RAM**.
+
+What that actually buys, in terms this repo has already documented:
+
+- `docs/memory-profile/findings.md` becomes largely moot. The whole document is
+  about fitting inside 256 MB; the `compilerBuild = "small"` and `start.sh`
+  changes stay worthwhile but stop being load-bearing.
+- The 32 MiB-per-sign-in scrypt allocation stops being a hazard. Four concurrent
+  hashes on the libuv pool is 128 MB — half the current machine, 3 % of a CX22.
+- 80 GB of local NVMe instead of a 1 GB volume, so image uploads could plausibly
+  come back in-house from Cloudinary if that were ever wanted.
+
+The cost is ops, and it is real: you own kernel patching, TLS renewal, and the
+deploy pipeline. The CI job changes from `flyctl deploy --remote-only` to
+pushing an image and pulling it over SSH. `fly ssh` disappears from the backup
+script — the NAS would pull over plain SSH instead, which is simpler, but it is
+a rewrite of a working thing. Putting **Coolify** or **Dokku** on the box gets
+most of the PaaS deploy ergonomics back for the price of one more moving part.
+
+Worth knowing: Hetzner raised prices 20–30 % across the board on 1 April 2026,
+so this is the new number, not the old cheap one.
+
+### 3. Railway / Render — lateral moves that cost more
+
+Both keep the container-plus-volume model, so migration is small. Neither solves
+a problem this app has, and both cost more than Fly for the same thing:
+
+- **Railway Hobby** — $5/mo including $5 of usage, then pay-as-you-go on CPU,
+  RAM, egress and volume ($0.25/GB-mo). An always-on service plus a volume lands
+  near or just past that credit, so budget $5–8 with no hard cap.
+- **Render Starter** — $7/mo per always-on service (512 MB, shared CPU) plus
+  $0.25/GB-mo disk. Predictable, which Railway is not, but that is $7.25 for
+  what Fly does at $4.04.
+
+Pick one of these only if the _deploy experience_ is the thing you want to buy.
+
+### 4. Swiss or EU-domiciled — only if locality is the actual goal
+
+Worth naming because of what is in the database, not because of price. The app
+stores member name, email, phone, and — in `EventResponse` — `vegetarian`,
+`student`, and free-text `restrictions`. Dietary restrictions can reveal health
+conditions or religious belief, which is GDPR Article 9 special-category
+territory. Today that data sits on a Fly volume in **Amsterdam**.
+
+That is legally fine: NL is inside the EEA, and the Swiss FADP does not require
+Swiss residency for personal data. So this is a "do we want it in Switzerland"
+question for the board, not a compliance defect. If the answer is yes,
+**Infomaniak Public Cloud** (Geneva, OpenStack) and **Exoscale** (Zurich/Geneva)
+are the credible options — but note Exoscale repriced compute upward by 74 %+ in
+May 2026, and Infomaniak's small-instance pricing could not be confirmed from
+public sources here. Both need a direct quote before they are comparable to the
+table above.
+
+### Ruled out
+
+- **Vercel / Netlify** — same serverless constraint as Cloudflare, so the same
+  data-layer rewrite, and their SSR function pricing is less favourable than
+  Workers' at this scale. Strictly worse than the option already rejected.
+- **Anything requiring a Postgres migration** — Neon, Supabase, Hyperdrive to a
+  managed instance. The schema would port, but it converts a zero-migration
+  question into a data-layer project to solve a problem (SQLite doesn't scale)
+  that a dinner club with ten events a year does not have.
+
+### Bottom line
+
+`fly scale memory 512`. It is one command, it is the fix the memory profile
+already identified, and it costs $2/month.
+
+If the goal is to leave Fly — for cost, for control, or because a 256 MB ceiling
+is annoying to keep profiling against — **Hetzner CX22 at €4.49** is the pick.
+It is the only alternative here that makes the app's known constraints
+disappear rather than relocating them, and the price of that is ops work, not
+application rewrites.
