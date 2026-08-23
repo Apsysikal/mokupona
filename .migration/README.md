@@ -34,17 +34,35 @@ shadcn `migrate-radix-to-base` skill produces, one per component.
   covered by a unit test, and written up in [button.md](./button.md). One spec
   assertion was also updated -- see [collapsible.md](./collapsible.md).
 
+## Resolved
+
+- **`components.json` now declares `"style": "base-vega"`.** With
+  `iconLibrary: "lucide"`, an emptied `tailwind.config` and the `ui` / `lib` /
+  `hooks` aliases spelled out, `shadcn add` delivers Base UI source and lucide
+  icons -- verified with a throwaway `tooltip` add that pulled in no Radix
+  package. See [shadcn-config.md](./shadcn-config.md).
+- **`tailwindcss-animate` is gone.** The `@plugin` directive and the dependency
+  were both dropped. `app/tailwind.css` imports `tw-animate-css` and
+  `shadcn/tailwind.css` instead -- the two stylesheets the `base-vega` registry
+  components expect -- and `shadcn` and `tw-animate-css` joined the
+  devDependencies.
+
+## House rule for `shadcn add`
+
+- **Never re-add the 14 components in `app/components/ui/` with `--overwrite`.**
+  They carry deliberate deviations from stock shadcn: `h-11` buttons at
+  `text-base font-semibold`, `rounded-lg` fields, `rounded-2xl` cards, the
+  `destructive-outline` variant, the `icon-sm` size. An overwrite reverts all
+  of it.
+- **New adds arrive in `base-vega` proportions** -- `h-9`, `text-sm`,
+  `rounded-md`, plus `data-slot` attributes that only `carousel.tsx` uses today.
+  Each one needs a sizing and typography pass before it sits next to the
+  existing components.
+- **Land the CLI output first, adjust in a second commit,** so the divergence
+  from the registry stays visible in the diff.
+
 ## Flagged, not fixed
 
-- **`components.json` still says `"style": "new-york"`.** That is a legacy,
-  pre-`radix-`/`base-` style name, so the shadcn CLI will keep delivering Radix
-  variants for future `shadcn add` runs. Switching the style would restyle the
-  app, so the choice is left open: either move to a `base-` style deliberately,
-  or keep hand-porting new components.
-- **`tailwindcss-animate` is now unused.** Base UI's `data-starting-style` /
-  `data-ending-style` transitions replaced its last consumers
-  (`animate-in`, `fade-in-0`, `zoom-in-95`, `animate-accordion-*`). The plugin
-  is still installed and still declared in `app/tailwind.css`.
 - **Icon set changed.** Base UI ships no icons, so removing every Radix package
   meant moving to lucide-react. This is a deliberate visual change, not a
   side effect of the primitive migration -- see [icons.md](./icons.md).

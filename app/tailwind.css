@@ -1,6 +1,6 @@
 @import "tailwindcss" source(".");
-
-@plugin "tailwindcss-animate";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -13,24 +13,36 @@
   --popover-foreground: rgb(245 241 236);
   --primary: rgb(237 130 94); /* accent #ED825E */
   --primary-foreground: rgb(21 17 14); /* on-accent */
+  --secondary: var(--card);
+  --secondary-foreground: var(--card-foreground);
+  --muted: rgb(245 241 236 / 0.05);
+  --muted-foreground: rgb(245 241 236 / 0.65);
   --accent: rgb(237 130 94);
   --accent-foreground: rgb(21 17 14);
   --destructive: rgb(167 29 49);
   --destructive-foreground: rgb(245 241 236);
   --destructive-light: oklch(80.8% 0.114 19.571);
   --border: rgb(245 241 236 / 0.15);
+  --input: var(--border);
   --ring: rgb(237 130 94);
   --radius: 0.5rem;
 }
 
 @theme {
   --color-border: var(--border);
+  --color-input: var(--input);
   --color-ring: var(--ring);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
 
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
