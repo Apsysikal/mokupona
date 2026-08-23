@@ -36,15 +36,6 @@ const buttonVariants = cva(
 export interface ButtonProps
   extends ButtonPrimitive.Props, VariantProps<typeof buttonVariants> {}
 
-// Base UI's Button stamps `type="button"` when the caller passes no type,
-// which is the opposite of the HTML default and silently turns Conform's
-// intent buttons (`form.insert.getButtonProps()` and friends) into no-ops —
-// a bare <button> in a form submits. Passing `type` through last, undefined
-// included, restores the native default.
-//
-// Links do not belong here: Base UI's Button always applies `role="button"`,
-// which overrides the link role. Style the anchor with `buttonVariants`
-// instead — see the shadcn Button docs, "As Link".
 const Button = ({ className, variant, size, type, ...props }: ButtonProps) => (
   <ButtonPrimitive
     className={cn(buttonVariants({ variant, size, className }))}
