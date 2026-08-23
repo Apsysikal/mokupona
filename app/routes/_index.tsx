@@ -11,10 +11,14 @@ import {
 import { formatEventDayMonth } from "~/features/events/date-format";
 import { getBlurDataUrl } from "~/features/images/blur-placeholder.server";
 import { getNextEvent } from "~/models/event.server";
+import { getImageUrl } from "~/shared/image";
 import { withOpenGraphUrls } from "~/shared/meta";
+import { getImageConfig } from "~/shared/root-data";
 
 const HERO_IMAGE_ID = "static/hero-image";
 const ACCENT_IMAGE_ID = "static/accent-image";
+const OG_IMAGE_WIDTH = 1200;
+const OG_IMAGE_HEIGHT = 630;
 
 export const loader = async () => {
   const [nextEvent, heroBlurDataUrl, accentBlurDataUrl] = await Promise.all([
@@ -48,9 +52,15 @@ export const meta: Route.MetaFunction = ({ matches, location }) => {
     { property: "og:type", content: "website" },
   ];
 
+  const ogImageUrl = getImageUrl(
+    { storageKey: HERO_IMAGE_ID },
+    getImageConfig(matches),
+    { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT },
+  );
+
   return withOpenGraphUrls(tags, {
     matches,
-    imagePath: "/landing-page-default.jpg",
+    imagePath: ogImageUrl || undefined,
     pagePath: location.pathname,
   });
 };
