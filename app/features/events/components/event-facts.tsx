@@ -1,9 +1,12 @@
-import { CalendarIcon, MapPinIcon, UserIcon } from "lucide-react";
+import {
+  CalendarIcon,
+  CreditCardIcon,
+  MapPinIcon,
+  UserIcon,
+} from "lucide-react";
 
 import { formatEventDateLine } from "../date-format";
 import type { SerializableDate } from "../view-models";
-
-import { CreditCardIcon } from "~/components/icons";
 
 export function EventDateHeading({ date }: { date: SerializableDate }) {
   const eventDate = new Date(date);

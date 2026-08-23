@@ -1,4 +1,4 @@
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, UtensilsIcon } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 
@@ -13,7 +13,6 @@ import {
   SeatProgress,
 } from "~/components/admin-ui";
 import { CoverImage } from "~/components/cover-image";
-import { UtensilsIcon } from "~/components/icons";
 import { buttonVariants } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { formatAdminDateLine } from "~/features/events/date-format";

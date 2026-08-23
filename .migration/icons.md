@@ -24,15 +24,20 @@ explicit choice, so it is recorded here as its own step.
 | `ExclamationTriangleIcon`   | `TriangleAlertIcon` |                       |                |
 
 - `InstagramLogoIcon` has no lucide equivalent (lucide dropped brand marks). It
-  is now a local SVG, `InstagramIcon` in `app/components/icons.tsx`, next to the
-  hand-drawn `UtensilsIcon` and `CreditCardIcon` that were already there.
+  is now a local SVG, `InstagramIcon` in `app/components/icons.tsx`.
+- The two hand-drawn SVGs that predate this migration moved to lucide as well,
+  so `app/components/icons.tsx` holds nothing but `InstagramIcon`:
+  `UtensilsIcon` (`app/routes/admin.dinners._index.tsx`) and `CreditCardIcon`
+  (`app/features/events/components/event-facts.tsx`).
 - Eight icons that rendered at the Radix 15px default with no size class were
   given `size-4` so lucide's 24px default does not blow up the layout
   (`app/components/signup-form-builder.tsx`).
 
 ## Left alone
 
-- `app/components/icons.tsx`'s existing local SVGs.
+- `Logo` (`app/components/logo.tsx`) and the Google mark
+  (`app/features/auth/components/google-button.tsx`) -- brand artwork, never
+  icon-set icons.
 - Every explicit `size-*` class on an icon call site.
 
 ## Behavior changes
@@ -40,8 +45,13 @@ explicit choice, so it is recorded here as its own step.
 - Purely visual. Most glyphs are near-identical; `SewingPinIcon -> MapPinIcon`,
   `TrashIcon -> Trash2Icon` and the calendar are visibly redrawn (lucide is a
   24px stroke set, radix-icons a 15px mixed fill/stroke set).
+- The local credit card was a Heroicons-style card with header rules and card
+  numbers; lucide's is a plain rect with one rule. The local utensils and
+  lucide's differ only in mirroring and stroke weight.
 
 ## Verify by hand
 
 - Scan the dinner fact list (calendar, pin, price, seats), the admin list
   headers, and the site header's Instagram mark.
+- The admin dinners page with a search that matches nothing -- its empty state
+  carries the utensils glyph.
