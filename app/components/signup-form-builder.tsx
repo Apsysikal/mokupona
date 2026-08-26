@@ -9,10 +9,10 @@ import {
   ArrowDownIcon,
   ArrowUpIcon,
   ChevronDownIcon,
-  Link2Icon,
-  LinkBreak2Icon,
-  TrashIcon,
-} from "@radix-ui/react-icons";
+  Link2OffIcon,
+  LinkIcon,
+  Trash2Icon,
+} from "lucide-react";
 import {
   createContext,
   useContext,
@@ -516,12 +516,12 @@ function BuilderRowView({
           <ActionRow>
             {isLinked && !PINNED_IDENTITY_KEYS.has(keyValue) ? (
               <DialogTriggerButton dialogId={unlinkDialogId(keyValue)}>
-                <LinkBreak2Icon />
+                <Link2OffIcon className="size-4" />
                 Unlink
               </DialogTriggerButton>
             ) : !isLinked && isCanonical && itemFieldsMeta ? (
               <DialogTriggerButton dialogId={linkDialogId(keyValue)}>
-                <Link2Icon />
+                <LinkIcon className="size-4" />
                 Link to friends
               </DialogTriggerButton>
             ) : null}
@@ -583,11 +583,7 @@ function RowCard({
       >
         {header}
         <RowErrors id={row.errorId} errors={row.errors} />
-        <CollapsibleContent
-          forceMount
-          data-row-body
-          className="data-[state=closed]:hidden"
-        >
+        <CollapsibleContent keepMounted data-row-body>
           <div className="border-t p-4">{children}</div>
         </CollapsibleContent>
       </Collapsible>
@@ -654,7 +650,7 @@ function RowHeader({
           to: Math.max(0, index - 1),
         })}
       >
-        <ArrowUpIcon />
+        <ArrowUpIcon className="size-4" />
       </Button>
       <Button
         variant="ghost"
@@ -668,16 +664,16 @@ function RowHeader({
           to: Math.min(count - 1, index + 1),
         })}
       >
-        <ArrowDownIcon />
+        <ArrowDownIcon className="size-4" />
       </Button>
       <CollapsibleTrigger
         aria-label="Toggle details"
         className={cn(
           buttonVariants({ variant: "ghost", size: "icon" }),
-          "text-foreground/65 shrink-0 [&[data-state=open]>svg]:rotate-180",
+          "text-foreground/65 shrink-0 [&[data-panel-open]>svg]:rotate-180",
         )}
       >
-        <ChevronDownIcon className="transition-transform duration-300" />
+        <ChevronDownIcon className="size-4 transition-transform duration-300" />
       </CollapsibleTrigger>
     </div>
   );
@@ -725,7 +721,7 @@ function RemoveButton({
           : undefined
       }
     >
-      <TrashIcon />
+      <Trash2Icon className="size-4" />
       Remove
     </Button>
   );
@@ -1060,7 +1056,7 @@ function UnlinkDialog({
             getDialog(dialogId)?.close();
           }}
         >
-          <LinkBreak2Icon />
+          <Link2OffIcon className="size-4" />
           Unlink
         </Button>
       </div>
@@ -1465,7 +1461,7 @@ function FriendsRowView({
                     <ActionRow>
                       {offersUnlink ? (
                         <DialogTriggerButton dialogId={unlinkDialogId(itemKey)}>
-                          <LinkBreak2Icon />
+                          <Link2OffIcon className="size-4" />
                           Unlink
                         </DialogTriggerButton>
                       ) : null}

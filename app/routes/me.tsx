@@ -1,6 +1,6 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import { CheckIcon } from "@radix-ui/react-icons";
+import { CheckIcon } from "lucide-react";
 import { useEffect } from "react";
 import { data, useFetcher } from "react-router";
 import { toast } from "sonner";

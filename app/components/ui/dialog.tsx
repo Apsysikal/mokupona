@@ -1,7 +1,7 @@
 "use client";
 
-import { Cross2Icon } from "@radix-ui/react-icons";
-import { Dialog as DialogPrimitive } from "radix-ui";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
+import { XIcon } from "lucide-react";
 import React from "react";
 
 import { cn } from "~/lib/utils";
@@ -16,17 +16,17 @@ const DialogOverlay = ({
   className,
   ref,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Overlay>) => (
-  <DialogPrimitive.Overlay
+}: DialogPrimitive.Backdrop.Props) => (
+  <DialogPrimitive.Backdrop
     ref={ref}
     className={cn(
-      "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-[rgb(10_8_6/0.7)]",
+      "fixed inset-0 z-50 bg-[rgb(10_8_6/0.7)] transition-opacity duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0",
       className,
     )}
     {...props}
   />
 );
-DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
+DialogOverlay.displayName = "DialogOverlay";
 
 const DialogContent = ({
   className,
@@ -35,16 +35,16 @@ const DialogContent = ({
   children,
   ref,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Content> & {
+}: DialogPrimitive.Popup.Props & {
   overlayClassName?: string;
   showClose?: boolean;
 }) => (
   <DialogPrimitive.Portal>
     <DialogOverlay className={overlayClassName} />
-    <DialogPrimitive.Content
+    <DialogPrimitive.Popup
       ref={ref}
       className={cn(
-        "bg-card data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-2xl border p-7 shadow-lg outline-hidden",
+        "bg-card fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-2xl border p-7 shadow-lg outline-hidden transition-[opacity,scale] duration-200 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0",
         className,
       )}
       {...props}
@@ -52,40 +52,40 @@ const DialogContent = ({
       {children}
       {showClose ? (
         <DialogPrimitive.Close className="text-foreground/50 hover:text-foreground focus-visible:ring-ring absolute top-5 right-5 rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-hidden">
-          <Cross2Icon className="size-4" />
+          <XIcon className="size-4" />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
       ) : null}
-    </DialogPrimitive.Content>
+    </DialogPrimitive.Popup>
   </DialogPrimitive.Portal>
 );
-DialogContent.displayName = DialogPrimitive.Content.displayName;
+DialogContent.displayName = "DialogContent";
 
 const DialogTitle = ({
   className,
   ref,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Title>) => (
+}: DialogPrimitive.Title.Props) => (
   <DialogPrimitive.Title
     ref={ref}
     className={cn("text-2xl font-light tracking-tight", className)}
     {...props}
   />
 );
-DialogTitle.displayName = DialogPrimitive.Title.displayName;
+DialogTitle.displayName = "DialogTitle";
 
 const DialogDescription = ({
   className,
   ref,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Description>) => (
+}: DialogPrimitive.Description.Props) => (
   <DialogPrimitive.Description
     ref={ref}
     className={cn("text-foreground/65 text-sm", className)}
     {...props}
   />
 );
-DialogDescription.displayName = DialogPrimitive.Description.displayName;
+DialogDescription.displayName = "DialogDescription";
 
 export {
   Dialog,

@@ -1,4 +1,4 @@
-import { PlusIcon } from "@radix-ui/react-icons";
+import { PlusIcon } from "lucide-react";
 import { Link } from "react-router";
 
 import type { Route } from "./+types/admin._index";
@@ -10,7 +10,7 @@ import {
 } from "~/components/admin-ui";
 import { CoverImage } from "~/components/cover-image";
 import { Eyebrow } from "~/components/section";
-import { Button } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import {
   formatAdminDateLine,
@@ -18,6 +18,7 @@ import {
   formatAdminToday,
 } from "~/features/events/date-format";
 import { getAttendeesForEvent } from "~/features/signup-form/read.server";
+import { cn } from "~/lib/utils";
 import { getNextEvent } from "~/models/event.server";
 
 export async function loader() {
@@ -63,15 +64,16 @@ export default function AdminOverviewPage({
         subtitle="Here's what's coming up for moku pona."
         actions={
           <>
-            <Button variant="outline" asChild>
-              <Link to="locations/new">New location</Link>
-            </Button>
-            <Button asChild>
-              <Link to="dinners/new">
-                <PlusIcon className="size-4" />
-                New dinner
-              </Link>
-            </Button>
+            <Link
+              to="locations/new"
+              className={buttonVariants({ variant: "outline" })}
+            >
+              New location
+            </Link>
+            <Link to="dinners/new" className={buttonVariants()}>
+              <PlusIcon className="size-4" />
+              New dinner
+            </Link>
           </>
         }
       />
@@ -176,12 +178,21 @@ function NextDinnerCard({ dinner }: { dinner: NextDinner }) {
       </div>
 
       <div className="flex gap-2 max-md:w-full">
-        <Button size="sm" className="max-md:flex-1" asChild>
-          <Link to={`dinners/${dinner.id}/signups`}>View signups</Link>
-        </Button>
-        <Button size="sm" variant="outline" className="max-md:flex-1" asChild>
-          <Link to={`dinners/${dinner.id}/edit`}>Edit</Link>
-        </Button>
+        <Link
+          to={`dinners/${dinner.id}/signups`}
+          className={cn(buttonVariants({ size: "sm" }), "max-md:flex-1")}
+        >
+          View signups
+        </Link>
+        <Link
+          to={`dinners/${dinner.id}/edit`}
+          className={cn(
+            buttonVariants({ variant: "outline", size: "sm" }),
+            "max-md:flex-1",
+          )}
+        >
+          Edit
+        </Link>
       </div>
     </Card>
   );

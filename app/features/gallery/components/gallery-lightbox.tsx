@@ -1,4 +1,3 @@
-import { VisuallyHidden } from "radix-ui";
 import { Link } from "react-router";
 
 import type { GalleryImageModel } from "../view-models";
@@ -98,9 +97,7 @@ export function GalleryLightbox({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-5xl overflow-y-auto">
-        <VisuallyHidden.Root>
-          <DialogTitle>gallery</DialogTitle>
-        </VisuallyHidden.Root>
+        <DialogTitle className="sr-only">gallery</DialogTitle>
         <Carousel opts={{ startIndex, loop: true }}>
           <CarouselContent>
             {images.map((image) => (

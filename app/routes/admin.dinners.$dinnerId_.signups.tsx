@@ -1,10 +1,10 @@
-import { DownloadIcon } from "@radix-ui/react-icons";
+import { DownloadIcon } from "lucide-react";
 
 import type { Route } from "./+types/admin.dinners.$dinnerId_.signups";
 
 import { AdminPageHeader, InitialsAvatar } from "~/components/admin-ui";
 import { BackLink } from "~/components/section";
-import { Button } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import {
   Table,
@@ -89,12 +89,13 @@ export default function DinnerSignupsPage({
         eyebrow={`${parties.length} signups · ${seatsTaken} / ${event.slots} seats`}
         title={event.title}
         actions={
-          <Button variant="outline" asChild>
-            <a href="signups.csv">
-              <DownloadIcon className="size-4" />
-              Export CSV
-            </a>
-          </Button>
+          <a
+            href="signups.csv"
+            className={buttonVariants({ variant: "outline" })}
+          >
+            <DownloadIcon className="size-4" />
+            Export CSV
+          </a>
         }
       />
 

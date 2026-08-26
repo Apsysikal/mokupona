@@ -1,6 +1,6 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import { EnvelopeClosedIcon } from "@radix-ui/react-icons";
+import { MailIcon } from "lucide-react";
 import { data, Form, Link } from "react-router";
 import { z } from "zod";
 
@@ -9,10 +9,11 @@ import type { Route } from "./+types/forgot-password";
 import { AuthShell } from "~/components/auth-layout";
 import { AuthStatus } from "~/components/auth-status";
 import { Field } from "~/components/forms";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { auth } from "~/features/auth/auth.server";
 import { emailSchema, parseRequestForm } from "~/features/auth/form-schemas";
 import { requestLoggerContext } from "~/features/auth/middleware.server";
+import { cn } from "~/lib/utils";
 import { getClientIPAddress } from "~/shared/http.server";
 
 const schema = z.object({
@@ -62,7 +63,7 @@ export default function ForgotPassword({ actionData }: Route.ComponentProps) {
     return (
       <AuthStatus
         standalone
-        icon={<EnvelopeClosedIcon className="size-7" />}
+        icon={<MailIcon className="size-7" />}
         heading="check your inbox"
         body={
           <>
@@ -72,9 +73,12 @@ export default function ForgotPassword({ actionData }: Route.ComponentProps) {
           </>
         }
       >
-        <Button size="lg" className="w-full" asChild>
-          <Link to="/login">back to log in</Link>
-        </Button>
+        <Link
+          to="/login"
+          className={cn(buttonVariants({ size: "lg" }), "w-full")}
+        >
+          back to log in
+        </Link>
       </AuthStatus>
     );
   }

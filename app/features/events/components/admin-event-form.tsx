@@ -20,7 +20,7 @@ import {
 import { BackLink, pageTitleClassName } from "~/components/section";
 import { SectionNav } from "~/components/section-nav";
 import { SignupFormBuilder } from "~/components/signup-form-builder";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 import {
   Card,
   CardContent,
@@ -97,9 +97,12 @@ function SaveBar({
           Unsaved changes
         </p>
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
-          <Button variant="outline" asChild>
-            <Link to={cancelHref}>Cancel</Link>
-          </Button>
+          <Link
+            to={cancelHref}
+            className={buttonVariants({ variant: "outline" })}
+          >
+            Cancel
+          </Link>
           <Button type="submit">{submitText}</Button>
         </div>
       </div>

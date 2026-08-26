@@ -2,7 +2,7 @@ import { Form, Link } from "react-router";
 
 import type { Route } from "./+types/admin.dinners.$dinnerId";
 
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { EventView } from "~/features/events/components/event-view";
 import { toEventDetailModel } from "~/features/events/view-models";
 import { getEventById } from "~/models/event.server";
@@ -33,15 +33,24 @@ export default function DinnerPage({ loaderData }: Route.ComponentProps) {
         </p>
 
         <span className="flex flex-wrap gap-2">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="signups">View Signups</Link>
-          </Button>
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="gallery">Gallery</Link>
-          </Button>
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="edit">Edit</Link>
-          </Button>
+          <Link
+            to="signups"
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
+          >
+            View Signups
+          </Link>
+          <Link
+            to="gallery"
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
+          >
+            Gallery
+          </Link>
+          <Link
+            to="edit"
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
+          >
+            Edit
+          </Link>
           <Form method="POST" action="delete">
             <Button type="submit" variant="destructive" size="sm">
               Delete

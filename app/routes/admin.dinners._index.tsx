@@ -1,4 +1,4 @@
-import { PlusIcon } from "@radix-ui/react-icons";
+import { PlusIcon, UtensilsIcon } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 
@@ -13,8 +13,7 @@ import {
   SeatProgress,
 } from "~/components/admin-ui";
 import { CoverImage } from "~/components/cover-image";
-import { UtensilsIcon } from "~/components/icons";
-import { Button } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { formatAdminDateLine } from "~/features/events/date-format";
 import {
@@ -86,12 +85,10 @@ export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
         eyebrow={`${dinners.length} total`}
         title="Dinners"
         actions={
-          <Button asChild>
-            <Link to="new">
-              <PlusIcon className="size-4" />
-              New dinner
-            </Link>
-          </Button>
+          <Link to="new" className={buttonVariants()}>
+            <PlusIcon className="size-4" />
+            New dinner
+          </Link>
         }
       />
 
@@ -126,9 +123,9 @@ export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
           title="No dinners match"
           description="Try a different search or filter — or create the next dinner for the season."
           action={
-            <Button asChild>
-              <Link to="new">New dinner</Link>
-            </Button>
+            <Link to="new" className={buttonVariants()}>
+              New dinner
+            </Link>
           }
         />
       )}
@@ -199,12 +196,18 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
       </div>
 
       <div className="relative flex flex-wrap gap-2">
-        <Button size="sm" variant="ghost" asChild>
-          <Link to={`${dinner.id}/signups`}>Signups</Link>
-        </Button>
-        <Button size="sm" variant="outline" asChild>
-          <Link to={`${dinner.id}/edit`}>Edit</Link>
-        </Button>
+        <Link
+          to={`${dinner.id}/signups`}
+          className={buttonVariants({ variant: "ghost", size: "sm" })}
+        >
+          Signups
+        </Link>
+        <Link
+          to={`${dinner.id}/edit`}
+          className={buttonVariants({ variant: "outline", size: "sm" })}
+        >
+          Edit
+        </Link>
         <AdminDeleteButton action={`${dinner.id}/delete`} />
       </div>
     </Card>

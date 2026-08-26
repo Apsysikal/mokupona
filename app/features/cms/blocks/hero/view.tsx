@@ -5,7 +5,7 @@ import type { HeroBlockType } from "./model";
 
 import { OptimizedImage } from "~/components/optimized-image";
 import { Eyebrow, SecondaryCTA } from "~/components/section";
-import { Button } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button";
 
 type HeroBlockViewProps = React.ComponentPropsWithoutRef<"section"> & {
   blockData: HeroBlockType;
@@ -64,9 +64,9 @@ export function HeroBlockView({ blockData, ...rest }: HeroBlockViewProps) {
                   {action.label}
                 </SecondaryCTA>
               ) : (
-                <Button key={index} asChild>
-                  <Link to={action.href}>{action.label}</Link>
-                </Button>
+                <Link key={index} to={action.href} className={buttonVariants()}>
+                  {action.label}
+                </Link>
               ),
             )}
           </div>

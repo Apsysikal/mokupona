@@ -435,7 +435,8 @@ describe("admin signup form builder", () => {
       openRow(FRIENDS_CARD);
       withinLastRow(/allergies/i, () => {
         cy.findByRole("button", { name: /toggle details/i }).then(($button) => {
-          if ($button.attr("data-state") === "closed") cy.wrap($button).click();
+          if ($button.attr("data-panel-open") === undefined)
+            cy.wrap($button).click();
         });
         cy.findByLabelText(/^label$/i)
           .should("have.value", "Allergies")

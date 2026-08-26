@@ -7,7 +7,7 @@ import {
   pageTitleClassName,
   SectionDivider,
 } from "~/components/section";
-import { Button } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import {
   FeaturedEventCard,
@@ -93,15 +93,17 @@ function EmptyState() {
         we&apos;re planning the next gathering. check back soon to see
         what&apos;s next, or follow along on instagram for the announcement.
       </p>
-      <Button variant="outline" size="lg" className="relative mt-1" asChild>
-        <a
-          href="https://instagram.com/mokupona"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          follow on instagram
-        </a>
-      </Button>
+      <a
+        href="https://instagram.com/mokupona"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn(
+          buttonVariants({ variant: "outline", size: "lg" }),
+          "relative mt-1",
+        )}
+      >
+        follow on instagram
+      </a>
     </Card>
   );
 }
