@@ -260,7 +260,7 @@ function MobileMenu({
             </a>
             <Link to="/privacy">privacy policy</Link>
           </div>
-          <span className="text-foreground/50 text-xs">
+          <span className="text-muted-foreground text-xs">
             made with love in zürich
           </span>
         </div>

@@ -51,12 +51,12 @@ export function BackLink({
 }
 
 export const pillVariants = cva(
-  "flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold",
+  "flex items-center gap-2 border px-4 py-2 text-sm font-semibold",
   {
     variants: {
       accent: {
         true: "border-primary/35 bg-primary/10 text-accent-light",
-        false: "text-foreground/65",
+        false: "text-muted-foreground",
       },
     },
     defaultVariants: {
@@ -74,7 +74,7 @@ const eyebrowVariants = cva("block font-semibold", {
     tone: {
       primary: "text-primary",
       light: "text-accent-light",
-      label: "text-foreground/50",
+      label: "text-muted-foreground",
       onPrimary: "text-primary-foreground/70",
     },
   },
@@ -139,11 +139,11 @@ export function SecondaryCTA({
   );
 }
 
-export const chipVariants = cva("rounded-full border transition-colors", {
+export const chipVariants = cva("border transition-colors", {
   variants: {
     active: {
       true: "border-primary/35 bg-primary/10 text-accent-light font-semibold",
-      false: "text-foreground/65 hover:text-foreground",
+      false: "text-muted-foreground hover:text-foreground",
     },
     size: {
       default:
@@ -184,8 +184,7 @@ export function Glow({
   );
 }
 
-export const segmentGroupClassName =
-  "bg-foreground/5 flex rounded-lg border p-1";
+export const segmentGroupClassName = "flex border p-1";
 
 export const segmentVariants = cva(
   "flex h-9 flex-1 items-center justify-center rounded-md text-sm font-semibold transition-colors",
@@ -193,7 +192,7 @@ export const segmentVariants = cva(
     variants: {
       active: {
         true: "bg-primary text-primary-foreground",
-        false: "text-foreground/65 hover:text-foreground",
+        false: "text-muted-foreground hover:text-foreground",
       },
     },
     defaultVariants: {

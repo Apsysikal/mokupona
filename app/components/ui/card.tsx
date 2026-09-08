@@ -15,7 +15,7 @@ const Card = ({
   <Component
     ref={ref}
     className={cn(
-      "bg-card text-card-foreground rounded-2xl border",
+      "bg-card text-card-foreground border",
       interactive && "hover:border-primary/35 transition-colors",
       className,
     )}

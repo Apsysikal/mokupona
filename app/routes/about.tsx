@@ -38,7 +38,7 @@ const whoWeAreSectionData: TextSectionBlockType = {
     eyebrow: "who we are",
     headline: "a community of around fifteen",
     body: "what started as a shared love of cooking has grown into a community who come together to create, host, and share meals. as an association, moku pona is about community, creativity, and hospitality, not just dining, but making people feel welcome.",
-    variant: "slanted",
+    variant: "feature",
   },
 };
 
@@ -46,27 +46,32 @@ export default function AboutPage({ loaderData }: Route.ComponentProps) {
   const { volunteers } = loaderData;
 
   return (
-    <PageContainer className="grow pt-7 pb-20">
-      <div className="mb-9 flex flex-col gap-3 md:mb-12">
-        <Eyebrow variant="tracked" tone="primary">
-          the people
-        </Eyebrow>
-        <h1 className={pageTitleClassName}>about</h1>
-        <p className="text-muted-foreground max-w-2xl text-base font-light md:text-lg">
-          moku pona runs on volunteers — the ones who cook, host, wash up, and
-          somehow still have room for dessert.
-        </p>
-      </div>
+    // TextSectionBlockView carries its own PageContainer, so the sections sit
+    // side by side under <main> rather than nested inside a second container
+    // — nesting them would indent the block past the rest of the page.
+    <main className="grow pt-14 pb-32 md:pt-20">
+      <PageContainer as="div">
+        <div className="flex flex-col gap-4">
+          <Eyebrow variant="tracked" tone="primary">
+            the people
+          </Eyebrow>
+          <h1 className={pageTitleClassName}>about</h1>
+          <p className="text-muted-foreground max-w-2xl text-base font-light md:text-lg">
+            moku pona runs on volunteers — the ones who cook, host, wash up, and
+            somehow still have room for dessert.
+          </p>
+        </div>
+      </PageContainer>
 
       <TextSectionBlockView blockData={whoWeAreSectionData} />
 
-      <div className="mt-14 md:mt-20">
-        <SectionDivider className="mb-5">
+      <PageContainer as="div">
+        <SectionDivider className="mb-8">
           the moku pona hall of fame
         </SectionDivider>
 
         {volunteers.length > 0 ? (
-          <ul className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
+          <ul className="grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
             {volunteers.map((volunteer) => (
               <VolunteerCard key={volunteer.id} volunteer={volunteer} />
             ))}
@@ -77,8 +82,8 @@ export default function AboutPage({ loaderData }: Route.ComponentProps) {
             everyone to sit still for a photograph.
           </p>
         )}
-      </div>
-    </PageContainer>
+      </PageContainer>
+    </main>
   );
 }
 
@@ -94,7 +99,9 @@ function VolunteerCard({
 }) {
   return (
     <li className="flex flex-col gap-3">
-      <div className="bg-sage/40 overflow-hidden rounded-2xl">
+      {/* the sage fill is the placeholder's own backdrop, not a card, so it
+          only appears when there is no portrait to show */}
+      <div className={volunteer.image ? "overflow-hidden" : "bg-sage/40"}>
         {volunteer.image ? (
           <OptimizedImage
             image={volunteer.image}
@@ -143,7 +150,7 @@ function PortraitPlaceholder({ name }: { name: string }) {
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   return (
-    <PageContainer className="grow pt-7 pb-20">
+    <PageContainer className="grow pt-14 pb-32 md:pt-20">
       <RouteErrorContent error={error} />
     </PageContainer>
   );

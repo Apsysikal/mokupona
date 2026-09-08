@@ -11,7 +11,7 @@ export function Footer() {
       <div className="flex items-start justify-between gap-8 px-10 py-11 max-md:hidden">
         <div className="flex flex-col gap-3">
           <BrandLockup logoClassName="size-5" />
-          <span className="text-foreground/50 text-xs">
+          <span className="text-muted-foreground text-xs">
             made with love in zürich
           </span>
         </div>
@@ -22,6 +22,12 @@ export function Footer() {
             </Eyebrow>
             <Link to="/dinners" className={linkClasses}>
               dinners
+            </Link>
+            <Link to="/gallery" className={linkClasses}>
+              gallery
+            </Link>
+            <Link to="/about" className={linkClasses}>
+              about
             </Link>
             <Link to="/privacy" className={linkClasses}>
               privacy policy
@@ -49,6 +55,12 @@ export function Footer() {
           <Link to="/dinners" className={linkClasses}>
             dinners
           </Link>
+          <Link to="/gallery" className={linkClasses}>
+            gallery
+          </Link>
+          <Link to="/about" className={linkClasses}>
+            about
+          </Link>
           <Link to="/privacy" className={linkClasses}>
             privacy policy
           </Link>
@@ -61,7 +73,7 @@ export function Footer() {
             instagram
           </a>
         </div>
-        <span className="text-foreground/50 text-xs">
+        <span className="text-muted-foreground text-xs">
           made with love in zürich
         </span>
       </div>

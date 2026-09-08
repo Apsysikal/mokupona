@@ -24,7 +24,9 @@ export function FeaturedEventCard({
   isNext?: boolean;
 }) {
   return (
-    <Card as="article" className="flex flex-col overflow-hidden lg:flex-row">
+    // No panel: the photograph and the type sit straight on the paper, and
+    // the column gap does the separating a card fill used to do.
+    <article className="flex flex-col gap-6 lg:flex-row lg:gap-10">
       <div className="relative lg:w-3/5 lg:shrink-0">
         <CoverImage
           image={event.image}
@@ -33,24 +35,24 @@ export function FeaturedEventCard({
           className="w-full"
         />
         {isNext ? (
-          <Badge pill className="absolute top-4 left-4 lg:top-5 lg:left-5">
+          <Badge pill className="absolute top-0 left-0">
             next dinner
           </Badge>
         ) : null}
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-3 p-5 lg:p-8">
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-4">
         <EventDateHeading date={event.date} />
 
-        <h2 className="line-clamp-2 text-2xl leading-tight font-light tracking-tight">
+        <h2 className="line-clamp-2 text-2xl leading-tight font-light tracking-tight lg:text-3xl">
           {event.title}
         </h2>
 
-        <p className="text-foreground/80 line-clamp-3 text-sm font-light lg:line-clamp-2 lg:text-base">
+        <p className="text-muted-foreground line-clamp-3 text-sm font-light lg:line-clamp-2 lg:text-base">
           {event.description}
         </p>
 
-        <div className="text-foreground/80 flex flex-wrap gap-4 border-y py-3 text-sm md:gap-6">
+        <div className="text-muted-foreground flex flex-wrap gap-4 border-y py-3 text-sm md:gap-6">
           <EventLocationFact addressLine={event.addressLine} />
           <EventPriceFact price={event.price} />
           <EventSeatsFact slots={event.slots} />
@@ -68,7 +70,7 @@ export function FeaturedEventCard({
           </SecondaryCTA>
         </div>
       </div>
-    </Card>
+    </article>
   );
 }
 
@@ -83,7 +85,7 @@ export function PastEventCard({ event }: { event: EventCardModel }) {
     >
       {/* Dimming the whole card washed out on the light ground, so the
           rest-state treatment sits on the image alone. */}
-      <div className="overflow-hidden rounded-2xl">
+      <div className="overflow-hidden">
         <CoverImage
           image={event.image}
           alt=""

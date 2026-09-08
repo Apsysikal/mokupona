@@ -23,8 +23,8 @@ export default function GalleryPage({ loaderData }: Route.ComponentProps) {
   const { albums } = loaderData;
 
   return (
-    <PageContainer className="grow pt-7 pb-20">
-      <div className="mb-9 flex flex-col gap-3 md:mb-12">
+    <PageContainer className="grow pt-14 pb-32 md:pt-20">
+      <div className="mb-14 flex flex-col gap-4 md:mb-20">
         <Eyebrow variant="tracked" tone="primary">
           from the table
         </Eyebrow>
@@ -60,7 +60,7 @@ function AlbumCard({ album }: { album: GalleryAlbumModel }) {
         to={`/dinners/${album.id}/gallery`}
         className="group flex flex-col gap-3"
       >
-        <div className="overflow-hidden rounded-2xl">
+        <div className="overflow-hidden">
           <CoverImage
             image={album.cover}
             alt={album.coverAlt}
@@ -90,7 +90,7 @@ function AlbumCard({ album }: { album: GalleryAlbumModel }) {
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   return (
-    <PageContainer className="grow pt-7 pb-20">
+    <PageContainer className="grow pt-14 pb-32 md:pt-20">
       <RouteErrorContent error={error} />
     </PageContainer>
   );

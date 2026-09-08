@@ -54,10 +54,10 @@ export default function DinnerGalleryPage({
   const date = new Date(dinner.date);
 
   return (
-    <PageContainer className="grow pt-7 pb-20">
+    <PageContainer className="grow pt-14 pb-32 md:pt-20">
       <BackLink to="/gallery">all galleries</BackLink>
 
-      <div className="mb-9 flex flex-col gap-3 md:mb-12">
+      <div className="mb-14 flex flex-col gap-4 md:mb-20">
         <Eyebrow variant="tracked" tone="primary">
           <time dateTime={date.toISOString()} suppressHydrationWarning>
             {formatEventDateLine(date, "long")}
@@ -76,7 +76,7 @@ export default function DinnerGalleryPage({
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   return (
-    <PageContainer className="grow pt-7 pb-20">
+    <PageContainer className="grow pt-14 pb-32 md:pt-20">
       <RouteErrorContent error={error} />
     </PageContainer>
   );

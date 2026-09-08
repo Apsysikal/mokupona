@@ -7,7 +7,7 @@ type TextSectionBlockData = {
   eyebrow?: string;
   headline: string;
   body: string;
-  variant: "plain" | "slanted";
+  variant: "plain" | "feature";
 };
 
 export type TextSectionBlockType = {
