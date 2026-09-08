@@ -79,7 +79,7 @@ export function FeaturedEventCard({
   );
 }
 
-export function PastEventCard({ event }: { event: EventCardModel }) {
+export function CompactEventCard({ event }: { event: EventCardModel }) {
   const eventDate = new Date(event.date);
   const hasGallery = event.galleryImageCount > 0;
 

@@ -10,7 +10,7 @@ import {
 import { buttonVariants } from "~/components/ui/button";
 import {
   FeaturedEventCard,
-  PastEventCard,
+  CompactEventCard,
 } from "~/features/events/components/event-card";
 import {
   orderEventsByStatus,
@@ -35,6 +35,11 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
   const { upcoming: upcomingEvents, past } = partitionEvents(events, now);
   const pastEvents = orderEventsByStatus(past, now);
 
+  // One dinner gets the big card. Any others still appear below rather than
+  // being dropped — a scheduled dinner nobody can find is a dinner nobody can
+  // book — but they stay compact so the next one keeps the page.
+  const [nextDinner, ...laterDinners] = upcomingEvents;
+
   return (
     <PageContainer className="grow pt-14 pb-32 md:pt-20">
       <div className="mb-14 flex flex-col gap-4 md:mb-20">
@@ -47,20 +52,25 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
         </p>
       </div>
 
-      {upcomingEvents.length > 0 ? (
+      {nextDinner ? (
         <>
           <SectionDivider className="mb-5" handwritten="nextDinner">
             the next dinner
           </SectionDivider>
-          <div className="mb-14 flex flex-col gap-8 md:mb-20">
-            {upcomingEvents.map((event, index) => (
-              <FeaturedEventCard
-                key={event.id}
-                event={event}
-                isNext={index === 0}
-              />
-            ))}
+          <div className="mb-14 md:mb-20">
+            <FeaturedEventCard event={nextDinner} />
           </div>
+
+          {laterDinners.length > 0 ? (
+            <>
+              <SectionDivider className="mb-5">also coming up</SectionDivider>
+              <div className="mb-14 grid grid-cols-2 gap-3 md:mb-20 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
+                {laterDinners.map((event) => (
+                  <CompactEventCard key={event.id} event={event} />
+                ))}
+              </div>
+            </>
+          ) : null}
         </>
       ) : (
         <EmptyState />
@@ -73,7 +83,7 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
           </SectionDivider>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
             {pastEvents.map((event) => (
-              <PastEventCard key={event.id} event={event} />
+              <CompactEventCard key={event.id} event={event} />
             ))}
           </div>
         </>

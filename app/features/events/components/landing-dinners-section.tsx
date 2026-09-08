@@ -1,6 +1,6 @@
 import type { EventCardModel } from "../view-models";
 
-import { FeaturedEventCard, PastEventCard } from "./event-card";
+import { FeaturedEventCard, CompactEventCard } from "./event-card";
 
 import {
   PageContainer,
@@ -56,7 +56,7 @@ export function LandingDinnersSection({
           </SectionDivider>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
             {past.map((event) => (
-              <PastEventCard key={event.id} event={event} />
+              <CompactEventCard key={event.id} event={event} />
             ))}
           </div>
         </>
