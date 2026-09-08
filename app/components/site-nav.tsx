@@ -121,7 +121,7 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
     <>
       <nav className="border-b">
         <div className="flex h-16 items-center justify-between px-10 max-md:hidden">
-          <BrandLockup to="/" />
+          <BrandLockup to="/" showWordmark={false} logoClassName="size-11" />
 
           <div className="text-foreground/80 flex items-center gap-7 text-sm">
             {navItems.map((item) => {
@@ -170,7 +170,7 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
         </div>
 
         <div className="flex h-14 items-center justify-between px-5 md:hidden">
-          <BrandLockup to="/" />
+          <BrandLockup to="/" showWordmark={false} logoClassName="size-10" />
           <button
             type="button"
             aria-label="Open menu"
@@ -210,7 +210,7 @@ function MobileMenu({
 
       <div className="relative border-b">
         <div className="flex h-14 items-center justify-between px-5">
-          <BrandLockup to="/" />
+          <BrandLockup to="/" showWordmark={false} logoClassName="size-10" />
           <button
             type="button"
             aria-label="Close menu"

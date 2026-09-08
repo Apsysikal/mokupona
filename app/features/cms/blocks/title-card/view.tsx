@@ -40,7 +40,10 @@ export function TitleCardBlockView({
             // Brand artwork, above the fold — never lazy-load it.
             loading="eager"
             decoding="sync"
-            className="h-auto w-[min(80vw,34rem)]"
+            // The wordmark is a JPEG in an SVG wrapper, so it carries an
+            // opaque white box instead of alpha. Multiply drops white to the
+            // paper beneath while leaving the dark strokes untouched.
+            className="h-auto w-[min(80vw,34rem)] mix-blend-multiply"
           />
         ) : (
           <h1 className="text-center text-6xl leading-none font-light tracking-tight sm:text-7xl md:text-8xl">
@@ -48,7 +51,7 @@ export function TitleCardBlockView({
           </h1>
         )}
 
-        <HandDrawnRule className="text-teal w-[min(70vw,26rem)]" />
+        <HandDrawnRule className="text-crayon/45 w-[min(70vw,26rem)]" />
 
         {tagline ? (
           <p className="text-muted-foreground max-w-md text-center text-sm font-light tracking-wide md:text-base">

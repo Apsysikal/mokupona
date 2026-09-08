@@ -23,7 +23,7 @@ export function TextSectionBlockView({
     return (
       <PageContainer as="div" {...rest}>
         <section className="flex max-w-3xl flex-col gap-5 py-16 md:gap-6 md:py-28">
-          <HandDrawnRule className="text-teal w-32" />
+          <HandDrawnRule className="text-crayon/45 w-32" />
           {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
           <h2 className="text-3xl leading-tight font-light tracking-tight text-balance md:text-4xl">
             {headline}

@@ -81,7 +81,7 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
 function EmptyState() {
   return (
     <div className="mb-14 flex flex-col gap-5 py-10 md:mb-20 md:gap-6 md:py-16">
-      <HandDrawnRule className="text-teal w-32" />
+      <HandDrawnRule className="text-crayon/45 w-32" />
       <span className="text-muted-foreground text-sm font-semibold">
         nothing on the calendar right now
       </span>

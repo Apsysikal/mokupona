@@ -37,9 +37,8 @@ const titleCardData: TitleCardBlockType = {
   version: 1,
   data: {
     title: "moku pona",
-    // Drop the crayon wordmark in `public/` and point `logo` at it — the text
-    // above then becomes its alt text rather than the visible title:
-    // logo: { src: "/moku-pona-wordmark.png", width: 1400, height: 420 },
+    // hand-drawn wordmark; `title` above is its alt text
+    logo: { src: "/naive-title.svg", width: 1258, height: 368 },
     tagline: "a dinner society in zürich",
     scrollTo: "#vision",
   },

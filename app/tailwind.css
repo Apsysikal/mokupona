@@ -19,6 +19,9 @@
   --paper: rgb(247 250 231); /* #F7FAE7 */
   --ink: rgb(74 68 102); /* #4A4466 — 8.22:1 on paper */
   --ink-strong: rgb(46 42 64); /* #2E2A40 — label on teal, 5.50:1 */
+  /* sampled from the hand-drawn wordmark so drawn marks match the artwork
+   * rather than approximating it — 12.69:1 on paper */
+  --crayon: rgb(56 8 136); /* #380888 */
   --teal: rgb(110 173 188); /* #6EADBC — fill / large display only */
   /* the teal darkened until it can carry small text on paper (6.01:1) —
    * the plain teal manages only 2.36:1 */
@@ -91,6 +94,7 @@
   --color-paper: var(--paper);
   --color-ink: var(--ink);
   --color-ink-strong: var(--ink-strong);
+  --color-crayon: var(--crayon);
   --color-teal: var(--teal);
   --color-teal-deep: var(--teal-deep);
   --color-sage: var(--sage);
