@@ -3,6 +3,10 @@ import { ChevronLeftIcon } from "lucide-react";
 import type { ComponentProps, ElementType, ReactNode } from "react";
 import { Link } from "react-router";
 
+import {
+  HandwrittenHeading,
+  type HandwrittenHeadingName,
+} from "~/components/handwritten-heading";
 import { cn } from "~/lib/utils";
 
 export const pageTitleClassName =
@@ -102,16 +106,23 @@ export function Eyebrow({
 
 export function SectionDivider({
   className,
+  /** When set, the drawn heading replaces `children` as the visible label. */
+  handwritten,
   children,
 }: {
   className?: string;
+  handwritten?: HandwrittenHeadingName;
   children: ReactNode;
 }) {
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      <Eyebrow variant="tracked" tone="label">
-        {children}
-      </Eyebrow>
+      {handwritten ? (
+        <HandwrittenHeading name={handwritten} />
+      ) : (
+        <Eyebrow variant="tracked" tone="label">
+          {children}
+        </Eyebrow>
+      )}
       <span aria-hidden className="bg-border h-px flex-1" />
     </div>
   );

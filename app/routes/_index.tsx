@@ -49,6 +49,7 @@ const visionSectionData: TextSectionBlockType = {
   version: 1,
   data: {
     eyebrow: "our vision",
+    eyebrowHandwritten: "ourVision",
     headline: "food as a way to connect",
     body: "moku pona began as a passion project by a group of friends who love cooking and wanted a creative way to explore our culinary interests. for us, food is a way to express creativity, share experiences, and connect with others. through our dinner club, we surprise our guests with unique flavors and ingredients, introducing them to diverse cuisines and the stories behind them.",
     variant: "plain",

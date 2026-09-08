@@ -31,14 +31,18 @@ export function LandingDinnersSection({
     <PageContainer as="section" className="pt-14 pb-20 md:pt-20 md:pb-28">
       {nextDinner ? (
         <>
-          <SectionDivider className="mb-5">the next dinner</SectionDivider>
+          <SectionDivider className="mb-5" handwritten="nextDinner">
+            the next dinner
+          </SectionDivider>
           <div className="mb-14 md:mb-20">
             <FeaturedEventCard event={nextDinner} />
           </div>
         </>
       ) : (
         <>
-          <SectionDivider className="mb-5">the next dinner</SectionDivider>
+          <SectionDivider className="mb-5" handwritten="nextDinner">
+            the next dinner
+          </SectionDivider>
           <p className="text-muted-foreground mb-14 max-w-md text-base font-light md:mb-20 md:text-lg">
             nothing on the calendar right now — we&apos;re planning the next
             gathering. the table is never empty for long.
@@ -48,7 +52,9 @@ export function LandingDinnersSection({
 
       {past.length > 0 ? (
         <>
-          <SectionDivider className="mb-5">already eaten</SectionDivider>
+          <SectionDivider className="mb-5" handwritten="pastDinners">
+            past dinners
+          </SectionDivider>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
             {past.map((event) => (
               <PastEventCard key={event.id} event={event} />

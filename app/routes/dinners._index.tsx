@@ -49,7 +49,9 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
 
       {upcomingEvents.length > 0 ? (
         <>
-          <SectionDivider className="mb-5">the next dinner</SectionDivider>
+          <SectionDivider className="mb-5" handwritten="nextDinner">
+            the next dinner
+          </SectionDivider>
           <div className="mb-14 flex flex-col gap-8 md:mb-20">
             {upcomingEvents.map((event, index) => (
               <FeaturedEventCard
@@ -66,7 +68,9 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
 
       {pastEvents.length > 0 ? (
         <>
-          <SectionDivider className="mb-5">past dinners</SectionDivider>
+          <SectionDivider className="mb-5" handwritten="pastDinners">
+            past dinners
+          </SectionDivider>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
             {pastEvents.map((event) => (
               <PastEventCard key={event.id} event={event} />

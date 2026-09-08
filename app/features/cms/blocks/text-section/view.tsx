@@ -3,6 +3,7 @@ import type React from "react";
 import type { TextSectionBlockType } from "./model";
 
 import { HandDrawnRule } from "~/components/hand-drawn";
+import { HandwrittenHeading } from "~/components/handwritten-heading";
 import { Eyebrow, PageContainer } from "~/components/section";
 
 type TextSectionBlockViewProps = React.ComponentPropsWithoutRef<"div"> & {
@@ -14,7 +15,13 @@ export function TextSectionBlockView({
   ...rest
 }: TextSectionBlockViewProps) {
   const { data } = blockData;
-  const { eyebrow, headline, body, variant } = data;
+  const { eyebrow, eyebrowHandwritten, headline, body, variant } = data;
+
+  const eyebrowNode = eyebrowHandwritten ? (
+    <HandwrittenHeading name={eyebrowHandwritten} />
+  ) : eyebrow ? (
+    <Eyebrow>{eyebrow}</Eyebrow>
+  ) : null;
 
   // The feature variant used to be a skewed purple slab. It now earns its
   // emphasis from space and type size instead of a filled block, so the page
@@ -24,7 +31,7 @@ export function TextSectionBlockView({
       <PageContainer as="div" {...rest}>
         <section className="flex max-w-3xl flex-col gap-5 py-16 md:gap-6 md:py-28">
           <HandDrawnRule className="text-crayon/45 w-32" />
-          {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
+          {eyebrowNode}
           <h2 className="text-3xl leading-tight font-light tracking-tight text-balance md:text-4xl">
             {headline}
           </h2>
@@ -40,7 +47,7 @@ export function TextSectionBlockView({
     <PageContainer as="div" {...rest}>
       <section className="grid items-start gap-3 py-14 md:grid-cols-[1fr_1.2fr] md:gap-12 md:py-24">
         <div className="flex flex-col gap-3 md:gap-4">
-          {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
+          {eyebrowNode}
           <h2 className="text-2xl leading-tight font-light tracking-tight md:text-3xl">
             {headline}
           </h2>
