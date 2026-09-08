@@ -71,7 +71,7 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
           <SectionDivider className="mb-5" handwritten="pastDinners">
             past dinners
           </SectionDivider>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
             {pastEvents.map((event) => (
               <PastEventCard key={event.id} event={event} />
             ))}

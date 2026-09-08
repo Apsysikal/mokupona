@@ -133,6 +133,15 @@ async function seed() {
   // The gallery only shows on dinners that already happened, so it needs one.
   const pastEvent = await seedEvent(faker.date.recent({ days: 45 }));
 
+  // A back catalogue, so the past-dinners grid is developed against a realistic
+  // number of rows rather than the single dinner the gallery needs. Spread over
+  // past months so the newest-first ordering is visible.
+  for (const monthsAgo of [3, 5, 8, 11, 14, 18, 23]) {
+    const date = new Date();
+    date.setMonth(date.getMonth() - monthsAgo);
+    await seedEvent(date);
+  }
+
   const galleryVariants = [
     { width: 1200, height: 800 },
     { width: 800, height: 1200 },
