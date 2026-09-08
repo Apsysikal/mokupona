@@ -10,20 +10,19 @@ import {
 
 type LandingDinnersSectionProps = {
   upcoming: EventCardModel[];
-  /** Already trimmed and ordered by the route — rendered as-is. */
+  /** Every past dinner, ordered by the route — rendered as-is. */
   past: EventCardModel[];
-  /** Whether more past dinners exist than the ones passed in. */
-  hasMore: boolean;
 };
 
 /**
  * The dinners the landing page shows once you scroll past the title card:
- * the next gathering, then a short tease of what's already been eaten.
+ * the single next gathering, then everything that has already been eaten.
+ * The featured card drops its facts row here — price, seats and location are
+ * for deciding, and the decision happens on the dinner's own page.
  */
 export function LandingDinnersSection({
   upcoming,
   past,
-  hasMore,
 }: LandingDinnersSectionProps) {
   const nextDinner = upcoming.at(0);
 
@@ -35,7 +34,7 @@ export function LandingDinnersSection({
             the next dinner
           </SectionDivider>
           <div className="mb-14 md:mb-20">
-            <FeaturedEventCard event={nextDinner} />
+            <FeaturedEventCard event={nextDinner} showFacts={false} />
           </div>
         </>
       ) : (
@@ -63,7 +62,7 @@ export function LandingDinnersSection({
         </>
       ) : null}
 
-      {hasMore || past.length > 0 || nextDinner ? (
+      {past.length > 0 || nextDinner ? (
         <div className="mt-10 flex justify-center md:mt-14">
           <SecondaryCTA to="/dinners">see all dinners →</SecondaryCTA>
         </div>

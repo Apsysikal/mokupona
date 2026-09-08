@@ -19,9 +19,12 @@ import { Card } from "~/components/ui/card";
 export function FeaturedEventCard({
   event,
   isNext = true,
+  /** The landing page hides these; /dinners keeps them for choosing. */
+  showFacts = true,
 }: {
   event: EventCardModel;
   isNext?: boolean;
+  showFacts?: boolean;
 }) {
   return (
     // No panel: the photograph and the type sit straight on the paper, and
@@ -52,11 +55,13 @@ export function FeaturedEventCard({
           {event.description}
         </p>
 
-        <div className="text-muted-foreground flex flex-wrap gap-4 border-y py-3 text-sm md:gap-6">
-          <EventLocationFact addressLine={event.addressLine} />
-          <EventPriceFact price={event.price} />
-          <EventSeatsFact slots={event.slots} />
-        </div>
+        {showFacts ? (
+          <div className="text-muted-foreground flex flex-wrap gap-4 border-y py-3 text-sm md:gap-6">
+            <EventLocationFact addressLine={event.addressLine} />
+            <EventPriceFact price={event.price} />
+            <EventSeatsFact slots={event.slots} />
+          </div>
+        ) : null}
 
         <div className="mt-1 flex flex-col gap-4 md:flex-row md:items-center md:gap-5">
           <Link

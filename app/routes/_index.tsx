@@ -23,9 +23,6 @@ const HERO_IMAGE_ID = "static/hero-image";
 const OG_IMAGE_WIDTH = 1200;
 const OG_IMAGE_HEIGHT = 630;
 
-/** How many past dinners the landing page teases before "see all dinners". */
-const PAST_DINNERS_ON_LANDING = 3;
-
 export const loader = async () => {
   const events = await getEventsWithAddress();
 
@@ -90,10 +87,9 @@ export default function Index({ loaderData }: Route.ComponentProps) {
 
   const now = new Date();
   const { upcoming, past } = partitionEvents(events, now);
-  const pastDinners = orderEventsByStatus(past, now).slice(
-    0,
-    PAST_DINNERS_ON_LANDING,
-  );
+  // every past dinner, newest first — the landing page no longer teases a
+  // subset, so there is nothing left on /dinners that isn't already here
+  const pastDinners = orderEventsByStatus(past, now);
 
   return (
     <main>
@@ -101,11 +97,7 @@ export default function Index({ loaderData }: Route.ComponentProps) {
 
       <TextSectionBlockView id="vision" blockData={visionSectionData} />
 
-      <LandingDinnersSection
-        upcoming={upcoming}
-        past={pastDinners}
-        hasMore={past.length > pastDinners.length}
-      />
+      <LandingDinnersSection upcoming={upcoming} past={pastDinners} />
     </main>
   );
 }
