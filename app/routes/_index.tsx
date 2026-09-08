@@ -23,6 +23,9 @@ const HERO_IMAGE_ID = "static/hero-image";
 const OG_IMAGE_WIDTH = 1200;
 const OG_IMAGE_HEIGHT = 630;
 
+/** Three past dinners, then a "see more" tile fills the fourth slot. */
+const PAST_DINNERS_ON_LANDING = 3;
+
 export const loader = async () => {
   const events = await getEventsWithAddress();
 
@@ -87,9 +90,8 @@ export default function Index({ loaderData }: Route.ComponentProps) {
 
   const now = new Date();
   const { upcoming, past } = partitionEvents(events, now);
-  // every past dinner, newest first — the landing page no longer teases a
-  // subset, so there is nothing left on /dinners that isn't already here
-  const pastDinners = orderEventsByStatus(past, now);
+  const orderedPast = orderEventsByStatus(past, now);
+  const pastDinners = orderedPast.slice(0, PAST_DINNERS_ON_LANDING);
 
   return (
     <main>
@@ -97,7 +99,11 @@ export default function Index({ loaderData }: Route.ComponentProps) {
 
       <TextSectionBlockView id="vision" blockData={visionSectionData} />
 
-      <LandingDinnersSection upcoming={upcoming} past={pastDinners} />
+      <LandingDinnersSection
+        upcoming={upcoming}
+        past={pastDinners}
+        hasMore={orderedPast.length > pastDinners.length}
+      />
     </main>
   );
 }
