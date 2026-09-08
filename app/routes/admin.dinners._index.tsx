@@ -160,7 +160,7 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
           <p
             className={cn(
               "text-xs font-semibold tracking-wide",
-              dinner.past ? "text-foreground/50" : "text-accent-light",
+              dinner.past ? "text-muted-foreground" : "text-accent-light",
             )}
           >
             <time dateTime={date.toISOString()} suppressHydrationWarning>
@@ -173,17 +173,19 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
                 the action row sits above it via `relative` */}
             <Link
               to={dinner.id}
-              className="focus-visible:after:ring-ring after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-hidden focus-visible:after:ring-2"
+              className="focus-visible:after:ring-ring after:absolute after:inset-0 focus-visible:after:ring-2 after:focus-visible:outline-hidden"
             >
               {dinner.title}
             </Link>
           </h2>
-          <p className="text-foreground/65 mt-1 text-sm">{dinner.location}</p>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {dinner.location}
+          </p>
         </div>
         <div className="max-w-xs">
           <div className="mb-2 flex justify-between text-xs">
             <span className="text-foreground/80">{dinner.signups} signups</span>
-            <span className="text-foreground/50">
+            <span className="text-muted-foreground">
               {dinner.signups} / {dinner.slots}
             </span>
           </div>

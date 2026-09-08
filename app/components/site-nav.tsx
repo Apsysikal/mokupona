@@ -41,13 +41,24 @@ function buildNavItems({
       kind: "link",
       label: "dinners",
       to: "/dinners",
-      isActive: (pathname) => pathname.startsWith("/dinners"),
+      // a dinner's album belongs to the gallery tab, not this one
+      isActive: (pathname) =>
+        pathname.startsWith("/dinners") && !pathname.endsWith("/gallery"),
     },
     {
       kind: "link",
       label: "gallery",
       to: "/gallery",
-      isActive: (pathname) => pathname.startsWith("/gallery"),
+      // per-dinner albums live under /dinners/:id/gallery, so also light up
+      // this tab when the reader is inside one
+      isActive: (pathname) =>
+        pathname.startsWith("/gallery") || pathname.endsWith("/gallery"),
+    },
+    {
+      kind: "link",
+      label: "about",
+      to: "/about",
+      isActive: (pathname) => pathname.startsWith("/about"),
     },
     { kind: "instagram" },
   ];
@@ -110,7 +121,7 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
     <>
       <nav className="border-b">
         <div className="flex h-16 items-center justify-between px-10 max-md:hidden">
-          <BrandLockup to="/" />
+          <BrandLockup to="/" showWordmark={false} logoClassName="size-11" />
 
           <div className="text-foreground/80 flex items-center gap-7 text-sm">
             {navItems.map((item) => {
@@ -159,7 +170,7 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
         </div>
 
         <div className="flex h-14 items-center justify-between px-5 md:hidden">
-          <BrandLockup to="/" />
+          <BrandLockup to="/" showWordmark={false} logoClassName="size-10" />
           <button
             type="button"
             aria-label="Open menu"
@@ -199,7 +210,7 @@ function MobileMenu({
 
       <div className="relative border-b">
         <div className="flex h-14 items-center justify-between px-5">
-          <BrandLockup to="/" />
+          <BrandLockup to="/" showWordmark={false} logoClassName="size-10" />
           <button
             type="button"
             aria-label="Close menu"
@@ -249,7 +260,7 @@ function MobileMenu({
             </a>
             <Link to="/privacy">privacy policy</Link>
           </div>
-          <span className="text-foreground/50 text-xs">
+          <span className="text-muted-foreground text-xs">
             made with love in zürich
           </span>
         </div>
