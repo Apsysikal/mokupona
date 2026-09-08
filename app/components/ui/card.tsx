@@ -63,7 +63,7 @@ const CardDescription = ({
 }: React.ComponentProps<"div">) => (
   <div
     ref={ref}
-    className={cn("text-foreground/50 text-sm", className)}
+    className={cn("text-muted-foreground text-sm", className)}
     {...props}
   />
 );

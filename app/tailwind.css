@@ -13,7 +13,10 @@
  * surface the token actually sits on; keep them if you retune.
  */
 :root {
-  --paper: rgb(241 247 212); /* #F1F7D4 */
+  /* Lightened from the source #F1F7D4. White cards now sit only 1.06:1 off
+   * this ground, so they read by their border rather than their fill —
+   * lighten further and they stop reading as cards at all. */
+  --paper: rgb(247 250 231); /* #F7FAE7 */
   --ink: rgb(74 68 102); /* #4A4466 — 8.22:1 on paper */
   --ink-strong: rgb(46 42 64); /* #2E2A40 — label on teal, 5.50:1 */
   --teal: rgb(110 173 188); /* #6EADBC — fill / large display only */
@@ -44,7 +47,8 @@
   --destructive-foreground: rgb(255 255 255);
   --destructive-light: oklch(45% 0.17 20);
 
-  --border: rgb(74 68 102 / 0.22); /* decorative rules */
+  /* carries card edges now that fill alone barely separates them from paper */
+  --border: rgb(74 68 102 / 0.28);
   --input: rgb(74 68 102 / 0.55); /* form outlines need the weight */
   --ring: var(--teal);
   --radius: 0.5rem;
