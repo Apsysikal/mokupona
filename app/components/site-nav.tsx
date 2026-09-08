@@ -41,13 +41,24 @@ function buildNavItems({
       kind: "link",
       label: "dinners",
       to: "/dinners",
-      isActive: (pathname) => pathname.startsWith("/dinners"),
+      // a dinner's album belongs to the gallery tab, not this one
+      isActive: (pathname) =>
+        pathname.startsWith("/dinners") && !pathname.endsWith("/gallery"),
     },
     {
       kind: "link",
       label: "gallery",
       to: "/gallery",
-      isActive: (pathname) => pathname.startsWith("/gallery"),
+      // per-dinner albums live under /dinners/:id/gallery, so also light up
+      // this tab when the reader is inside one
+      isActive: (pathname) =>
+        pathname.startsWith("/gallery") || pathname.endsWith("/gallery"),
+    },
+    {
+      kind: "link",
+      label: "about",
+      to: "/about",
+      isActive: (pathname) => pathname.startsWith("/about"),
     },
     { kind: "instagram" },
   ];

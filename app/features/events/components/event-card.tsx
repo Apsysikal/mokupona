@@ -74,24 +74,38 @@ export function FeaturedEventCard({
 
 export function PastEventCard({ event }: { event: EventCardModel }) {
   const eventDate = new Date(event.date);
+  const hasGallery = event.galleryImageCount > 0;
 
   return (
     <Link
-      to={`/dinners/${event.id}`}
-      className="flex flex-col gap-2 opacity-70 transition-opacity hover:opacity-100"
+      to={hasGallery ? `/dinners/${event.id}/gallery` : `/dinners/${event.id}`}
+      className="group flex flex-col gap-2"
     >
-      <CoverImage
-        image={event.image}
-        alt=""
-        sizes="(min-width: 768px) 300px, 45vw"
-        className="w-full rounded-2xl"
-      />
-      <span className="text-foreground/50 text-xs">
+      {/* Dimming the whole card washed out on the light ground, so the
+          rest-state treatment sits on the image alone. */}
+      <div className="overflow-hidden rounded-2xl">
+        <CoverImage
+          image={event.image}
+          alt=""
+          sizes="(min-width: 768px) 300px, 45vw"
+          className="w-full transition duration-300 group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+        />
+      </div>
+      <span className="text-muted-foreground flex items-center gap-2 text-xs">
         <time dateTime={eventDate.toISOString()} suppressHydrationWarning>
           {formatEventMonthYear(eventDate)}
         </time>
+        {hasGallery ? <span aria-hidden="true">·</span> : null}
+        {hasGallery ? (
+          <span>
+            {event.galleryImageCount}{" "}
+            {event.galleryImageCount === 1 ? "photo" : "photos"}
+          </span>
+        ) : null}
       </span>
-      <h4 className="text-base font-light md:text-lg">{event.title}</h4>
+      <h4 className="text-base font-light group-hover:underline md:text-lg">
+        {event.title}
+      </h4>
     </Link>
   );
 }

@@ -40,7 +40,7 @@ export function BackLink({
       to={to}
       prefetch={prefetch}
       className={cn(
-        "text-foreground/50 hover:text-foreground mb-3 inline-flex items-center gap-2 text-sm transition-colors",
+        "text-muted-foreground hover:text-foreground mb-3 inline-flex items-center gap-2 text-sm transition-colors",
         className,
       )}
     >

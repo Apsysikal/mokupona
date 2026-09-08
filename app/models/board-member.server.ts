@@ -29,6 +29,9 @@ export async function listBoardMembers(): Promise<
   }[]
 > {
   const boardMembers = await prisma.boardMember.findMany({
+    // the public hall of fame renders this list as-is, so the order has to be
+    // deterministic rather than whatever the engine happens to return
+    orderBy: [{ createdAt: "asc" }, { name: "asc" }],
     include: { image: { select: IMAGE_METADATA_SELECT } },
   });
 

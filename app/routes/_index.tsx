@@ -1,39 +1,59 @@
 import type { Route } from "./+types/_index";
 
-import { HeroBlockView } from "~/features/cms/blocks/hero";
-import type { HeroBlockType } from "~/features/cms/blocks/hero/model";
-import type { ImageBlockType } from "~/features/cms/blocks/image/model";
-import { ImageBlockView } from "~/features/cms/blocks/image/view";
 import {
   TextSectionBlockView,
   type TextSectionBlockType,
 } from "~/features/cms/blocks/text-section";
-import { formatEventDayMonth } from "~/features/events/date-format";
-import { getBlurDataUrl } from "~/features/images/blur-placeholder.server";
-import { getNextEvent } from "~/models/event.server";
+import {
+  TitleCardBlockView,
+  type TitleCardBlockType,
+} from "~/features/cms/blocks/title-card";
+import { LandingDinnersSection } from "~/features/events/components/landing-dinners-section";
+import {
+  orderEventsByStatus,
+  partitionEvents,
+} from "~/features/events/event-status";
+import { toEventCardModel } from "~/features/events/view-models";
+import { getEventsWithAddress } from "~/models/event.server";
 import { getImageUrl } from "~/shared/image";
 import { withOpenGraphUrls } from "~/shared/meta";
 import { getImageConfig } from "~/shared/root-data";
 
 const HERO_IMAGE_ID = "static/hero-image";
-const ACCENT_IMAGE_ID = "static/accent-image";
 const OG_IMAGE_WIDTH = 1200;
 const OG_IMAGE_HEIGHT = 630;
 
-export const loader = async () => {
-  const [nextEvent, heroBlurDataUrl, accentBlurDataUrl] = await Promise.all([
-    getNextEvent(),
-    getBlurDataUrl(HERO_IMAGE_ID),
-    getBlurDataUrl(ACCENT_IMAGE_ID),
-  ]);
+/** How many past dinners the landing page teases before "see all dinners". */
+const PAST_DINNERS_ON_LANDING = 3;
 
-  return {
-    nextDinner: nextEvent
-      ? { id: nextEvent.id, date: nextEvent.date, slots: nextEvent.slots }
-      : null,
-    heroBlurDataUrl,
-    accentBlurDataUrl,
-  };
+export const loader = async () => {
+  const events = await getEventsWithAddress();
+
+  return { events: events.map(toEventCardModel) };
+};
+
+const titleCardData: TitleCardBlockType = {
+  type: "title-card",
+  version: 1,
+  data: {
+    title: "moku pona",
+    // Drop the crayon wordmark in `public/` and point `logo` at it — the text
+    // above then becomes its alt text rather than the visible title:
+    // logo: { src: "/moku-pona-wordmark.png", width: 1400, height: 420 },
+    tagline: "a dinner society in zürich",
+    scrollTo: "#vision",
+  },
+};
+
+const visionSectionData: TextSectionBlockType = {
+  type: "text-section",
+  version: 1,
+  data: {
+    eyebrow: "our vision",
+    headline: "food as a way to connect",
+    body: "moku pona began as a passion project by a group of friends who love cooking and wanted a creative way to explore our culinary interests. for us, food is a way to express creativity, share experiences, and connect with others. through our dinner club, we surprise our guests with unique flavors and ingredients, introducing them to diverse cuisines and the stories behind them.",
+    variant: "plain",
+  },
 };
 
 export const meta: Route.MetaFunction = ({ matches, location }) => {
@@ -65,97 +85,27 @@ export const meta: Route.MetaFunction = ({ matches, location }) => {
   });
 };
 
-const visionSectionData: TextSectionBlockType = {
-  type: "text-section",
-  version: 1,
-  data: {
-    eyebrow: "our vision",
-    headline: "food as a way to connect",
-    body: "moku pona began as a passion project by a group of friends who love cooking and wanted a creative way to explore our culinary interests. for us, food is a way to express creativity, share experiences, and connect with others. through our dinner club, we surprise our guests with unique flavors and ingredients, introducing them to diverse cuisines and the stories behind them.",
-    variant: "plain",
-  },
-};
-
-const accentSectionData = (blurDataUrl: string | null): ImageBlockType => ({
-  type: "image",
-  version: 1,
-  data: {
-    image: {
-      src: ACCENT_IMAGE_ID,
-      alt: "",
-      width: 1080,
-      height: 382,
-      blurDataUrl,
-    },
-    variant: "full-width",
-  },
-});
-
-const differenceSectionData: TextSectionBlockType = {
-  type: "text-section",
-  version: 1,
-  data: {
-    eyebrow: "how's this different?",
-    headline: "more than a meal out",
-    body: "our dinner events go beyond the typical restaurant experience, creating a warm and welcoming space where friends and strangers can forge new connections. every gathering is a chance not just to enjoy a wonderful meal, but to meet new people, share stories, and build meaningful relationships, the magic of a shared table in a cozy, intimate setting.",
-    variant: "plain",
-  },
-};
-
-const aboutSectionData: TextSectionBlockType = {
-  type: "text-section",
-  version: 1,
-  data: {
-    eyebrow: "who we are",
-    headline: "a community of around fifteen",
-    body: "what started as a shared love of cooking has grown into a community who come together to create, host, and share meals. as an association, moku pona is about community, creativity, and hospitality, not just dining, but making people feel welcome.",
-    variant: "slanted",
-  },
-};
-
 export default function Index({ loaderData }: Route.ComponentProps) {
-  const { nextDinner, heroBlurDataUrl, accentBlurDataUrl } = loaderData;
+  const { events } = loaderData;
 
-  const heroSectionData: HeroBlockType = {
-    type: "hero",
-    version: 1,
-    data: {
-      eyebrow: nextDinner
-        ? `next gathering · ${formatEventDayMonth(new Date(nextDinner.date))}`
-        : undefined,
-      headline: "an evening around",
-      headlineAccent: "one long table",
-      description:
-        "moku pona is a dinner society in zürich, shared meals, new stories, and the quiet joy of discovery.",
-      actions: [
-        {
-          href: nextDinner ? `/dinners/${nextDinner.id}` : "/dinners",
-          label: "reserve a seat",
-        },
-        { href: "/dinners", label: "see all dinners →", variant: "secondary" },
-      ],
-      meta: undefined,
-      image: {
-        src: HERO_IMAGE_ID,
-        alt: "",
-        width: 1080,
-        height: 572,
-        blurDataUrl: heroBlurDataUrl,
-      },
-    },
-  };
+  const now = new Date();
+  const { upcoming, past } = partitionEvents(events, now);
+  const pastDinners = orderEventsByStatus(past, now).slice(
+    0,
+    PAST_DINNERS_ON_LANDING,
+  );
 
   return (
     <main>
-      <HeroBlockView blockData={heroSectionData} />
+      <TitleCardBlockView blockData={titleCardData} />
 
-      <TextSectionBlockView blockData={visionSectionData} />
+      <TextSectionBlockView id="vision" blockData={visionSectionData} />
 
-      <ImageBlockView blockData={accentSectionData(accentBlurDataUrl)} />
-
-      <TextSectionBlockView blockData={differenceSectionData} />
-
-      <TextSectionBlockView blockData={aboutSectionData} />
+      <LandingDinnersSection
+        upcoming={upcoming}
+        past={pastDinners}
+        hasMore={past.length > pastDinners.length}
+      />
     </main>
   );
 }
