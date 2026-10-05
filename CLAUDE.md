@@ -51,6 +51,10 @@ Visual/content pass on the public site, built on top of the design-harmonization
 
 So: this branch is iterating on landing page (`app/routes/_index.tsx`) and `/dinners` (`app/routes/dinners._index.tsx`, `app/routes/dinners_.$dinnerId.tsx`) presentation/layout, not backend logic.
 
+## Backlog
+
+[TODO.md](TODO.md) tracks the feature backlog (admin hub expansion, Impressum, FAQ, Stripe/TWINT, editable strings, about page, email domain setup, Cloudinary, guest galleries, recipes site). Update its checkboxes as tasks ship; don't start on it without explicit go-ahead per task.
+
 ## Local state notes
 
 - `package.json` has an uncommitted `allowScripts` addition (npm/pnpm trusted postinstall scripts list) — pending, not yet committed as of 2026-10-05.
