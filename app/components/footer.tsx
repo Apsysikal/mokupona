@@ -32,6 +32,9 @@ export function Footer() {
             <Link to="/privacy" className={linkClasses}>
               privacy policy
             </Link>
+            <Link to="/impressum" className={linkClasses}>
+              impressum
+            </Link>
           </div>
           <div className="flex flex-col gap-2">
             <Eyebrow variant="tracked" tone="label">
@@ -51,7 +54,7 @@ export function Footer() {
 
       <div className="flex flex-col gap-4 px-5 pt-7 pb-10 md:hidden">
         <BrandLockup logoClassName="size-4" wordmarkClassName="text-base" />
-        <div className="flex gap-5">
+        <div className="flex flex-wrap gap-x-5 gap-y-2">
           <Link to="/dinners" className={linkClasses}>
             dinners
           </Link>
@@ -63,6 +66,9 @@ export function Footer() {
           </Link>
           <Link to="/privacy" className={linkClasses}>
             privacy policy
+          </Link>
+          <Link to="/impressum" className={linkClasses}>
+            impressum
           </Link>
           <a
             href="https://instagram.com/mokupona"

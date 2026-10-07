@@ -259,6 +259,7 @@ function MobileMenu({
               instagram
             </a>
             <Link to="/privacy">privacy policy</Link>
+            <Link to="/impressum">impressum</Link>
           </div>
           <span className="text-muted-foreground text-xs">
             made with love in zürich

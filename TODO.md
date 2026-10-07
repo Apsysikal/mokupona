@@ -20,8 +20,8 @@ Already exists (`app/routes/admin*.tsx`): dinners CRUD, locations, board members
 
 ## 2. Impressum page
 
-- [ ] Swiss legal requirement (Art. 3 UWG / imprint duty) — needs org name, address, contact, UID/commercial register no. if applicable
-- [ ] New route, likely sibling to `privacy.tsx` (`app/routes/impressum.tsx`), linked from footer
+- [~] Swiss legal requirement (Art. 3 UWG / imprint duty) — needs org name, address, contact, UID/commercial register no. if applicable
+- [x] 2026-10-07 New route `app/routes/impressum.tsx`, linked from footer + mobile menu (address/email reused from privacy page; UID / responsible person still to confirm)
 
 ## 3. Improve gallery page
 
