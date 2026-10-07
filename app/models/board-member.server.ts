@@ -13,6 +13,7 @@ export type { BoardMember };
 export interface BoardMemberData {
   name: string;
   position: string;
+  bio?: string;
   image?: ImageCreateData;
 }
 
@@ -25,6 +26,7 @@ export async function listBoardMembers(): Promise<
     id: string;
     name: string;
     position: string;
+    bio: string | null;
     image: ImageMetadata | null;
   }[]
 > {
@@ -35,10 +37,11 @@ export async function listBoardMembers(): Promise<
     include: { image: { select: IMAGE_METADATA_SELECT } },
   });
 
-  return boardMembers.map(({ id, name, position, image }) => ({
+  return boardMembers.map(({ id, name, position, bio, image }) => ({
     id,
     name,
     position,
+    bio,
     image,
   }));
 }
@@ -52,12 +55,13 @@ export async function getBoardMemberById(
 export async function createBoardMember(
   data: BoardMemberData,
 ): Promise<BoardMember> {
-  const { name, position, image } = data;
+  const { name, position, bio, image } = data;
 
   return prisma.boardMember.create({
     data: {
       name,
       position,
+      bio: bio || null,
       ...(image && { image: { create: image } }),
     },
   });
@@ -87,7 +91,7 @@ export async function updateBoardMember(
   id: string,
   data: BoardMemberData,
 ): Promise<{ boardMember: BoardMember; replacedImageKey: string | null }> {
-  const { name, position, image } = data;
+  const { name, position, bio, image } = data;
 
   return prisma.$transaction(async (tx) => {
     let previousImageId: string | null = null;
@@ -105,6 +109,7 @@ export async function updateBoardMember(
       data: {
         name,
         position,
+        bio: bio || null,
         ...(image && { image: { create: image } }),
       },
     });

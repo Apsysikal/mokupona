@@ -94,6 +94,7 @@ function VolunteerCard({
     id: string;
     name: string;
     position: string;
+    bio: string | null;
     image: ImageMetadata | null;
   };
 }) {
@@ -124,6 +125,11 @@ function VolunteerCard({
         <p className="text-muted-foreground text-xs md:text-sm">
           {volunteer.position}
         </p>
+        {volunteer.bio ? (
+          <p className="text-foreground/80 mt-2 text-sm font-light whitespace-pre-line">
+            {volunteer.bio}
+          </p>
+        ) : null}
       </div>
     </li>
   );

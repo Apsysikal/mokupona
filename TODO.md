@@ -51,7 +51,7 @@ Already exists (`app/routes/admin*.tsx`): dinners CRUD, locations, board members
 ## 7. About page — volunteers, board members, who we are
 
 - [ ] `app/routes/about.tsx` already exists — check current content before rewriting
-- [ ] Board members already modeled (`board-member.server.ts`, admin CRUD exists) — surface them with photos on the About page
+- [x] 2026-10-07 Board members (the hall of fame) show on the About page with photo, name, position and an optional bio — all editable at `/admin/board-members`
 - [ ] Volunteers are not currently modeled — needs a volunteer entity (or extend board-member model) with photo + bio, managed from admin
 
 ## 8. Email sending/receiving on the real domain
