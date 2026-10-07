@@ -3,6 +3,9 @@ import type { ReactNode } from "react";
 const URL_DELIMITER =
   /((?:https?:\/\/)?(?:(?:[a-z0-9]?(?:[a-z0-9\-]{1,61}[a-z0-9])?\.[^\.|\s])+[a-z\.]*[a-z]+|(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3})(?::\d{1,5})*[a-z0-9.,_\/~#&=;%+?\-\\(\\)]*)/gi;
 
+const EMAIL_DELIMITER =
+  /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}/i;
+
 function normalizeMatchedUrl(rawUrl: string): {
   url: string;
   trailingText: string;
@@ -44,10 +47,16 @@ function isValidUrlMatch(url: string): boolean {
 }
 
 export type AutoLinkPart =
-  { type: "text"; value: string } | { type: "link"; url: string };
+  | { type: "text"; value: string }
+  | { type: "link"; url: string }
+  | { type: "email"; email: string };
 
 export function parseAutoLinks(text: string): AutoLinkPart[] {
-  const matcher = new RegExp(URL_DELIMITER.source, URL_DELIMITER.flags);
+  // Match emails first so dotted local parts and domains stay in one link.
+  const matcher = new RegExp(
+    `(?<email>${EMAIL_DELIMITER.source})|${URL_DELIMITER.source}`,
+    URL_DELIMITER.flags,
+  );
   const parts: AutoLinkPart[] = [];
   let lastIndex = 0;
 
@@ -69,6 +78,12 @@ export function parseAutoLinks(text: string): AutoLinkPart[] {
 
     if (start > lastIndex) {
       pushText(text.slice(lastIndex, start));
+    }
+
+    if (match.groups?.email) {
+      parts.push({ type: "email", email: match.groups.email });
+      lastIndex = start + rawUrl.length;
+      continue;
     }
 
     const { url, trailingText } = normalizeMatchedUrl(rawUrl);
@@ -102,6 +117,17 @@ export function AutoLink({
   return (
     <>
       {parseAutoLinks(text).map((part, index) => {
+        if (part.type === "email") {
+          return (
+            <a
+              key={`email-${index}-${part.email}`}
+              href={`mailto:${part.email}`}
+              className="underline"
+            >
+              {part.email}
+            </a>
+          );
+        }
         if (part.type === "link") {
           const { url } = part;
           return (

@@ -127,6 +127,45 @@ describe("parseAutoLinks", () => {
     });
   });
 
+  describe("email addresses", () => {
+    test.each([
+      "hello@example.com",
+      "first.last@example.com",
+      "first.last+events@sub.example.co.uk",
+      "HELLO@EXAMPLE.COM",
+    ])("detects the entire email address: %s", (email) => {
+      expect(parseAutoLinks(`Contact ${email} for details.`)).toEqual([
+        { type: "text", value: "Contact " },
+        { type: "email", email },
+        { type: "text", value: " for details." },
+      ]);
+    });
+
+    test.each([",", ".", "!", "?", ";", ":"])(
+      "keeps wrapping and punctuation outside email links: %s",
+      (punctuation) => {
+        expect(
+          parseAutoLinks(`Contact (hello@example.com)${punctuation}`),
+        ).toEqual([
+          { type: "text", value: "Contact (" },
+          { type: "email", email: "hello@example.com" },
+          { type: "text", value: `)${punctuation}` },
+        ]);
+      },
+    );
+
+    test("detects emails and URLs together", () => {
+      expect(
+        parseAutoLinks("first.last@example.com or https://example.org."),
+      ).toEqual([
+        { type: "email", email: "first.last@example.com" },
+        { type: "text", value: " or " },
+        { type: "link", url: "https://example.org" },
+        { type: "text", value: "." },
+      ]);
+    });
+  });
+
   describe("URLs wrapped in parentheses (desired behaviour)", () => {
     test("strips trailing ) when URL is wrapped in parentheses", () => {
       const result = parseAutoLinks(
@@ -214,6 +253,18 @@ describe("parseAutoLinks", () => {
   });
 
   describe("AutoLink rendering", () => {
+    test("renders the full email address with a mailto link", () => {
+      const html = renderToStaticMarkup(
+        createElement(AutoLink, {
+          text: "Contact first.last+events@example.com.",
+        }),
+      );
+
+      expect(html).toContain('href="mailto:first.last+events@example.com"');
+      expect(html).toContain(">first.last+events@example.com</a>");
+      expect(html).not.toContain('target="_blank"');
+    });
+
     test("uses https for bare domains", () => {
       const html = renderToStaticMarkup(
         createElement(AutoLink, { text: "Visit example.com" }),
