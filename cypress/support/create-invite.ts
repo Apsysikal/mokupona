@@ -1,7 +1,3 @@
-// Creates an invite (as the seeded admin) and prints its token — lets tests
-// exercise the acceptance route without driving the admin UI each time.
-// Usage: npx tsx ./cypress/support/create-invite.ts <email> <role> [expired]
-
 export {};
 
 process.env.MAIL_PROVIDER = "console";
@@ -23,8 +19,6 @@ async function createInvite(email: string, roleName: string, expired?: string) {
     throw new Error("Seeded admin not found. Run the seed script first.");
   }
 
-  // upsertInvite is the one place the raw token surfaces (the DB only holds
-  // its hash), so keep it from here even when we backdate the expiry below
   const invite = await upsertInvite({
     email,
     roleName,

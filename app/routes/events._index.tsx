@@ -1,0 +1,109 @@
+import type { Route } from "./+types/events._index";
+
+import {
+  Eyebrow,
+  Glow,
+  PageContainer,
+  pageTitleClassName,
+  SectionDivider,
+} from "~/components/section";
+import { buttonVariants } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
+import {
+  FeaturedEventCard,
+  PastEventCard,
+} from "~/features/events/components/event-card";
+import {
+  orderEventsByStatus,
+  partitionEvents,
+} from "~/features/events/event-status";
+import { toEventCardModel } from "~/features/events/view-models";
+import { cn } from "~/lib/utils";
+import { getEventsWithAddress } from "~/models/event.server";
+
+export const loader = async () => {
+  const events = await getEventsWithAddress();
+
+  return { events: events.map(toEventCardModel) };
+};
+
+export const meta: Route.MetaFunction = () => [{ title: "Events" }];
+
+export default function EventsIndexPage({ loaderData }: Route.ComponentProps) {
+  const { events } = loaderData;
+
+  const now = new Date();
+  const { upcoming: upcomingEvents, past } = partitionEvents(events, now);
+  const pastEvents = orderEventsByStatus(past, now);
+
+  return (
+    <PageContainer className="grow pt-7 pb-20">
+      <div className="mb-9 flex flex-col gap-3 md:mb-12">
+        <Eyebrow>gatherings</Eyebrow>
+        <h1 className={pageTitleClassName}>events</h1>
+        <p className="text-foreground/80 max-w-2xl text-base font-light md:text-lg">
+          {upcomingEvents.length > 0
+            ? "a handful of seats open before each supper. reserve early, tables are small and fill quickly."
+            : "we run a handful of intimate events a year. there's nothing on the calendar right now, but the next one is never far off."}
+        </p>
+      </div>
+
+      {upcomingEvents.length > 0 ? (
+        <>
+          <SectionDivider className="mb-5">the next event</SectionDivider>
+          <div className="mb-14 flex flex-col gap-8 md:mb-20">
+            {upcomingEvents.map((event, index) => (
+              <FeaturedEventCard
+                key={event.id}
+                event={event}
+                isNext={index === 0}
+              />
+            ))}
+          </div>
+        </>
+      ) : (
+        <EmptyState />
+      )}
+
+      {pastEvents.length > 0 ? (
+        <>
+          <SectionDivider className="mb-5">past events</SectionDivider>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
+            {pastEvents.map((event) => (
+              <PastEventCard key={event.id} event={event} />
+            ))}
+          </div>
+        </>
+      ) : null}
+    </PageContainer>
+  );
+}
+
+function EmptyState() {
+  return (
+    <Card className="relative mb-14 flex flex-col items-center gap-4 overflow-hidden px-6 py-9 text-center md:mb-20 md:gap-5 md:px-14 md:py-20">
+      <Glow className="-top-36 left-1/2 h-80 w-md -translate-x-1/2" />
+      <span className="text-primary relative text-sm font-semibold">
+        nothing on the calendar right now
+      </span>
+      <h2 className={cn("relative max-w-md", pageTitleClassName)}>
+        the table is being set
+      </h2>
+      <p className="text-foreground/80 relative max-w-md text-sm font-light md:text-lg">
+        we&apos;re planning the next gathering. check back soon to see
+        what&apos;s next, or follow along on instagram for the announcement.
+      </p>
+      <a
+        href="https://instagram.com/mokupona"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn(
+          buttonVariants({ variant: "outline", size: "lg" }),
+          "relative mt-1",
+        )}
+      >
+        follow on instagram
+      </a>
+    </Card>
+  );
+}

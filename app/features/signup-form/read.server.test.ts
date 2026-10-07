@@ -59,11 +59,9 @@ describe("getAttendeesForEvent", () => {
 
     expect(friend1.isSigner).toBe(false);
     expect(friend1.name).toBe("Grace Friend");
-    // personal answers come from the friend's own item values
     expect(friend1.answers).toMatchObject({ vegetarian: false, student: true });
     expect(friend2.name).toBe("Alan Friend");
 
-    // one party: all three share the submission id
     expect(new Set(attendees.map((a) => a.submissionId)).size).toBe(1);
   });
 
@@ -73,12 +71,10 @@ describe("getAttendeesForEvent", () => {
     const attendees = await getAttendeesForEvent(event.id);
 
     for (const attendee of attendees) {
-      // email/phone/comment have no counterpart in the friends itemFields
       expect(attendee.email).toBe("ada@example.com");
       expect(attendee.phone).toBe("123456");
       expect(attendee.answers.comment).toBe("party of three");
     }
-    // per-attendee fields are NOT replicated from the signer
     expect(attendees[1].answers.restrictions).toBe("");
   });
 
@@ -107,7 +103,6 @@ describe("getAttendeesForEvent", () => {
       phone: "999",
       answers: {
         name: "Legacy Person",
-        // nulls take the values today's CSV prints for them
         vegetarian: false,
         student: true,
         restrictions: "",
@@ -119,8 +114,6 @@ describe("getAttendeesForEvent", () => {
   it("tolerates answer shapes any valid writer could store", async () => {
     const event = await createEvent(await buildEventData());
     const version = await getCurrentFormVersion(event.formId);
-    // no friends key, optional fields absent — the reader must not be
-    // stricter than the write side, or whole parties vanish from the roster
     await createFormSubmission({
       formVersionId: version.id,
       answers: { name: "Minimal Signer", email: "min@example.com", phone: "1" },
@@ -186,8 +179,6 @@ describe("getAttendeeRosterForEvent columns", () => {
 
     const { attendees, columns } = await getAttendeeRosterForEvent(event.id);
 
-    // the submission can't be interpreted, but the export must never come
-    // back header-less
     expect(attendees).toHaveLength(0);
     expect(columns.length).toBeGreaterThan(0);
     expect(columns[0]).toEqual({ name: "name", label: "Name" });
@@ -196,7 +187,6 @@ describe("getAttendeeRosterForEvent columns", () => {
   it("unions columns across versions with submissions, latest labels first", async () => {
     const event = await createEventWithSubmission();
 
-    // v2: drop `comment`, relabel `restrictions`
     const v2Fields: FieldDescriptor[] = DEFAULT_FORM.flatMap((field) => {
       if (field.type === "textarea" && field.data.name === "comment") return [];
       if (field.type === "text" && field.data.name === "restrictions") {
@@ -220,7 +210,6 @@ describe("getAttendeeRosterForEvent columns", () => {
 
     const { columns } = await getAttendeeRosterForEvent(event.id);
 
-    // latest version fixes order + labels; v1's dropped column is appended
     expect(columns.map((column) => column.name)).toEqual([
       "name",
       "email",

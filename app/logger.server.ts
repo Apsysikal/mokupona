@@ -20,7 +20,6 @@ const options = {
   serializers: { error: pino.stdSerializers.err },
 };
 
-// pino-pretty hands back a plain Transform, which has no flushSync
 type MaybeFlushable = { flushSync?: () => void };
 
 function flushStream(stream: object) {
@@ -28,7 +27,6 @@ function flushStream(stream: object) {
     (stream as MaybeFlushable).flushSync?.();
     return true;
   } catch {
-    // "sonic boom is not ready yet" — the file has not finished opening
     return false;
   }
 }
@@ -105,8 +103,6 @@ function createLogger() {
 
 const { logger, flush } = createLogger();
 
-// long enough for a sink that was still opening to finish and drain, far
-// shorter than fly.toml's 5 s kill_timeout
 const DRAIN_GRACE_MS = 250;
 
 let closing = false;
@@ -121,12 +117,6 @@ function shutdown(signal: NodeJS.Signals) {
     return;
   }
 
-  // A signal within the first milliseconds of a process, before the file sink
-  // finished opening. Exiting now would lose the buffered lines and rethrow out
-  // of pino's own exit hook, so let the sink open and write them first. The
-  // timer is unref'd — a script with nothing left to do still exits at once —
-  // and it must exist at all because an event loop held open by a listening
-  // server would otherwise ignore this signal and every one after it.
   process.exitCode = 0;
   setTimeout(() => {
     flush();

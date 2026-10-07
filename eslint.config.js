@@ -12,7 +12,6 @@ export default [
     ],
   },
   {
-    // Global
     plugins: {
       import: (await import("eslint-plugin-import-x")).default,
     },
@@ -34,7 +33,6 @@ export default [
     },
   },
   {
-    // React
     files: ["**/*.{js,jsx,ts,tsx}"],
     plugins: {
       react: (await import("eslint-plugin-react")).default,
@@ -50,7 +48,6 @@ export default [
     },
   },
   {
-    // React hooks
     files: ["**/*.{js,jsx,ts,tsx}"],
     plugins: {
       "react-hooks": (await import("eslint-plugin-react-hooks")).default,
@@ -61,7 +58,6 @@ export default [
     },
   },
   {
-    // Typescript
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
       parser: (await import("typescript-eslint")).parser,
@@ -74,7 +70,6 @@ export default [
     },
   },
   {
-    // Jest
     files: ["**/*.test.{js,jsx,ts,tsx}"],
     plugins: {
       "jest-dom": (await import("eslint-plugin-jest-dom")).default,
@@ -86,18 +81,12 @@ export default [
     },
   },
   {
-    // Cypress
     files: ["cypress/**/*.ts"],
     plugins: {
       cypress: (await import("eslint-plugin-cypress")).default,
     },
   },
   {
-    // Data-access boundary (docs/data-access-layer/design.md): only the
-    // models layer may touch Prisma. Tests are exempt — they seed the DB
-    // directly. auth.server.ts is exempt for one reason only: better-auth's
-    // prismaAdapter needs the raw client; our own queries still go through
-    // models.
     files: ["app/**/*.{js,jsx,ts,tsx}"],
     ignores: [
       "app/models/**",

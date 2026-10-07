@@ -27,8 +27,6 @@ export type NonListFieldDescriptor = z.infer<
 >;
 export type NonListFieldType = NonListFieldDescriptor["type"];
 
-// The runtime list of non-list types (the union above is type-level only);
-// the completeness check below fails to compile if the two ever drift.
 export const NON_LIST_FIELD_TYPES = [
   "text",
   "textarea",
@@ -40,13 +38,8 @@ export const NON_LIST_FIELD_TYPES = [
 
 type AssertAllTypesListed =
   NonListFieldType extends (typeof NON_LIST_FIELD_TYPES)[number] ? true : never;
-// becomes `never` (a compile error) when a union member is missing above.
 export const NON_LIST_FIELD_TYPES_COMPLETE: AssertAllTypesListed = true;
 
-// Constrains a view registry so each type maps to a view accepting exactly
-// that type's descriptor — registering a view under the wrong key fails to
-// compile. Views narrow the metadata's value type themselves, so it stays
-// `any` here (FieldMetadata<any> would collapse its members to unknown).
 export type ViewsFor<Descriptor extends { type: string }> = {
   [K in Descriptor["type"]]: (props: {
     fieldConfig: Extract<Descriptor, { type: K }>;
@@ -63,9 +56,6 @@ export const NonListFieldViews = {
   select: SelectField,
 } as const satisfies ViewsFor<NonListFieldDescriptor>;
 
-// The registration above is type-checked; lookups are deliberately erased to
-// React.ElementType because the config/metadata pair is only correlated at
-// runtime.
 export function getViewForNonListField(
   descriptor: NonListFieldDescriptor,
 ): React.ElementType {
@@ -77,8 +67,6 @@ export function zodForField(descriptor: NonListFieldDescriptor) {
 
   const requiredError = `${label} is required`;
 
-  // switch on descriptor.type (not a destructured copy) so each case narrows
-  // the descriptor and can reach type-specific data like select options
   switch (descriptor.type) {
     case "text":
     case "textarea":
@@ -89,7 +77,6 @@ export function zodForField(descriptor: NonListFieldDescriptor) {
     }
 
     case "email": {
-      // trim first: a format schema's check runs before a chained .trim()
       const schema = z
         .string({ error: requiredError })
         .trim()

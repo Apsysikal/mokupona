@@ -14,8 +14,6 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   return prisma.user.findUnique({ where: { email: email.toLowerCase() } });
 }
 
-// The projection the admin user list needs.
-// the admin tab bar shows a count pill per section
 export async function countUsers(): Promise<number> {
   return prisma.user.count();
 }
@@ -28,7 +26,6 @@ export async function listUsersWithRoleName(): Promise<
   });
 }
 
-// The account view shared by the profile page and the admin user edit page.
 export async function getUserAccountSummary(id: string): Promise<{
   name: string;
   email: string;
@@ -46,9 +43,6 @@ export async function getUserAccountSummary(id: string): Promise<{
   });
 }
 
-// What /me needs to render its password / connected-accounts / sessions
-// sections: which auth providers back this user, and how many live sessions
-// they have.
 export async function getUserAuthOverview(id: string): Promise<{
   hasPassword: boolean;
   googleLinked: boolean;
@@ -75,8 +69,6 @@ export async function updateUserName(id: string, name: string): Promise<void> {
   await prisma.user.update({ where: { id }, data: { name } });
 }
 
-// Mailbox ownership was proven out-of-band (password reset completion,
-// invite-link acceptance) — deliberate shortcuts per the auth design.
 export async function setUserEmailVerified(id: string): Promise<void> {
   await prisma.user.update({
     where: { id },
@@ -84,8 +76,6 @@ export async function setUserEmailVerified(id: string): Promise<void> {
   });
 }
 
-// Admins can't have their role changed from the admin UI — the guard is part
-// of the write itself, not a check the caller can forget.
 export async function updateNonAdminUserRole(
   userId: string,
   roleId: string,
@@ -96,8 +86,6 @@ export async function updateNonAdminUserRole(
   });
 }
 
-// Event.createdById is onDelete: SetNull — events (and their responses and
-// form data) outlive their creator; only authorship is cleared.
 async function deleteUserInTx(tx: Prisma.TransactionClient, id: string) {
   return tx.user.delete({ where: { id } });
 }
@@ -106,8 +94,6 @@ export async function deleteUserById(id: string): Promise<User> {
   return prisma.$transaction((tx) => deleteUserInTx(tx, id));
 }
 
-// Admin deletion policy belongs to the write, not only its route/UI. Missing
-// and protected admin users are both no-ops for the idempotent admin action.
 export async function deleteNonAdminUserById(id: string): Promise<User | null> {
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.findUnique({

@@ -4,8 +4,8 @@ import { toEventCardModel, toEventDetailModel } from "./view-models";
 
 const event = {
   id: "event-id",
-  title: "Summer Dinner",
-  description: "Dinner description",
+  title: "Summer Event",
+  description: "Event description",
   menuDescription: "Seasonal menu",
   donationDescription: "Pay what you can",
   date: new Date("2026-07-12T17:30:00.000Z"),
@@ -20,6 +20,7 @@ const event = {
     height: 800,
     blurDataUrl: "data:image/webp;base64,tiny",
   },
+  imageId: "image-id",
   addressId: "address-id",
   createdById: "user-id",
   formId: "form-id",

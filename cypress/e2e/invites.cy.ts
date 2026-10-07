@@ -51,7 +51,6 @@ describe("invites", () => {
     };
     cy.then(() => ({ email: invitee.email })).as("user");
 
-    // create the invite through the admin UI
     cy.loginAsRole("admin");
     cy.visitAndCheck("/admin/users");
     cy.findByRole("button", { name: /invite/i }).click();
@@ -59,20 +58,16 @@ describe("invites", () => {
     cy.findByLabelText(/moderator/i).click({ force: true });
     cy.findByRole("button", { name: /send invite/i }).click();
 
-    // pending invite row appears
     cy.findByText(invitee.email);
     cy.findByText(/moderator · invited today · expires in 7 days/i);
 
-    // follow the invite mail as the (logged-out) invitee
     cy.clearCookie("better-auth.session_token");
     readLatestMailTo(invitee.email).then((mail) => {
       visitMailLink(mail, "/invite/");
     });
 
     cy.findByRole("heading", { name: /accept your invite/i });
-    // the bound address is locked
     cy.findByLabelText(/email address/i).should("be.disabled");
-    // lands in the admin area as a moderator, no verification hop needed
     acceptInviteAsNewUser(invitee.name, invitee.password);
   });
 
@@ -86,7 +81,6 @@ describe("invites", () => {
     createAndVisitInvite(invitee.email, "moderator").then((token) => {
       acceptInviteAsNewUser("test person", invitee.password);
 
-      // second use dead-ends
       cy.clearCookie("better-auth.session_token");
       cy.visit(`/invite/${token}`);
       cy.findByRole("heading", {
@@ -130,7 +124,6 @@ describe("invites", () => {
         });
         cy.findByRole("button", { name: /log out & retry/i }).click();
 
-        // logged out and back on the invite — now the signup form shows
         cy.findByRole("heading", { name: /accept your invite/i });
         cy.findByLabelText(/email address/i).should("be.disabled");
       });

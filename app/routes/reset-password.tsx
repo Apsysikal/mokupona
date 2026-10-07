@@ -1,6 +1,6 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import { CheckCircledIcon, LinkBreak2Icon } from "@radix-ui/react-icons";
+import { CircleCheckIcon, Link2OffIcon } from "lucide-react";
 import { data, Form, Link, redirect } from "react-router";
 import { z } from "zod";
 
@@ -9,11 +9,12 @@ import type { Route } from "./+types/reset-password";
 import { AuthShell } from "~/components/auth-layout";
 import { AuthStatus } from "~/components/auth-status";
 import { Field } from "~/components/forms";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { auth } from "~/features/auth/auth.server";
 import { parseRequestForm } from "~/features/auth/form-schemas";
 import { requestLoggerContext } from "~/features/auth/middleware.server";
 import { withPasswordConfirmation } from "~/features/auth/password-schema";
+import { cn } from "~/lib/utils";
 import { getPasswordResetEmail } from "~/models/password-reset.server";
 import { getClientIPAddress } from "~/shared/http.server";
 
@@ -21,9 +22,6 @@ const schema = withPasswordConfirmation({
   token: z.string(),
 });
 
-// The mailed link goes through better-auth's API endpoint, which validates
-// the token and redirects here with ?token=… (or ?error=INVALID_TOKEN).
-// Completing a reset also verifies the email (auth.server.ts onPasswordReset).
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const url = new URL(request.url);
 
@@ -34,8 +32,6 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     return { state: "invalid" as const };
   }
 
-  // resolve the token to its user for the "resetting for …" subhead — and to
-  // dead-end immediately when it's stale
   const email = await getPasswordResetEmail(token);
   if (!email) return { state: "invalid" as const };
 
@@ -51,7 +47,6 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
   }
 
   const { password, token } = submission.value;
-  // resolvable only while the token is live, so it has to be read first
   const email = await getPasswordResetEmail(token);
 
   try {
@@ -100,13 +95,16 @@ export default function ResetPassword({
     return (
       <AuthStatus
         standalone
-        icon={<CheckCircledIcon className="size-7" />}
+        icon={<CircleCheckIcon className="size-7" />}
         heading="password updated"
         body="your new password is saved and your email is confirmed. log in to pick up where you left off."
       >
-        <Button size="lg" className="w-full" asChild>
-          <Link to="/login">continue to log in</Link>
-        </Button>
+        <Link
+          to="/login"
+          className={cn(buttonVariants({ size: "lg" }), "w-full")}
+        >
+          continue to log in
+        </Link>
       </AuthStatus>
     );
   }
@@ -116,13 +114,16 @@ export default function ResetPassword({
       <AuthStatus
         standalone
         tone="neutral"
-        icon={<LinkBreak2Icon className="size-7" />}
+        icon={<Link2OffIcon className="size-7" />}
         heading="this reset link has expired"
         body="request a fresh one and we'll email it right over."
       >
-        <Button size="lg" className="w-full" asChild>
-          <Link to="/forgot-password">request a new link</Link>
-        </Button>
+        <Link
+          to="/forgot-password"
+          className={cn(buttonVariants({ size: "lg" }), "w-full")}
+        >
+          request a new link
+        </Link>
       </AuthStatus>
     );
   }

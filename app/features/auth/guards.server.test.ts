@@ -1,5 +1,4 @@
 // @vitest-environment node
-// (happy-dom swaps the fetch primitives; better-auth needs the real ones)
 
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -52,8 +51,6 @@ describe("guard shim", () => {
   });
 
   it("getUserWithRole tolerates a role outside the vocabulary", async () => {
-    // corrupt data must not lock the account out of every page — role
-    // checks deny the unknown name instead (least privilege)
     const { user, request } = await signedInRequest();
     const legacyRole = await prisma.role.upsert({
       where: { name: "legacy-role" },
@@ -80,7 +77,7 @@ describe("guard shim", () => {
   });
 
   it("requireResolvedUserWithRole redirects an unresolved user to /login with redirectTo", () => {
-    const anonymous = new Request("http://localhost:3000/admin/dinners");
+    const anonymous = new Request("http://localhost:3000/admin/events");
     const thrown = (() => {
       try {
         return requireResolvedUserWithRole(null, anonymous, ["admin"]);
@@ -90,7 +87,7 @@ describe("guard shim", () => {
     })();
     expect(thrown).toBeInstanceOf(Response);
     expect((thrown as Response).headers.get("location")).toBe(
-      "/login?redirectTo=%2Fadmin%2Fdinners",
+      "/login?redirectTo=%2Fadmin%2Fevents",
     );
   });
 

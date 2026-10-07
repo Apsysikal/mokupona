@@ -1,9 +1,5 @@
 import type { FieldDescriptor, NonListFieldDescriptor } from "./fields";
 
-// Conform's coercion strips unchecked optional checkboxes from the parse
-// output entirely, and zod omits absent optional keys. Stored answers must
-// carry explicit values instead: checkboxes always a boolean, lists always an
-// array — so readers never have to guess what absence means.
 export function normalizeSubmissionValues(
   descriptors: FieldDescriptor[],
   values: Record<string, unknown>,

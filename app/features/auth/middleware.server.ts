@@ -19,23 +19,12 @@ import type { RoleName } from "./roles";
 import { withRequestLogger } from "~/logger/request-context.server";
 import { logger } from "~/logger.server";
 
-// Root middleware always initializes this context with a lazy, memoized
-// resolver (null resolution = anonymous request): routes that never read the
-// user — the /file/:fileId resource route in particular, which middleware
-// runs for too — pay no session or database cost, while all consumers within
-// one request share a single session/user resolution.
 export const optionalUserContext =
   createContext<() => Promise<ValidatedUser | null>>();
 export const userContext = createContext<ValidatedUser>();
 
-// The default keeps `.get()` from throwing where this middleware never ran —
-// an unmatched path, or the instrumentation reading the context of one.
 export const requestLoggerContext = createContext<Logger>(logger);
 
-/**
- * Mint the request id and hang the request-scoped logger off both the router
- * context and an AsyncLocalStorage store.
- */
 export const requestLoggerMiddleware: MiddlewareFunction<Response> = (
   { context },
   next,
@@ -56,11 +45,6 @@ export const resolveOptionalUserMiddleware: MiddlewareFunction<
   });
 };
 
-/**
- * Resolve the root-provided optional user, throwing a login redirect for
- * anonymous requests (and, via the shared resolver, a logout redirect for a
- * stale session).
- */
 export async function requireResolvedUser(
   context: Readonly<RouterContextProvider>,
   request: Request,
@@ -72,11 +56,6 @@ export async function requireResolvedUser(
   return user;
 }
 
-/**
- * Loader shared by the anonymous-only auth pages (login/join): bounce
- * signed-in users home, and report whether Google sign-in and email sign-ups
- * are on the table right now.
- */
 export async function anonymousAuthPageLoader({
   context,
 }: {
@@ -90,13 +69,6 @@ export async function anonymousAuthPageLoader({
   };
 }
 
-/**
- * Promote the root-resolved optional user into the required admin context
- * after asserting membership in one of `roles`.
- *
- * The first consumer of the shared resolver triggers the actual session and
- * database lookup; every later consumer reuses it.
- */
 export function requireResolvedUserRoleMiddleware(
   roles: readonly RoleName[],
 ): MiddlewareFunction<Response> {

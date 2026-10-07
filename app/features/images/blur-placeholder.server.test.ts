@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// getBlurDataUrl keeps a module-level per-boot cache; import a fresh module
-// per test so cache state can't leak between them.
 async function importFresh() {
   vi.resetModules();
   return import("./blur-placeholder.server");

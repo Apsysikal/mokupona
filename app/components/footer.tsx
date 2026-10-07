@@ -8,7 +8,6 @@ const linkClasses = "text-sm text-foreground/80 hover:text-foreground";
 export function Footer() {
   return (
     <footer className="border-t">
-      {/* desktop */}
       <div className="flex items-start justify-between gap-8 px-10 py-11 max-md:hidden">
         <div className="flex flex-col gap-3">
           <BrandLockup logoClassName="size-5" />
@@ -21,8 +20,8 @@ export function Footer() {
             <Eyebrow variant="tracked" tone="label">
               explore
             </Eyebrow>
-            <Link to="/dinners" className={linkClasses}>
-              dinners
+            <Link to="/events" className={linkClasses}>
+              events
             </Link>
             <Link to="/privacy" className={linkClasses}>
               privacy policy
@@ -44,12 +43,11 @@ export function Footer() {
         </div>
       </div>
 
-      {/* mobile */}
       <div className="flex flex-col gap-4 px-5 pt-7 pb-10 md:hidden">
         <BrandLockup logoClassName="size-4" wordmarkClassName="text-base" />
         <div className="flex gap-5">
-          <Link to="/dinners" className={linkClasses}>
-            dinners
+          <Link to="/events" className={linkClasses}>
+            events
           </Link>
           <Link to="/privacy" className={linkClasses}>
             privacy policy

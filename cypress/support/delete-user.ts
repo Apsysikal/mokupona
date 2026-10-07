@@ -1,8 +1,3 @@
-// Use this to delete a user by their email
-// Simply call this with:
-// npx ts-node -r tsconfig-paths/register ./cypress/support/delete-user.ts username@example.com,
-// and that user will get deleted
-
 import { Prisma } from "#prisma/generated/client";
 
 import { prisma } from "~/db.server";

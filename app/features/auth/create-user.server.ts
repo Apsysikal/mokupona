@@ -8,9 +8,6 @@ import {
   updateNonAdminUserRole,
 } from "~/models/user.server";
 
-// Seed/test factory: creates the user through better-auth's own API so the
-// credential Account and scrypt hash are shape-correct, then applies the
-// bits better-auth doesn't know about (role, pre-verified email).
 export async function createUserViaAuth({
   email,
   password,

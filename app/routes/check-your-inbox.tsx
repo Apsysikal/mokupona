@@ -1,11 +1,12 @@
-import { EnvelopeClosedIcon } from "@radix-ui/react-icons";
+import { MailIcon } from "lucide-react";
 import { Link, redirect } from "react-router";
 
 import type { Route } from "./+types/check-your-inbox";
 
 import { AuthShell } from "~/components/auth-layout";
 import { AuthStatus } from "~/components/auth-status";
-import { Button } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button";
+import { cn } from "~/lib/utils";
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const url = new URL(request.url);
@@ -32,7 +33,7 @@ export default function CheckYourInbox({ loaderData }: Route.ComponentProps) {
       }}
     >
       <AuthStatus
-        icon={<EnvelopeClosedIcon className="size-7" />}
+        icon={<MailIcon className="size-7" />}
         heading="check your inbox"
         body={
           <>
@@ -42,9 +43,12 @@ export default function CheckYourInbox({ loaderData }: Route.ComponentProps) {
           </>
         }
       >
-        <Button size="lg" className="w-full" asChild>
-          <Link to={`/login${loginSearch}`}>back to log in</Link>
-        </Button>
+        <Link
+          to={`/login${loginSearch}`}
+          className={cn(buttonVariants({ size: "lg" }), "w-full")}
+        >
+          back to log in
+        </Link>
         <p className="text-foreground/50 text-sm">
           no link yet? give it a minute, then check your spam folder.
         </p>

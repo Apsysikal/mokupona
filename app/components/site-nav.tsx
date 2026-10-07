@@ -1,8 +1,4 @@
-import {
-  ChevronRightIcon,
-  Cross1Icon,
-  InstagramLogoIcon,
-} from "@radix-ui/react-icons";
+import { ChevronRightIcon, XIcon } from "lucide-react";
 import {
   useEffect,
   useState,
@@ -13,8 +9,9 @@ import { Form, Link, useLocation } from "react-router";
 
 import { BrandLockup } from "./brand-lockup";
 import { Glow } from "./section";
-import { Button } from "./ui/button";
+import { buttonVariants } from "./ui/button";
 
+import { InstagramIcon } from "~/components/icons";
 import { ADMIN_ROLE_NAMES } from "~/features/auth/roles";
 import { useOptionalUser } from "~/hooks/useOptionalUser";
 import { cn } from "~/lib/utils";
@@ -32,11 +29,6 @@ type NavItem =
   | { kind: "instagram" }
   | { kind: "logout" };
 
-/**
- * One authenticated item list drives both layouts; desktop and mobile keep
- * their own markup and may place items elsewhere (mobile renders instagram
- * in its footer instead of the link list).
- */
 function buildNavItems({
   loggedIn,
   isModerator,
@@ -47,9 +39,15 @@ function buildNavItems({
   const items: NavItem[] = [
     {
       kind: "link",
-      label: "dinners",
-      to: "/dinners",
-      isActive: (pathname) => pathname.startsWith("/dinners"),
+      label: "events",
+      to: "/events",
+      isActive: (pathname) => pathname.startsWith("/events"),
+    },
+    {
+      kind: "link",
+      label: "gallery",
+      to: "/gallery",
+      isActive: (pathname) => pathname.startsWith("/gallery"),
     },
     { kind: "instagram" },
   ];
@@ -98,7 +96,6 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
 
   const navItems = buildNavItems({ loggedIn, isModerator });
 
-  // the overlay must never survive a navigation
   useEffect(() => {
     setMenuOpen(false);
   }, [location.pathname]);
@@ -112,7 +109,6 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
   return (
     <>
       <nav className="border-b">
-        {/* desktop */}
         <div className="flex h-16 items-center justify-between px-10 max-md:hidden">
           <BrandLockup to="/" />
 
@@ -141,7 +137,7 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
                       rel="noopener noreferrer"
                       className="hover:text-foreground"
                     >
-                      <InstagramLogoIcon className="size-5" />
+                      <InstagramIcon className="size-5" />
                       <span className="sr-only">instagram</span>
                     </a>
                   );
@@ -156,13 +152,12 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
               }
             })}
 
-            <Button size="sm" asChild>
-              <Link to={joinHref}>join a dinner</Link>
-            </Button>
+            <Link to={joinHref} className={buttonVariants({ size: "sm" })}>
+              join an event
+            </Link>
           </div>
         </div>
 
-        {/* mobile */}
         <div className="flex h-14 items-center justify-between px-5 md:hidden">
           <BrandLockup to="/" />
           <button
@@ -211,7 +206,7 @@ function MobileMenu({
             className="p-2"
             onClick={closeMenu}
           >
-            <Cross1Icon className="size-5" />
+            <XIcon className="size-5" />
           </button>
         </div>
       </div>
@@ -227,7 +222,6 @@ function MobileMenu({
                   </MobileMenuLink>
                 );
               case "instagram":
-                // rendered in the footer below instead
                 return null;
               case "logout":
                 return (
@@ -241,9 +235,12 @@ function MobileMenu({
           })}
         </div>
 
-        <Button size="lg" className="mt-8" asChild>
-          <Link to={joinHref}>join a dinner</Link>
-        </Button>
+        <Link
+          to={joinHref}
+          className={cn(buttonVariants({ size: "lg" }), "mt-8")}
+        >
+          join an event
+        </Link>
 
         <div className="mt-auto flex flex-col gap-4 pt-9">
           <div className="text-foreground/80 flex gap-6 text-sm">

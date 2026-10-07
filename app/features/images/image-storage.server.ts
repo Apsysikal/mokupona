@@ -7,14 +7,12 @@ import { logger } from "~/logger.server";
 import { singleton } from "~/utils/singleton.server";
 
 /** The asset folders this app writes to, per owner entity. */
-export type ImageFolder = "dinners" | "board-members";
+export type ImageFolder = "events" | "board-members" | "event-gallery";
 
 function imageProviderName(env: NodeJS.ProcessEnv) {
   return env.IMAGE_PROVIDER ?? "local";
 }
 
-// Exported for tests; the app goes through the singleton below so an invalid
-// configuration fails on first import, not on first upload.
 export function createImageStorageProvider(
   env: NodeJS.ProcessEnv = process.env,
 ): ImageStorageProvider {
@@ -23,7 +21,6 @@ export function createImageStorageProvider(
     case "local":
       return createLocalProvider(env);
     case "cloudinary":
-      // the factory invariants the CLOUDINARY_* variables
       return createCloudinaryProvider(env);
     default:
       throw new Error(
@@ -49,6 +46,31 @@ export function storeImage(
   folder: ImageFolder,
 ): Promise<StoredImage> {
   return provider.store(file, { folder });
+}
+
+/**
+ * Store a batch, settled and in input order: one file's failure never discards
+ * the assets its siblings already put on the provider.
+ */
+export async function storeImages(
+  files: File[],
+  folder: ImageFolder,
+  providerOverride: ImageStorageProvider = provider,
+): Promise<PromiseSettledResult<StoredImage>[]> {
+  const results = await Promise.allSettled(
+    files.map((file) => providerOverride.store(file, { folder })),
+  );
+
+  results.forEach((result, index) => {
+    if (result.status === "rejected") {
+      requestLogger.warn(
+        { folder, fileName: files[index].name, error: result.reason },
+        "Failed to store image",
+      );
+    }
+  });
+
+  return results;
 }
 
 export async function destroyImages(

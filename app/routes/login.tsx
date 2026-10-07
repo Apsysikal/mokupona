@@ -50,7 +50,6 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         email,
         password,
         rememberMe: remember,
-        // only used for the verification link an unverified attempt re-sends
         callbackURL: `/verify-email?email=${encodeURIComponent(email)}`,
       },
       headers: request.headers,
@@ -82,7 +81,6 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     );
 
     if (code === "EMAIL_NOT_VERIFIED") {
-      // better-auth already re-sent the verification link (sendOnSignIn)
       return data({
         result: submission.reply(),
         authError: { kind: "unverified" as const, email },
@@ -103,7 +101,7 @@ export default function LoginPage({
   actionData,
 }: Route.ComponentProps) {
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") || "/dinners";
+  const redirectTo = searchParams.get("redirectTo") || "/events";
   const authError = actionData?.authError ?? null;
   const [form, fields] = useForm({
     lastResult: actionData?.result,

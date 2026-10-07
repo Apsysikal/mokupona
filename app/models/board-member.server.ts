@@ -3,6 +3,7 @@ import type { BoardMember } from "#prisma/generated/client";
 import { prisma } from "~/db.server";
 import {
   IMAGE_METADATA_SELECT,
+  releaseImagesIfUnreferenced,
   type ImageCreateData,
   type ImageMetadata,
 } from "~/models/image.server";
@@ -15,7 +16,6 @@ export interface BoardMemberData {
   image?: ImageCreateData;
 }
 
-// the admin tab bar shows a count pill per section
 export async function countBoardMembers(): Promise<number> {
   return prisma.boardMember.count();
 }
@@ -64,20 +64,22 @@ export async function deleteBoardMember(
   id: string,
 ): Promise<{ boardMember: BoardMember; imageKey: string | null }> {
   return prisma.$transaction(async (tx) => {
-    const portrait = await tx.image.findUnique({
-      where: { boardMemberId: id },
-      select: { storageKey: true },
-    });
     const boardMember = await tx.boardMember.delete({ where: { id } });
 
-    return { boardMember, imageKey: portrait?.storageKey ?? null };
+    // released only after the member is gone, so the portrait survives when
+    // a gallery still shows it
+    let imageKey: string | null = null;
+    if (boardMember.imageId) {
+      const { storageKeys } = await releaseImagesIfUnreferenced(tx, [
+        boardMember.imageId,
+      ]);
+      imageKey = storageKeys[0] ?? null;
+    }
+
+    return { boardMember, imageKey };
   });
 }
 
-// Replaces the portrait iff a new image is provided: the old image row is
-// deleted and the new one created in the same transaction as the update.
-// The replaced portrait's storageKey comes back for the caller's post-commit
-// provider destroy; null when nothing was replaced.
 export async function updateBoardMember(
   id: string,
   data: BoardMemberData,
@@ -85,15 +87,14 @@ export async function updateBoardMember(
   const { name, position, image } = data;
 
   return prisma.$transaction(async (tx) => {
-    let replacedImageKey: string | null = null;
+    let previousImageId: string | null = null;
 
     if (image) {
-      const replaced = await tx.image.findUnique({
-        where: { boardMemberId: id },
-        select: { storageKey: true },
+      const current = await tx.boardMember.findUnique({
+        where: { id },
+        select: { imageId: true },
       });
-      replacedImageKey = replaced?.storageKey ?? null;
-      await tx.image.deleteMany({ where: { boardMemberId: id } });
+      previousImageId = current?.imageId ?? null;
     }
 
     const boardMember = await tx.boardMember.update({
@@ -104,6 +105,14 @@ export async function updateBoardMember(
         ...(image && { image: { create: image } }),
       },
     });
+
+    let replacedImageKey: string | null = null;
+    if (previousImageId) {
+      const { storageKeys } = await releaseImagesIfUnreferenced(tx, [
+        previousImageId,
+      ]);
+      replacedImageKey = storageKeys[0] ?? null;
+    }
 
     return { boardMember, replacedImageKey };
   });

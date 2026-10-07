@@ -1,5 +1,5 @@
-import { ChevronDownIcon } from "@radix-ui/react-icons";
-import { Accordion as AccordionPrimitive } from "radix-ui";
+import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion";
+import { ChevronDownIcon } from "lucide-react";
 import React from "react";
 
 import { cn } from "~/lib/utils";
@@ -10,7 +10,7 @@ const AccordionItem = ({
   className,
   ref,
   ...props
-}: React.ComponentProps<typeof AccordionPrimitive.Item>) => (
+}: AccordionPrimitive.Item.Props) => (
   <AccordionPrimitive.Item
     ref={ref}
     className={cn("border-b", className)}
@@ -25,39 +25,39 @@ const AccordionTrigger = ({
   children,
   ref,
   ...props
-}: React.ComponentProps<typeof AccordionPrimitive.Trigger>) => (
+}: AccordionPrimitive.Trigger.Props) => (
   <AccordionPrimitive.Header className="flex">
     <AccordionPrimitive.Trigger
       ref={ref}
       className={cn(
-        "flex flex-1 items-center justify-between py-5 text-left text-base font-semibold transition-colors [&[data-state=open]>svg]:rotate-180",
+        "group flex flex-1 items-center justify-between py-5 text-left text-base font-semibold transition-colors",
         className,
       )}
       {...props}
     >
       {children}
-      <ChevronDownIcon className="text-primary size-4 shrink-0 transition-transform duration-300" />
+      <ChevronDownIcon className="text-primary size-4 shrink-0 transition-transform duration-300 group-data-panel-open:rotate-180" />
     </AccordionPrimitive.Trigger>
   </AccordionPrimitive.Header>
 );
 
-AccordionTrigger.displayName = AccordionPrimitive.Trigger.displayName;
+AccordionTrigger.displayName = "AccordionTrigger";
 
 const AccordionContent = ({
   className,
   children,
   ref,
   ...props
-}: React.ComponentProps<typeof AccordionPrimitive.Content>) => (
-  <AccordionPrimitive.Content
+}: AccordionPrimitive.Panel.Props) => (
+  <AccordionPrimitive.Panel
     ref={ref}
-    className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden"
+    className="h-[var(--accordion-panel-height)] overflow-hidden transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0"
     {...props}
   >
     <div className={cn("pb-4", className)}>{children}</div>
-  </AccordionPrimitive.Content>
+  </AccordionPrimitive.Panel>
 );
 
-AccordionContent.displayName = AccordionPrimitive.Content.displayName;
+AccordionContent.displayName = "AccordionContent";
 
 export { Accordion, AccordionContent, AccordionItem, AccordionTrigger };

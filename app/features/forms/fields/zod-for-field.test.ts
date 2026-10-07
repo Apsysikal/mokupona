@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { zodForField, type NonListFieldDescriptor } from "./non-list";
 
 function descriptor(
-  // select carries extra data (options) and has its own describe block below
   type: Exclude<NonListFieldDescriptor["type"], "select">,
   required: boolean,
 ): NonListFieldDescriptor {

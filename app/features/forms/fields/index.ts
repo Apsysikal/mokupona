@@ -26,9 +26,6 @@ interface PlacedDescriptor {
   path: (string | number)[];
 }
 
-// One flat view of the two-level structure: the top-level fields form one
-// scope, each list's itemFields another. Every bound below walks this instead
-// of re-traversing the tree.
 function flattenIntoScopes(fields: FieldDescriptor[]): PlacedDescriptor[][] {
   const topLevel = fields.map((descriptor, index) => ({
     descriptor,
@@ -62,8 +59,6 @@ export const FormSchema = z
       });
     }
 
-    // name uniqueness per scope: among top-level fields, and within each
-    // list's itemFields
     for (const scope of scopes) {
       const seen = new Set<string>();
       for (const { descriptor, path } of scope) {
@@ -78,8 +73,6 @@ export const FormSchema = z
       }
     }
 
-    // the same name across scopes is the merge link, not a collision — but it
-    // must carry the same field type everywhere it appears
     const typeByName = new Map<string, FieldType>();
     for (const { descriptor, path } of allPlaced) {
       const seenType = typeByName.get(descriptor.data.name);
@@ -100,8 +93,6 @@ const FieldViews = {
   list: ListField,
 } as const satisfies ViewsFor<FieldDescriptor>;
 
-// Registration is type-checked via ViewsFor; the lookup is deliberately
-// erased because the config/metadata pair is only correlated at runtime.
 export function getViewForField(
   descriptor: FieldDescriptor,
 ): React.ElementType {

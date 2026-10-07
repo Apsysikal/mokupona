@@ -1,4 +1,4 @@
-import { ChevronDownIcon } from "@radix-ui/react-icons";
+import { ChevronDownIcon } from "lucide-react";
 import React, { useId } from "react";
 
 import { Checkbox } from "./ui/checkbox";
@@ -232,7 +232,6 @@ export function CheckboxField({
           aria-invalid={errorId ? true : undefined}
           aria-describedby={describedBy}
         />
-        {/* checkbox labels read as body copy, not as field labels */}
         <Label
           htmlFor={id}
           {...labelProps}

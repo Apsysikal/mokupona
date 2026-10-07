@@ -5,7 +5,7 @@ export const UPLOAD_HANDLER_LIMIT_BYTES = 1024 * 1024 * 4;
 export const FILE_TOO_LARGE_ERROR = "File cannot be greater than 3MB";
 export const VALID_UPLOAD_FIXTURE_PATH = "cypress/fixtures/upload-image.jpg";
 
-export interface DinnerRecord {
+export interface EventRecord {
   id: string;
   title: string;
   description: string;
@@ -36,9 +36,9 @@ export interface ImageRecord {
 }
 
 type UploadDbAction =
-  | "create-dinner"
-  | "get-dinner"
-  | "delete-dinner"
+  | "create-event"
+  | "get-event"
+  | "delete-event"
   | "get-image"
   | "delete-image"
   | "create-legacy-response"
@@ -51,16 +51,16 @@ export function uniqueSuffix() {
   return `${Date.now()}-${Math.round(Math.random() * 1_000_000)}`;
 }
 
-export function dinnerFormValues(suffix: string) {
+export function eventFormValues(suffix: string) {
   return {
-    title: `Cypress dinner ${suffix}`,
-    description: `Dinner description ${suffix}`,
-    menuDescription: `Dinner menu ${suffix}`,
-    donationDescription: `Dinner donation ${suffix}`,
+    title: `Cypress event ${suffix}`,
+    description: `Event description ${suffix}`,
+    menuDescription: `Event menu ${suffix}`,
+    donationDescription: `Event donation ${suffix}`,
     date: "2035-02-01T18:30",
     slots: "12",
     price: "28",
-    discounts: `Dinner discount ${suffix}`,
+    discounts: `Event discount ${suffix}`,
   };
 }
 
@@ -89,7 +89,6 @@ export function uploadFileInput(
   };
 }
 
-/** A file just over the Zod schema limit — rejected client-side with a form error. */
 export function oversizedZodUpload() {
   return uploadFileInput(ZOD_LIMIT_BYTES + 1, {
     fileName: "zod-too-large.jpg",
@@ -105,9 +104,6 @@ export function runUploadDbCommand<T>(
     : "";
   const payloadArg = encodedPayload ? ` "${encodedPayload}"` : "";
 
-  // This script's stdout is its return channel, but importing app modules emits
-  // the boot lines onto the same descriptor. Without silencing them JSON.parse
-  // receives the pretty-printed log first.
   return cy
     .exec(
       `npx cross-env LOG_LEVEL=silent tsx ./cypress/support/upload-test-records.ts "${action}"${payloadArg}`,
@@ -159,10 +155,6 @@ export function submitMultipartRequest({
   });
 }
 
-/**
- * Posts the form with a file just over the upload handler limit and asserts
- * the server rejects it gracefully (no 500, form error in the response).
- */
 export function expectHandlerLimitRejection({
   action,
   fields,
@@ -195,7 +187,7 @@ export function getFirstAddressId() {
       const addressId = $option.val();
 
       if (typeof addressId !== "string") {
-        throw new Error("Address value missing from dinner form");
+        throw new Error("Address value missing from event form");
       }
 
       return addressId;
@@ -208,11 +200,12 @@ export function selectFirstAddress() {
   });
 }
 
-export function fillDinnerForm(values: ReturnType<typeof dinnerFormValues>) {
+export function fillEventForm(values: ReturnType<typeof eventFormValues>) {
   cy.findByLabelText(/^title$/i)
     .clear()
     .type(values.title);
-  cy.findByLabelText(/^description$/i)
+  cy.findAllByLabelText(/^description$/i)
+    .first()
     .clear()
     .type(values.description);
   cy.findByLabelText(/^menu$/i)
@@ -236,48 +229,40 @@ export function fillDinnerForm(values: ReturnType<typeof dinnerFormValues>) {
   selectFirstAddress();
 }
 
-export function uploadDinnerCover(file: string | Cypress.FileReferenceObject) {
+export function uploadEventCover(file: string | Cypress.FileReferenceObject) {
   cy.findByLabelText(/^cover$/i).selectFile(file, { force: true });
 }
 
-/** Visits the new-dinner form and fills it with a valid cover attached. */
-export function createDinnerViaAdminForm(
-  values: ReturnType<typeof dinnerFormValues>,
+export function createEventViaAdminForm(
+  values: ReturnType<typeof eventFormValues>,
 ) {
-  cy.visitAndCheck("/admin/dinners/new");
-  fillDinnerForm(values);
-  uploadDinnerCover(VALID_UPLOAD_FIXTURE_PATH);
+  cy.visitAndCheck("/admin/events/new");
+  fillEventForm(values);
+  uploadEventCover(VALID_UPLOAD_FIXTURE_PATH);
 }
 
-/**
- * Saves the dinner form, waits for the detail page, and yields the created
- * dinner's id (so the caller can register cleanup).
- */
-export function saveDinnerAndCaptureId(
+export function saveEventAndCaptureId(
   title: string,
 ): Cypress.Chainable<string> {
-  cy.findByRole("button", { name: /save dinner/i }).click();
+  cy.findByRole("button", { name: /save event/i }).click();
   cy.findByRole("heading", { name: title }).should("be.visible");
 
   return cy
     .location("pathname")
-    .should("match", /\/admin\/dinners\/[^/.]+$/)
-    .then((pathname) => getDinnerIdFromPathname(pathname));
+    .should("match", /\/admin\/events\/[^/.]+$/)
+    .then((pathname) => getEventIdFromPathname(pathname));
 }
 
-export function getDinnerIdFromPathname(pathname: string) {
-  const dinnerId = pathname.match(
-    /\/admin\/dinners\/([^/.]+)(?:\.data)?$/,
-  )?.[1];
+export function getEventIdFromPathname(pathname: string) {
+  const eventId = pathname.match(/\/admin\/events\/([^/.]+)(?:\.data)?$/)?.[1];
 
-  if (!dinnerId) {
-    throw new Error(`Unable to determine dinner id from pathname: ${pathname}`);
+  if (!eventId) {
+    throw new Error(`Unable to determine event id from pathname: ${pathname}`);
   }
 
-  return dinnerId;
+  return eventId;
 }
 
-// Signup-page interactions shared by the specs that submit real signups.
 export function fillSignupContact({
   name,
   email,
@@ -297,6 +282,6 @@ export function fillSignupContact({
 export function acceptPrivacyAndJoin() {
   cy.findByLabelText(/agree to the privacy policy/i).click();
   cy.findByRole("button", { name: /join/i }).click();
-  cy.location("pathname").should("equal", "/dinners");
+  cy.location("pathname").should("equal", "/events");
   cy.findByText(/signup complete/i);
 }

@@ -1,5 +1,5 @@
-import { ChevronLeftIcon } from "@radix-ui/react-icons";
 import { cva, type VariantProps } from "class-variance-authority";
+import { ChevronLeftIcon } from "lucide-react";
 import type { ComponentProps, ElementType, ReactNode } from "react";
 import { Link } from "react-router";
 
@@ -100,8 +100,6 @@ export function Eyebrow({
   );
 }
 
-// "the next dinner" / "past dinners" — a tracked label with a hairline rule
-// running out to the edge.
 export function SectionDivider({
   className,
   children,

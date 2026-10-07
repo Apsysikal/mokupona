@@ -4,7 +4,7 @@ import type z from "zod";
 
 import { Field } from "./forms";
 import { BackLink, pageTitleClassName } from "./section";
-import { Button } from "./ui/button";
+import { Button, buttonVariants } from "./ui/button";
 import { Card } from "./ui/card";
 
 import type { AddressSchema } from "~/utils/address-validation";
@@ -13,8 +13,6 @@ type FieldsetOf<Schema extends z.ZodType> = {
   [K in keyof z.input<Schema>]-?: FieldMetadata<z.input<Schema>[K]>;
 };
 
-// Shared by the location create and edit routes so the two can't drift; mirrors
-// AdminEventForm's header + card shell on the compact admin density.
 export function AdminLocationForm({
   fields,
   submitText,
@@ -69,9 +67,12 @@ export function AdminLocationForm({
         </div>
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button variant="outline" asChild>
-            <Link to="/admin/locations">Cancel</Link>
-          </Button>
+          <Link
+            to="/admin/locations"
+            className={buttonVariants({ variant: "outline" })}
+          >
+            Cancel
+          </Link>
           <Button type="submit">{submitText}</Button>
         </div>
       </Card>

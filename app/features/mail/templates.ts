@@ -28,7 +28,7 @@ export const mailTemplates = {
     compose("You're invited to moku pona", [
       paragraph(
         roleName === "moderator"
-          ? "You've been invited to join moku pona as a moderator and help run our dinners."
+          ? "You've been invited to join moku pona as a moderator and help run our events."
           : "You've been invited to join moku pona.",
       ),
       paragraph(

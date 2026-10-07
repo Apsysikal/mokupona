@@ -13,7 +13,7 @@ import {
 import { CoverImage } from "~/components/cover-image";
 import { SecondaryCTA } from "~/components/section";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 
 export function FeaturedEventCard({
@@ -21,7 +21,6 @@ export function FeaturedEventCard({
   isNext = true,
 }: {
   event: EventCardModel;
-  /** the "next dinner" pill belongs on the soonest dinner only */
   isNext?: boolean;
 }) {
   return (
@@ -35,7 +34,7 @@ export function FeaturedEventCard({
         />
         {isNext ? (
           <Badge pill className="absolute top-4 left-4 lg:top-5 lg:left-5">
-            next dinner
+            next event
           </Badge>
         ) : null}
       </div>
@@ -58,10 +57,10 @@ export function FeaturedEventCard({
         </div>
 
         <div className="mt-1 flex flex-col gap-4 md:flex-row md:items-center md:gap-5">
-          <Button asChild>
-            <Link to={`/dinners/${event.id}#sign-up`}>reserve a seat</Link>
-          </Button>
-          <SecondaryCTA to={`/dinners/${event.id}`} className="max-md:hidden">
+          <Link to={`/events/${event.id}#sign-up`} className={buttonVariants()}>
+            reserve a seat
+          </Link>
+          <SecondaryCTA to={`/events/${event.id}`} className="max-md:hidden">
             read more →
           </SecondaryCTA>
         </div>
@@ -70,13 +69,12 @@ export function FeaturedEventCard({
   );
 }
 
-// quiet archive tile: image, month label, title
 export function PastEventCard({ event }: { event: EventCardModel }) {
   const eventDate = new Date(event.date);
 
   return (
     <Link
-      to={`/dinners/${event.id}`}
+      to={`/events/${event.id}`}
       className="flex flex-col gap-2 opacity-70 transition-opacity hover:opacity-100"
     >
       <CoverImage

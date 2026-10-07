@@ -8,8 +8,6 @@ import { parseStoredFormSchema } from "~/features/forms/serialization";
 
 export type { FormVersion } from "#prisma/generated/client";
 
-// The single definition of "current version": max(version) among the rows
-// matching the filter.
 export const CURRENT_FORM_VERSION_ORDER_BY = { version: "desc" } as const;
 
 const currentVersionArgs = (where: Prisma.FormVersionWhereInput) =>
@@ -18,13 +16,10 @@ const currentVersionArgs = (where: Prisma.FormVersionWhereInput) =>
     orderBy: CURRENT_FORM_VERSION_ORDER_BY,
   }) satisfies Prisma.FormVersionFindFirstArgs;
 
-// Every form has at least one version by construction (created with the
-// event, backfilled by migration).
 export async function getCurrentFormVersion(formId: string) {
   return prisma.formVersion.findFirstOrThrow(currentVersionArgs({ formId }));
 }
 
-// Null when the event does not exist — callers 404 on the event themselves.
 export async function getCurrentFormVersionForEvent(eventId: string) {
   return prisma.formVersion.findFirst(
     currentVersionArgs({ form: { event: { id: eventId } } }),
@@ -40,8 +35,6 @@ export async function saveFormSchema(
   );
 }
 
-// The same policy composed into a caller's transaction (e.g. the event edit
-// action persists event data and form schema atomically).
 export async function saveFormSchemaInTx(
   tx: Prisma.TransactionClient,
   formId: string,
@@ -60,9 +53,6 @@ export async function saveFormSchemaInTx(
   }
 
   if (current._count.submissions === 0) {
-    // the no-submissions condition is re-checked inside the write itself:
-    // a submission that lands between the count read and this statement
-    // must not have its pinned version mutated under it
     const updated = await tx.formVersion.updateMany({
       where: { id: current.id, submissions: { none: {} } },
       data: { schema: next as Prisma.InputJsonValue },

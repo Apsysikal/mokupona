@@ -1,6 +1,6 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import { CheckIcon } from "@radix-ui/react-icons";
+import { CheckIcon } from "lucide-react";
 import { useEffect } from "react";
 import { data, useFetcher } from "react-router";
 import { toast } from "sonner";
@@ -57,7 +57,6 @@ const passwordActionSchema = withPasswordConfirmation({
 export const meta: Route.MetaFunction = () => [{ title: "your account" }];
 
 export const loader = async ({ request, context }: Route.LoaderArgs) => {
-  // root middleware already resolved session + user + role for this request
   const user = await requireResolvedUser(context, request);
   const authOverview = await getUserAuthOverview(user.id);
 
@@ -105,7 +104,6 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
           headers: request.headers,
         });
       } else {
-        // only valid while the account has no credential account (Google-only)
         await auth.api.setPassword({
           body: { newPassword: submission.value.password },
           headers: request.headers,
@@ -139,8 +137,6 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
   if (intent === "unlink-google") {
     try {
-      // better-auth also refuses to unlink the last remaining account —
-      // the UI disables this earlier, this is the backstop
       await auth.api.unlinkAccount({
         body: { providerId: "google" },
         headers: request.headers,

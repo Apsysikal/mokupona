@@ -11,13 +11,6 @@ import {
   type NonListFieldDescriptor,
 } from "~/features/forms/fields/non-list";
 
-// The admin builder's value model: one flat row shape for every field so
-// Conform's field arrays need no union handling. `maxCount`/`itemFields`
-// only carry data for the pinned friends list row; the profile rules run on
-// the transformed descriptors via SignupFormSchema, so builder and public
-// endpoint can never disagree.
-
-// Button labels are not exposed in the builder (v1); they stay DEFAULT_FORM's.
 const FRIENDS_ADD_LABEL = "Add a friend";
 const FRIENDS_REMOVE_LABEL = "Remove this person";
 
@@ -31,12 +24,7 @@ const BuilderItemRowSchema = z.object({
     .regex(FIELD_KEY_REGEX, { error: FIELD_KEY_ERROR }),
   label: z.string({ error: "Label is required" }).trim().min(1),
   required: z.boolean().default(false),
-  // optional helper text for guests; the bound is restated here (BaseFieldData
-  // enforces it again on the transformed descriptor) so Conform's constraint
-  // reaches the textarea
   description: z.string().trim().max(MAX_FIELD_DESCRIPTION_LENGTH).optional(),
-  // select only: one option per line; SelectFieldSchema bounds the parsed
-  // list via the profile validation below
   options: z.string().optional(),
 });
 
@@ -53,19 +41,12 @@ const BuilderRowSchema = BuilderItemRowSchema.extend({
 
 export type BuilderRow = z.infer<typeof BuilderRowSchema>;
 export type BuilderItemRow = z.infer<typeof BuilderItemRowSchema>;
-// the pre-coercion shapes Conform's field metadata carries
 export type BuilderRowInput = z.input<typeof BuilderRowSchema>;
 export type BuilderItemRowInput = z.input<typeof BuilderItemRowSchema>;
 
-// Rows validate by transforming to descriptors and running the same profile
-// schema the server persists with; issue paths are mapped back onto the rows
-// (descriptor paths carry an extra "data" segment).
 export const SignupFormBuilderSchema = z
   .array(BuilderRowSchema)
   .superRefine((rows, ctx) => {
-    // maxCount is optional in the shared row shape (non-list rows have none)
-    // but a list row must state it — a cleared input must not silently
-    // become "friends disabled"
     for (const [index, row] of rows.entries()) {
       if (row.type === "list" && row.maxCount === undefined) {
         ctx.addIssue({
@@ -80,8 +61,6 @@ export const SignupFormBuilderSchema = z
 
     for (const issue of result.success ? [] : result.error.issues) {
       const path = issue.path.filter((segment) => segment !== "data");
-      // per-element option issues ([i, "options", 3]) have no rendered field;
-      // collapse them onto the row's options textarea
       const optionsIndex = path.indexOf("options");
 
       ctx.addIssue({
@@ -101,10 +80,112 @@ function descriptionEntry(description: string | undefined) {
   return description ? { description } : {};
 }
 
+function optionsEntry(options: string | undefined) {
+  return options ? { options } : {};
+}
+
+export const LINKED_ROW_PROPS = [
+  "type",
+  "label",
+  "required",
+  "options",
+  "description",
+] as const;
+
+type LinkedProps = Pick<BuilderItemRow, (typeof LINKED_ROW_PROPS)[number]>;
+
+export function syncLinkedRows(rows: BuilderRow[]): BuilderRow[] {
+  const canonical = new Map<string, LinkedProps>();
+
+  const claim = (
+    row: BuilderRow | BuilderItemRow,
+    type: LinkedProps["type"],
+  ): LinkedProps | undefined => {
+    const first = canonical.get(row.name);
+
+    if (first !== undefined) return first;
+
+    canonical.set(row.name, {
+      type,
+      label: row.label,
+      required: row.required,
+      ...optionsEntry(row.options),
+      ...descriptionEntry(row.description),
+    });
+
+    return undefined;
+  };
+
+  const claimed = rows.map((row): BuilderRow => {
+    if (row.type === "list") return row;
+
+    const props = claim(row, row.type);
+
+    return props === undefined ? row : { name: row.name, ...props };
+  });
+
+  return claimed.map((row): BuilderRow => {
+    if (row.type !== "list" || row.itemFields === undefined) return row;
+
+    return {
+      ...row,
+      itemFields: row.itemFields.map((item): BuilderItemRow => {
+        const props = claim(item, item.type);
+
+        return props === undefined ? item : { name: item.name, ...props };
+      }),
+    };
+  });
+}
+
+export function linkedFieldKeys(
+  topLevelKeys: Array<string | undefined>,
+  itemKeys: Array<string | undefined>,
+): Set<string> {
+  const asked = new Set(itemKeys);
+  const linked = new Set<string>();
+
+  for (const key of topLevelKeys) {
+    if (key !== undefined && asked.has(key)) linked.add(key);
+  }
+
+  return linked;
+}
+
+export function syncChangedFieldKeys(rows: BuilderRow[]): string[] {
+  const synced = syncLinkedRows(rows);
+  const changed = new Set<string>();
+
+  const compare = (
+    before: BuilderRow | BuilderItemRow,
+    after: BuilderRow | BuilderItemRow,
+  ) => {
+    if (LINKED_ROW_PROPS.some((prop) => before[prop] !== after[prop])) {
+      changed.add(before.name);
+    }
+  };
+
+  rows.forEach((row, index) => {
+    const syncedRow = synced[index];
+    if (row.type === "list") {
+      const syncedItems =
+        syncedRow.type === "list" ? (syncedRow.itemFields ?? []) : [];
+      (row.itemFields ?? []).forEach((item, itemIndex) => {
+        const syncedItem = syncedItems[itemIndex];
+        if (syncedItem) compare(item, syncedItem);
+      });
+    } else if (syncedRow.type !== "list") {
+      compare(row, syncedRow);
+    }
+  });
+
+  return [...changed].sort();
+}
+
 export function builderRowsToDescriptors(
   rows: BuilderRow[],
 ): FieldDescriptor[] {
-  return rows.map((row): FieldDescriptor => {
+  return syncLinkedRows(rows).map((row): FieldDescriptor => {
     if (row.type === "list") {
       return {
         type: "list",
@@ -122,8 +203,6 @@ export function builderRowsToDescriptors(
       };
     }
 
-    // row.type is narrowed past "list" here, but the object type is not —
-    // rebuild the item row explicitly
     return itemRowToDescriptor({
       type: row.type,
       name: row.name,
@@ -162,8 +241,6 @@ function itemRowToDescriptor(row: BuilderItemRow): NonListFieldDescriptor {
   };
 }
 
-// The builder edits options as one-per-line text; descriptors store them as
-// an array. Options are trimmed and non-empty, so the mapping round-trips.
 function splitOptions(text: string): string[] {
   return text
     .split("\n")
@@ -210,7 +287,6 @@ export function defaultBuilderRows(): BuilderRow[] {
   return descriptorsToBuilderRows(DEFAULT_FORM);
 }
 
-// "Field key" values are machine keys; new fields derive one from the label.
 export function slugifyFieldKey(label: string): string {
   const slug = label
     .toLowerCase()

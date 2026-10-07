@@ -1,6 +1,5 @@
-export {}; // keeps the script in module scope (shared const names otherwise clash)
+export {};
 
-// mail side effects stay out of the shared capture directory
 process.env.MAIL_PROVIDER = "console";
 
 const seededRoleEmails = {

@@ -3,9 +3,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { loader } from "~/routes/file.$fileId";
 
-// The fs storage returns LazyFiles, not Files — the mock must too, or it
-// masks Response-body incompatibilities (lazy-file >= 5 stopped implementing
-// File, which undici rejects as a body).
 function lazyFile(content: string) {
   return new LazyFile([content], "image-id", { type: "image/jpeg" });
 }
@@ -78,7 +75,6 @@ describe("image resource route", () => {
     mocks.getImageById.mockResolvedValue(storedImage);
     mocks.getLocalImageFile.mockResolvedValue(lazyFile("stored-bytes"));
 
-    // old published URLs still carry w/h/fit — they must keep serving
     const response = await loadImage("?w=432&h=324&fit=cover");
 
     expect(mocks.getLocalImageFile).toHaveBeenCalledWith("dinners/uuid");

@@ -14,9 +14,6 @@ type ListFieldProps = {
   fieldMetadata: FieldMetadata<ListItem[]>;
 };
 
-// Reads the form metadata from context so every field view shares the same
-// {fieldConfig, fieldMetadata} contract; consumers must render fields inside
-// Conform's <FormProvider context={form.context}>.
 export function ListField({
   fieldConfig: config,
   fieldMetadata: metadata,

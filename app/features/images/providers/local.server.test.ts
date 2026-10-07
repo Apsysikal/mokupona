@@ -2,7 +2,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, sep } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { createLocalProvider, getLocalImageFile } from "./local.server";
 
@@ -20,11 +20,9 @@ describe("local image provider", () => {
       type: "image/jpeg",
     });
 
-    const stored = await provider.store(file, { folder: "dinners" });
+    const stored = await provider.store(file, { folder: "events" });
 
-    // key = provider-generated (store() runs before any Image row exists),
-    // scoped by folder; no cloudinary-only metadata
-    expect(stored.storageKey).toMatch(/^dinners\/[0-9a-f-]{36}$/);
+    expect(stored.storageKey).toMatch(/^events\/[0-9a-f-]{36}$/);
     expect(stored.version).toBeUndefined();
     expect(stored.width).toBeUndefined();
     expect(stored.blurDataUrl).toBeUndefined();
@@ -34,6 +32,48 @@ describe("local image provider", () => {
     await expect(new Response(roundTripped!.stream()).text()).resolves.toBe(
       "cover-bytes",
     );
+  });
+
+  it("measures intrinsic dimensions from real image bytes", async () => {
+    const env = testEnv();
+    const provider = createLocalProvider(env);
+    // a bare PNG signature + IHDR header declaring 40×30 — image-size reads
+    // dimensions from the header alone, no full decode
+    const png = Buffer.from(
+      "89504e470d0a1a0a0000000d49484452000000280000001e",
+      "hex",
+    );
+    const file = new File([png], "frame.png", { type: "image/png" });
+
+    const stored = await provider.store(file, { folder: "event-gallery" });
+
+    expect(stored.width).toBe(40);
+    expect(stored.height).toBe(30);
+  });
+
+  it("measures a multi-megabyte image without reading it whole a second time", async () => {
+    const env = testEnv();
+    const provider = createLocalProvider(env);
+    const png = Buffer.concat([
+      Buffer.from("89504e470d0a1a0a0000000d49484452000000280000001e", "hex"),
+      Buffer.alloc(3 * 1024 * 1024, 0x7a),
+    ]);
+    const file = new File([png], "big.png", { type: "image/png" });
+    const readWhole = vi.spyOn(file, "arrayBuffer");
+    const readSlice = vi.spyOn(file, "slice");
+
+    const stored = await provider.store(file, { folder: "event-gallery" });
+
+    expect(stored.width).toBe(40);
+    expect(stored.height).toBe(30);
+    expect(readWhole).not.toHaveBeenCalled();
+    expect(readSlice).toHaveBeenCalledTimes(1);
+    const [start, end] = readSlice.mock.calls[0] as [number, number];
+    expect(start).toBe(0);
+    expect(end).toBeLessThanOrEqual(512 * 1024);
+
+    const roundTripped = await getLocalImageFile(stored.storageKey, env);
+    expect(roundTripped?.size).toBe(png.byteLength);
   });
 
   it("generates a fresh key per store, never overwriting", async () => {
@@ -52,7 +92,7 @@ describe("local image provider", () => {
     const provider = createLocalProvider(env);
     const file = new File(["doomed"], "doomed.webp", { type: "image/webp" });
 
-    const { storageKey } = await provider.store(file, { folder: "dinners" });
+    const { storageKey } = await provider.store(file, { folder: "events" });
     await provider.destroy(storageKey);
 
     await expect(getLocalImageFile(storageKey, env)).resolves.toBeNull();
@@ -70,7 +110,7 @@ describe("local image provider", () => {
     const provider = createLocalProvider(env);
     const stored = await provider.store(
       new File(["made-on-demand"], "a.jpg", { type: "image/jpeg" }),
-      { folder: "dinners" },
+      { folder: "events" },
     );
 
     await expect(

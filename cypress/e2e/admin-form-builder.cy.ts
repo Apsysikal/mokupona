@@ -1,55 +1,71 @@
 import {
   acceptPrivacyAndJoin,
-  createDinnerViaAdminForm,
-  dinnerFormValues,
+  createEventViaAdminForm,
+  eventFormValues,
   fillSignupContact,
   runUploadDbCommand,
-  saveDinnerAndCaptureId,
+  saveEventAndCaptureId,
   uniqueSuffix,
 } from "../support/upload-test-utils";
 
 describe("admin signup form builder", () => {
-  let dinnersToCleanup: string[];
+  let eventsToCleanup: string[];
 
   beforeEach(() => {
-    dinnersToCleanup = [];
+    eventsToCleanup = [];
     cy.loginAsRole("moderator");
   });
 
   afterEach(() => {
     cy.then(() => {
-      dinnersToCleanup.forEach((id) => {
-        runUploadDbCommand("delete-dinner", { id });
+      eventsToCleanup.forEach((id) => {
+        runUploadDbCommand("delete-event", { id });
       });
     });
   });
 
-  // Both the signer field and the friend item carry this label; this edits
-  // the signer one (first in DOM order — the friend twin's collapsed header
-  // is hidden inside the collapsed friends row).
-  function relabelDietaryToAllergies() {
-    cy.findAllByRole("button", { name: /dietary restrictions/i })
-      .first()
-      .click();
-    cy.findAllByDisplayValue("Dietary restrictions")
-      .first()
-      .clear()
-      .type("Allergies");
+  const RESTRICTIONS = /dietary restrictions/i;
+  const LINKED_RESTRICTIONS = /dietary restrictions.*linked/i;
+  const FRIEND_RESTRICTIONS = /dietary restrictions.*linked to the signer/i;
+  const FRIENDS_CARD = /^friends group/i;
+
+  function openRow(name: RegExp) {
+    cy.findAllByRole("button", { name }).first().click();
   }
 
-  function saveDinnerExpectingDetail(title: string) {
-    cy.findByRole("button", { name: /save dinner/i }).click();
+  function withinRow(name: RegExp, run: () => void) {
+    cy.findAllByRole("button", { name }).first().closest("li").within(run);
+  }
+
+  function openLastRow(name: RegExp) {
+    cy.findAllByRole("button", { name }).last().click();
+  }
+
+  function withinLastRow(name: RegExp, run: () => void) {
+    cy.findAllByRole("button", { name }).last().closest("li").within(run);
+  }
+
+  function relabelSignerRestrictions(label: string) {
+    openRow(RESTRICTIONS);
+    withinRow(RESTRICTIONS, () => {
+      cy.findByLabelText(/^label$/i)
+        .clear()
+        .type(label);
+    });
+  }
+
+  function saveEventExpectingDetail(title: string) {
+    cy.findByRole("button", { name: /save event/i }).click();
     cy.findByRole("heading", { name: title }).should("be.visible");
   }
 
   it("authors a custom field that round-trips signup → admin table → CSV", () => {
     const suffix = uniqueSuffix();
-    const values = dinnerFormValues(`builder-${suffix}`);
+    const values = eventFormValues(`builder-${suffix}`);
     const signerName = `Builder Signer ${suffix}`;
 
-    createDinnerViaAdminForm(values);
+    createEventViaAdminForm(values);
 
-    // add a custom signer question; the field key derives from the label
     cy.findByRole("button", { name: /^add field$/i }).click();
     cy.findAllByLabelText(/^label$/i)
       .last()
@@ -59,7 +75,6 @@ describe("admin signup form builder", () => {
       .last()
       .should("have.value", "favorite_dish");
 
-    // and a select question with an options editor
     cy.findByRole("button", { name: /^add field$/i }).click();
     cy.findAllByLabelText(/^type$/i)
       .last()
@@ -70,20 +85,15 @@ describe("admin signup form builder", () => {
       .blur();
     cy.findByLabelText(/options \(one per line\)/i).type("Meat\nVegan");
 
-    saveDinnerAndCaptureId(values.title).then((dinnerId) => {
-      dinnersToCleanup.push(dinnerId);
+    saveEventAndCaptureId(values.title).then((eventId) => {
+      eventsToCleanup.push(eventId);
 
-      // builder round-trip: the edit screen shows the authored field again
-      // (stored rows load collapsed — expand via the row header first)
-      cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
-      cy.findAllByRole("button", { name: /favorite dish/i })
-        .first()
-        .click();
+      cy.visitAndCheck(`/admin/events/${eventId}/edit`);
+      openRow(/favorite dish/i);
       cy.findByDisplayValue("Favorite dish").should("be.visible");
       cy.findByDisplayValue("favorite_dish").should("be.visible");
 
-      // the public signup page renders the custom question
-      cy.visitAndCheck(`/dinners/${dinnerId}`);
+      cy.visitAndCheck(`/events/${eventId}`);
       fillSignupContact({
         name: signerName,
         email: `builder-${suffix}@example.com`,
@@ -92,11 +102,10 @@ describe("admin signup form builder", () => {
       cy.findByRole("combobox", { name: /menu choice/i }).select("Vegan");
       acceptPrivacyAndJoin();
 
-      // the answer reaches the admin table and the CSV column union
-      cy.visitAndCheck(`/admin/dinners/${dinnerId}/signups`);
+      cy.visitAndCheck(`/admin/events/${eventId}/signups`);
       cy.findByText(signerName);
 
-      cy.request(`/admin/dinners/${dinnerId}/signups.csv`).then((response) => {
+      cy.request(`/admin/events/${eventId}/signups.csv`).then((response) => {
         expect(response.body).to.include("Favorite dish");
         expect(response.body).to.include("Ramen");
         expect(response.body).to.include("Menu choice");
@@ -108,24 +117,22 @@ describe("admin signup form builder", () => {
 
   it("versions a submitted form and exports mixed legacy + multi-version rows", () => {
     const suffix = uniqueSuffix();
-    const values = dinnerFormValues(`builder-versions-${suffix}`);
+    const values = eventFormValues(`builder-versions-${suffix}`);
     const legacyName = `Legacy Guest ${suffix}`;
     const v1Signer = `V1 Signer ${suffix}`;
     const v1Friend = `V1 Friend ${suffix}`;
     const v2Signer = `V2 Signer ${suffix}`;
 
-    createDinnerViaAdminForm(values);
-    saveDinnerAndCaptureId(values.title).then((dinnerId) => {
-      dinnersToCleanup.push(dinnerId);
+    createEventViaAdminForm(values);
+    saveEventAndCaptureId(values.title).then((eventId) => {
+      eventsToCleanup.push(eventId);
 
-      // legacy rows can't be written through the app anymore
       runUploadDbCommand("create-legacy-response", {
-        eventId: dinnerId,
+        eventId: eventId,
         name: legacyName,
       });
 
-      // v1 signup with a friend
-      cy.visitAndCheck(`/dinners/${dinnerId}`);
+      cy.visitAndCheck(`/events/${eventId}`);
       fillSignupContact({
         name: v1Signer,
         email: `v1-${suffix}@example.com`,
@@ -137,17 +144,15 @@ describe("admin signup form builder", () => {
         .type(v1Friend);
       acceptPrivacyAndJoin();
 
-      // with submissions, existing field keys are locked and edits fork v2
-      cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
+      cy.visitAndCheck(`/admin/events/${eventId}/edit`);
       cy.findAllByLabelText(/field key \(locked/i).should(
         "have.length.greaterThan",
         0,
       );
-      relabelDietaryToAllergies();
-      saveDinnerExpectingDetail(values.title);
+      relabelSignerRestrictions("Allergies");
+      saveEventExpectingDetail(values.title);
 
-      // v2 signup (solo) against the renamed field
-      cy.visitAndCheck(`/dinners/${dinnerId}`);
+      cy.visitAndCheck(`/events/${eventId}`);
       fillSignupContact({
         name: v2Signer,
         email: `v2-${suffix}@example.com`,
@@ -157,10 +162,7 @@ describe("admin signup form builder", () => {
         .type("pollen");
       acceptPrivacyAndJoin();
 
-      // the roster groups each source into one party row — the v1 friend
-      // isn't named, they bump the signer's party size; the CSV below
-      // stays one row per person
-      cy.visitAndCheck(`/admin/dinners/${dinnerId}/signups`);
+      cy.visitAndCheck(`/admin/events/${eventId}/signups`);
       cy.findByText(legacyName);
       cy.findByText(v1Signer)
         .closest("tr")
@@ -169,7 +171,7 @@ describe("admin signup form builder", () => {
         });
       cy.findByText(v2Signer);
 
-      cy.request(`/admin/dinners/${dinnerId}/signups.csv`).then((response) => {
+      cy.request(`/admin/events/${eventId}/signups.csv`).then((response) => {
         expect(response.body).to.include("Allergies");
         expect(response.body).to.include(legacyName);
         expect(response.body).to.include(v1Signer);
@@ -182,35 +184,262 @@ describe("admin signup form builder", () => {
 
   it("edits a form and shows the change after reload", () => {
     const suffix = uniqueSuffix();
-    const values = dinnerFormValues(`builder-edit-${suffix}`);
+    const values = eventFormValues(`builder-edit-${suffix}`);
 
-    createDinnerViaAdminForm(values);
-    saveDinnerAndCaptureId(values.title).then((dinnerId) => {
-      dinnersToCleanup.push(dinnerId);
+    createEventViaAdminForm(values);
+    saveEventAndCaptureId(values.title).then((eventId) => {
+      eventsToCleanup.push(eventId);
 
-      // relabel a default field and disable friends
-      cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
-      relabelDietaryToAllergies();
-      cy.findAllByRole("button", { name: /friends/i })
-        .first()
-        .click();
+      cy.visitAndCheck(`/admin/events/${eventId}/edit`);
+      relabelSignerRestrictions("Allergies");
+      openRow(FRIENDS_CARD);
       cy.findByLabelText(/max per signup/i)
         .clear()
         .type("0");
-      saveDinnerExpectingDetail(values.title);
+      saveEventExpectingDetail(values.title);
 
-      // reload shows the edited form
-      cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
-      cy.findAllByRole("button", { name: /allergies/i })
-        .first()
-        .click();
-      cy.findByDisplayValue("Allergies").should("be.visible");
+      cy.visitAndCheck(`/admin/events/${eventId}/edit`);
+      openRow(/allergies/i);
+      withinRow(/allergies/i, () => {
+        cy.findByLabelText(/^label$/i).should("have.value", "Allergies");
+      });
+      openRow(FRIENDS_CARD);
       cy.findByLabelText(/max per signup/i).should("have.value", "0");
 
-      // the public page reflects it: relabeled field, no friends button
-      cy.visitAndCheck(`/dinners/${dinnerId}`);
+      cy.visitAndCheck(`/events/${eventId}`);
       cy.findAllByRole("textbox", { name: /allergies/i }).should("exist");
       cy.findByRole("button", { name: /add a friend/i }).should("not.exist");
+    });
+  });
+
+  it("mirrors the signer's wording onto the friend's row as it is typed", () => {
+    const suffix = uniqueSuffix();
+    const values = eventFormValues(`builder-mirror-${suffix}`);
+
+    createEventViaAdminForm(values);
+    saveEventAndCaptureId(values.title).then((eventId) => {
+      eventsToCleanup.push(eventId);
+
+      cy.visitAndCheck(`/admin/events/${eventId}/edit`);
+      relabelSignerRestrictions("Allergies");
+
+      openRow(FRIENDS_CARD);
+      openRow(/allergies.*linked to the signer/i);
+      withinRow(/allergies.*linked to the signer/i, () => {
+        cy.contains("Mirrors the signer")
+          .should("be.visible")
+          .and("contain.text", "signer's “Allergies”");
+        cy.findAllByDisplayValue("Allergies")
+          .filter(":visible")
+          .should("have.length", 1)
+          .and("be.disabled");
+      });
+
+      saveEventExpectingDetail(values.title);
+
+      cy.visitAndCheck(`/events/${eventId}`);
+      cy.findAllByRole("textbox", { name: /allergies/i }).should(
+        "have.length",
+        1,
+      );
+      cy.findByRole("button", { name: /add a friend/i }).click();
+      cy.findAllByRole("textbox", { name: /allergies/i }).should(
+        "have.length",
+        2,
+      );
+    });
+  });
+
+  it("unlinks a pair from the friend's row and links it back", () => {
+    const suffix = uniqueSuffix();
+    const values = eventFormValues(`builder-unlink-${suffix}`);
+
+    createEventViaAdminForm(values);
+    saveEventAndCaptureId(values.title).then((eventId) => {
+      eventsToCleanup.push(eventId);
+
+      cy.visitAndCheck(`/admin/events/${eventId}/edit`);
+      openRow(FRIENDS_CARD);
+      openLastRow(FRIEND_RESTRICTIONS);
+      withinLastRow(FRIEND_RESTRICTIONS, () => {
+        cy.findByRole("button", { name: /^unlink$/i }).click();
+      });
+
+      cy.location("pathname").should("equal", `/admin/events/${eventId}/edit`);
+      cy.get("#unlink-dialog-restrictions")
+        .should("be.visible")
+        .within(() => {
+          cy.findByRole("heading", {
+            name: /unlink from the signer's question\?/i,
+          }).should("be.visible");
+          cy.findByLabelText(/new field key/i).should(
+            "have.value",
+            "restrictions_2",
+          );
+          cy.findByRole("button", { name: /^unlink$/i }).click();
+        });
+
+      cy.findByDisplayValue("restrictions_2").should("be.enabled");
+      cy.findAllByRole("button", { name: LINKED_RESTRICTIONS }).should(
+        "not.exist",
+      );
+
+      saveEventExpectingDetail(values.title);
+
+      cy.visitAndCheck(`/admin/events/${eventId}/edit`);
+      openRow(FRIENDS_CARD);
+      cy.findAllByRole("button", { name: RESTRICTIONS }).should(
+        "have.length",
+        2,
+      );
+      openLastRow(RESTRICTIONS);
+      withinLastRow(RESTRICTIONS, () => {
+        cy.findByLabelText(/^field key$/i).should(
+          "have.value",
+          "restrictions_2",
+        );
+      });
+
+      openRow(RESTRICTIONS);
+      withinRow(RESTRICTIONS, () => {
+        cy.findByRole("button", { name: /link to friends/i }).click();
+      });
+      cy.get("#link-dialog-restrictions")
+        .should("be.visible")
+        .within(() => {
+          cy.findByRole("heading", {
+            name: /also ask each friend this question\?/i,
+          }).should("be.visible");
+          cy.contains("Mirror onto")
+            .should("contain.text", "“Dietary restrictions”")
+            .click();
+          cy.findByRole("button", { name: /link to friends/i }).click();
+        });
+
+      cy.findAllByRole("button", { name: FRIEND_RESTRICTIONS }).should(
+        "have.length",
+        1,
+      );
+      withinLastRow(FRIEND_RESTRICTIONS, () => {
+        cy.contains("Mirrors the signer")
+          .should("be.visible")
+          .and("contain.text", "signer's “Dietary restrictions”");
+      });
+      cy.focused().should("contain.text", "Mirrors the signer");
+    });
+  });
+
+  it("warns about collected answers when unlinking an answered pair", () => {
+    const suffix = uniqueSuffix();
+    const values = eventFormValues(`builder-answers-${suffix}`);
+    const signerName = `Answered Signer ${suffix}`;
+    const friendName = `Answered Friend ${suffix}`;
+
+    createEventViaAdminForm(values);
+    saveEventAndCaptureId(values.title).then((eventId) => {
+      eventsToCleanup.push(eventId);
+
+      cy.visitAndCheck(`/events/${eventId}`);
+      fillSignupContact({
+        name: signerName,
+        email: `answers-${suffix}@example.com`,
+      });
+      cy.findByRole("button", { name: /add a friend/i }).click();
+      cy.findAllByRole("textbox", { name: /^name$/i })
+        .should("have.length", 2)
+        .last()
+        .type(friendName);
+      cy.findAllByRole("textbox", { name: RESTRICTIONS })
+        .should("have.length", 2)
+        .each(($field) => {
+          cy.wrap($field).type("nuts");
+        });
+      acceptPrivacyAndJoin();
+
+      cy.visitAndCheck(`/admin/events/${eventId}/edit`);
+      cy.findAllByLabelText(/field key \(locked/i).should(
+        "have.length.greaterThan",
+        0,
+      );
+      openRow(FRIENDS_CARD);
+      openLastRow(FRIEND_RESTRICTIONS);
+      withinLastRow(FRIEND_RESTRICTIONS, () => {
+        cy.findByRole("button", { name: /^unlink$/i }).click();
+      });
+
+      cy.get("#unlink-dialog-restrictions")
+        .should("be.visible")
+        .within(() => {
+          cy.contains(/2 answers were collected under the shared key/i).should(
+            "be.visible",
+          );
+          cy.contains("strong", "restrictions").should("be.visible");
+          cy.findByRole("button", { name: /^unlink$/i }).click();
+        });
+
+      cy.findByDisplayValue("restrictions_2")
+        .should("be.enabled")
+        .and("not.have.attr", "readonly");
+
+      openRow(RESTRICTIONS);
+      withinRow(RESTRICTIONS, () => {
+        cy.findByRole("button", { name: /link to friends/i }).click();
+      });
+      cy.get("#link-dialog-restrictions")
+        .should("be.visible")
+        .within(() => {
+          cy.contains(/1 friend has already answered this question/i).should(
+            "be.visible",
+          );
+          cy.contains("Mirror onto").click();
+          cy.contains(/friend has already answered/i).should("not.exist");
+          cy.findByRole("button", { name: /link to friends/i }).click();
+        });
+
+      const confirms: string[] = [];
+      cy.on("window:confirm", (message) => {
+        confirms.push(message);
+        return false;
+      });
+      withinLastRow(FRIEND_RESTRICTIONS, () => {
+        cy.findByRole("button", { name: /^remove$/i }).click();
+      });
+      cy.then(() => {
+        expect(confirms).to.have.length(1);
+        expect(confirms[0]).to.match(/already has signups/i);
+      });
+      cy.findAllByRole("button", { name: FRIEND_RESTRICTIONS }).should(
+        "have.length",
+        1,
+      );
+    });
+  });
+
+  it("keeps the session's wording on the friend when the signer row is removed", () => {
+    const suffix = uniqueSuffix();
+    const values = eventFormValues(`builder-keep-${suffix}`);
+
+    createEventViaAdminForm(values);
+    saveEventAndCaptureId(values.title).then((eventId) => {
+      eventsToCleanup.push(eventId);
+
+      cy.visitAndCheck(`/admin/events/${eventId}/edit`);
+      relabelSignerRestrictions("Allergies");
+      withinRow(/allergies/i, () => {
+        cy.findByRole("button", { name: /^remove$/i }).click();
+      });
+
+      openRow(FRIENDS_CARD);
+      withinLastRow(/allergies/i, () => {
+        cy.findByRole("button", { name: /toggle details/i }).then(($button) => {
+          if ($button.attr("data-panel-open") === undefined)
+            cy.wrap($button).click();
+        });
+        cy.findByLabelText(/^label$/i)
+          .should("have.value", "Allergies")
+          .and("be.enabled");
+        cy.findByLabelText(/^field key$/i).should("have.value", "restrictions");
+      });
     });
   });
 });

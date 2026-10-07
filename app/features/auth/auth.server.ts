@@ -36,8 +36,6 @@ export const auth = singleton("better-auth", () => {
     database: prismaAdapter(prisma, { provider: "sqlite" }),
     user: {
       additionalFields: {
-        // never part of any API input/output contract — the create hook
-        // below fills it; declared so the adapter persists it
         roleId: { type: "string", required: false, input: false },
       },
     },
@@ -69,8 +67,6 @@ export const auth = singleton("better-auth", () => {
     databaseHooks: {
       user: {
         create: {
-          // every signup path (password, Google, invite) must produce a
-          // roleId — the non-null FK is the safety net if one is missed
           before: async (user) => {
             const role = await getRoleByName("user");
             if (!role) {
@@ -99,8 +95,6 @@ export const auth = singleton("better-auth", () => {
       account: {
         create: {
           after: async (account) => {
-            // accountLinking.trustedProviders links a Google identity onto an
-            // existing address without a confirmation step
             requestLogger.warn(
               { userId: account.userId, provider: account.providerId },
               "Account linked to a user",

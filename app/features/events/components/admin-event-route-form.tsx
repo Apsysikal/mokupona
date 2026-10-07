@@ -14,6 +14,8 @@ import type { AddressOptionModel } from "../view-models";
 
 import { AdminEventForm } from "./admin-event-form";
 
+import type { AnswerCountsByFieldKey } from "~/features/signup-form/read.server";
+
 type AdminEventRouteFormProps = {
   schema: typeof EventSchema | typeof EventEditSchema;
   lastResult?: SubmissionResult;
@@ -23,9 +25,9 @@ type AdminEventRouteFormProps = {
   pageTitle: string;
   cancelHref: string;
   lockFieldKeys?: boolean;
+  answerCounts?: AnswerCountsByFieldKey;
 };
 
-/** Shared Conform and multipart shell for event create/edit route screens. */
 export function AdminEventRouteForm({
   schema,
   lastResult,
@@ -35,6 +37,7 @@ export function AdminEventRouteForm({
   pageTitle,
   cancelHref,
   lockFieldKeys,
+  answerCounts,
 }: AdminEventRouteFormProps) {
   const [form, fields] = useForm<
     z.input<typeof EventEditSchema>,
@@ -64,6 +67,7 @@ export function AdminEventRouteForm({
           pageTitle={pageTitle}
           cancelHref={cancelHref}
           lockFieldKeys={lockFieldKeys}
+          answerCounts={answerCounts}
         />
       </Form>
     </FormProvider>

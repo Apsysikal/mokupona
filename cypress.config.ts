@@ -11,8 +11,6 @@ export default defineConfig({
         screenshotOnRunFailure: !process.env.CI,
       };
 
-      // To use this:
-      // cy.task('log', whateverYouWantInTheTerminal)
       on("task", {
         log: (message) => {
           console.log(message);

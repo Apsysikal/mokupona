@@ -28,7 +28,6 @@ async function createInvite(
 }
 
 beforeAll(async () => {
-  // acceptInvite resolves invite.roleName against the real Role table
   await ensureAuthRoles();
 });
 
@@ -41,7 +40,6 @@ describe("upsertInvite", () => {
 
     expect(second.id).toBe(first.id);
     expect(second.roleName).toBe("moderator");
-    // the token rotates, killing the previously mailed link
     expect(second.token).not.toBe(first.token);
 
     const pending = await listPendingInvites();
@@ -57,7 +55,6 @@ describe("upsertInvite", () => {
       where: { id: invite.id },
     });
     expect(row.tokenHash).not.toBe(invite.token);
-    // ...but the raw token still resolves through the hashed lookup
     expect((await getInviteByToken(invite.token))?.id).toBe(invite.id);
   });
 

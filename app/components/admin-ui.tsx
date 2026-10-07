@@ -1,4 +1,4 @@
-import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
+import { SearchIcon } from "lucide-react";
 
 import { chipVariants, Eyebrow, pageTitleClassName } from "./section";
 import { Card } from "./ui/card";
@@ -51,7 +51,7 @@ export function AdminSearchField({
         "flex items-center gap-2 max-md:w-full md:w-72",
       )}
     >
-      <MagnifyingGlassIcon className="text-foreground/50 size-4 shrink-0" />
+      <SearchIcon className="text-foreground/50 size-4 shrink-0" />
       <input
         type="search"
         value={value}
@@ -84,8 +84,6 @@ export function FilterChip({
   );
 }
 
-// The bar is deliberately capped by its parent (max-w on the wrapping group)
-// rather than full-width.
 export function SeatProgress({
   taken,
   total,
@@ -93,7 +91,6 @@ export function SeatProgress({
 }: {
   taken: number;
   total: number;
-  /** past dinners fill in a faint tint instead of the accent */
   muted?: boolean;
 }) {
   const percent =
@@ -130,7 +127,6 @@ export function InitialsAvatar({
   className,
 }: {
   name: string;
-  /** list index — picks the tint so colors rotate down a list */
   seed: number;
   className?: string;
 }) {

@@ -1,11 +1,6 @@
 import { getFormProps, getInputProps, useForm } from "@conform-to/react";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
-import {
-  ArrowRightIcon,
-  InfoCircledIcon,
-  LinkBreak2Icon,
-  LockClosedIcon,
-} from "@radix-ui/react-icons";
+import { ArrowRightIcon, InfoIcon, Link2OffIcon, LockIcon } from "lucide-react";
 import { data, Form, Link, redirect } from "react-router";
 import { z } from "zod";
 
@@ -15,7 +10,7 @@ import { AuthShell } from "~/components/auth-layout";
 import { AuthStatus } from "~/components/auth-status";
 import { ErrorList, Field } from "~/components/forms";
 import { pillVariants } from "~/components/section";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { isAuthToggleEnabled } from "~/features/auth/auth-settings.server";
@@ -30,6 +25,7 @@ import {
 import { passwordSchema } from "~/features/auth/password-schema";
 import { landingPathForRole } from "~/features/auth/roles";
 import { normalizeInvitableRole } from "~/features/users/invite.shared";
+import { cn } from "~/lib/utils";
 import { requestLogger } from "~/logger/request-context.server";
 import {
   acceptInvite,
@@ -112,7 +108,6 @@ export const action = async ({
 
   if (intent === "logout-retry") {
     const mismatched = await context.get(optionalUserContext)();
-    // destroys the session, then lands back on this link for a clean retry
     const response = await logout(request);
     log.warn(
       { userId: mismatched?.id },
@@ -125,7 +120,6 @@ export const action = async ({
   const invite = await getInviteByToken(params.token);
   const validity = inviteValidity(invite);
   if (validity !== "valid" || !invite) {
-    // token went stale between render and submit — re-render the dead-end
     log.warn(
       { inviteId: invite?.id, reason: validity },
       "Invite submitted with a token that is no longer valid",
@@ -133,8 +127,6 @@ export const action = async ({
     return redirect(`/invite/${params.token}`);
   }
 
-  // Prisma types roleName as string; invites only ever carry an invitable
-  // role, so fall back the way the invite mailer does.
   const landingPath = landingPathForRole(
     normalizeInvitableRole(invite.roleName),
   );
@@ -189,8 +181,6 @@ export const action = async ({
     const created = await getUserByEmail(invite.email);
     if (!created) throw new Error("signup did not create a user");
 
-    // the invite link proves mailbox control: acceptance verifies the email
-    // and applies the role atomically — no verification mail hop needed
     await acceptCurrentInvite(invite, created.id, params.token);
 
     const { headers } = await auth.api.signInEmail({
@@ -225,7 +215,7 @@ const DEAD_END_COPY = {
   },
   expired: {
     heading: "this invite has expired",
-    body: "invites last about a week. ask whoever invited you to send a fresh one, or browse our public dinners in the meantime.",
+    body: "invites last about a week. ask whoever invited you to send a fresh one, or browse our public events in the meantime.",
   },
   used: {
     heading: "this invite has already been accepted",
@@ -244,13 +234,16 @@ export default function InvitePage({
       <AuthStatus
         standalone
         tone="neutral"
-        icon={<LinkBreak2Icon className="size-7" />}
+        icon={<Link2OffIcon className="size-7" />}
         heading={copy.heading}
         body={copy.body}
       >
-        <Button size="lg" className="w-full" asChild>
-          <Link to="/dinners">browse dinners</Link>
-        </Button>
+        <Link
+          to="/events"
+          className={cn(buttonVariants({ size: "lg" }), "w-full")}
+        >
+          browse events
+        </Link>
         <Link
           to="/login"
           className="text-primary text-sm font-semibold hover:underline"
@@ -267,7 +260,7 @@ export default function InvitePage({
     return (
       <AuthStatus
         standalone
-        icon={<LockClosedIcon className="size-7" />}
+        icon={<LockIcon className="size-7" />}
         heading="accept your invite"
         body={
           <>
@@ -282,7 +275,7 @@ export default function InvitePage({
             <RolePill>{currentRole}</RolePill>
             <ArrowRightIcon className="text-foreground/50 size-4" />
             <RolePill accent>
-              <LockClosedIcon className="size-3" />
+              <LockIcon className="size-3" />
               {roleName}
             </RolePill>
           </div>
@@ -309,7 +302,7 @@ export default function InvitePage({
       <AuthStatus
         standalone
         tone="neutral"
-        icon={<InfoCircledIcon className="size-7" />}
+        icon={<InfoIcon className="size-7" />}
         heading="this invite is for a different account"
         body={
           <>
@@ -381,8 +374,8 @@ function InviteSignup({
 
   const brandBody =
     roleName === "moderator"
-      ? `${inviterName} invited you to help run our dinners. set a password to accept. your invite is tied to the email below.`
-      : `${inviterName} invited you to join our dinners. set a password to accept. your invite is tied to the email below.`;
+      ? `${inviterName} invited you to help run our events. set a password to accept. your invite is tied to the email below.`
+      : `${inviterName} invited you to join our events. set a password to accept. your invite is tied to the email below.`;
 
   return (
     <AuthShell
@@ -421,7 +414,7 @@ function InviteSignup({
               disabled
               className="text-foreground/65 pr-10"
             />
-            <LockClosedIcon
+            <LockIcon
               aria-hidden
               className="text-foreground/50 absolute top-1/2 right-3 size-4 -translate-y-1/2"
             />

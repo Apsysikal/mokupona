@@ -20,7 +20,7 @@ import {
 import { BackLink, pageTitleClassName } from "~/components/section";
 import { SectionNav } from "~/components/section-nav";
 import { SignupFormBuilder } from "~/components/signup-form-builder";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 import {
   Card,
   CardContent,
@@ -28,6 +28,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import type { AnswerCountsByFieldKey } from "~/features/signup-form/read.server";
 import { cn } from "~/lib/utils";
 import { VALID_IMAGE_TYPES } from "~/shared/image";
 
@@ -41,8 +42,8 @@ type AdminEventFormProps = {
   submitText: string;
   pageTitle: string;
   cancelHref: string;
-  // true once the event's form has submissions (edit screen only)
   lockFieldKeys?: boolean;
+  answerCounts?: AnswerCountsByFieldKey;
 };
 
 const SECTIONS = [
@@ -65,11 +66,7 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card
-      id={id}
-      // scroll-mt clears the sticky chip nav when jumping via anchor links
-      className="scroll-mt-16 md:scroll-mt-8"
-    >
+    <Card id={id} className="scroll-mt-16 md:scroll-mt-8">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         {description ? <CardDescription>{description}</CardDescription> : null}
@@ -100,9 +97,12 @@ function SaveBar({
           Unsaved changes
         </p>
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
-          <Button variant="outline" asChild>
-            <Link to={cancelHref}>Cancel</Link>
-          </Button>
+          <Link
+            to={cancelHref}
+            className={buttonVariants({ variant: "outline" })}
+          >
+            Cancel
+          </Link>
           <Button type="submit">{submitText}</Button>
         </div>
       </div>
@@ -117,12 +117,13 @@ export function AdminEventForm({
   pageTitle,
   cancelHref,
   lockFieldKeys,
+  answerCounts,
 }: AdminEventFormProps) {
   return (
     <div className="flex flex-col gap-4 md:gap-6">
       <div>
-        <BackLink to="/admin/dinners" prefetch="intent">
-          Dinners
+        <BackLink to="/admin/events" prefetch="intent">
+          Events
         </BackLink>
         <h1 className={pageTitleClassName}>{pageTitle}</h1>
       </div>
@@ -134,7 +135,7 @@ export function AdminEventForm({
           <SectionCard
             id="section-basics"
             title="Basics"
-            description="Title and description guests see on the dinner page."
+            description="Title and description guests see on the event page."
           >
             <Field
               labelProps={{ children: "Title" }}
@@ -234,6 +235,13 @@ export function AdminEventForm({
               }}
               errors={fields.cover.errors}
             />
+            <noscript>
+              <p className="text-foreground/65 text-sm">
+                Without JavaScript, the form&apos;s buttons reload the page and
+                a chosen cover file does not survive the reload — pick the cover
+                image last, right before saving.
+              </p>
+            </noscript>
 
             <SelectField
               labelProps={{ children: "Address" }}
@@ -253,6 +261,7 @@ export function AdminEventForm({
             <SignupFormBuilder
               field={fields.signupForm}
               lockFieldKeys={lockFieldKeys}
+              answerCounts={answerCounts}
             />
           </SectionCard>
 

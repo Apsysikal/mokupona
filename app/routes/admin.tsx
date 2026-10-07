@@ -15,9 +15,6 @@ import { countBoardMembers } from "~/models/board-member.server";
 import { countEvents } from "~/models/event.server";
 import { countUsers } from "~/models/user.server";
 
-// Authorizes the root-resolved user for the whole admin hierarchy and exposes
-// the required userContext. Descendants inherit this middleware; only the
-// admin-only users segment needs an additional narrowing check.
 export const middleware: Route.MiddlewareFunction[] = [
   requireResolvedUserRoleMiddleware(ADMIN_ROLE_NAMES),
 ];
@@ -26,15 +23,14 @@ export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext);
   const isAdmin = isAdminRole(user.role.name);
 
-  const [dinners, locations, board, users] = await Promise.all([
+  const [events, locations, board, users] = await Promise.all([
     countEvents(),
     countAddresses(),
     countBoardMembers(),
-    // the users section (and its tab) is admin-only
     isAdmin ? countUsers() : Promise.resolve(null),
   ]);
 
-  return { counts: { dinners, locations, board, users }, isAdmin };
+  return { counts: { events, locations, board, users }, isAdmin };
 }
 
 export const meta: Route.MetaFunction = () => {
@@ -52,8 +48,6 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
   );
 }
 
-// The middleware's 403 (and child 404s) land here instead of the root
-// boundary, so denied users see a styled page inside the site chrome.
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   return (
     <PageContainer className="grow pt-7 pb-20">

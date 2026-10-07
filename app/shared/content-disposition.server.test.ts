@@ -17,15 +17,14 @@ describe("contentDispositionAttachment", () => {
     expect(header).toContain(
       `filename*=UTF-8''Summer%20%27Special%27%20%28v2%29.csv`,
     );
-    // the quoted fallback contains no quotes or spaces
     expect(header).toContain(`filename="Summer-Special-v2-.csv"`);
   });
 
   it("leaves a plain ASCII name readable in both parameters", () => {
-    const header = contentDispositionAttachment("dinner-signups.csv");
+    const header = contentDispositionAttachment("event-signups.csv");
 
     expect(header).toBe(
-      `attachment; filename="dinner-signups.csv"; filename*=UTF-8''dinner-signups.csv`,
+      `attachment; filename="event-signups.csv"; filename*=UTF-8''event-signups.csv`,
     );
   });
 });
