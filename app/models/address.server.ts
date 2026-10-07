@@ -81,8 +81,8 @@ export async function deleteAddress(id: string): Promise<Address | null> {
     const inUse = await tx.event.count({ where: { addressId: id } });
     if (inUse > 0) {
       requestLogger.warn(
-        { addressId: id, reason: { dinnersUsingAddress: inUse } },
-        "Refused to delete an address dinners still point at",
+        { addressId: id, reason: { eventsUsingAddress: inUse } },
+        "Refused to delete an address events still point at",
       );
       return null;
     }

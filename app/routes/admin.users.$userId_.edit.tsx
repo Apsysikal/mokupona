@@ -88,7 +88,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
   return redirect(`/admin/users`);
 }
 
-export default function DinnersPage({
+export default function EventsPage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {

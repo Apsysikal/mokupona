@@ -65,7 +65,7 @@ describe("request logger middleware", () => {
 
   it("carries the minted request id into the context and the ambient store", async () => {
     const child = stubRequestChild();
-    const request = new Request("http://localhost:3000/dinners");
+    const request = new Request("http://localhost:3000/events");
     const context = new RouterContextProvider();
 
     await runMiddleware(requestLoggerMiddleware, request, context, async () => {
@@ -105,7 +105,7 @@ describe("resolved-user role middleware", () => {
   });
 
   it("redirects anonymous requests to /login with redirectTo", async () => {
-    const request = new Request("http://localhost:3000/admin/dinners");
+    const request = new Request("http://localhost:3000/admin/events");
     const context = new RouterContextProvider();
     await resolveUser(request, context);
     await expect(context.get(optionalUserContext)()).resolves.toBeNull();
@@ -118,7 +118,7 @@ describe("resolved-user role middleware", () => {
     expect(thrown).toBeInstanceOf(Response);
     expect((thrown as Response).status).toBe(302);
     expect((thrown as Response).headers.get("location")).toBe(
-      "/login?redirectTo=%2Fadmin%2Fdinners",
+      "/login?redirectTo=%2Fadmin%2Fevents",
     );
   });
 

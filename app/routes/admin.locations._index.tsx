@@ -47,7 +47,7 @@ export default function AdminLocationsPage({
         <AdminEmptyState
           icon={<MapPinIcon className="size-6" />}
           title="No locations yet"
-          description="Add the first venue address so dinners have somewhere to happen."
+          description="Add the first venue address so events have somewhere to happen."
           action={
             <Link to="new" className={buttonVariants()}>
               New location
@@ -92,7 +92,7 @@ function LocationCard({ address }: { address: AddressWithEventCount }) {
         <AdminDeleteButton action={`${id}/delete`} disabled={inUse} />
         {inUse ? (
           <span className="text-foreground/50 self-center text-xs">
-            hosts {eventCount} {eventCount === 1 ? "dinner" : "dinners"}
+            hosts {eventCount} {eventCount === 1 ? "event" : "events"}
           </span>
         ) : null}
       </div>

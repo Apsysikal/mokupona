@@ -20,9 +20,9 @@ describe("local image provider", () => {
       type: "image/jpeg",
     });
 
-    const stored = await provider.store(file, { folder: "dinners" });
+    const stored = await provider.store(file, { folder: "events" });
 
-    expect(stored.storageKey).toMatch(/^dinners\/[0-9a-f-]{36}$/);
+    expect(stored.storageKey).toMatch(/^events\/[0-9a-f-]{36}$/);
     expect(stored.version).toBeUndefined();
     expect(stored.width).toBeUndefined();
     expect(stored.blurDataUrl).toBeUndefined();
@@ -45,7 +45,7 @@ describe("local image provider", () => {
     );
     const file = new File([png], "frame.png", { type: "image/png" });
 
-    const stored = await provider.store(file, { folder: "dinner-gallery" });
+    const stored = await provider.store(file, { folder: "event-gallery" });
 
     expect(stored.width).toBe(40);
     expect(stored.height).toBe(30);
@@ -62,7 +62,7 @@ describe("local image provider", () => {
     const readWhole = vi.spyOn(file, "arrayBuffer");
     const readSlice = vi.spyOn(file, "slice");
 
-    const stored = await provider.store(file, { folder: "dinner-gallery" });
+    const stored = await provider.store(file, { folder: "event-gallery" });
 
     expect(stored.width).toBe(40);
     expect(stored.height).toBe(30);
@@ -92,7 +92,7 @@ describe("local image provider", () => {
     const provider = createLocalProvider(env);
     const file = new File(["doomed"], "doomed.webp", { type: "image/webp" });
 
-    const { storageKey } = await provider.store(file, { folder: "dinners" });
+    const { storageKey } = await provider.store(file, { folder: "events" });
     await provider.destroy(storageKey);
 
     await expect(getLocalImageFile(storageKey, env)).resolves.toBeNull();
@@ -110,7 +110,7 @@ describe("local image provider", () => {
     const provider = createLocalProvider(env);
     const stored = await provider.store(
       new File(["made-on-demand"], "a.jpg", { type: "image/jpeg" }),
-      { folder: "dinners" },
+      { folder: "events" },
     );
 
     await expect(

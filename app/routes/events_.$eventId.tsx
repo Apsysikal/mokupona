@@ -8,7 +8,7 @@ import { getZodConstraint, parseWithZod } from "@conform-to/zod/v4";
 import { useMemo } from "react";
 import { Form, Link } from "react-router";
 
-import type { Route } from "./+types/dinners_.$dinnerId";
+import type { Route } from "./+types/events_.$eventId";
 
 import { CheckboxField, ErrorList } from "~/components/forms";
 import { RouteErrorContent } from "~/components/route-error-content";
@@ -44,13 +44,13 @@ import { getImageConfig } from "~/shared/root-data";
 import { redirectWithToast } from "~/utils/toast.server";
 
 export async function loader({ params }: Route.LoaderArgs) {
-  const { dinnerId } = params;
+  const { eventId } = params;
 
   const { event, version } = requireFound(
-    await getEventWithCurrentFormVersion(dinnerId),
+    await getEventWithCurrentFormVersion(eventId),
   );
 
-  // the gallery belongs to evenings that already happened; upcoming dinners
+  // the gallery belongs to evenings that already happened; upcoming events
   // pay nothing for it
   const gallery = isPastEvent(event.date, new Date())
     ? await loadEventGallerySection(event.id)
@@ -76,14 +76,14 @@ const SIGNUP_SUCCESS_TOAST = {
 } as const;
 
 export async function action({ params, request, context }: Route.ActionArgs) {
-  const { dinnerId } = params;
+  const { eventId } = params;
   const logger = context.get(requestLoggerContext);
 
-  const { event: dinner, version } = requireFound(
-    await getEventWithCurrentFormVersion(dinnerId),
+  const { event, version } = requireFound(
+    await getEventWithCurrentFormVersion(eventId),
   );
 
-  if (isPastEvent(dinner.date, new Date())) {
+  if (isPastEvent(event.date, new Date())) {
     throw new Response("Forbidden", { status: 403 });
   }
 
@@ -103,13 +103,13 @@ export async function action({ params, request, context }: Route.ActionArgs) {
     logger.warn(
       {
         ip: getClientIPAddress(request),
-        dinner: dinner.id,
+        event: event.id,
         reason: honeypot.reason,
       },
-      "Blocked dinner signup caught by the spam trap",
+      "Blocked event signup caught by the spam trap",
     );
 
-    return redirectWithToast("/dinners", SIGNUP_SUCCESS_TOAST);
+    return redirectWithToast("/events", SIGNUP_SUCCESS_TOAST);
   }
 
   const submission = parseWithZod(formData, { schema });
@@ -118,10 +118,10 @@ export async function action({ params, request, context }: Route.ActionArgs) {
     logger.info(
       {
         ip: getClientIPAddress(request),
-        dinner: dinner.id,
+        event: event.id,
         reason: honeypot.reason,
       },
-      "Rejected dinner signup with an unverifiable spam-trap stamp",
+      "Rejected event signup with an unverifiable spam-trap stamp",
     );
 
     return submission.reply({ formErrors: [HONEYPOT_RETRY_MESSAGE] });
@@ -130,11 +130,11 @@ export async function action({ params, request, context }: Route.ActionArgs) {
   if (formData.get("formVersionId") !== version.id) {
     logger.info(
       {
-        dinner: dinner.id,
+        event: event.id,
         submittedVersion: formData.get("formVersionId"),
         currentVersion: version.id,
       },
-      "Dinner signup submitted against an outdated form version",
+      "Event signup submitted against an outdated form version",
     );
 
     return submission.reply({ formErrors: [FORM_CHANGED_ERROR] });
@@ -144,12 +144,12 @@ export async function action({ params, request, context }: Route.ActionArgs) {
     logger.info(
       {
         ip: getClientIPAddress(request),
-        dinner: dinner.id,
+        event: event.id,
         email:
           submission.payload["email"]?.toString() ?? "unknown@no-domain.com",
         reason: submission.status === "error" ? submission.error : null,
       },
-      "Failed submission for dinner signup",
+      "Failed submission for event signup",
     );
 
     return submission.reply();
@@ -171,10 +171,10 @@ export async function action({ params, request, context }: Route.ActionArgs) {
     if (reason instanceof FormVersionChangedError) {
       logger.warn(
         {
-          dinner: dinner.id,
+          event: event.id,
           formVersion: version.id,
         },
-        "Dinner signup raced an in-place form update",
+        "Event signup raced an in-place form update",
       );
 
       return submission.reply({ formErrors: [FORM_CHANGED_ERROR] });
@@ -183,11 +183,11 @@ export async function action({ params, request, context }: Route.ActionArgs) {
     logger.error(
       {
         ip: getClientIPAddress(request),
-        dinner: dinner.id,
+        event: event.id,
         email,
         error: reason,
       },
-      "Failed to persist dinner signup",
+      "Failed to persist event signup",
     );
 
     return submission.reply({
@@ -198,19 +198,19 @@ export async function action({ params, request, context }: Route.ActionArgs) {
   logger.info(
     {
       ip: getClientIPAddress(request),
-      dinner: dinner.id,
+      event: event.id,
       email,
     },
-    "Successful submission for dinner signup",
+    "Successful submission for event signup",
   );
 
-  return redirectWithToast("/dinners", SIGNUP_SUCCESS_TOAST);
+  return redirectWithToast("/events", SIGNUP_SUCCESS_TOAST);
 }
 
 export const meta: Route.MetaFunction = ({ loaderData, matches, location }) => {
   const metaTags = [
     {
-      title: "Dinner",
+      title: "Event",
     },
   ];
 
@@ -218,7 +218,7 @@ export const meta: Route.MetaFunction = ({ loaderData, matches, location }) => {
 
   const { event } = loaderData;
   const tags = [
-    { title: `Dinner - ${event.title}` },
+    { title: `Event - ${event.title}` },
     { property: "og:title", content: event.title },
     { property: "og:type", content: "website" },
   ];
@@ -232,7 +232,7 @@ export const meta: Route.MetaFunction = ({ loaderData, matches, location }) => {
   });
 };
 
-export default function DinnerPage({
+export default function EventPage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
@@ -247,8 +247,8 @@ export default function DinnerPage({
 
   return (
     <PageContainer className="grow pt-7 pb-20">
-      <BackLink to="/dinners" className="mb-6">
-        all dinners
+      <BackLink to="/events" className="mb-6">
+        all events
       </BackLink>
 
       <div className={gridClasses}>
@@ -350,7 +350,7 @@ function SignupForm({
         <ErrorList id={form.errorId} errors={form.errors} />
 
         <Button type="submit" size="lg" className="w-full">
-          join this dinner
+          join this event
         </Button>
 
         <p className="text-foreground/50 text-center text-xs leading-normal">

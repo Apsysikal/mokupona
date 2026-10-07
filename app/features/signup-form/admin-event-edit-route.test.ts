@@ -12,16 +12,16 @@ import { userContext } from "~/features/auth/middleware.server";
 import { parseStoredFormSchema } from "~/features/forms/serialization";
 import { createEvent } from "~/models/event.server";
 import { getCurrentFormVersionForEvent } from "~/models/form.server";
-import { action } from "~/routes/admin.dinners.$dinnerId_.edit";
+import { action } from "~/routes/admin.events.$eventId_.edit";
 
 const SIGNER_LABEL = "Allergies";
 const FRIEND_LABEL = "Dietary restrictions";
 
-async function createDinner() {
+async function createTestEvent() {
   const data = await buildEventData();
   const event = await createEvent(data);
 
-  return { dinnerId: event.id, addressId: data.addressId };
+  return { eventId: event.id, addressId: data.addressId };
 }
 
 async function moderator(): Promise<ValidatedUser> {
@@ -55,7 +55,7 @@ function appendRow(
 
 function editBody(addressId: string, rows: BuilderRow[]): URLSearchParams {
   const body = new URLSearchParams({
-    title: "A dinner with a linked question",
+    title: "An event with a linked question",
     description: "Every seat comes with a question asked twice.",
     date: "2026-09-01T18:30",
     slots: "10",
@@ -86,7 +86,7 @@ function disagreeingRows(): BuilderRow[] {
 }
 
 async function submit(
-  dinnerId: string,
+  eventId: string,
   body: URLSearchParams,
   user: ValidatedUser,
 ) {
@@ -94,29 +94,29 @@ async function submit(
   context.set(userContext, user);
 
   return action({
-    params: { dinnerId },
-    request: new Request(
-      `http://localhost:3000/admin/dinners/${dinnerId}/edit`,
-      { method: "POST", body },
-    ),
+    params: { eventId },
+    request: new Request(`http://localhost:3000/admin/events/${eventId}/edit`, {
+      method: "POST",
+      body,
+    }),
     context,
   } as unknown as Parameters<typeof action>[0]);
 }
 
-async function storedFields(dinnerId: string) {
-  const version = await getCurrentFormVersionForEvent(dinnerId);
+async function storedFields(eventId: string) {
+  const version = await getCurrentFormVersionForEvent(eventId);
   const parsed = parseStoredFormSchema(version?.schema);
   if (!parsed.success) throw new Error("the stored form schema does not parse");
 
   return parsed.data;
 }
 
-describe("admin dinner edit action", () => {
+describe("admin event edit action", () => {
   it("stores the signer's wording on both sides of a linked pair", async () => {
-    const { dinnerId, addressId } = await createDinner();
+    const { eventId, addressId } = await createTestEvent();
 
     const result = await submit(
-      dinnerId,
+      eventId,
       editBody(addressId, disagreeingRows()),
       await moderator(),
     );
@@ -124,7 +124,7 @@ describe("admin dinner edit action", () => {
     expect(result).toBeInstanceOf(Response);
     expect((result as Response).status).toBe(302);
 
-    const fields = await storedFields(dinnerId);
+    const fields = await storedFields(eventId);
     const signer = fields.find(
       (field) => field.type !== "list" && field.data.name === "restrictions",
     );
@@ -143,7 +143,7 @@ describe("admin dinner edit action", () => {
   });
 
   it("splits the pair into two questions once the friend's key differs", async () => {
-    const { dinnerId, addressId } = await createDinner();
+    const { eventId, addressId } = await createTestEvent();
     const rows = disagreeingRows().map((row): BuilderRow => {
       if (row.type !== "list") return row;
 
@@ -157,9 +157,9 @@ describe("admin dinner edit action", () => {
       };
     });
 
-    await submit(dinnerId, editBody(addressId, rows), await moderator());
+    await submit(eventId, editBody(addressId, rows), await moderator());
 
-    const fields = await storedFields(dinnerId);
+    const fields = await storedFields(eventId);
     const friends = fields.find((field) => field.type === "list");
     const unlinked = friends?.data.itemFields.find(
       (item) => item.data.name === "restrictions_2",

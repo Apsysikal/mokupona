@@ -4,7 +4,7 @@ import { createRoutesStub } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 
 import type { GalleryEntryWithReuse } from "~/models/gallery.server";
-import AdminDinnerGalleryPage from "~/routes/admin.dinners.$dinnerId_.gallery";
+import AdminEventGalleryPage from "~/routes/admin.events.$eventId_.gallery";
 import type { ImageProviderConfig } from "~/shared/image";
 
 // the entry cards render OptimizedImage, which reads delivery config from the
@@ -24,23 +24,23 @@ function entry(id: string): GalleryEntryWithReuse {
     altText: null,
     image: {
       id: `img-${id}`,
-      storageKey: `dinner-gallery/${id}`,
+      storageKey: `event-gallery/${id}`,
       version: 1,
       width: 1200,
       height: 800,
       blurDataUrl: null,
     },
-    event: { id: "dinner-1", title: "nine courses", date: new Date() },
+    event: { id: "event-1", title: "nine courses", date: new Date() },
     sharedWith: [],
   };
 }
 
-type PageProps = Parameters<typeof AdminDinnerGalleryPage>[0];
+type PageProps = Parameters<typeof AdminEventGalleryPage>[0];
 
 function propsFor(entries: GalleryEntryWithReuse[]) {
   return {
     loaderData: {
-      dinner: { id: "dinner-1", title: "nine courses" },
+      event: { id: "event-1", title: "nine courses" },
       entries,
       maxFiles: 12,
     },
@@ -59,7 +59,7 @@ function renderGallery(entries: GalleryEntryWithReuse[]) {
   function Page() {
     const [current, setCurrent] = useState(entries);
     settle = setCurrent;
-    return <AdminDinnerGalleryPage {...propsFor(current)} />;
+    return <AdminEventGalleryPage {...propsFor(current)} />;
   }
 
   const Stub = createRoutesStub([{ path: "/", Component: Page }]);
@@ -81,7 +81,7 @@ function fill(photos: HTMLInputElement, caption: HTMLInputElement) {
   fireEvent.change(caption, { target: { value: "A long table" } });
 }
 
-describe("admin dinner gallery upload form", () => {
+describe("admin event gallery upload form", () => {
   // happy-dom's form.reset() leaves input.files alone, so the caption stands
   // in for the whole form here; the browser clears both in one call
   it("drops what was submitted once the photos are in the gallery", () => {

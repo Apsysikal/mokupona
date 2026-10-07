@@ -1,6 +1,6 @@
 import { redirect } from "react-router";
 
-import type { Route } from "./+types/admin.dinners.new";
+import type { Route } from "./+types/admin.events.new";
 
 import { userContext } from "~/features/auth/middleware.server";
 import { AdminEventRouteForm } from "~/features/events/components/admin-event-route-form";
@@ -66,23 +66,23 @@ export async function action({ request, context }: Route.ActionArgs) {
           addressId,
           image: {
             contentType: cover.type,
-            ...(await storeImage(cover, "dinners")),
+            ...(await storeImage(cover, "events")),
           },
           createdById: user.id,
         },
         builderRowsToDescriptors(signupForm),
       );
 
-      return redirect(`/admin/dinners/${event.id}`);
+      return redirect(`/admin/events/${event.id}`);
     },
   });
 }
 
 export const meta: Route.MetaFunction = () => {
-  return [{ title: "Admin - Create Dinner" }];
+  return [{ title: "Admin - Create Event" }];
 };
 
-export default function AdminDinnerNewPage({
+export default function AdminEventNewPage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
@@ -95,9 +95,9 @@ export default function AdminDinnerNewPage({
       lastResult={actionData}
       defaultValue={{ signupForm: defaultBuilderRows() }}
       addressOptions={addressOptions}
-      submitText="Save dinner"
-      pageTitle="New dinner"
-      cancelHref="/admin/dinners"
+      submitText="Save event"
+      pageTitle="New event"
+      cancelHref="/admin/events"
     />
   );
 }

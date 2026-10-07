@@ -5,9 +5,9 @@ import {
   fillSignupContact,
 } from "../support/upload-test-utils";
 
-describe("dinner signup", () => {
-  function visitFirstDinner() {
-    cy.visitAndCheck("/dinners");
+describe("event signup", () => {
+  function visitFirstEvent() {
+    cy.visitAndCheck("/events");
     cy.findAllByRole("link", { name: /read more/i })
       .first()
       .click();
@@ -28,15 +28,15 @@ describe("dinner signup", () => {
       .type(name);
   }
 
-  it("allows signing up for a dinner", () => {
-    visitFirstDinner();
+  it("allows signing up for an event", () => {
+    visitFirstEvent();
 
     fillSigner();
     acceptPrivacyAndJoin();
   });
 
   it("allows signing up with a friend", () => {
-    visitFirstDinner();
+    visitFirstEvent();
 
     fillSigner();
     addFriend(faker.person.fullName());
@@ -48,11 +48,11 @@ describe("dinner signup", () => {
     const signerName = `Cypress Signer ${suffix}`;
     const friendName = `Cypress Friend ${suffix}`;
 
-    visitFirstDinner();
+    visitFirstEvent();
     cy.location("pathname")
-      .should("match", /^\/dinners\/[^/]+$/)
+      .should("match", /^\/events\/[^/]+$/)
       .then((pathname) => {
-        const dinnerId = pathname.split("/").pop();
+        const eventId = pathname.split("/").pop();
 
         fillSignupContact({
           name: signerName,
@@ -63,24 +63,22 @@ describe("dinner signup", () => {
 
         cy.loginAsRole("moderator");
 
-        cy.visitAndCheck(`/admin/dinners/${dinnerId}/signups`);
+        cy.visitAndCheck(`/admin/events/${eventId}/signups`);
         cy.findByText(signerName)
           .closest("tr")
           .within(() => {
             cy.findByText("2");
           });
 
-        cy.request(`/admin/dinners/${dinnerId}/signups.csv`).then(
-          (response) => {
-            expect(response.body).to.include(signerName);
-            expect(response.body).to.include(friendName);
-          },
-        );
+        cy.request(`/admin/events/${eventId}/signups.csv`).then((response) => {
+          expect(response.body).to.include(signerName);
+          expect(response.body).to.include(friendName);
+        });
       });
   });
 
   it("shows validation errors for an empty submission", () => {
-    visitFirstDinner();
+    visitFirstEvent();
 
     cy.findByRole("button", { name: /join/i }).click();
 
@@ -88,6 +86,6 @@ describe("dinner signup", () => {
     cy.findByText("Email is required");
     cy.findByText("Phone number is required");
     cy.findByText("You must agree to signup");
-    cy.location("pathname").should("not.equal", "/dinners");
+    cy.location("pathname").should("not.equal", "/events");
   });
 });

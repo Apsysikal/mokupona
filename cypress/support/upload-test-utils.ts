@@ -5,7 +5,7 @@ export const UPLOAD_HANDLER_LIMIT_BYTES = 1024 * 1024 * 4;
 export const FILE_TOO_LARGE_ERROR = "File cannot be greater than 3MB";
 export const VALID_UPLOAD_FIXTURE_PATH = "cypress/fixtures/upload-image.jpg";
 
-export interface DinnerRecord {
+export interface EventRecord {
   id: string;
   title: string;
   description: string;
@@ -36,9 +36,9 @@ export interface ImageRecord {
 }
 
 type UploadDbAction =
-  | "create-dinner"
-  | "get-dinner"
-  | "delete-dinner"
+  | "create-event"
+  | "get-event"
+  | "delete-event"
   | "get-image"
   | "delete-image"
   | "create-legacy-response"
@@ -51,16 +51,16 @@ export function uniqueSuffix() {
   return `${Date.now()}-${Math.round(Math.random() * 1_000_000)}`;
 }
 
-export function dinnerFormValues(suffix: string) {
+export function eventFormValues(suffix: string) {
   return {
-    title: `Cypress dinner ${suffix}`,
-    description: `Dinner description ${suffix}`,
-    menuDescription: `Dinner menu ${suffix}`,
-    donationDescription: `Dinner donation ${suffix}`,
+    title: `Cypress event ${suffix}`,
+    description: `Event description ${suffix}`,
+    menuDescription: `Event menu ${suffix}`,
+    donationDescription: `Event donation ${suffix}`,
     date: "2035-02-01T18:30",
     slots: "12",
     price: "28",
-    discounts: `Dinner discount ${suffix}`,
+    discounts: `Event discount ${suffix}`,
   };
 }
 
@@ -187,7 +187,7 @@ export function getFirstAddressId() {
       const addressId = $option.val();
 
       if (typeof addressId !== "string") {
-        throw new Error("Address value missing from dinner form");
+        throw new Error("Address value missing from event form");
       }
 
       return addressId;
@@ -200,7 +200,7 @@ export function selectFirstAddress() {
   });
 }
 
-export function fillDinnerForm(values: ReturnType<typeof dinnerFormValues>) {
+export function fillEventForm(values: ReturnType<typeof eventFormValues>) {
   cy.findByLabelText(/^title$/i)
     .clear()
     .type(values.title);
@@ -229,40 +229,38 @@ export function fillDinnerForm(values: ReturnType<typeof dinnerFormValues>) {
   selectFirstAddress();
 }
 
-export function uploadDinnerCover(file: string | Cypress.FileReferenceObject) {
+export function uploadEventCover(file: string | Cypress.FileReferenceObject) {
   cy.findByLabelText(/^cover$/i).selectFile(file, { force: true });
 }
 
-export function createDinnerViaAdminForm(
-  values: ReturnType<typeof dinnerFormValues>,
+export function createEventViaAdminForm(
+  values: ReturnType<typeof eventFormValues>,
 ) {
-  cy.visitAndCheck("/admin/dinners/new");
-  fillDinnerForm(values);
-  uploadDinnerCover(VALID_UPLOAD_FIXTURE_PATH);
+  cy.visitAndCheck("/admin/events/new");
+  fillEventForm(values);
+  uploadEventCover(VALID_UPLOAD_FIXTURE_PATH);
 }
 
-export function saveDinnerAndCaptureId(
+export function saveEventAndCaptureId(
   title: string,
 ): Cypress.Chainable<string> {
-  cy.findByRole("button", { name: /save dinner/i }).click();
+  cy.findByRole("button", { name: /save event/i }).click();
   cy.findByRole("heading", { name: title }).should("be.visible");
 
   return cy
     .location("pathname")
-    .should("match", /\/admin\/dinners\/[^/.]+$/)
-    .then((pathname) => getDinnerIdFromPathname(pathname));
+    .should("match", /\/admin\/events\/[^/.]+$/)
+    .then((pathname) => getEventIdFromPathname(pathname));
 }
 
-export function getDinnerIdFromPathname(pathname: string) {
-  const dinnerId = pathname.match(
-    /\/admin\/dinners\/([^/.]+)(?:\.data)?$/,
-  )?.[1];
+export function getEventIdFromPathname(pathname: string) {
+  const eventId = pathname.match(/\/admin\/events\/([^/.]+)(?:\.data)?$/)?.[1];
 
-  if (!dinnerId) {
-    throw new Error(`Unable to determine dinner id from pathname: ${pathname}`);
+  if (!eventId) {
+    throw new Error(`Unable to determine event id from pathname: ${pathname}`);
   }
 
-  return dinnerId;
+  return eventId;
 }
 
 export function fillSignupContact({
@@ -284,6 +282,6 @@ export function fillSignupContact({
 export function acceptPrivacyAndJoin() {
   cy.findByLabelText(/agree to the privacy policy/i).click();
   cy.findByRole("button", { name: /join/i }).click();
-  cy.location("pathname").should("equal", "/dinners");
+  cy.location("pathname").should("equal", "/events");
   cy.findByText(/signup complete/i);
 }

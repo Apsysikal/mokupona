@@ -17,7 +17,7 @@ interface AuthShellBrandCopy {
 const DEFAULT_BRAND: AuthShellBrandCopy = {
   eyebrow: "members",
   heading: "welcome back to the table",
-  body: "sign in to manage your reservations, or create an account to start joining our dinners.",
+  body: "sign in to manage your reservations, or create an account to start joining our events.",
 };
 
 interface AuthShellProps {

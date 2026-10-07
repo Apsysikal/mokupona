@@ -53,7 +53,7 @@ export async function buildEventData() {
     price: 20,
     image: {
       contentType: "image/jpeg",
-      storageKey: `test/dinners/${faker.string.uuid()}`,
+      storageKey: `test/events/${faker.string.uuid()}`,
     },
     addressId: address.id,
     createdById: user.id,

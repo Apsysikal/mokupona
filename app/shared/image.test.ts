@@ -34,7 +34,7 @@ describe("getImageUrl — local provider", () => {
 
   it("serves a locally stored row (no cloud name) from the resource route", () => {
     expect(
-      getImageUrl({ id: "img-1", storageKey: "dinners/uuid" }, localConfig),
+      getImageUrl({ id: "img-1", storageKey: "events/uuid" }, localConfig),
     ).toBe("/file/img-1");
   });
 });

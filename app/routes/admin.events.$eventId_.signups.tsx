@@ -1,6 +1,6 @@
 import { DownloadIcon } from "lucide-react";
 
-import type { Route } from "./+types/admin.dinners.$dinnerId_.signups";
+import type { Route } from "./+types/admin.events.$eventId_.signups";
 
 import { AdminPageHeader, InitialsAvatar } from "~/components/admin-ui";
 import { BackLink } from "~/components/section";
@@ -50,11 +50,11 @@ function toParties(attendees: Attendee[]) {
 }
 
 export async function loader({ params }: Route.LoaderArgs) {
-  const { dinnerId } = params;
+  const { eventId } = params;
 
   const [event, attendees] = await Promise.all([
-    getEventById(dinnerId).then(requireFound),
-    getAttendeesForEvent(dinnerId),
+    getEventById(eventId).then(requireFound),
+    getAttendeesForEvent(eventId),
   ]);
 
   return {
@@ -68,21 +68,19 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
   return [
     {
       title: loaderData
-        ? `Admin - Dinner - ${loaderData.event.title} - Signups`
-        : "Admin - Dinner - Signups",
+        ? `Admin - Event - ${loaderData.event.title} - Signups`
+        : "Admin - Event - Signups",
     },
   ];
 };
 
-export default function DinnerSignupsPage({
-  loaderData,
-}: Route.ComponentProps) {
+export default function EventSignupsPage({ loaderData }: Route.ComponentProps) {
   const { event, seatsTaken, parties } = loaderData;
 
   return (
     <main className="animate-page-in">
-      <BackLink to="/admin/dinners" prefetch="intent">
-        Dinners
+      <BackLink to="/admin/events" prefetch="intent">
+        Events
       </BackLink>
 
       <AdminPageHeader

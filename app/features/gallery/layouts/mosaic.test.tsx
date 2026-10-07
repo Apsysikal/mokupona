@@ -33,7 +33,7 @@ function makeImage(
     alt: `photo ${overrides.id}`,
     caption: null,
     event: {
-      id: "dinner-1",
+      id: "event-1",
       title: "nine courses",
       date: "2026-04-11T18:00:00.000Z",
     },
@@ -183,7 +183,7 @@ describe("mosaic layout", () => {
     expect(caption).not.toHaveAttribute("tabindex");
   });
 
-  it("lets the keyboard reveal the scrim on a tile with no dinner link", () => {
+  it("lets the keyboard reveal the scrim on a tile with no event link", () => {
     const { container } = renderMosaic({
       images: [makeImage({ id: "orphan", event: null, caption: "a candle" })],
     });
@@ -204,7 +204,7 @@ describe("mosaic layout", () => {
     }
   });
 
-  it("labels the dinner an image came from with a link to it", () => {
+  it("labels the event an image came from with a link to it", () => {
     const { container } = renderMosaic({
       images: [makeImage({ id: "a", caption: "steam off the pot" })],
     });
@@ -212,11 +212,11 @@ describe("mosaic layout", () => {
     const link = firstWallOf(container).getByRole("link", {
       name: /nine courses/,
     });
-    expect(link).toHaveAttribute("href", "/dinners/dinner-1");
+    expect(link).toHaveAttribute("href", "/events/event-1");
     expect(link).toHaveTextContent("apr 2026");
   });
 
-  it("renders an image no dinner claims without a label", () => {
+  it("renders an image no event claims without a label", () => {
     const { container } = renderMosaic({
       images: [makeImage({ id: "orphan", event: null, caption: "a candle" })],
     });
@@ -227,7 +227,7 @@ describe("mosaic layout", () => {
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 
-  it("drops the (redundant) dinner labels in the section variant", () => {
+  it("drops the (redundant) event labels in the section variant", () => {
     renderMosaic({
       images: [makeImage({ id: "a", caption: "steam off the pot" })],
       variant: "section",

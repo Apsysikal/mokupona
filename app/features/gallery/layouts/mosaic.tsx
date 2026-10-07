@@ -65,7 +65,7 @@ function distribute(images: GalleryImageModel[], columnCount: number) {
   return columns;
 }
 
-function DinnerLabel({
+function EventLabel({
   event,
 }: {
   event: NonNullable<GalleryImageModel["event"]>;
@@ -74,7 +74,7 @@ function DinnerLabel({
 
   return (
     <Link
-      to={`/dinners/${event.id}`}
+      to={`/events/${event.id}`}
       className="text-foreground/50 hover:text-foreground focus-visible:ring-ring pointer-events-auto w-fit transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
     >
       {event.title} ·{" "}
@@ -87,18 +87,18 @@ function DinnerLabel({
 
 function MosaicTile({
   image,
-  showDinner,
+  showEvent,
   sizes,
   onOpen,
 }: {
   image: GalleryImageModel;
-  showDinner: boolean;
+  showEvent: boolean;
   sizes: string;
   onOpen: (id: string) => void;
 }) {
   const { width, height } = tileSize(image.image);
-  const dinner = showDinner ? image.event : null;
-  const hasCaption = Boolean(image.caption) || Boolean(dinner);
+  const event = showEvent ? image.event : null;
+  const hasCaption = Boolean(image.caption) || Boolean(event);
 
   return (
     <figure className="group relative">
@@ -121,15 +121,15 @@ function MosaicTile({
         // Below md the caption sits under the photo, where the narrow tiles
         // have no room to overlay it. From md up it is a scrim over the whole
         // tile: the scrim is the hover target, so it covers the photo rather
-        // than a band of it. Without a dinner link the tile holds nothing
+        // than a band of it. Without an event link the tile holds nothing
         // focusable, so the caption itself takes focus to reveal that scrim.
         <figcaption
-          tabIndex={dinner ? undefined : 0}
+          tabIndex={event ? undefined : 0}
           className={cn(
             "text-foreground/80 flex flex-col gap-1 pt-2 text-xs",
             "md:from-background md:pointer-events-none md:absolute md:inset-0 md:justify-end md:rounded-2xl md:bg-linear-to-t md:to-transparent md:to-60% md:px-4 md:pt-12 md:pb-4 md:text-sm",
             "md:opacity-0 md:transition-opacity md:duration-200 md:group-focus-within:opacity-100 md:group-hover:opacity-100",
-            dinner
+            event
               ? null
               : "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-hidden",
           )}
@@ -137,7 +137,7 @@ function MosaicTile({
           {image.caption ? (
             <span className="font-light">{image.caption}</span>
           ) : null}
-          {dinner ? <DinnerLabel event={dinner} /> : null}
+          {event ? <EventLabel event={event} /> : null}
         </figcaption>
       ) : null}
     </figure>
@@ -149,7 +149,7 @@ function MosaicWall({
   columnCount,
   gap,
   display,
-  showDinner,
+  showEvent,
   sizes,
   onOpen,
 }: {
@@ -157,7 +157,7 @@ function MosaicWall({
   columnCount: number;
   gap: string;
   display: string;
-  showDinner: boolean;
+  showEvent: boolean;
   sizes: string;
   onOpen: (id: string) => void;
 }) {
@@ -172,7 +172,7 @@ function MosaicWall({
             <MosaicTile
               key={image.id}
               image={image}
-              showDinner={showDinner}
+              showEvent={showEvent}
               sizes={sizes}
               onOpen={onOpen}
             />
@@ -211,7 +211,7 @@ export function MosaicGallery({
   };
 
   if (images.length === 0) {
-    // embedded in a dinner's page there is nothing worth saying — the story
+    // embedded in an event's page there is nothing worth saying — the story
     // column carries the page on its own
     if (isSection) return null;
 
@@ -221,7 +221,7 @@ export function MosaicGallery({
           no photos yet
         </Eyebrow>
         <p className="text-foreground/65 max-w-xs text-sm font-light">
-          nothing on the wall yet. the next dinner will hang the first ones.
+          nothing on the wall yet. the next event will hang the first ones.
         </p>
       </div>
     );
@@ -239,7 +239,7 @@ export function MosaicGallery({
           columnCount={2}
           gap="gap-2 md:gap-3"
           display="flex"
-          showDinner={false}
+          showEvent={false}
           sizes="(min-width: 768px) 220px, 45vw"
           onOpen={onOpen}
         />
@@ -258,7 +258,7 @@ export function MosaicGallery({
         columnCount={1}
         gap="gap-3"
         display="flex md:hidden"
-        showDinner
+        showEvent
         sizes={PAGE_TILE_SIZES}
         onOpen={onOpen}
       />
@@ -267,7 +267,7 @@ export function MosaicGallery({
         columnCount={2}
         gap="gap-5"
         display="hidden md:flex lg:hidden"
-        showDinner
+        showEvent
         sizes={PAGE_TILE_SIZES}
         onOpen={onOpen}
       />
@@ -276,7 +276,7 @@ export function MosaicGallery({
         columnCount={3}
         gap="gap-5"
         display="hidden lg:flex"
-        showDinner
+        showEvent
         sizes={PAGE_TILE_SIZES}
         onOpen={onOpen}
       />

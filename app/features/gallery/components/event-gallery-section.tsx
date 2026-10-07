@@ -4,8 +4,8 @@ import type { GalleryImageModel } from "../view-models";
 import { SectionDivider } from "~/components/section";
 
 /**
- * The gallery as it appears on a past dinner's page. Renders nothing at all
- * when that dinner has no images — an empty state here would be noise on a
+ * The gallery as it appears on a past event's page. Renders nothing at all
+ * when that event has no images — an empty state here would be noise on a
  * page that is about the evening, not about its photos.
  */
 export function EventGallerySection({

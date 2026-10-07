@@ -1,25 +1,25 @@
 import {
   acceptPrivacyAndJoin,
-  createDinnerViaAdminForm,
-  dinnerFormValues,
+  createEventViaAdminForm,
+  eventFormValues,
   fillSignupContact,
   runUploadDbCommand,
-  saveDinnerAndCaptureId,
+  saveEventAndCaptureId,
   uniqueSuffix,
 } from "../support/upload-test-utils";
 
 describe("admin signup form builder", () => {
-  let dinnersToCleanup: string[];
+  let eventsToCleanup: string[];
 
   beforeEach(() => {
-    dinnersToCleanup = [];
+    eventsToCleanup = [];
     cy.loginAsRole("moderator");
   });
 
   afterEach(() => {
     cy.then(() => {
-      dinnersToCleanup.forEach((id) => {
-        runUploadDbCommand("delete-dinner", { id });
+      eventsToCleanup.forEach((id) => {
+        runUploadDbCommand("delete-event", { id });
       });
     });
   });
@@ -54,17 +54,17 @@ describe("admin signup form builder", () => {
     });
   }
 
-  function saveDinnerExpectingDetail(title: string) {
-    cy.findByRole("button", { name: /save dinner/i }).click();
+  function saveEventExpectingDetail(title: string) {
+    cy.findByRole("button", { name: /save event/i }).click();
     cy.findByRole("heading", { name: title }).should("be.visible");
   }
 
   it("authors a custom field that round-trips signup → admin table → CSV", () => {
     const suffix = uniqueSuffix();
-    const values = dinnerFormValues(`builder-${suffix}`);
+    const values = eventFormValues(`builder-${suffix}`);
     const signerName = `Builder Signer ${suffix}`;
 
-    createDinnerViaAdminForm(values);
+    createEventViaAdminForm(values);
 
     cy.findByRole("button", { name: /^add field$/i }).click();
     cy.findAllByLabelText(/^label$/i)
@@ -85,15 +85,15 @@ describe("admin signup form builder", () => {
       .blur();
     cy.findByLabelText(/options \(one per line\)/i).type("Meat\nVegan");
 
-    saveDinnerAndCaptureId(values.title).then((dinnerId) => {
-      dinnersToCleanup.push(dinnerId);
+    saveEventAndCaptureId(values.title).then((eventId) => {
+      eventsToCleanup.push(eventId);
 
-      cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
+      cy.visitAndCheck(`/admin/events/${eventId}/edit`);
       openRow(/favorite dish/i);
       cy.findByDisplayValue("Favorite dish").should("be.visible");
       cy.findByDisplayValue("favorite_dish").should("be.visible");
 
-      cy.visitAndCheck(`/dinners/${dinnerId}`);
+      cy.visitAndCheck(`/events/${eventId}`);
       fillSignupContact({
         name: signerName,
         email: `builder-${suffix}@example.com`,
@@ -102,10 +102,10 @@ describe("admin signup form builder", () => {
       cy.findByRole("combobox", { name: /menu choice/i }).select("Vegan");
       acceptPrivacyAndJoin();
 
-      cy.visitAndCheck(`/admin/dinners/${dinnerId}/signups`);
+      cy.visitAndCheck(`/admin/events/${eventId}/signups`);
       cy.findByText(signerName);
 
-      cy.request(`/admin/dinners/${dinnerId}/signups.csv`).then((response) => {
+      cy.request(`/admin/events/${eventId}/signups.csv`).then((response) => {
         expect(response.body).to.include("Favorite dish");
         expect(response.body).to.include("Ramen");
         expect(response.body).to.include("Menu choice");
@@ -117,22 +117,22 @@ describe("admin signup form builder", () => {
 
   it("versions a submitted form and exports mixed legacy + multi-version rows", () => {
     const suffix = uniqueSuffix();
-    const values = dinnerFormValues(`builder-versions-${suffix}`);
+    const values = eventFormValues(`builder-versions-${suffix}`);
     const legacyName = `Legacy Guest ${suffix}`;
     const v1Signer = `V1 Signer ${suffix}`;
     const v1Friend = `V1 Friend ${suffix}`;
     const v2Signer = `V2 Signer ${suffix}`;
 
-    createDinnerViaAdminForm(values);
-    saveDinnerAndCaptureId(values.title).then((dinnerId) => {
-      dinnersToCleanup.push(dinnerId);
+    createEventViaAdminForm(values);
+    saveEventAndCaptureId(values.title).then((eventId) => {
+      eventsToCleanup.push(eventId);
 
       runUploadDbCommand("create-legacy-response", {
-        eventId: dinnerId,
+        eventId: eventId,
         name: legacyName,
       });
 
-      cy.visitAndCheck(`/dinners/${dinnerId}`);
+      cy.visitAndCheck(`/events/${eventId}`);
       fillSignupContact({
         name: v1Signer,
         email: `v1-${suffix}@example.com`,
@@ -144,15 +144,15 @@ describe("admin signup form builder", () => {
         .type(v1Friend);
       acceptPrivacyAndJoin();
 
-      cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
+      cy.visitAndCheck(`/admin/events/${eventId}/edit`);
       cy.findAllByLabelText(/field key \(locked/i).should(
         "have.length.greaterThan",
         0,
       );
       relabelSignerRestrictions("Allergies");
-      saveDinnerExpectingDetail(values.title);
+      saveEventExpectingDetail(values.title);
 
-      cy.visitAndCheck(`/dinners/${dinnerId}`);
+      cy.visitAndCheck(`/events/${eventId}`);
       fillSignupContact({
         name: v2Signer,
         email: `v2-${suffix}@example.com`,
@@ -162,7 +162,7 @@ describe("admin signup form builder", () => {
         .type("pollen");
       acceptPrivacyAndJoin();
 
-      cy.visitAndCheck(`/admin/dinners/${dinnerId}/signups`);
+      cy.visitAndCheck(`/admin/events/${eventId}/signups`);
       cy.findByText(legacyName);
       cy.findByText(v1Signer)
         .closest("tr")
@@ -171,7 +171,7 @@ describe("admin signup form builder", () => {
         });
       cy.findByText(v2Signer);
 
-      cy.request(`/admin/dinners/${dinnerId}/signups.csv`).then((response) => {
+      cy.request(`/admin/events/${eventId}/signups.csv`).then((response) => {
         expect(response.body).to.include("Allergies");
         expect(response.body).to.include(legacyName);
         expect(response.body).to.include(v1Signer);
@@ -184,21 +184,21 @@ describe("admin signup form builder", () => {
 
   it("edits a form and shows the change after reload", () => {
     const suffix = uniqueSuffix();
-    const values = dinnerFormValues(`builder-edit-${suffix}`);
+    const values = eventFormValues(`builder-edit-${suffix}`);
 
-    createDinnerViaAdminForm(values);
-    saveDinnerAndCaptureId(values.title).then((dinnerId) => {
-      dinnersToCleanup.push(dinnerId);
+    createEventViaAdminForm(values);
+    saveEventAndCaptureId(values.title).then((eventId) => {
+      eventsToCleanup.push(eventId);
 
-      cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
+      cy.visitAndCheck(`/admin/events/${eventId}/edit`);
       relabelSignerRestrictions("Allergies");
       openRow(FRIENDS_CARD);
       cy.findByLabelText(/max per signup/i)
         .clear()
         .type("0");
-      saveDinnerExpectingDetail(values.title);
+      saveEventExpectingDetail(values.title);
 
-      cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
+      cy.visitAndCheck(`/admin/events/${eventId}/edit`);
       openRow(/allergies/i);
       withinRow(/allergies/i, () => {
         cy.findByLabelText(/^label$/i).should("have.value", "Allergies");
@@ -206,7 +206,7 @@ describe("admin signup form builder", () => {
       openRow(FRIENDS_CARD);
       cy.findByLabelText(/max per signup/i).should("have.value", "0");
 
-      cy.visitAndCheck(`/dinners/${dinnerId}`);
+      cy.visitAndCheck(`/events/${eventId}`);
       cy.findAllByRole("textbox", { name: /allergies/i }).should("exist");
       cy.findByRole("button", { name: /add a friend/i }).should("not.exist");
     });
@@ -214,13 +214,13 @@ describe("admin signup form builder", () => {
 
   it("mirrors the signer's wording onto the friend's row as it is typed", () => {
     const suffix = uniqueSuffix();
-    const values = dinnerFormValues(`builder-mirror-${suffix}`);
+    const values = eventFormValues(`builder-mirror-${suffix}`);
 
-    createDinnerViaAdminForm(values);
-    saveDinnerAndCaptureId(values.title).then((dinnerId) => {
-      dinnersToCleanup.push(dinnerId);
+    createEventViaAdminForm(values);
+    saveEventAndCaptureId(values.title).then((eventId) => {
+      eventsToCleanup.push(eventId);
 
-      cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
+      cy.visitAndCheck(`/admin/events/${eventId}/edit`);
       relabelSignerRestrictions("Allergies");
 
       openRow(FRIENDS_CARD);
@@ -235,9 +235,9 @@ describe("admin signup form builder", () => {
           .and("be.disabled");
       });
 
-      saveDinnerExpectingDetail(values.title);
+      saveEventExpectingDetail(values.title);
 
-      cy.visitAndCheck(`/dinners/${dinnerId}`);
+      cy.visitAndCheck(`/events/${eventId}`);
       cy.findAllByRole("textbox", { name: /allergies/i }).should(
         "have.length",
         1,
@@ -252,23 +252,20 @@ describe("admin signup form builder", () => {
 
   it("unlinks a pair from the friend's row and links it back", () => {
     const suffix = uniqueSuffix();
-    const values = dinnerFormValues(`builder-unlink-${suffix}`);
+    const values = eventFormValues(`builder-unlink-${suffix}`);
 
-    createDinnerViaAdminForm(values);
-    saveDinnerAndCaptureId(values.title).then((dinnerId) => {
-      dinnersToCleanup.push(dinnerId);
+    createEventViaAdminForm(values);
+    saveEventAndCaptureId(values.title).then((eventId) => {
+      eventsToCleanup.push(eventId);
 
-      cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
+      cy.visitAndCheck(`/admin/events/${eventId}/edit`);
       openRow(FRIENDS_CARD);
       openLastRow(FRIEND_RESTRICTIONS);
       withinLastRow(FRIEND_RESTRICTIONS, () => {
         cy.findByRole("button", { name: /^unlink$/i }).click();
       });
 
-      cy.location("pathname").should(
-        "equal",
-        `/admin/dinners/${dinnerId}/edit`,
-      );
+      cy.location("pathname").should("equal", `/admin/events/${eventId}/edit`);
       cy.get("#unlink-dialog-restrictions")
         .should("be.visible")
         .within(() => {
@@ -287,9 +284,9 @@ describe("admin signup form builder", () => {
         "not.exist",
       );
 
-      saveDinnerExpectingDetail(values.title);
+      saveEventExpectingDetail(values.title);
 
-      cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
+      cy.visitAndCheck(`/admin/events/${eventId}/edit`);
       openRow(FRIENDS_CARD);
       cy.findAllByRole("button", { name: RESTRICTIONS }).should(
         "have.length",
@@ -334,15 +331,15 @@ describe("admin signup form builder", () => {
 
   it("warns about collected answers when unlinking an answered pair", () => {
     const suffix = uniqueSuffix();
-    const values = dinnerFormValues(`builder-answers-${suffix}`);
+    const values = eventFormValues(`builder-answers-${suffix}`);
     const signerName = `Answered Signer ${suffix}`;
     const friendName = `Answered Friend ${suffix}`;
 
-    createDinnerViaAdminForm(values);
-    saveDinnerAndCaptureId(values.title).then((dinnerId) => {
-      dinnersToCleanup.push(dinnerId);
+    createEventViaAdminForm(values);
+    saveEventAndCaptureId(values.title).then((eventId) => {
+      eventsToCleanup.push(eventId);
 
-      cy.visitAndCheck(`/dinners/${dinnerId}`);
+      cy.visitAndCheck(`/events/${eventId}`);
       fillSignupContact({
         name: signerName,
         email: `answers-${suffix}@example.com`,
@@ -359,7 +356,7 @@ describe("admin signup form builder", () => {
         });
       acceptPrivacyAndJoin();
 
-      cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
+      cy.visitAndCheck(`/admin/events/${eventId}/edit`);
       cy.findAllByLabelText(/field key \(locked/i).should(
         "have.length.greaterThan",
         0,
@@ -420,13 +417,13 @@ describe("admin signup form builder", () => {
 
   it("keeps the session's wording on the friend when the signer row is removed", () => {
     const suffix = uniqueSuffix();
-    const values = dinnerFormValues(`builder-keep-${suffix}`);
+    const values = eventFormValues(`builder-keep-${suffix}`);
 
-    createDinnerViaAdminForm(values);
-    saveDinnerAndCaptureId(values.title).then((dinnerId) => {
-      dinnersToCleanup.push(dinnerId);
+    createEventViaAdminForm(values);
+    saveEventAndCaptureId(values.title).then((eventId) => {
+      eventsToCleanup.push(eventId);
 
-      cy.visitAndCheck(`/admin/dinners/${dinnerId}/edit`);
+      cy.visitAndCheck(`/admin/events/${eventId}/edit`);
       relabelSignerRestrictions("Allergies");
       withinRow(/allergies/i, () => {
         cy.findByRole("button", { name: /^remove$/i }).click();

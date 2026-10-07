@@ -53,7 +53,7 @@ function reportRosterDrops(eventId: string, drops: RosterDrops) {
   if (Object.values(drops).every((count) => count === 0)) return;
 
   requestLogger.error(
-    { dinner: eventId, reason: drops },
+    { event: eventId, reason: drops },
     "Dropped attendee data while loading the roster",
   );
 }
@@ -80,11 +80,11 @@ export async function getAttendeeCountsForEvents(
     counts[eventId] = (counts[eventId] ?? 0) + _count._all;
   }
 
-  let submissionsWithoutDinner = 0;
+  let submissionsWithoutEvent = 0;
   for (const submission of submissions) {
     const eventId = submission.formVersion.form.event?.id;
     if (!eventId) {
-      submissionsWithoutDinner += 1;
+      submissionsWithoutEvent += 1;
       continue;
     }
     const answers = asRecord(submission.answers);
@@ -93,10 +93,10 @@ export async function getAttendeeCountsForEvents(
     counts[eventId] = (counts[eventId] ?? 0) + party;
   }
 
-  if (submissionsWithoutDinner > 0) {
+  if (submissionsWithoutEvent > 0) {
     requestLogger.error(
-      { reason: { submissionsWithoutDinner } },
-      "Dropped form submissions that no longer point at a dinner",
+      { reason: { submissionsWithoutEvent } },
+      "Dropped form submissions that no longer point at an event",
     );
   }
 

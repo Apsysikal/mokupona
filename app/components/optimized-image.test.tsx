@@ -32,7 +32,7 @@ function renderImage(overrides: Partial<ImageDisplaySource> = {}) {
       image={{ ...image, ...overrides }}
       width={640}
       height={480}
-      alt="A dinner table"
+      alt="An event table"
     />,
   );
 }
@@ -106,7 +106,7 @@ describe("OptimizedImage blur-up", () => {
         width={640}
         height={480}
         style={{ aspectRatio: "1200 / 800" }}
-        alt="A dinner table"
+        alt="An event table"
       />,
     );
 
@@ -121,7 +121,7 @@ describe("OptimizedImage blur-up", () => {
     const restore = stubImageComplete(false);
     renderImage();
 
-    const img = screen.getByAltText("A dinner table");
+    const img = screen.getByAltText("An event table");
     expect(img).toHaveClass("opacity-0");
 
     fireEvent.load(img);
@@ -134,7 +134,7 @@ describe("OptimizedImage blur-up", () => {
     const restore = stubImageComplete(true);
     renderImage();
 
-    expect(screen.getByAltText("A dinner table")).toHaveClass("opacity-100");
+    expect(screen.getByAltText("An event table")).toHaveClass("opacity-100");
     restore();
   });
 
@@ -170,7 +170,7 @@ describe("OptimizedImage blur-up", () => {
     const restore = stubImageComplete(false);
     const { rerender } = renderImage();
 
-    expect(screen.getByAltText("A dinner table")).toHaveAttribute(
+    expect(screen.getByAltText("An event table")).toHaveAttribute(
       "loading",
       "eager",
     );
@@ -180,12 +180,12 @@ describe("OptimizedImage blur-up", () => {
         image={image}
         width={640}
         height={480}
-        alt="A dinner table"
+        alt="An event table"
         loading="lazy"
       />,
     );
 
-    expect(screen.getByAltText("A dinner table")).toHaveAttribute(
+    expect(screen.getByAltText("An event table")).toHaveAttribute(
       "loading",
       "lazy",
     );
@@ -200,7 +200,7 @@ describe("OptimizedImage blur-up", () => {
     const restore = stubImageComplete(false);
     renderImage();
 
-    const img = screen.getByAltText("A dinner table");
+    const img = screen.getByAltText("An event table");
     expect(img).toHaveAttribute(
       "src",
       "https://res.cloudinary.com/test-cloud/image/upload/f_auto,q_auto,c_fill,g_auto,w_640,h_480/v3/abc123",

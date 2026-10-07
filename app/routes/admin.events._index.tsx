@@ -2,7 +2,7 @@ import { PlusIcon, UtensilsIcon } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 
-import type { Route } from "./+types/admin.dinners._index";
+import type { Route } from "./+types/admin.events._index";
 
 import { AdminDeleteButton } from "~/components/admin-delete-button";
 import {
@@ -31,7 +31,7 @@ export async function loader() {
   );
 
   return {
-    dinners: events.map((event) => ({
+    events: events.map((event) => ({
       id: event.id,
       title: event.title,
       date: event.date,
@@ -44,7 +44,7 @@ export async function loader() {
 }
 
 export const meta: Route.MetaFunction = () => {
-  return [{ title: "Admin - Dinners" }];
+  return [{ title: "Admin - Events" }];
 };
 
 const FILTERS = [
@@ -55,39 +55,39 @@ const FILTERS = [
 
 type Filter = (typeof FILTERS)[number]["id"];
 
-export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
-  const { dinners } = loaderData;
+export default function AdminEventsPage({ loaderData }: Route.ComponentProps) {
+  const { events } = loaderData;
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
 
   const now = new Date();
   const q = query.trim().toLowerCase();
 
-  const filtered = dinners
-    .map((dinner) => ({
-      ...dinner,
-      past: isPastEvent(new Date(dinner.date), now),
+  const filtered = events
+    .map((event) => ({
+      ...event,
+      past: isPastEvent(new Date(event.date), now),
     }))
-    .filter((dinner) =>
-      filter === "all" ? true : filter === "past" ? dinner.past : !dinner.past,
+    .filter((event) =>
+      filter === "all" ? true : filter === "past" ? event.past : !event.past,
     )
     .filter(
-      (dinner) =>
+      (event) =>
         !q ||
-        dinner.title.toLowerCase().includes(q) ||
-        dinner.location.toLowerCase().includes(q),
+        event.title.toLowerCase().includes(q) ||
+        event.location.toLowerCase().includes(q),
     );
   const visible = orderEventsByStatus(filtered, now);
 
   return (
     <div className="animate-page-in">
       <AdminPageHeader
-        eyebrow={`${dinners.length} total`}
-        title="Dinners"
+        eyebrow={`${events.length} total`}
+        title="Events"
         actions={
           <Link to="new" className={buttonVariants()}>
             <PlusIcon className="size-4" />
-            New dinner
+            New event
           </Link>
         }
       />
@@ -96,7 +96,7 @@ export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
         <AdminSearchField
           value={query}
           onChange={setQuery}
-          placeholder="Search dinners"
+          placeholder="Search events"
         />
         <div className="flex gap-2">
           {FILTERS.map(({ id, label }) => (
@@ -113,18 +113,18 @@ export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
 
       {visible.length > 0 ? (
         <div className="flex flex-col gap-3">
-          {visible.map((dinner) => (
-            <DinnerCard key={dinner.id} dinner={dinner} />
+          {visible.map((event) => (
+            <EventCard key={event.id} event={event} />
           ))}
         </div>
       ) : (
         <AdminEmptyState
           icon={<UtensilsIcon className="size-6" />}
-          title="No dinners match"
-          description="Try a different search or filter — or create the next dinner for the season."
+          title="No events match"
+          description="Try a different search or filter — or create the next event for the season."
           action={
             <Link to="new" className={buttonVariants()}>
-              New dinner
+              New event
             </Link>
           }
         />
@@ -133,23 +133,23 @@ export default function AdminDinnersPage({ loaderData }: Route.ComponentProps) {
   );
 }
 
-type Dinner = Awaited<ReturnType<typeof loader>>["dinners"][number] & {
+type Event = Awaited<ReturnType<typeof loader>>["events"][number] & {
   past: boolean;
 };
 
-function DinnerCard({ dinner }: { dinner: Dinner }) {
-  const date = new Date(dinner.date);
+function EventCard({ event }: { event: Event }) {
+  const date = new Date(event.date);
 
   return (
     <Card
       interactive
       className={cn(
         "relative flex flex-wrap items-center gap-3 p-4",
-        dinner.past && "opacity-60",
+        event.past && "opacity-60",
       )}
     >
       <CoverImage
-        image={dinner.image}
+        image={event.image}
         alt=""
         sizes="160px"
         className="w-40 shrink-0 rounded-lg border"
@@ -160,7 +160,7 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
           <p
             className={cn(
               "text-xs font-semibold tracking-wide",
-              dinner.past ? "text-foreground/50" : "text-accent-light",
+              event.past ? "text-foreground/50" : "text-accent-light",
             )}
           >
             <time dateTime={date.toISOString()} suppressHydrationWarning>
@@ -169,46 +169,46 @@ function DinnerCard({ dinner }: { dinner: Dinner }) {
           </p>
           <h2 className="mt-1 truncate text-base font-semibold">
             {/* stretched link: the pseudo-element makes the whole card the
-                hit area while the accessible name stays the dinner title;
+                hit area while the accessible name stays the event title;
                 the action row sits above it via `relative` */}
             <Link
-              to={dinner.id}
+              to={event.id}
               className="focus-visible:after:ring-ring after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-hidden focus-visible:after:ring-2"
             >
-              {dinner.title}
+              {event.title}
             </Link>
           </h2>
-          <p className="text-foreground/65 mt-1 text-sm">{dinner.location}</p>
+          <p className="text-foreground/65 mt-1 text-sm">{event.location}</p>
         </div>
         <div className="max-w-xs">
           <div className="mb-2 flex justify-between text-xs">
-            <span className="text-foreground/80">{dinner.signups} signups</span>
+            <span className="text-foreground/80">{event.signups} signups</span>
             <span className="text-foreground/50">
-              {dinner.signups} / {dinner.slots}
+              {event.signups} / {event.slots}
             </span>
           </div>
           <SeatProgress
-            taken={dinner.signups}
-            total={dinner.slots}
-            muted={dinner.past}
+            taken={event.signups}
+            total={event.slots}
+            muted={event.past}
           />
         </div>
       </div>
 
       <div className="relative flex flex-wrap gap-2">
         <Link
-          to={`${dinner.id}/signups`}
+          to={`${event.id}/signups`}
           className={buttonVariants({ variant: "ghost", size: "sm" })}
         >
           Signups
         </Link>
         <Link
-          to={`${dinner.id}/edit`}
+          to={`${event.id}/edit`}
           className={buttonVariants({ variant: "outline", size: "sm" })}
         >
           Edit
         </Link>
-        <AdminDeleteButton action={`${dinner.id}/delete`} />
+        <AdminDeleteButton action={`${event.id}/delete`} />
       </div>
     </Card>
   );

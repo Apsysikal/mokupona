@@ -65,7 +65,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
       domainUrl,
       allowIndexing,
       cypressSupport,
-      nextDinnerId: nextEvent?.id ?? null,
+      nextEventId: nextEvent?.id ?? null,
       imageProvider,
       cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME ?? null,
       honeypot: getHoneypotInputProps(),
@@ -93,10 +93,10 @@ export default function App({ loaderData }: Route.ComponentProps) {
         <Meta />
         <Links />
       </head>
-      <body className="dark h-full">
+      <body className="dark h-full scheme-dark">
         <Document
           toast={loaderData.toast}
-          nextDinnerId={loaderData.nextDinnerId}
+          nextEventId={loaderData.nextEventId}
         />
         <ScrollRestoration />
         <Scripts />
@@ -108,14 +108,14 @@ export default function App({ loaderData }: Route.ComponentProps) {
 
 function Document({
   toast,
-  nextDinnerId,
+  nextEventId,
 }: {
   toast: Route.ComponentProps["loaderData"]["toast"];
-  nextDinnerId: string | null;
+  nextEventId: string | null;
 }) {
   useToast(toast);
 
-  const joinHref = nextDinnerId ? `/dinners/${nextDinnerId}` : "/dinners";
+  const joinHref = nextEventId ? `/events/${nextEventId}` : "/events";
 
   return (
     <div className="flex min-h-full flex-col">

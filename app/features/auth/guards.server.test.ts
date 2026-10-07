@@ -77,7 +77,7 @@ describe("guard shim", () => {
   });
 
   it("requireResolvedUserWithRole redirects an unresolved user to /login with redirectTo", () => {
-    const anonymous = new Request("http://localhost:3000/admin/dinners");
+    const anonymous = new Request("http://localhost:3000/admin/events");
     const thrown = (() => {
       try {
         return requireResolvedUserWithRole(null, anonymous, ["admin"]);
@@ -87,7 +87,7 @@ describe("guard shim", () => {
     })();
     expect(thrown).toBeInstanceOf(Response);
     expect((thrown as Response).headers.get("location")).toBe(
-      "/login?redirectTo=%2Fadmin%2Fdinners",
+      "/login?redirectTo=%2Fadmin%2Fevents",
     );
   });
 

@@ -5,7 +5,7 @@
 import type { SerializableDate } from "~/features/events/view-models";
 import type { ImageMetadata } from "~/models/image.server";
 
-/** The dinner a gallery image belongs to, as much as a layout needs of it. */
+/** The event a gallery image belongs to, as much as a layout needs of it. */
 export interface GalleryEventRef {
   id: string;
   title: string;
@@ -20,9 +20,9 @@ export interface GalleryImageModel {
    */
   id: string;
   image: ImageMetadata;
-  /** never null — falls back to the dinner title */
+  /** never null — falls back to the event title */
   alt: string;
   caption: string | null;
-  /** null for images no dinner claims */
+  /** null for images no event claims */
   event: GalleryEventRef | null;
 }

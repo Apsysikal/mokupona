@@ -54,7 +54,7 @@ export const UNREFERENCED_IMAGE_WHERE: Prisma.ImageWhereInput = {
   AND: Object.values(IMAGE_REFERENCE_SITES),
 };
 
-// Matches images no slot claims — not a dinner cover, not a board portrait.
+// Matches images no slot claims — not an event cover, not a board portrait.
 // Gallery membership does not count: the reuse pool and the seed treat
 // slot-owned images as off limits whether or not a gallery shows them.
 export const UNOWNED_IMAGE_WHERE: Prisma.ImageWhereInput = {

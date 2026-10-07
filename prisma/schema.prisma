@@ -224,9 +224,9 @@ model Image {
   galleryLinks EventGalleryImage[]
 }
 
-// Grants one image membership in one dinner's gallery. Deleting a link
+// Grants one image membership in one event's gallery. Deleting a link
 // unlinks without destroying the asset, and the same photo can be shown
-// under two dinners with different captions.
+// under two events with different captions.
 model EventGalleryImage {
   id       String  @id @default(cuid())
   caption  String?
@@ -241,7 +241,7 @@ model EventGalleryImage {
   image   Image  @relation(fields: [imageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   imageId String
 
-  // one membership per (dinner, image) pair — re-adding is idempotent
+  // one membership per (event, image) pair — re-adding is idempotent
   @@unique([eventId, imageId])
   @@index([eventId])
   @@index([imageId])

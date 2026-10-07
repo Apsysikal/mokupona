@@ -4,8 +4,8 @@ import { describeCompletedRequest } from "./request-log.server";
 
 const completed = {
   method: "GET",
-  pathname: "/dinners",
-  pattern: "dinners",
+  pathname: "/events",
+  pattern: "events",
   statusCode: 200,
   failed: false,
   shellMs: 12,
@@ -41,11 +41,11 @@ describe("describeCompletedRequest", () => {
 
   it("tags data requests instead of filtering them", () => {
     expect(
-      describeCompletedRequest({ ...completed, pathname: "/dinners.data" }),
+      describeCompletedRequest({ ...completed, pathname: "/events.data" }),
     ).toEqual({
       level: "debug",
       bindings: {
-        pattern: "dinners",
+        pattern: "events",
         statusCode: 200,
         shellMs: 12,
         isDataRequest: true,
@@ -69,7 +69,7 @@ describe("describeCompletedRequest", () => {
   it("raises the level of the one line rather than adding a second", () => {
     expect(describeCompletedRequest({ ...completed, failed: true })).toEqual({
       level: "error",
-      bindings: { pattern: "dinners", statusCode: 200, shellMs: 12 },
+      bindings: { pattern: "events", statusCode: 200, shellMs: 12 },
     });
     expect(
       describeCompletedRequest({ ...completed, statusCode: 500 })?.level,

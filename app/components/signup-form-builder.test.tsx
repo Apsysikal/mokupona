@@ -75,9 +75,9 @@ function renderEditScreen(rows: BuilderRow[]) {
           schema={EventEditSchema}
           defaultValue={{ signupForm: rows }}
           addressOptions={[]}
-          submitText="Save dinner"
-          pageTitle="Edit dinner"
-          cancelHref="/admin/dinners/dinner-1"
+          submitText="Save event"
+          pageTitle="Edit event"
+          cancelHref="/admin/events/event-1"
         />
       ),
     },

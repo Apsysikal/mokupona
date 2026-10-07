@@ -86,11 +86,11 @@ describe("createCloudinaryProvider", () => {
 
     const stored = await provider.store(
       new File(["bytes"], "cover.jpg", { type: "image/jpeg" }),
-      { folder: "dinners" },
+      { folder: "events" },
     );
 
     expect(mocks.uploadStream).toHaveBeenCalledWith(
-      { resource_type: "image", asset_folder: "test/dinners" },
+      { resource_type: "image", asset_folder: "test/events" },
       expect.any(Function),
     );
     expect(fetchMock).toHaveBeenCalledWith(
@@ -112,7 +112,7 @@ describe("createCloudinaryProvider", () => {
 
     const stored = await provider.store(
       new File(["bytes"], "cover.jpg", { type: "image/jpeg" }),
-      { folder: "dinners" },
+      { folder: "events" },
     );
 
     expect(stored.storageKey).toBe("abc123");
@@ -131,7 +131,7 @@ describe("createCloudinaryProvider", () => {
     const provider = createCloudinaryProvider(env);
 
     await expect(
-      provider.store(new File(["bytes"], "cover.jpg"), { folder: "dinners" }),
+      provider.store(new File(["bytes"], "cover.jpg"), { folder: "events" }),
     ).rejects.toThrow("quota exceeded");
   });
 

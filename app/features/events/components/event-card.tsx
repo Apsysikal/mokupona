@@ -34,7 +34,7 @@ export function FeaturedEventCard({
         />
         {isNext ? (
           <Badge pill className="absolute top-4 left-4 lg:top-5 lg:left-5">
-            next dinner
+            next event
           </Badge>
         ) : null}
       </div>
@@ -57,13 +57,10 @@ export function FeaturedEventCard({
         </div>
 
         <div className="mt-1 flex flex-col gap-4 md:flex-row md:items-center md:gap-5">
-          <Link
-            to={`/dinners/${event.id}#sign-up`}
-            className={buttonVariants()}
-          >
+          <Link to={`/events/${event.id}#sign-up`} className={buttonVariants()}>
             reserve a seat
           </Link>
-          <SecondaryCTA to={`/dinners/${event.id}`} className="max-md:hidden">
+          <SecondaryCTA to={`/events/${event.id}`} className="max-md:hidden">
             read more →
           </SecondaryCTA>
         </div>
@@ -77,7 +74,7 @@ export function PastEventCard({ event }: { event: EventCardModel }) {
 
   return (
     <Link
-      to={`/dinners/${event.id}`}
+      to={`/events/${event.id}`}
       className="flex flex-col gap-2 opacity-70 transition-opacity hover:opacity-100"
     >
       <CoverImage

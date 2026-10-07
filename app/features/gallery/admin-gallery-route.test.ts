@@ -7,7 +7,7 @@ import { buildEventData } from "../../../test/factories";
 import { createEvent } from "~/models/event.server";
 import type * as GalleryServer from "~/models/gallery.server";
 import { getGalleryEntriesForEvent } from "~/models/gallery.server";
-import { action } from "~/routes/admin.dinners.$dinnerId_.gallery";
+import { action } from "~/routes/admin.events.$eventId_.gallery";
 
 const mocks = vi.hoisted(() => ({
   storeImages: vi.fn(),
@@ -43,23 +43,23 @@ function unstored(message: string): PromiseSettledResult<never> {
   return { status: "rejected", reason: new Error(message) };
 }
 
-async function upload(dinnerId: string, files: File[]) {
+async function upload(eventId: string, files: File[]) {
   const body = new FormData();
   body.append("intent", "upload");
   body.append("caption", "A long table");
   for (const file of files) body.append("images", file);
 
   return action({
-    params: { dinnerId },
+    params: { eventId },
     request: new Request(
-      `http://localhost:3000/admin/dinners/${dinnerId}/gallery`,
+      `http://localhost:3000/admin/events/${eventId}/gallery`,
       { method: "POST", body },
     ),
     context: new RouterContextProvider(),
   } as unknown as Parameters<typeof action>[0]);
 }
 
-async function createDinner() {
+async function createTestEvent() {
   const event = await createEvent(await buildEventData());
   return event.id;
 }
@@ -70,7 +70,7 @@ beforeEach(() => {
   mocks.createGalleryImagesForEvent.mockReset();
 });
 
-describe("admin dinner gallery upload", () => {
+describe("admin event gallery upload", () => {
   it("keeps the photos that stored and names the ones that did not", async () => {
     const { createGalleryImagesForEvent } = await vi.importActual<
       typeof GalleryServer
@@ -79,14 +79,14 @@ describe("admin dinner gallery upload", () => {
       createGalleryImagesForEvent,
     );
     mocks.storeImages.mockResolvedValue([
-      stored("dinner-gallery/one"),
+      stored("event-gallery/one"),
       unstored("cloudinary 503"),
-      stored("dinner-gallery/three"),
+      stored("event-gallery/three"),
     ]);
 
-    const dinnerId = await createDinner();
+    const eventId = await createTestEvent();
 
-    const result = (await upload(dinnerId, [
+    const result = (await upload(eventId, [
       photo("one.jpg"),
       photo("two.jpg"),
       photo("three.jpg"),
@@ -97,10 +97,10 @@ describe("admin dinner gallery upload", () => {
       "Uploaded 2 of 3 photos — two.jpg failed. Try those again.",
     ]);
 
-    const entries = await getGalleryEntriesForEvent(dinnerId);
+    const entries = await getGalleryEntriesForEvent(eventId);
     expect(entries.map((entry) => entry.image.storageKey)).toEqual([
-      "dinner-gallery/one",
-      "dinner-gallery/three",
+      "event-gallery/one",
+      "event-gallery/three",
     ]);
     expect(entries.every((entry) => entry.caption === "A long table")).toBe(
       true,
@@ -115,9 +115,9 @@ describe("admin dinner gallery upload", () => {
       unstored("cloudinary 503"),
     ]);
 
-    const dinnerId = await createDinner();
+    const eventId = await createTestEvent();
 
-    const result = (await upload(dinnerId, [
+    const result = (await upload(eventId, [
       photo("one.jpg"),
       photo("two.jpg"),
     ])) as SubmissionResult;
@@ -125,7 +125,7 @@ describe("admin dinner gallery upload", () => {
     expect(result.error?.images).toEqual([
       "None of the 2 photos could be stored — one.jpg and two.jpg failed. Try again.",
     ]);
-    expect(await getGalleryEntriesForEvent(dinnerId)).toEqual([]);
+    expect(await getGalleryEntriesForEvent(eventId)).toEqual([]);
   });
 
   it("destroys the batch when the rows cannot be written", async () => {
@@ -133,34 +133,34 @@ describe("admin dinner gallery upload", () => {
       new Error("foreign key constraint failed"),
     );
     mocks.storeImages.mockResolvedValue([
-      stored("dinner-gallery/one"),
-      stored("dinner-gallery/two"),
+      stored("event-gallery/one"),
+      stored("event-gallery/two"),
     ]);
 
-    const dinnerId = await createDinner();
+    const eventId = await createTestEvent();
 
     await expect(
-      upload(dinnerId, [photo("one.jpg"), photo("two.jpg")]),
+      upload(eventId, [photo("one.jpg"), photo("two.jpg")]),
     ).rejects.toThrow("foreign key constraint failed");
 
     expect(mocks.destroyImages).toHaveBeenCalledWith([
-      "dinner-gallery/one",
-      "dinner-gallery/two",
+      "event-gallery/one",
+      "event-gallery/two",
     ]);
   });
 
   it("redirects when every photo stored", async () => {
     mocks.createGalleryImagesForEvent.mockResolvedValue([]);
-    mocks.storeImages.mockResolvedValue([stored("dinner-gallery/one")]);
+    mocks.storeImages.mockResolvedValue([stored("event-gallery/one")]);
 
-    const dinnerId = await createDinner();
+    const eventId = await createTestEvent();
 
-    const result = await upload(dinnerId, [photo("one.jpg")]);
+    const result = await upload(eventId, [photo("one.jpg")]);
 
     expect(result).toBeInstanceOf(Response);
     expect((result as Response).status).toBe(302);
     expect((result as Response).headers.get("location")).toBe(
-      `/admin/dinners/${dinnerId}/gallery`,
+      `/admin/events/${eventId}/gallery`,
     );
   });
 });

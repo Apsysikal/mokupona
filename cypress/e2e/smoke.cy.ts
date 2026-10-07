@@ -108,7 +108,7 @@ describe("smoke tests", () => {
     });
   });
 
-  it("should allow you to join a dinner", () => {
+  it("should allow you to join an event", () => {
     const testCredentials = {
       name: faker.person.fullName(),
       email: `${faker.internet.username()}@example.com`,
@@ -117,8 +117,8 @@ describe("smoke tests", () => {
     cy.login();
     cy.visitAndCheck("/");
 
-    cy.findByRole("link", { name: /join a dinner/i }).click();
-    cy.location("pathname").should("match", /^\/dinners\/[^/]+$/);
+    cy.findByRole("link", { name: /join an event/i }).click();
+    cy.location("pathname").should("match", /^\/events\/[^/]+$/);
 
     cy.findByRole("textbox", { name: /name/i }).type(testCredentials.name);
     cy.findByRole("textbox", { name: /email/i }).type(testCredentials.email);

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Form, NavLink, redirect } from "react-router";
 import { z } from "zod";
 
-import type { Route } from "./+types/admin.dinners.$dinnerId_.gallery";
+import type { Route } from "./+types/admin.events.$eventId_.gallery";
 
 import { AdminEmptyState, AdminPageHeader } from "~/components/admin-ui";
 import { Field, fileFieldClassName } from "~/components/forms";
@@ -48,15 +48,15 @@ const GalleryUploadSchema = z.object({
 });
 
 export async function loader({ params }: Route.LoaderArgs) {
-  const { dinnerId } = params;
+  const { eventId } = params;
 
-  const [dinner, entries] = await Promise.all([
-    getEventById(dinnerId).then(requireFound),
-    getGalleryEntriesForEventWithReuse(dinnerId),
+  const [event, entries] = await Promise.all([
+    getEventById(eventId).then(requireFound),
+    getGalleryEntriesForEventWithReuse(eventId),
   ]);
 
   return {
-    dinner: { id: dinner.id, title: dinner.title },
+    event: { id: event.id, title: event.title },
     entries,
     // the file input's hint; the constant itself is server-only
     maxFiles: MAX_GALLERY_FILES,
@@ -81,12 +81,12 @@ function partialUploadMessage(
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
-  const { dinnerId } = params;
-  const galleryPath = `/admin/dinners/${dinnerId}/gallery`;
+  const { eventId } = params;
+  const galleryPath = `/admin/events/${eventId}/gallery`;
 
-  // before any upload is stored: a dinner deleted in another tab must yield
+  // before any upload is stored: an event deleted in another tab must yield
   // a 404, not stranded provider assets
-  await getEventById(dinnerId).then(requireFound);
+  await getEventById(eventId).then(requireFound);
 
   // The upload arrives as multipart and has to stream through the image
   // parser before any field is readable; remove is a plain post, so its
@@ -120,7 +120,7 @@ export async function action({ request, params }: Route.ActionArgs) {
           return failed;
         }
 
-        const results = await storeImages(files, "dinner-gallery");
+        const results = await storeImages(files, "event-gallery");
 
         const stored = results.flatMap((result, index) =>
           result.status === "fulfilled"
@@ -135,7 +135,7 @@ export async function action({ request, params }: Route.ActionArgs) {
         );
 
         try {
-          await createGalleryImagesForEvent(dinnerId, stored);
+          await createGalleryImagesForEvent(eventId, stored);
         } catch (error) {
           await destroyImages(stored.map((image) => image.storageKey));
           throw error;
@@ -169,7 +169,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     const entryId = formData.get("entryId");
 
     if (typeof entryId === "string") {
-      const removed = await removeGalleryEntry(dinnerId, entryId);
+      const removed = await removeGalleryEntry(eventId, entryId);
       // the image survives an unlink while anything still references it;
       // only the last unlink hands back a key to destroy, bytes last
       if (removed?.deletedStorageKey) {
@@ -186,26 +186,26 @@ export async function action({ request, params }: Route.ActionArgs) {
 export const meta: Route.MetaFunction = ({ loaderData }) => [
   {
     title: loaderData
-      ? `Admin - Gallery - ${loaderData.dinner.title}`
+      ? `Admin - Gallery - ${loaderData.event.title}`
       : "Admin - Gallery",
   },
 ];
 
 function deletePhotoDescription(sharedWith: GalleryEventLabel[]): string {
   if (sharedWith.length === 0) {
-    return "This photo isn't linked to any other dinner, so deleting it also deletes the file. This can't be undone.";
+    return "This photo isn't linked to any other event, so deleting it also deletes the file. This can't be undone.";
   }
 
   const others = galleryList.format(sharedWith.map((event) => event.title));
 
-  return `This photo is also linked to ${others}, so deleting it here only removes it from this dinner's gallery. The file stays.`;
+  return `This photo is also linked to ${others}, so deleting it here only removes it from this event's gallery. The file stays.`;
 }
 
-export default function AdminDinnerGalleryPage({
+export default function AdminEventGalleryPage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const { dinner, entries, maxFiles } = loaderData;
+  const { event, entries, maxFiles } = loaderData;
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   const uploadFormRef = useRef<HTMLFormElement>(null);
@@ -221,15 +221,15 @@ export default function AdminDinnerGalleryPage({
   return (
     <div className="animate-page-in">
       <AdminPageHeader
-        eyebrow={dinner.title}
+        eyebrow={event.title}
         title="Gallery"
-        subtitle="The photos linked to this dinner's gallery. Captions belong to this dinner, not to the file."
+        subtitle="The photos linked to this event's gallery. Captions belong to this event, not to the file."
         actions={
           <NavLink
-            to={`/admin/dinners/${dinner.id}`}
+            to={`/admin/events/${event.id}`}
             className={buttonVariants({ variant: "outline" })}
           >
-            Back to dinner
+            Back to event
           </NavLink>
         }
       />
@@ -239,8 +239,8 @@ export default function AdminDinnerGalleryPage({
           <div>
             <h2 className="text-xl font-semibold">Add photos</h2>
             <p className="text-foreground/65 mt-1 text-sm">
-              Uploads land in this dinner&apos;s gallery, in the order you
-              choose them.
+              Uploads land in this event&apos;s gallery, in the order you choose
+              them.
             </p>
           </div>
 
@@ -279,7 +279,7 @@ export default function AdminDinnerGalleryPage({
               />
 
               <Button type="submit" className="self-start">
-                Upload to this dinner
+                Upload to this event
               </Button>
             </Form>
           </Card>
@@ -308,7 +308,7 @@ export default function AdminDinnerGalleryPage({
                       image={entry.image}
                       width={480}
                       height={320}
-                      alt={entry.altText ?? dinner.title}
+                      alt={entry.altText ?? event.title}
                     />
                     <div className="flex items-center gap-3 p-4">
                       <p className="min-w-0 flex-1 truncate text-sm">

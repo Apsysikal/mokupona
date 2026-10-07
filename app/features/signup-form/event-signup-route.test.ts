@@ -12,13 +12,13 @@ import {
 import { getHoneypotInputProps } from "~/features/forms/honeypot.server";
 import { createEvent } from "~/models/event.server";
 import { getCurrentFormVersion } from "~/models/form.server";
-import { action } from "~/routes/dinners_.$dinnerId";
+import { action } from "~/routes/events_.$eventId";
 
-async function createDinner() {
+async function createTestEvent() {
   const event = await createEvent(await buildEventData());
   const version = await getCurrentFormVersion(event.formId);
 
-  return { dinnerId: event.id, versionId: version.id };
+  return { eventId: event.id, versionId: version.id };
 }
 
 // every browser submission carries the spam-trap fields — with the trap
@@ -41,10 +41,10 @@ function answers(versionId: string) {
   };
 }
 
-function submit(dinnerId: string, body: Record<string, string>) {
+function submit(eventId: string, body: Record<string, string>) {
   return action({
-    params: { dinnerId },
-    request: new Request(`http://localhost:3000/dinners/${dinnerId}`, {
+    params: { eventId },
+    request: new Request(`http://localhost:3000/events/${eventId}`, {
       method: "POST",
       body: new URLSearchParams(body),
     }),
@@ -60,7 +60,7 @@ function expectSuccessRedirect(result: Awaited<ReturnType<typeof action>>) {
   expect(result).toBeInstanceOf(Response);
   const response = result as Response;
   expect(response.status).toBe(302);
-  expect(response.headers.get("location")).toBe("/dinners");
+  expect(response.headers.get("location")).toBe("/events");
 }
 
 function readFormErrors(result: Awaited<ReturnType<typeof action>>) {
@@ -68,12 +68,12 @@ function readFormErrors(result: Awaited<ReturnType<typeof action>>) {
   return reply.error?.[""] ?? [];
 }
 
-describe("dinner signup action", () => {
+describe("event signup action", () => {
   it("stores a submission carrying a freshly minted stamp", async () => {
-    const { dinnerId, versionId } = await createDinner();
+    const { eventId, versionId } = await createTestEvent();
 
     expectSuccessRedirect(
-      await submit(dinnerId, fromBrowser(answers(versionId))),
+      await submit(eventId, fromBrowser(answers(versionId))),
     );
 
     const stored = await storedFor(versionId);
@@ -85,9 +85,9 @@ describe("dinner signup action", () => {
   });
 
   it("answers a filled spam trap with the success redirect", async () => {
-    const { dinnerId, versionId } = await createDinner();
+    const { eventId, versionId } = await createTestEvent();
 
-    const result = await submit(dinnerId, {
+    const result = await submit(eventId, {
       ...fromBrowser(answers(versionId)),
       [HONEYPOT_FIELD_NAME]: "https://buy-cheap-pills.example",
     });
@@ -98,11 +98,11 @@ describe("dinner signup action", () => {
   });
 
   it("answers a filled spam trap the same way when nothing else validates", async () => {
-    const { dinnerId, versionId } = await createDinner();
+    const { eventId, versionId } = await createTestEvent();
 
     // the trap is read before the answers are, so a bot cannot tell a
     // rejected payload apart from an accepted one
-    const result = await submit(dinnerId, {
+    const result = await submit(eventId, {
       [HONEYPOT_FIELD_NAME]: "https://buy-cheap-pills.example",
     });
 
@@ -111,12 +111,12 @@ describe("dinner signup action", () => {
   });
 
   it("asks for a retry when the stamp cannot be verified", async () => {
-    const { dinnerId, versionId } = await createDinner();
+    const { eventId, versionId } = await createTestEvent();
 
     // what a tab that outlived a deploy sends: an empty trap, a stamp this
     // process cannot vouch for. A person, so the answers must come back on
     // screen instead of vanishing into the fake success.
-    const result = await submit(dinnerId, {
+    const result = await submit(eventId, {
       ...fromBrowser(answers(versionId)),
       [HONEYPOT_VALID_FROM_FIELD_NAME]: `${Date.now()}.stale-signature`,
     });

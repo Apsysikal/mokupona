@@ -28,7 +28,7 @@ export const loader = async () => {
   ]);
 
   return {
-    nextDinner: nextEvent
+    nextEvent: nextEvent
       ? { id: nextEvent.id, date: nextEvent.date, slots: nextEvent.slots }
       : null,
     heroBlurDataUrl,
@@ -42,7 +42,7 @@ export const meta: Route.MetaFunction = ({ matches, location }) => {
     {
       name: "description",
       content:
-        "A dinner society in Zurich, bringing people together through shared meals, stories, and the joy of discovery.",
+        "A culinary society in Zurich, bringing people together through shared meals, stories, and the joy of discovery.",
     },
   ] satisfies ReturnType<Route.MetaFunction>;
 
@@ -71,7 +71,7 @@ const visionSectionData: TextSectionBlockType = {
   data: {
     eyebrow: "our vision",
     headline: "food as a way to connect",
-    body: "moku pona began as a passion project by a group of friends who love cooking and wanted a creative way to explore our culinary interests. for us, food is a way to express creativity, share experiences, and connect with others. through our dinner club, we surprise our guests with unique flavors and ingredients, introducing them to diverse cuisines and the stories behind them.",
+    body: "moku pona began as a passion project by a group of friends who love cooking and wanted a creative way to explore our culinary interests. for us, food is a way to express creativity, share experiences, and connect with others. through our community, we surprise our guests with unique flavors and ingredients, introducing them to diverse cuisines and the stories behind them.",
     variant: "plain",
   },
 };
@@ -97,7 +97,7 @@ const differenceSectionData: TextSectionBlockType = {
   data: {
     eyebrow: "how's this different?",
     headline: "more than a meal out",
-    body: "our dinner events go beyond the typical restaurant experience, creating a warm and welcoming space where friends and strangers can forge new connections. every gathering is a chance not just to enjoy a wonderful meal, but to meet new people, share stories, and build meaningful relationships, the magic of a shared table in a cozy, intimate setting.",
+    body: "our events go beyond the typical restaurant experience, creating a warm and welcoming space where friends and strangers can forge new connections. every gathering is a chance not just to enjoy a wonderful meal, but to meet new people, share stories, and build meaningful relationships, the magic of a shared table in a cozy, intimate setting.",
     variant: "plain",
   },
 };
@@ -114,25 +114,25 @@ const aboutSectionData: TextSectionBlockType = {
 };
 
 export default function Index({ loaderData }: Route.ComponentProps) {
-  const { nextDinner, heroBlurDataUrl, accentBlurDataUrl } = loaderData;
+  const { nextEvent, heroBlurDataUrl, accentBlurDataUrl } = loaderData;
 
   const heroSectionData: HeroBlockType = {
     type: "hero",
     version: 1,
     data: {
-      eyebrow: nextDinner
-        ? `next gathering · ${formatEventDayMonth(new Date(nextDinner.date))}`
+      eyebrow: nextEvent
+        ? `next gathering · ${formatEventDayMonth(new Date(nextEvent.date))}`
         : undefined,
       headline: "an evening around",
       headlineAccent: "one long table",
       description:
-        "moku pona is a dinner society in zürich, shared meals, new stories, and the quiet joy of discovery.",
+        "moku pona is a culinary society in zürich, shared meals, new stories, and the quiet joy of discovery.",
       actions: [
         {
-          href: nextDinner ? `/dinners/${nextDinner.id}` : "/dinners",
+          href: nextEvent ? `/events/${nextEvent.id}` : "/events",
           label: "reserve a seat",
         },
-        { href: "/dinners", label: "see all dinners →", variant: "secondary" },
+        { href: "/events", label: "see all events →", variant: "secondary" },
       ],
       meta: undefined,
       image: {

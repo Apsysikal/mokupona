@@ -39,9 +39,9 @@ function buildNavItems({
   const items: NavItem[] = [
     {
       kind: "link",
-      label: "dinners",
-      to: "/dinners",
-      isActive: (pathname) => pathname.startsWith("/dinners"),
+      label: "events",
+      to: "/events",
+      isActive: (pathname) => pathname.startsWith("/events"),
     },
     {
       kind: "link",
@@ -153,7 +153,7 @@ export function SiteNav({ joinHref }: { joinHref: string }) {
             })}
 
             <Link to={joinHref} className={buttonVariants({ size: "sm" })}>
-              join a dinner
+              join an event
             </Link>
           </div>
         </div>
@@ -239,7 +239,7 @@ function MobileMenu({
           to={joinHref}
           className={cn(buttonVariants({ size: "lg" }), "mt-8")}
         >
-          join a dinner
+          join an event
         </Link>
 
         <div className="mt-auto flex flex-col gap-4 pt-9">

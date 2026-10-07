@@ -22,21 +22,21 @@ import { cn } from "~/lib/utils";
 import { getNextEvent } from "~/models/event.server";
 
 export async function loader() {
-  const nextDinner = await getNextEvent();
-  const attendees = nextDinner ? await getAttendeesForEvent(nextDinner.id) : [];
+  const nextEvent = await getNextEvent();
+  const attendees = nextEvent ? await getAttendeesForEvent(nextEvent.id) : [];
 
   const todayLabel = formatAdminToday(new Date());
 
   return {
     todayLabel,
-    nextDinner: nextDinner
+    nextEvent: nextEvent
       ? {
-          id: nextDinner.id,
-          title: nextDinner.title,
-          date: nextDinner.date,
-          image: nextDinner.image,
-          slots: nextDinner.slots,
-          street: `${nextDinner.address.streetName} ${nextDinner.address.houseNumber}`,
+          id: nextEvent.id,
+          title: nextEvent.title,
+          date: nextEvent.date,
+          image: nextEvent.image,
+          slots: nextEvent.slots,
+          street: `${nextEvent.address.streetName} ${nextEvent.address.houseNumber}`,
           seatsTaken: attendees.length,
         }
       : null,
@@ -54,7 +54,7 @@ export const meta: Route.MetaFunction = () => {
 export default function AdminOverviewPage({
   loaderData,
 }: Route.ComponentProps) {
-  const { todayLabel, nextDinner, recentSignups } = loaderData;
+  const { todayLabel, nextEvent, recentSignups } = loaderData;
 
   return (
     <div className="animate-page-in">
@@ -70,22 +70,22 @@ export default function AdminOverviewPage({
             >
               New location
             </Link>
-            <Link to="dinners/new" className={buttonVariants()}>
+            <Link to="events/new" className={buttonVariants()}>
               <PlusIcon className="size-4" />
-              New dinner
+              New event
             </Link>
           </>
         }
       />
 
       <div className="flex flex-col gap-4">
-        {nextDinner ? (
-          <NextDinnerCard dinner={nextDinner} />
+        {nextEvent ? (
+          <NextEventCard event={nextEvent} />
         ) : (
           <Card className="p-6 text-center">
-            <p className="text-lg font-semibold">No upcoming dinner</p>
+            <p className="text-lg font-semibold">No upcoming event</p>
             <p className="text-foreground/50 mt-1 text-sm">
-              Create the next dinner to see it here.
+              Create the next event to see it here.
             </p>
           </Card>
         )}
@@ -93,9 +93,9 @@ export default function AdminOverviewPage({
         <Card className="p-4 md:p-5">
           <div className="mb-2 flex items-center justify-between md:mb-3">
             <h2 className="text-base font-semibold">Recent signups</h2>
-            {nextDinner ? (
+            {nextEvent ? (
               <Link
-                to={`dinners/${nextDinner.id}/signups`}
+                to={`events/${nextEvent.id}/signups`}
                 prefetch="intent"
                 className="text-foreground/50 hover:text-foreground text-sm transition-colors"
               >
@@ -139,15 +139,15 @@ export default function AdminOverviewPage({
   );
 }
 
-type NextDinner = NonNullable<Awaited<ReturnType<typeof loader>>["nextDinner"]>;
+type NextEvent = NonNullable<Awaited<ReturnType<typeof loader>>["nextEvent"]>;
 
-function NextDinnerCard({ dinner }: { dinner: NextDinner }) {
-  const date = new Date(dinner.date);
+function NextEventCard({ event }: { event: NextEvent }) {
+  const date = new Date(event.date);
 
   return (
     <Card className="flex flex-wrap items-center gap-3 p-4">
       <CoverImage
-        image={dinner.image}
+        image={event.image}
         alt=""
         sizes="160px"
         className="w-40 shrink-0 rounded-lg border"
@@ -156,36 +156,34 @@ function NextDinnerCard({ dinner }: { dinner: NextDinner }) {
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         <div>
           <Eyebrow variant="tracked" tone="label">
-            Next dinner
+            Next event
           </Eyebrow>
-          <h2 className="mt-1 truncate text-lg font-semibold">
-            {dinner.title}
-          </h2>
+          <h2 className="mt-1 truncate text-lg font-semibold">{event.title}</h2>
           <p className="text-foreground/65 mt-1 text-sm">
             <time dateTime={date.toISOString()} suppressHydrationWarning>
               {formatAdminDateLine(date)}
             </time>
             {" · "}
-            {dinner.street}
+            {event.street}
           </p>
         </div>
         <div className="flex max-w-md items-center gap-3">
-          <SeatProgress taken={dinner.seatsTaken} total={dinner.slots} />
+          <SeatProgress taken={event.seatsTaken} total={event.slots} />
           <span className="text-foreground/50 text-sm whitespace-nowrap">
-            {dinner.seatsTaken} / {dinner.slots} seats
+            {event.seatsTaken} / {event.slots} seats
           </span>
         </div>
       </div>
 
       <div className="flex gap-2 max-md:w-full">
         <Link
-          to={`dinners/${dinner.id}/signups`}
+          to={`events/${event.id}/signups`}
           className={cn(buttonVariants({ size: "sm" }), "max-md:flex-1")}
         >
           View signups
         </Link>
         <Link
-          to={`dinners/${dinner.id}/edit`}
+          to={`events/${event.id}/edit`}
           className={cn(
             buttonVariants({ variant: "outline", size: "sm" }),
             "max-md:flex-1",

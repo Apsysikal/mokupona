@@ -7,7 +7,10 @@ import {
   type ImageFolder,
 } from "~/features/images/image-storage.server";
 import { deleteBoardMember as deleteBoardMemberRecord } from "~/models/board-member.server";
-import { createEvent, deleteEvent } from "~/models/event.server";
+import {
+  createEvent,
+  deleteEvent as deleteEventRecord,
+} from "~/models/event.server";
 import { getUserByEmail } from "~/models/user.server";
 
 const defaultImagePath = path.resolve(process.cwd(), "prisma/default.jpg");
@@ -15,7 +18,7 @@ const moderatorEmail = "moderator@mokupona.ch";
 
 type CommandInput =
   | {
-      action: "create-dinner";
+      action: "create-event";
       payload: {
         title: string;
         description?: string;
@@ -28,13 +31,13 @@ type CommandInput =
       };
     }
   | {
-      action: "get-dinner";
+      action: "get-event";
       payload: {
         id: string;
       };
     }
   | {
-      action: "delete-dinner";
+      action: "delete-event";
       payload: {
         id: string;
       };
@@ -85,7 +88,7 @@ type CommandInput =
       };
     };
 
-type DinnerResult = {
+type EventResult = {
   id: string;
   title: string;
   description: string;
@@ -115,7 +118,7 @@ type ImageResult = {
   storageKey: string | null;
 } | null;
 
-function toDinnerResult(
+function toEventResult(
   event: {
     id: string;
     title: string;
@@ -130,7 +133,7 @@ function toDinnerResult(
   },
   // the cover arrives via the Event.imageId relation
   image: { id: string; storageKey: string | null } | null,
-): DinnerResult {
+): EventResult {
   return {
     id: event.id,
     title: event.title,
@@ -202,13 +205,13 @@ async function requireAddressId() {
   return address.id;
 }
 
-async function createDinner(
-  payload: Extract<CommandInput, { action: "create-dinner" }>,
+async function createTestEvent(
+  payload: Extract<CommandInput, { action: "create-event" }>,
 ) {
   const [moderatorId, addressId, imageData] = await Promise.all([
     requireModeratorId(),
     requireAddressId(),
-    getDefaultImageInput("dinners"),
+    getDefaultImageInput("events"),
   ]);
 
   const event = await createEvent({
@@ -237,11 +240,11 @@ async function createDinner(
     select: { image: { select: { id: true, storageKey: true } } },
   });
 
-  return outputJson<DinnerResult>(toDinnerResult(event, cover));
+  return outputJson<EventResult>(toEventResult(event, cover));
 }
 
-async function getDinner(
-  payload: Extract<CommandInput, { action: "get-dinner" }>,
+async function getEvent(
+  payload: Extract<CommandInput, { action: "get-event" }>,
 ) {
   const event = await prisma.event.findUnique({
     where: { id: payload.payload.id },
@@ -252,11 +255,11 @@ async function getDinner(
     return outputJson<null>(null);
   }
 
-  return outputJson<DinnerResult>(toDinnerResult(event, event.image));
+  return outputJson<EventResult>(toEventResult(event, event.image));
 }
 
-async function deleteDinner(
-  payload: Extract<CommandInput, { action: "delete-dinner" }>,
+async function deleteEvent(
+  payload: Extract<CommandInput, { action: "delete-event" }>,
 ) {
   const event = await prisma.event.findUnique({
     where: { id: payload.payload.id },
@@ -264,7 +267,7 @@ async function deleteDinner(
   });
 
   if (event) {
-    await deleteEvent(event.id);
+    await deleteEventRecord(event.id);
   }
 
   return outputJson({ deleted: Boolean(event) });
@@ -405,9 +408,9 @@ function parseCommand(): CommandInput {
     : {};
 
   switch (action) {
-    case "create-dinner":
-    case "get-dinner":
-    case "delete-dinner":
+    case "create-event":
+    case "get-event":
+    case "delete-event":
     case "get-image":
     case "delete-image":
     case "create-legacy-response":
@@ -429,12 +432,12 @@ async function main() {
   const command = parseCommand();
 
   switch (command.action) {
-    case "create-dinner":
-      return createDinner(command);
-    case "get-dinner":
-      return getDinner(command);
-    case "delete-dinner":
-      return deleteDinner(command);
+    case "create-event":
+      return createTestEvent(command);
+    case "get-event":
+      return getEvent(command);
+    case "delete-event":
+      return deleteEvent(command);
     case "get-image":
       return getImage(command);
     case "delete-image":

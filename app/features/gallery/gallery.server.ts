@@ -18,8 +18,8 @@ function toGalleryImageModel(entry: GalleryEntry): GalleryImageModel {
 }
 
 /**
- * Every gallery image from a dinner that already happened — newest dinner
- * first, then display order. An upcoming dinner's photos stay unlisted here
+ * Every gallery image from an event that already happened — newest event
+ * first, then display order. An upcoming event's photos stay unlisted here
  * for the same reason its own page hides them.
  */
 export async function listGalleryImages(
@@ -28,7 +28,7 @@ export async function listGalleryImages(
   return (await getGalleryEntries(now)).map(toGalleryImageModel);
 }
 
-/** One dinner's gallery, in display order. */
+/** One event's gallery, in display order. */
 export async function listGalleryImagesForEvent(
   eventId: string,
 ): Promise<GalleryImageModel[]> {

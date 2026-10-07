@@ -1,4 +1,4 @@
-import type { Route } from "./+types/admin.dinners.$dinnerId.[signups.csv]";
+import type { Route } from "./+types/admin.events.$eventId.[signups.csv]";
 
 import {
   getAttendeeRosterForEvent,
@@ -11,11 +11,11 @@ import { buildCSVObject } from "~/shared/csv-builder.server";
 import { requireFound } from "~/shared/http.server";
 
 export async function loader({ params }: Route.LoaderArgs) {
-  const { dinnerId } = params;
+  const { eventId } = params;
 
   const [event, { attendees, columns }] = await Promise.all([
-    getEventById(dinnerId).then(requireFound),
-    getAttendeeRosterForEvent(dinnerId),
+    getEventById(eventId).then(requireFound),
+    getAttendeeRosterForEvent(eventId),
   ]);
 
   const data = buildCSVObject(

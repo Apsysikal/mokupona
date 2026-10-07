@@ -1,6 +1,6 @@
 import { redirect } from "react-router";
 
-import type { Route } from "./+types/admin.dinners.$dinnerId.delete";
+import type { Route } from "./+types/admin.events.$eventId.delete";
 
 import {
   requestLoggerContext,
@@ -10,20 +10,20 @@ import { destroyImages } from "~/features/images/image-storage.server";
 import { deleteEvent } from "~/models/event.server";
 
 export async function loader() {
-  return redirect("/admin/dinners");
+  return redirect("/admin/events");
 }
 
 export async function action({ params, context }: Route.ActionArgs) {
-  const { dinnerId } = params;
-  const { imageKeys } = await deleteEvent(dinnerId);
+  const { eventId } = params;
+  const { imageKeys } = await deleteEvent(eventId);
   await destroyImages(imageKeys);
 
   context
     .get(requestLoggerContext)
     .warn(
-      { userId: context.get(userContext).id, dinner: dinnerId },
-      "Admin deleted a dinner and everything that cascades from it",
+      { userId: context.get(userContext).id, event: eventId },
+      "Admin deleted an event and everything that cascades from it",
     );
 
-  return redirect("/admin/dinners");
+  return redirect("/admin/events");
 }

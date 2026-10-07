@@ -10,14 +10,14 @@ import {
 
 export type { EventGalleryImage };
 
-/** The dinner an entry hangs in, as much as the gallery reads of it. */
+/** The event an entry hangs in, as much as the gallery reads of it. */
 export interface GalleryEntryEvent {
   id: string;
   title: string;
   date: Date;
 }
 
-/** A dinner reference thin enough for the reuse labels. */
+/** An event reference thin enough for the reuse labels. */
 export interface GalleryEventLabel {
   id: string;
   title: string;
@@ -28,14 +28,14 @@ export interface GalleryEntry {
   id: string;
   caption: string | null;
   position: number;
-  /** lives on the image row; callers fall back to the dinner title */
+  /** lives on the image row; callers fall back to the event title */
   altText: string | null;
   image: ImageMetadata;
   event: GalleryEntryEvent;
 }
 
 export interface GalleryEntryWithReuse extends GalleryEntry {
-  /** the other dinners whose gallery shows the very same image */
+  /** the other events whose gallery shows the very same image */
   sharedWith: GalleryEventLabel[];
 }
 
@@ -72,7 +72,7 @@ const ENTRY_WITH_REUSE_SELECT = {
   },
 } satisfies Prisma.EventGalleryImageSelect;
 
-// newest dinner first, then the dinner's own display order
+// newest event first, then the event's own display order
 const ENTRY_ORDER_BY = [
   { event: { date: "desc" } },
   { position: "asc" },
@@ -129,8 +129,8 @@ async function nextPositionInTx(
 }
 
 /**
- * Every membership hanging in a dinner that already happened, newest dinner
- * first. Upcoming dinners keep their photos to their own page — the same cut
+ * Every membership hanging in an event that already happened, newest event
+ * first. Upcoming events keep their photos to their own page — the same cut
  * `isPastEvent` makes: strictly before `now`.
  */
 export async function getGalleryEntries(now: Date): Promise<GalleryEntry[]> {
@@ -143,7 +143,7 @@ export async function getGalleryEntries(now: Date): Promise<GalleryEntry[]> {
   return entries.map(toGalleryEntry);
 }
 
-/** One dinner's memberships in display order — the public page's read. */
+/** One event's memberships in display order — the public page's read. */
 export async function getGalleryEntriesForEvent(
   eventId: string,
 ): Promise<GalleryEntry[]> {
@@ -156,7 +156,7 @@ export async function getGalleryEntriesForEvent(
   return entries.map(toGalleryEntry);
 }
 
-/** The admin read: each entry plus the other dinners showing its image. */
+/** The admin read: each entry plus the other events showing its image. */
 export async function getGalleryEntriesForEventWithReuse(
   eventId: string,
 ): Promise<GalleryEntryWithReuse[]> {
@@ -171,7 +171,7 @@ export async function getGalleryEntriesForEventWithReuse(
 
 /**
  * Upload path: persist freshly stored images and grant each one membership in
- * this dinner, appending after the current last entry. One transaction, so a
+ * this event, appending after the current last entry. One transaction, so a
  * failed entry write cannot leave an image row nothing points at.
  */
 export async function createGalleryImagesForEvent(
@@ -206,7 +206,7 @@ export async function createGalleryImagesForEvent(
 }
 
 /**
- * Unlink one image from one dinner, scoped to that dinner — an entry hanging
+ * Unlink one image from one event, scoped to that event — an entry hanging
  * elsewhere reads as not found. An image still referenced anywhere (another
  * gallery, a cover or portrait slot) survives the unlink; only the last
  * unlink deletes the row, and its storageKey comes back for the caller's

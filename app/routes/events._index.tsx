@@ -1,4 +1,4 @@
-import type { Route } from "./+types/dinners._index";
+import type { Route } from "./+types/events._index";
 
 import {
   Eyebrow,
@@ -27,9 +27,9 @@ export const loader = async () => {
   return { events: events.map(toEventCardModel) };
 };
 
-export const meta: Route.MetaFunction = () => [{ title: "Dinners" }];
+export const meta: Route.MetaFunction = () => [{ title: "Events" }];
 
-export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
+export default function EventsIndexPage({ loaderData }: Route.ComponentProps) {
   const { events } = loaderData;
 
   const now = new Date();
@@ -40,17 +40,17 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
     <PageContainer className="grow pt-7 pb-20">
       <div className="mb-9 flex flex-col gap-3 md:mb-12">
         <Eyebrow>gatherings</Eyebrow>
-        <h1 className={pageTitleClassName}>dinners</h1>
+        <h1 className={pageTitleClassName}>events</h1>
         <p className="text-foreground/80 max-w-2xl text-base font-light md:text-lg">
           {upcomingEvents.length > 0
             ? "a handful of seats open before each supper. reserve early, tables are small and fill quickly."
-            : "we run a handful of intimate dinners a year. there's nothing on the calendar right now, but the next one is never far off."}
+            : "we run a handful of intimate events a year. there's nothing on the calendar right now, but the next one is never far off."}
         </p>
       </div>
 
       {upcomingEvents.length > 0 ? (
         <>
-          <SectionDivider className="mb-5">the next dinner</SectionDivider>
+          <SectionDivider className="mb-5">the next event</SectionDivider>
           <div className="mb-14 flex flex-col gap-8 md:mb-20">
             {upcomingEvents.map((event, index) => (
               <FeaturedEventCard
@@ -67,7 +67,7 @@ export default function DinnersIndexPage({ loaderData }: Route.ComponentProps) {
 
       {pastEvents.length > 0 ? (
         <>
-          <SectionDivider className="mb-5">past dinners</SectionDivider>
+          <SectionDivider className="mb-5">past events</SectionDivider>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
             {pastEvents.map((event) => (
               <PastEventCard key={event.id} event={event} />

@@ -45,7 +45,7 @@ export default function VerifyEmail({ loaderData }: Route.ComponentProps) {
       brand={{
         eyebrow: "you're in",
         heading: "a seat at the table is yours",
-        body: "your email is confirmed. log in to browse the next dinners and reserve your spot.",
+        body: "your email is confirmed. log in to browse the next events and reserve your spot.",
       }}
     >
       <AuthStatus
@@ -70,10 +70,10 @@ export default function VerifyEmail({ loaderData }: Route.ComponentProps) {
           continue to log in
         </Link>
         <Link
-          to="/dinners"
+          to="/events"
           className="text-primary text-sm font-semibold hover:underline"
         >
-          browse dinners instead
+          browse events instead
         </Link>
       </AuthStatus>
     </AuthShell>

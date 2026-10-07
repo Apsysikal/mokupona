@@ -1,6 +1,6 @@
 import { redirect } from "react-router";
 
-import type { Route } from "./+types/admin.dinners.$dinnerId_.edit";
+import type { Route } from "./+types/admin.events.$eventId_.edit";
 
 import { userContext } from "~/features/auth/middleware.server";
 import { AdminEventRouteForm } from "~/features/events/components/admin-event-route-form";
@@ -33,12 +33,12 @@ import { requireFound } from "~/shared/http.server";
 import { nullableStringUpdateValue } from "~/utils/nullable-update-field.server";
 
 export async function loader({ params }: Route.LoaderArgs) {
-  const { dinnerId } = params;
+  const { eventId } = params;
 
   const [addresses, eventWithVersion, answerData] = await Promise.all([
     getAddresses(),
-    getEventWithCurrentFormVersion(dinnerId).then(requireFound),
-    getAnswerCountsByFieldKey(dinnerId),
+    getEventWithCurrentFormVersion(eventId).then(requireFound),
+    getAnswerCountsByFieldKey(eventId),
   ]);
   const { event, version } = eventWithVersion;
   const { counts: answerCounts, hasResponses: formHasSubmissions } = answerData;
@@ -52,7 +52,7 @@ export async function loader({ params }: Route.LoaderArgs) {
     signupForm: storedFields
       ? descriptorsToBuilderRows(storedFields)
       : defaultBuilderRows(),
-    dinner: {
+    event: {
       ...event,
       date: toDisplayEventDate(event.date),
     },
@@ -62,7 +62,7 @@ export async function loader({ params }: Route.LoaderArgs) {
 export async function action({ request, params, context }: Route.ActionArgs) {
   const user = context.get(userContext);
 
-  const { dinnerId } = params;
+  const { eventId } = params;
 
   return withParsedImageForm(request, {
     fieldName: "cover",
@@ -83,7 +83,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
       const changedKeys = syncChangedFieldKeys(signupForm);
       if (changedKeys.length > 0) {
         requestLogger.warn(
-          { dinner: dinnerId, fieldKeys: changedKeys },
+          { event: eventId, fieldKeys: changedKeys },
           "Linked-field sync changed submitted rows before persistence",
         );
       }
@@ -98,7 +98,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
       });
 
       const { event, replacedImageKey } = await updateEvent(
-        dinnerId,
+        eventId,
         {
           title,
           description,
@@ -116,7 +116,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
           ...(cover && {
             image: {
               contentType: cover.type,
-              ...(await storeImage(cover, "dinners")),
+              ...(await storeImage(cover, "events")),
             },
           }),
           createdById: user.id,
@@ -126,7 +126,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
 
       await destroyImages([replacedImageKey]);
 
-      return redirect(`/admin/dinners/${event.id}`);
+      return redirect(`/admin/events/${event.id}`);
     },
   });
 }
@@ -135,17 +135,17 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
   return [
     {
       title: loaderData
-        ? `Admin - Dinner - ${loaderData.dinner.title} - Edit`
-        : "Admin - Dinner - Edit",
+        ? `Admin - Event - ${loaderData.event.title} - Edit`
+        : "Admin - Event - Edit",
     },
   ];
 };
 
-export default function AdminDinnerEditPage({
+export default function AdminEventEditPage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const { addresses, dinner, signupForm, formHasSubmissions, answerCounts } =
+  const { addresses, event, signupForm, formHasSubmissions, answerCounts } =
     loaderData;
   const addressOptions = toAddressOptions(addresses);
 
@@ -153,11 +153,11 @@ export default function AdminDinnerEditPage({
     <AdminEventRouteForm
       schema={EventEditSchema}
       lastResult={actionData}
-      defaultValue={{ ...dinner, signupForm }}
+      defaultValue={{ ...event, signupForm }}
       addressOptions={addressOptions}
-      submitText="Save dinner"
-      pageTitle="Edit dinner"
-      cancelHref={`/admin/dinners/${dinner.id}`}
+      submitText="Save event"
+      pageTitle="Edit event"
+      cancelHref={`/admin/events/${event.id}`}
       lockFieldKeys={formHasSubmissions}
       answerCounts={answerCounts}
     />

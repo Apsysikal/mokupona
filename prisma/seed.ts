@@ -106,7 +106,7 @@ async function seed() {
         contentType: "image/jpeg",
         ...(await storeImage(
           new File([defaultImage], "default.jpg", { type: "image/jpeg" }),
-          "dinners",
+          "events",
         )),
       },
       addressId: address.id,
@@ -127,7 +127,7 @@ async function seed() {
     });
   }
 
-  // The gallery only shows on dinners that already happened, so it needs one.
+  // The gallery only shows on events that already happened, so it needs one.
   const pastEvent = await seedEvent(faker.date.recent({ days: 45 }));
 
   const galleryVariants = [
@@ -173,7 +173,7 @@ async function seed() {
             new File([svg], `gallery-${index + 1}.svg`, {
               type: "image/svg+xml",
             }),
-            "dinner-gallery",
+            "event-gallery",
           )),
           width,
           height,

@@ -1,14 +1,14 @@
 # moku pona
 
-Web app for the moku pona dinner society in Zurich.
+Web app for the moku pona culinary society in Zurich.
 
 The app includes:
 
-- Public landing page and dinner pages
-- Dinner signup (RSVP) flow
+- Public landing page and event pages
+- Event signup (RSVP) flow
 - Role-based authentication (user, moderator, admin)
-- Admin area for dinners, locations, users, and board members
-- CSV export for dinner signups
+- Admin area for events, locations, users, and board members
+- CSV export for event signups
 - SQLite + Prisma data layer
 
 ## Tech stack

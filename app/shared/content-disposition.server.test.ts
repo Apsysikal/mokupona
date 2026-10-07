@@ -21,10 +21,10 @@ describe("contentDispositionAttachment", () => {
   });
 
   it("leaves a plain ASCII name readable in both parameters", () => {
-    const header = contentDispositionAttachment("dinner-signups.csv");
+    const header = contentDispositionAttachment("event-signups.csv");
 
     expect(header).toBe(
-      `attachment; filename="dinner-signups.csv"; filename*=UTF-8''dinner-signups.csv`,
+      `attachment; filename="event-signups.csv"; filename*=UTF-8''event-signups.csv`,
     );
   });
 });

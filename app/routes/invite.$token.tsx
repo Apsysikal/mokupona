@@ -215,7 +215,7 @@ const DEAD_END_COPY = {
   },
   expired: {
     heading: "this invite has expired",
-    body: "invites last about a week. ask whoever invited you to send a fresh one, or browse our public dinners in the meantime.",
+    body: "invites last about a week. ask whoever invited you to send a fresh one, or browse our public events in the meantime.",
   },
   used: {
     heading: "this invite has already been accepted",
@@ -239,10 +239,10 @@ export default function InvitePage({
         body={copy.body}
       >
         <Link
-          to="/dinners"
+          to="/events"
           className={cn(buttonVariants({ size: "lg" }), "w-full")}
         >
-          browse dinners
+          browse events
         </Link>
         <Link
           to="/login"
@@ -374,8 +374,8 @@ function InviteSignup({
 
   const brandBody =
     roleName === "moderator"
-      ? `${inviterName} invited you to help run our dinners. set a password to accept. your invite is tied to the email below.`
-      : `${inviterName} invited you to join our dinners. set a password to accept. your invite is tied to the email below.`;
+      ? `${inviterName} invited you to help run our events. set a password to accept. your invite is tied to the email below.`
+      : `${inviterName} invited you to join our events. set a password to accept. your invite is tied to the email below.`;
 
   return (
     <AuthShell

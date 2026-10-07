@@ -49,13 +49,13 @@ describe("destroyImages", () => {
   it("destroys each captured key, skipping nulls from legacy rows", async () => {
     const destroy = vi.fn().mockResolvedValue(undefined);
 
-    await destroyImages(["dinners/a", null, undefined, "board-members/b"], {
+    await destroyImages(["events/a", null, undefined, "board-members/b"], {
       store: vi.fn(),
       destroy,
     });
 
     expect(destroy).toHaveBeenCalledTimes(2);
-    expect(destroy).toHaveBeenNthCalledWith(1, "dinners/a");
+    expect(destroy).toHaveBeenNthCalledWith(1, "events/a");
     expect(destroy).toHaveBeenNthCalledWith(2, "board-members/b");
   });
 
@@ -66,7 +66,7 @@ describe("destroyImages", () => {
       .mockResolvedValueOnce(undefined);
 
     await expect(
-      destroyImages(["dinners/a", "dinners/b"], {
+      destroyImages(["events/a", "events/b"], {
         store: vi.fn(),
         destroy,
       }),
@@ -74,7 +74,7 @@ describe("destroyImages", () => {
 
     expect(destroy).toHaveBeenCalledTimes(2);
     expect(loggerStub.warn).toHaveBeenCalledWith(
-      expect.objectContaining({ storageKey: "dinners/a" }),
+      expect.objectContaining({ storageKey: "events/a" }),
       "Failed to destroy stored image after DB commit",
     );
   });
@@ -88,23 +88,23 @@ describe("storeImages", () => {
   it("keeps the siblings of a failed store, settled in input order", async () => {
     const store = vi
       .fn()
-      .mockResolvedValueOnce({ storageKey: "dinner-gallery/a" })
+      .mockResolvedValueOnce({ storageKey: "event-gallery/a" })
       .mockRejectedValueOnce(new Error("cloudinary 503"))
-      .mockResolvedValueOnce({ storageKey: "dinner-gallery/c" });
+      .mockResolvedValueOnce({ storageKey: "event-gallery/c" });
 
     const results = await storeImages(
       [file("a.jpg"), file("b.jpg"), file("c.jpg")],
-      "dinner-gallery",
+      "event-gallery",
       { store, destroy: vi.fn() },
     );
 
     expect(results).toEqual([
-      { status: "fulfilled", value: { storageKey: "dinner-gallery/a" } },
+      { status: "fulfilled", value: { storageKey: "event-gallery/a" } },
       { status: "rejected", reason: new Error("cloudinary 503") },
-      { status: "fulfilled", value: { storageKey: "dinner-gallery/c" } },
+      { status: "fulfilled", value: { storageKey: "event-gallery/c" } },
     ]);
     expect(loggerStub.warn).toHaveBeenCalledWith(
-      expect.objectContaining({ fileName: "b.jpg", folder: "dinner-gallery" }),
+      expect.objectContaining({ fileName: "b.jpg", folder: "event-gallery" }),
       "Failed to store image",
     );
   });
@@ -113,7 +113,7 @@ describe("storeImages", () => {
     const store = vi.fn();
 
     await expect(
-      storeImages([], "dinner-gallery", { store, destroy: vi.fn() }),
+      storeImages([], "event-gallery", { store, destroy: vi.fn() }),
     ).resolves.toEqual([]);
     expect(store).not.toHaveBeenCalled();
   });

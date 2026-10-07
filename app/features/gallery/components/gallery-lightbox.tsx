@@ -68,7 +68,7 @@ function GallerySlide({ image }: { image: GalleryImageModel }) {
           ) : null}
           {event && date ? (
             <Link
-              to={`/dinners/${event.id}`}
+              to={`/events/${event.id}`}
               className="text-foreground/50 hover:text-foreground focus-visible:ring-ring w-fit transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
             >
               {event.title} ·{" "}

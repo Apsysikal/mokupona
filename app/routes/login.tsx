@@ -101,7 +101,7 @@ export default function LoginPage({
   actionData,
 }: Route.ComponentProps) {
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") || "/dinners";
+  const redirectTo = searchParams.get("redirectTo") || "/events";
   const authError = actionData?.authError ?? null;
   const [form, fields] = useForm({
     lastResult: actionData?.result,

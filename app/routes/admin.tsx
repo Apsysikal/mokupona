@@ -23,14 +23,14 @@ export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext);
   const isAdmin = isAdminRole(user.role.name);
 
-  const [dinners, locations, board, users] = await Promise.all([
+  const [events, locations, board, users] = await Promise.all([
     countEvents(),
     countAddresses(),
     countBoardMembers(),
     isAdmin ? countUsers() : Promise.resolve(null),
   ]);
 
-  return { counts: { dinners, locations, board, users }, isAdmin };
+  return { counts: { events, locations, board, users }, isAdmin };
 }
 
 export const meta: Route.MetaFunction = () => {

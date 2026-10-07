@@ -20,8 +20,8 @@ export function Footer() {
             <Eyebrow variant="tracked" tone="label">
               explore
             </Eyebrow>
-            <Link to="/dinners" className={linkClasses}>
-              dinners
+            <Link to="/events" className={linkClasses}>
+              events
             </Link>
             <Link to="/privacy" className={linkClasses}>
               privacy policy
@@ -46,8 +46,8 @@ export function Footer() {
       <div className="flex flex-col gap-4 px-5 pt-7 pb-10 md:hidden">
         <BrandLockup logoClassName="size-4" wordmarkClassName="text-base" />
         <div className="flex gap-5">
-          <Link to="/dinners" className={linkClasses}>
-            dinners
+          <Link to="/events" className={linkClasses}>
+            events
           </Link>
           <Link to="/privacy" className={linkClasses}>
             privacy policy

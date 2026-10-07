@@ -122,8 +122,8 @@ export function AdminEventForm({
   return (
     <div className="flex flex-col gap-4 md:gap-6">
       <div>
-        <BackLink to="/admin/dinners" prefetch="intent">
-          Dinners
+        <BackLink to="/admin/events" prefetch="intent">
+          Events
         </BackLink>
         <h1 className={pageTitleClassName}>{pageTitle}</h1>
       </div>
@@ -135,7 +135,7 @@ export function AdminEventForm({
           <SectionCard
             id="section-basics"
             title="Basics"
-            description="Title and description guests see on the dinner page."
+            description="Title and description guests see on the event page."
           >
             <Field
               labelProps={{ children: "Title" }}

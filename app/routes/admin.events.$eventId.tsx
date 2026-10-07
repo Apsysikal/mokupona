@@ -1,6 +1,6 @@
 import { Form, Link } from "react-router";
 
-import type { Route } from "./+types/admin.dinners.$dinnerId";
+import type { Route } from "./+types/admin.events.$eventId";
 
 import { Button, buttonVariants } from "~/components/ui/button";
 import { EventView } from "~/features/events/components/event-view";
@@ -9,7 +9,7 @@ import { getEventById } from "~/models/event.server";
 import { requireFound } from "~/shared/http.server";
 
 export async function loader({ params }: Route.LoaderArgs) {
-  const event = requireFound(await getEventById(params.dinnerId));
+  const event = requireFound(await getEventById(params.eventId));
 
   return { event: toEventDetailModel(event) };
 }
@@ -17,19 +17,19 @@ export async function loader({ params }: Route.LoaderArgs) {
 export const meta: Route.MetaFunction = ({ loaderData }) => {
   return [
     {
-      title: loaderData ? `Dinner - ${loaderData.event.title}` : "Dinner",
+      title: loaderData ? `Event - ${loaderData.event.title}` : "Event",
     },
   ];
 };
 
-export default function DinnerPage({ loaderData }: Route.ComponentProps) {
+export default function EventPage({ loaderData }: Route.ComponentProps) {
   const { event } = loaderData;
 
   return (
     <main className="flex grow flex-col gap-5">
       <div className="bg-card text-card-foreground flex flex-col gap-3 rounded-lg p-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm leading-none font-semibold">
-          You are viewing the admin view of this dinner.
+          You are viewing the admin view of this event.
         </p>
 
         <span className="flex flex-wrap gap-2">

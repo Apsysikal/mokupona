@@ -3,7 +3,7 @@ import { NavLink } from "react-router";
 import { cn } from "~/lib/utils";
 
 export interface AdminTabCounts {
-  dinners: number;
+  events: number;
   locations: number;
   board: number;
   users: number | null;
@@ -11,7 +11,7 @@ export interface AdminTabCounts {
 
 const TABS = [
   { to: "/admin", label: "overview", end: true },
-  { to: "/admin/dinners", label: "dinners", countKey: "dinners" },
+  { to: "/admin/events", label: "events", countKey: "events" },
   { to: "/admin/locations", label: "locations", countKey: "locations" },
   { to: "/admin/board-members", label: "board", countKey: "board" },
   { to: "/admin/users", label: "users", countKey: "users", adminOnly: true },

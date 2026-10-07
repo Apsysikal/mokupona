@@ -197,7 +197,7 @@ describe("event image lifecycle", () => {
     const oldImage = await findCoverOrThrow(event.id);
     const newImage = {
       contentType: "image/png",
-      storageKey: "test/dinners/swapped-cover",
+      storageKey: "test/events/swapped-cover",
     };
 
     await updateEvent(event.id, { image: newImage });
@@ -218,7 +218,7 @@ describe("event image lifecycle", () => {
     const event = await createEvent(await buildEventData());
     const newImage = {
       contentType: "image/png",
-      storageKey: "test/dinners/never-persisted-cover",
+      storageKey: "test/events/never-persisted-cover",
     };
     // the schema failure inside saveFormSchemaInTx happens AFTER the new
     // image was created and the event repointed, so the whole swap must
@@ -283,7 +283,7 @@ describe("event image lifecycle", () => {
     const result = await updateEvent(event.id, {
       image: {
         contentType: "image/png",
-        storageKey: "test/dinners/replacement",
+        storageKey: "test/events/replacement",
       },
     });
 

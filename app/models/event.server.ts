@@ -189,7 +189,7 @@ export async function updateEvent(
 /**
  * Deletes the matched events with their forms, then releases every image the
  * events referenced — cover slots and gallery links alike. An image another
- * dinner or a slot still references survives; the storageKeys of those that
+ * event or a slot still references survives; the storageKeys of those that
  * fell come back for the caller's post-commit provider destroy.
  */
 export async function deleteEventsInTx(
