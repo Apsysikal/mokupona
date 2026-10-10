@@ -137,8 +137,16 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
   if (intent === "unlink-google") {
     try {
+      const accounts = await auth.api.listUserAccounts({
+        headers: request.headers,
+      });
+      const googleAccount = accounts.find(
+        (account) => account.providerId === "google",
+      );
+      if (!googleAccount) return data({ result: null, done: null });
+
       await auth.api.unlinkAccount({
-        body: { providerId: "google" },
+        body: { accountId: googleAccount.id },
         headers: request.headers,
       });
       return data({ result: null, done: "unlink" as const });
