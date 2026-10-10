@@ -254,7 +254,9 @@ describe("DEFAULT_FORM parity with the legacy signup schema", () => {
       name: "Ada Lovelace",
       email: "ada@example.com",
       phone: "+41791234567",
-      friends: [{ name: "Charles Babbage", vegetarian: true }],
+      vegetarian: false,
+      student: false,
+      friends: [{ name: "Charles Babbage", vegetarian: true, student: false }],
       comment: "See you there",
       acceptedPrivacy: true,
     });
