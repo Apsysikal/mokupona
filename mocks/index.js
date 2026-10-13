@@ -1,6 +1,5 @@
-import { http } from "msw/http";
+import { http, passthrough } from "msw";
 import { setupServer } from "msw/node";
-import { passthrough } from "msw/utils/passthrough";
 
 const miscHandlers = [
   http.post(`${process.env.REMIX_DEV_HTTP_ORIGIN}/ping`, () => passthrough()),
@@ -8,7 +7,7 @@ const miscHandlers = [
 
 const server = setupServer(...miscHandlers);
 
-server.listen({ onUnhandledFrame: "bypass" });
+server.listen({ onUnhandledRequest: "bypass" });
 console.info("🔶 Mock server running");
 
 process.once("SIGINT", () => server.close());
