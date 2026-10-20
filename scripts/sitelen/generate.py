@@ -161,16 +161,16 @@ def seed_for(word: str) -> int:
     return int(hashlib.sha256(word.encode()).hexdigest()[:8], 16)
 
 
-def build_geometry(word: str) -> dict:
+def build_geometry(word: str, eps: float = 0.7) -> dict:
     rng = np.random.default_rng(seed_for(word))
     base, dark = rasterise(GLYPHS[word])
     body, outer = tear(base, rng, rim_max=3.0)
     dbody, douter = tear(dark, rng, rim_max=1.8)
     return {
-        "body": to_path(body),
-        "outer": to_path(outer),
-        "dark_body": to_path(dbody),
-        "dark_outer": to_path(douter),
+        "body": to_path(body, eps),
+        "outer": to_path(outer, eps),
+        "dark_body": to_path(dbody, eps),
+        "dark_outer": to_path(douter, eps),
         "tilt": round(float(rng.uniform(-7, 7)), 1),
         "tex_offset": [round(float(v), 1) for v in rng.uniform(0, TEXTURE_UNITS, 2)],
         "tex_rotate": round(float(rng.choice([0, 90, 180, 270]) + rng.uniform(-10, 10)), 1),

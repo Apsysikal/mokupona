@@ -14,6 +14,7 @@ import {
   partitionEvents,
 } from "~/features/events/event-status";
 import { toEventCardModel } from "~/features/events/view-models";
+import { SitelenRows } from "~/features/sitelen/sitelen-rows";
 import { getEventsWithAddress } from "~/models/event.server";
 import { getImageUrl } from "~/shared/image";
 import { withOpenGraphUrls } from "~/shared/meta";
@@ -96,6 +97,8 @@ export default function Index({ loaderData }: Route.ComponentProps) {
   return (
     <main>
       <TitleCardBlockView blockData={titleCardData} />
+
+      <SitelenRows />
 
       <TextSectionBlockView id="vision" blockData={visionSectionData} />
 

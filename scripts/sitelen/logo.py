@@ -98,8 +98,8 @@ def svg(name: str, m: dict, tex: dict) -> str:
     )
 
 
-def png(m: dict, cw: dict) -> Image.Image:
-    img = np.broadcast_to(sheet.PAPER, (g.SIZE, g.SIZE, 3)).copy()
+def png(m: dict, cw: dict, bg=sheet.PAPER) -> Image.Image:
+    img = np.broadcast_to(np.asarray(bg, float), (g.SIZE, g.SIZE, 3)).copy()
     sh = ndimage.shift((m["outer"] | m["douter"]).astype(float), (1.6 * g.PX, 1.1 * g.PX), order=0)
     sh = ndimage.gaussian_filter(sh, 1.1 * g.PX) * 0.28
     img = img * (1 - sh[..., None]) + sheet._hex("#2B1238") * sh[..., None]
@@ -130,6 +130,7 @@ def main() -> None:
         (OUT / f"{name}.svg").write_text(svg(name, m, tex))
         im = png(m, cw)
         im.save(OUT / f"{name}.png")
+        png(m, cw, bg=(255, 255, 255)).save(OUT / f"{name}-white.png")
         tiles.append((name, im))
         print(name, im.size)
 
