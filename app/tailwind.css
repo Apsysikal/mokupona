@@ -5,26 +5,29 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Palette — "cream paper, purple ink".
+ * Palette — "lilac paper, purple ink".
  *
- * Only the ink carries text. Teal and sage fail contrast as text on cream
- * (2.27:1 and 1.63:1), so they are fills, bands and decoration only, never
+ * Only the ink carries text. Teal and sage fail contrast as text on the paper
+ * (2.31:1 and 1.67:1), so they are fills, bands and decoration only, never
  * a text colour on the page ground. Ratios noted per token are against the
  * surface the token actually sits on; keep them if you retune.
  */
 :root {
-  /* Lightened from the source #F1F7D4. White cards now sit only 1.06:1 off
-   * this ground, so they read by their border rather than their fill —
-   * lighten further and they stop reading as cards at all. */
-  --paper: rgb(247 250 231); /* #F7FAE7 */
-  --ink: rgb(74 68 102); /* #4A4466 — 8.22:1 on paper */
+  /* A cool off-white with a faint lilac cast, taken from the ink's hue so the
+   * page and the purple artwork read as one family. Replaced the cream
+   * #F7FAE7 (itself lightened from the source #F1F7D4), which read beige.
+   * White cards sit only 1.08:1 off this ground, so they read by their
+   * border rather than their fill — lighten further and they stop reading
+   * as cards at all. */
+  --paper: rgb(246 245 250); /* #F6F5FA */
+  --ink: rgb(74 68 102); /* #4A4466 — 8.38:1 on paper */
   --ink-strong: rgb(46 42 64); /* #2E2A40 — label on teal, 5.50:1 */
   /* sampled from the hand-drawn wordmark so drawn marks match the artwork
-   * rather than approximating it — 12.69:1 on paper */
+   * rather than approximating it — 12.42:1 on paper */
   --crayon: rgb(56 8 136); /* #380888 */
   --teal: rgb(110 173 188); /* #6EADBC — fill / large display only */
-  /* the teal darkened until it can carry small text on paper (6.01:1) —
-   * the plain teal manages only 2.36:1 */
+  /* the teal darkened until it can carry small text on paper (5.88:1) —
+   * the plain teal manages only 2.31:1 */
   --teal-deep: rgb(53 102 113); /* #356671 */
   --sage: rgb(159 203 173); /* #9FCBAD — band fill, ink on top 5.03:1 */
 
@@ -35,7 +38,7 @@
   --popover: rgb(255 255 255);
   --popover-foreground: var(--ink);
 
-  /* the main CTA is solid ink — cream label reads 8.22:1 */
+  /* the main CTA is solid ink — paper-coloured label reads 8.38:1 */
   --primary: var(--ink);
   --primary-foreground: var(--paper);
 

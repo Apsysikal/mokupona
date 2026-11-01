@@ -46,7 +46,7 @@ export function HandwrittenHeading({
       loading="lazy"
       // Like the wordmark, these are JPEGs in an SVG wrapper with an opaque
       // white ground rather than alpha. Multiply drops the white to the paper
-      // and keeps the strokes — only safe because they sit on cream.
+      // and keeps the strokes — only safe because they sit on the light paper.
       //
       // self-start matters: in a flex column the default stretch would blow
       // `w-auto` out to the full column and squash the writing, and because
