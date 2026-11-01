@@ -21,3 +21,20 @@ export function rowOffset(
   const wrapped = ((travelled % copyWidth) + copyWidth) % copyWidth;
   return wrapped - copyWidth;
 }
+
+/**
+ * Vertical layout for an endless wall of `count` rows drifted up by `drift`
+ * px. Rows are numbered k = 0, 1, 2, … down the (infinite) wall; only the
+ * `count` rows starting one above the screen exist, each DOM slot i showing
+ * the one row k with k ≡ i (mod count). As the wall drifts, a row scrolling
+ * off the top is handed to the bottom.
+ *
+ * `slot(i)` gives the wall row a slot shows; `top(k)` its y in px.
+ */
+export function wallRows(drift: number, pitch: number, count: number) {
+  const first = Math.floor(drift / pitch) - 1;
+  return {
+    slot: (i: number) => first + ((((i - first) % count) + count) % count),
+    top: (k: number) => k * pitch - drift,
+  };
+}

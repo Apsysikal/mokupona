@@ -118,7 +118,11 @@ function Document({
   const joinHref = nextEventId ? `/events/${nextEventId}` : "/events";
 
   return (
-    <div className="flex min-h-full flex-col">
+    // isolate + its own paper background: decorative layers at a negative
+    // z-index (the landing page's glyph backdrop) then sit above the paper but
+    // below everything else, and mix-blend-multiply artwork still has the
+    // paper to blend against
+    <div className="bg-background isolate flex min-h-full flex-col">
       <SiteNav joinHref={joinHref} />
       <div className="flex grow flex-col">
         <Outlet />
