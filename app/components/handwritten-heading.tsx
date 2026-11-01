@@ -53,7 +53,7 @@ export function HandwrittenHeading({
       // the artwork's white margins stretch with it the result reads as a
       // centred heading rather than a broken one.
       className={cn(
-        "h-9 w-auto self-start object-contain mix-blend-multiply md:h-11",
+        "art-warm h-9 w-auto self-start object-contain mix-blend-multiply md:h-11",
         className,
       )}
     />

@@ -33,7 +33,7 @@ export function SitelenRows({ className }: { className?: string }) {
     <section
       aria-hidden="true"
       className={cn(
-        "relative overflow-hidden py-8 select-none md:py-12",
+        "art-warm relative overflow-hidden py-8 select-none md:py-12",
         className,
       )}
       style={

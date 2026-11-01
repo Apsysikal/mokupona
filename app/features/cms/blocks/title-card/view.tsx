@@ -43,7 +43,7 @@ export function TitleCardBlockView({
             // The wordmark is a JPEG in an SVG wrapper, so it carries an
             // opaque white box instead of alpha. Multiply drops white to the
             // paper beneath while leaving the dark strokes untouched.
-            className="h-auto w-[min(80vw,34rem)] mix-blend-multiply"
+            className="art-warm h-auto w-[min(80vw,34rem)] mix-blend-multiply"
           />
         ) : (
           <h1 className="text-center text-6xl leading-none font-light tracking-tight sm:text-7xl md:text-8xl">

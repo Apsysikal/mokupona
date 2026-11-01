@@ -46,7 +46,7 @@ Visual/content pass on the public site, built on top of the design-harmonization
 - Landing page showed every past dinner; next-dinner card dropped its facts list
 - Hand-written section headings, hand-drawn wordmark/logo
 - Square corners, no panels, more breathing room
-- Paper background moved off cream to lilac-white `#F6F5FA` (cream read beige)
+- Paper background moved off cream to blush-white `#FAF6F8`; purples turned ~40° toward red (plum ink `#614466`), raster artwork follows via `art-warm` / `--art-hue-shift`
 - Cream/purple palette, title card, galleries, hall of fame
 
 So: this branch is iterating on landing page (`app/routes/_index.tsx`) and `/dinners` (`app/routes/dinners._index.tsx`, `app/routes/dinners_.$dinnerId.tsx`) presentation/layout, not backend logic.

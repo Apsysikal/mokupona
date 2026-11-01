@@ -23,7 +23,10 @@ export function Logo({ className }: LogoProps) {
       // opaque. Multiply drops it to the paper and keeps the strokes.
       // object-contain preserves the letterboxing the old inline SVG gave us,
       // since call sites size it with square `size-*` utilities.
-      className={cn("w-auto object-contain mix-blend-multiply", className)}
+      className={cn(
+        "art-warm w-auto object-contain mix-blend-multiply",
+        className,
+      )}
     />
   );
 }
