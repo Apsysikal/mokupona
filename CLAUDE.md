@@ -17,7 +17,7 @@ React Router v7 (framework mode) + React 19 + TypeScript, Tailwind CSS v4, Prism
 ## Structure
 
 - `app/routes` — route modules (public pages + `admin.*` area), flat-file routing (`admin.dinners.$dinnerId_.edit.tsx` style)
-- `app/features/*` — feature-scoped logic (auth, gallery, signup-form, cms, events, mail, images, board-members, users, forms)
+- `app/features/*` — feature-scoped logic (auth, gallery, signup-form, cms, events, mail, images, board-members, users, forms, live-data)
 - `app/models` — server-side data access
 - `app/components/ui` — design-system primitives (migrated Radix → Base UI, see `docs/design-harmonization`)
 - `app/tailwind.css` — theme tokens

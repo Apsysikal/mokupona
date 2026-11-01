@@ -17,6 +17,7 @@ Already exists (`app/routes/admin*.tsx`): dinners CRUD, locations, board members
 - [ ] 1.5 Manage a mailing list — nothing exists yet. Needs: subscriber model, opt-in/opt-out (double opt-in for compliance), admin UI to view/export/segment, send-to-list action
 - [ ] 1.6 Manage bookings for each dinner — signups view exists; may need booking status (confirmed/waitlisted/cancelled) once Stripe (#5) lands
 - [ ] 1.7 Other admin needs identified below: Impressum/FAQ/string editor (#2, #3, #6) all live under `/admin` too
+- [x] 2026-11-01 1.8 Copy live data into staging/local with one click (`/admin/sync`, setup in `docs/live-data-sync/`)
 
 ## 2. Impressum page
 

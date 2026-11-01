@@ -9,6 +9,7 @@ The app includes:
 - Role-based authentication (user, moderator, admin)
 - Admin area for events, locations, users, and board members
 - CSV export for event signups
+- One-click copy of the live site's data into staging (`/admin/sync`)
 - SQLite + Prisma data layer
 
 ## Tech stack
@@ -82,6 +83,11 @@ Optional:
 
 - `ALLOW_INDEXING`: set to `false` to disable search engine indexing tags
 - `PORT`: server port (Fly uses `8080`)
+
+Live data sync (copy the live site's content into staging from `/admin/sync`, see [`docs/live-data-sync/`](docs/live-data-sync/README.md)):
+
+- `LIVE_DATA_TOKEN`: shared secret (`openssl rand -hex 32`), the same value on the live site and on every copy target
+- `LIVE_DATA_SOURCE_URL`: set only on a copy target, the live site's public `https://` address. Never set it on production
 
 ## Useful scripts
 

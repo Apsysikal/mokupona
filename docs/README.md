@@ -8,6 +8,7 @@ These describe standing conventions or still-relevant specs, not closed projects
 
 - `data-access-layer/` — the data-access-layer pattern, enforced live via an ESLint rule (`no-restricted-imports` in `eslint.config.js`)
 - `database-backups/` — nightly backup/restore runbook (NAS pull), includes the `nas-backup.sh` script
+- `live-data-sync/` — copying the live site's content into staging from `/admin/sync`: Railway setup runbook, security model, troubleshooting
 - `design-harmonization/` — design system spec (`design-system-spec.md`) synced to the Claude Design project; audit/spec phases are done, but applying it to component code ("code convergence") is still outstanding — see `plan.md`
 - `route-module-conventions/` — house rules for route modules (`conventions.md`); the companion cleanup pass (`action-plan.md`) is fully done
 
