@@ -120,7 +120,7 @@ export default function EventSignupsPage({ loaderData }: Route.ComponentProps) {
                     <span className="font-semibold">{party.name}</span>
                   </div>
                 </TableCell>
-                <TableCell className="text-foreground/65">
+                <TableCell className="text-muted-foreground">
                   {party.email}
                 </TableCell>
                 <TableCell className="text-center">{party.size}</TableCell>
@@ -128,7 +128,7 @@ export default function EventSignupsPage({ loaderData }: Route.ComponentProps) {
                   <time
                     dateTime={new Date(party.createdAt).toISOString()}
                     suppressHydrationWarning
-                    className="text-foreground/50 text-sm whitespace-nowrap"
+                    className="text-muted-foreground text-sm whitespace-nowrap"
                   >
                     {formatAdminTimestamp(new Date(party.createdAt))}
                   </time>
@@ -139,7 +139,7 @@ export default function EventSignupsPage({ loaderData }: Route.ComponentProps) {
               <TableRow className="hover:bg-transparent">
                 <TableCell
                   colSpan={4}
-                  className="text-foreground/50 py-8 text-center text-sm"
+                  className="text-muted-foreground py-8 text-center text-sm"
                 >
                   No signups yet.
                 </TableCell>

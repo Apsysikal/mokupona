@@ -24,7 +24,7 @@ export function EventDateHeading({ date }: { date: SerializableDate }) {
 export function EventLocationFact({ addressLine }: { addressLine: string }) {
   return (
     <span className="flex items-center gap-2">
-      <MapPinIcon className="text-foreground/50 size-4" />
+      <MapPinIcon className="text-muted-foreground size-4" />
       <span className="sr-only">location</span>
       <span>{addressLine}</span>
     </span>
@@ -34,7 +34,7 @@ export function EventLocationFact({ addressLine }: { addressLine: string }) {
 export function EventPriceFact({ price }: { price: number }) {
   return (
     <span className="flex items-center gap-2">
-      <CreditCardIcon className="text-foreground/50 size-4" />
+      <CreditCardIcon className="text-muted-foreground size-4" />
       <span className="sr-only">price</span>
       {price} chf
     </span>
@@ -44,7 +44,7 @@ export function EventPriceFact({ price }: { price: number }) {
 export function EventSeatsFact({ slots }: { slots: number }) {
   return (
     <span className="flex items-center gap-2">
-      <UserIcon className="text-foreground/50 size-4" />
+      <UserIcon className="text-muted-foreground size-4" />
       <span>{slots} seats</span>
     </span>
   );
